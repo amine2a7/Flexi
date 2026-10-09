@@ -5,7 +5,6 @@
   "permissions": {
     "allow": [
       "Bash(pnpm *)",
-      "Bash(npx prettier *)",
       "Bash(flutter analyze*)",
       "Bash(flutter test*)",
       "Bash(dart format *)",
@@ -20,7 +19,15 @@
       "Bash(git push *)",
       "Bash(pnpm * prisma migrate *)",
       "Bash(pnpm add *)",
-      "Bash(flutter pub add *)"
+      "Bash(pnpm * add *)",
+      "Bash(pnpm i *)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm * install *)",
+      "Bash(pnpm dlx *)",
+      "Bash(pnpm * dlx *)",
+      "Bash(npx *)",
+      "Bash(flutter pub add *)",
+      "Bash(dart pub add *)"
     ],
     "deny": [
       "Read(./.env)",
