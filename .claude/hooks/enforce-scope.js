@@ -7,10 +7,19 @@ const fs = require('fs');
 const path = require('path');
 const { LEAD_ONLY, AGENTS, ownerOf } = require('./lib/scopes');
 
+// Toute erreur imprévue bloque (code 2) au lieu de laisser passer (code 1, non bloquant) : S9-04.
+process.on('uncaughtException', () => {
+  process.stderr.write("Bloqué : erreur interne du hook enforce-scope (échec fermé). Signale-le à main.\n");
+  process.exit(2);
+});
+
 let input;
 try {
   input = JSON.parse(fs.readFileSync(0, 'utf8'));
 } catch {
+  input = undefined;
+}
+if (input === null || typeof input !== 'object' || Array.isArray(input)) {
   process.stderr.write("Bloqué : entrée du hook enforce-scope illisible (échec fermé). Signale-le à main.\n");
   process.exit(2);
 }
