@@ -29,7 +29,7 @@ Gérer tout l'argent par un ledger en partie double, immuable, en millimes, avec
 Le transfert de trésorerie séquestre → paiement est documenté avec la banque (hors ledger applicatif ou compte de passage).
 
 ## 4. Données
-`accounts` (id, code, owner_type, owner_id, currency='TND', created_at) · `transactions` (id, type, idempotency_key UNIQUE, reference, created_at, reverses_id) · `ledger_entries` (id, transaction_id, account_id, direction D|C, amount_millimes BIGINT CHECK >0, lot_id, created_at) · `credit_lots` (id, wallet_account_id, category, initial_amount, remaining_amount CHECK ≥0, expires_at, source_transaction_id) · `account_balances` (matérialisé, mis à jour dans la même transaction, vérifié par réconciliation).
+`accounts` (id, code, owner_type, owner_id, currency='TND', created_at) · `transactions` (id, type, tenant_id, user_id, idempotency_key, reference, created_at, reverses_id ; **UNIQUE (tenant_id, user_id, idempotency_key)**) · `ledger_entries` (id, transaction_id, account_id, direction D|C, amount_millimes BIGINT CHECK >0, lot_id, created_at) · `credit_lots` (id, wallet_account_id, category, initial_amount, remaining_amount CHECK ≥0, expires_at, source_transaction_id) · `account_balances` (matérialisé, mis à jour dans la même transaction, vérifié par réconciliation).
 Contraintes : somme débits = somme crédits par transaction (contrainte différée ou trigger) ; triggers interdisant UPDATE/DELETE sur `transactions` et `ledger_entries` ; `remaining_amount` ne peut descendre sous 0.
 
 ## 5. Règles
@@ -37,7 +37,8 @@ Contraintes : somme débits = somme crédits par transaction (contrainte différ
 - Plafonds (transaction, jour, mois, membre famille) vérifiés dans la transaction, avec les mêmes verrous.
 - Verrouillage des comptes concernés dans un **ordre déterministe** (par id) pour éviter les deadlocks.
 - Niveau d'isolation `SERIALIZABLE` avec réessai sur conflit, ou `READ COMMITTED` + `FOR UPDATE` documenté.
-- Idempotence : même clé → même réponse, aucune nouvelle écriture ; clé conservée 24 h minimum (ou à vie pour les financiers).
+- Idempotence : même clé → même réponse, aucune nouvelle écriture ; clé conservée 24 h minimum (ou à vie pour les financiers). **Unicité par (tenant, utilisateur, clé)**, jamais globale ; registre et protocole de réservation décrits dans le contrat (`docs/handoff/contracts/openapi.yaml`, section idempotence, constats S6-04 et S6-11).
+- Fuseau : les fenêtres « jour » et « mois » des plafonds et les dates d'expiration se calculent en `Africa/Tunis`.
 - Expiration : job quotidien qui constate les lots expirés (écriture ou marquage selon décision métier).
 - Réconciliation quotidienne : somme des soldes wallets = engagements ; somme ledger = 0 ; écart → alerte critique.
 

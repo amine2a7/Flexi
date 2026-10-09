@@ -5,7 +5,7 @@
 Exécuter les virements aux commerçants, rapprocher avec la banque, gérer les litiges.
 
 ## 2. Règles
-- Cycle par défaut J+2, paramétrable. Demande libre (au-dessus du seuil) ou lot automatique.
+- Cycle par défaut J+2, paramétrable, calculé en jours calendaires `Africa/Tunis`. Demande libre (au-dessus du seuil) ou lot automatique.
 - Contrôles avant virement : RIB conforme au KYB, commerçant actif, créance non en litige, plafond de virement, LAB/FT.
 - Double validation du lot au-delà du seuil (ex. 10 000 TND). L'approbateur n'est pas l'initiateur.
 - Génération du fichier/ordre bancaire ; import du retour bancaire pour passer en `EXECUTEE` ou `REJETEE` (en cas de rejet : contre-passation et notification).

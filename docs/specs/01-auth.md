@@ -20,6 +20,7 @@ Authentifier Administrateurs, Entreprises, Commerçants, Employés et membres fa
 ## 4. Données
 `users` (id, role, email, phone_enc, password_hash, must_change_password, temp_password_expires_at, mfa_secret_enc, status) · `company_users` · `merchant_users` · `sessions` (family_id, refresh_hash, device_id, ip, expires_at, revoked_at) · `devices` (user_id, platform, attestation_status, last_seen) · `pins` (user_id, pin_hash, failed_count, locked_until) · `login_attempts`.
 RLS : toute table métier porte `company_id` ou `merchant_id` ; la politique compare à la valeur de session `app.tenant_id`.
+**Tenant unique (MVP, RG-2.5) :** `company_users` et `merchant_users` sont les tables d'appartenance utilisateur ↔ tenant ; dans le MVP, contrainte d'unicité sur `user_id` (un compte = un seul tenant). Le tenant de la session est fixé à la connexion ; aucune route de changement de tenant dans le MVP.
 
 ## 5. API
 | Route | Rôle | Description |
@@ -50,6 +51,7 @@ Argon2id (paramètres versionnés), comparaison à temps constant, journal d'aud
 7. Verrouillage progressif ; notification envoyée.
 8. Création d'un membre famille au-delà du maximum paramétré : refusée.
 9. Membre famille ne peut créer aucun compte.
+10. Un utilisateur ne peut pas être rattaché à deux tenants (contrainte d'unicité) ; aucune route ne permet de changer de tenant en session.
 
 ## 9. Hors périmètre
 SSO d'entreprise, authentification par clé d'accès (passkeys) : phase ultérieure.

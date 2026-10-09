@@ -17,7 +17,7 @@
 5. **RTL natif** : la sidebar passe à droite, la barre basse s'inverse, par propriétés logiques seulement (A.5).
 
 ### Source des données de navigation (hypothèse à confirmer avec backend)
-`GET /me` fournit : `displayName`, `role` (`ADMIN` | `COMPANY` | `MERCHANT` | `EMPLOYEE` | `FAMILY_MEMBER`), `subRole` éventuel, `permissions[]`, `memberships[]` éventuels (plusieurs espaces). Compteur de notifications non lues : champ de `/me` ou route dédiée (**ouvert**). La navigation est calculée **uniquement** à partir de ces données, jamais d'une valeur côté client.
+`GET /me` fournit : `displayName`, `role` (`ADMIN` | `COMPANY` | `MERCHANT` | `EMPLOYEE` | `FAMILY_MEMBER`), `subRole` éventuel, `permissions[]`. **MVP : un compte = un seul tenant** (décision du 2026-10-09) : pas de liste d'espaces, pas de changement de tenant en session, le tenant n'est jamais transmis par le client. Compteur de notifications non lues : champ de `/me` ou route dédiée (**ouvert**). La navigation est calculée **uniquement** à partir de ces données, jamais d'une valeur côté client.
 
 ### Libellés de rôle (clés `role.*`)
 `role.ADMIN` « Administrateur » · `role.COMPANY` « Entreprise » · `role.MERCHANT` « Commerçant » · `role.EMPLOYEE` « Employé » · `role.FAMILY_MEMBER` « Membre famille ». Sous-rôles (specs 01, 05, 07 ; **enums à confirmer**) : `role.sub.OWNER` « Propriétaire » · `role.sub.MANAGER` « Gestionnaire » · `role.sub.ACCOUNTANT` « Comptable » · `role.sub.READ_ONLY` « Lecture seule » · `role.sub.CASHIER` « Caissier » · `role.sub.SUPER_ADMIN` « Super-administrateur » · `role.sub.FINANCE` « Finance » · `role.sub.SUPPORT` « Support » · `role.sub.COMPLIANCE` « Conformité ».
@@ -33,7 +33,7 @@
 2. **Profil et rôle actif** : pastille d'initiales, nom (`displayName`), rôle (+ sous-rôle).
 3. **Modules** (liste verticale, un niveau, tableau ci-dessous).
 4. Espace flexible.
-5. **Pied** : « Changer d'espace » (affiché **seulement** si `memberships[]` contient plus d'un espace) puis « Se déconnecter ».
+5. **Pied** : « Se déconnecter ». *« Changer d'espace » est retiré du MVP (un compte = un seul tenant, décision du 2026-10-09) ; le sens de « changement de rôle en bas » (cahier §5.6) est **en attente de décision utilisateur (2026-10-09)**, voir §F.*
 
 Modules (cahier §5.6, **ordre et libellés repris tels quels** ; icônes Lucide proposées par design, hors icônes imposées par la charte §6) :
 
@@ -64,9 +64,9 @@ Modules (cahier §5.6, **ordre et libellés repris tels quels** ; icônes Lucide
 | | `nav.merchant.settings` | Paramètres | `Settings2` |
 
 Décisions d'architecture de l'information (design, sans règle métier) :
-- **Un seul niveau** dans la sidebar. Les sous-sections d'un module sont des **onglets dans la page** : Administrateur → Paramétrage → onglets *Commissions, Catégories, Plafonds, Seuils, Cycles* (ADM-09, RG-1.1) ; Commerçant → Encaissement → onglets *Encaisser, Historique* (COM-06 n'a pas de module propre dans le cahier §5.6).
+- **Un seul niveau** dans la sidebar. Les sous-sections d'un module sont des **onglets dans la page** : Administrateur → Paramétrage → onglets *Commissions, Catégories, Plafonds, Seuils, Cycles* (ADM-09, RG-1.1) ; Commerçant → Encaissement → onglets *Encaisser, Historique* (COM-06 n'a pas de module propre dans le cahier §5.6 ; **historique commerçant web = onglet du module Encaissement, tranché le 2026-10-09**).
 - L'utilisateur voit uniquement les modules dont il a la **permission** (ex. Commerçant « caissier » : Encaissement ; « comptable » : Règlements & factures ; spec 07 §2). Le nom de la permission requise par module est fourni par backend.
-- « Changer d'espace » (cahier §5.6 « changement de rôle en bas ») ouvre une liste des espaces autorisés ; choisir un espace recharge toute la coquille avec le nouveau tenant.
+- **Pas de « Changer d'espace » dans le MVP** : un compte appartient à un seul tenant et aucun changement de tenant en session n'existe (décision du 2026-10-09 ; aucune route ni aucun en-tête de sélection de tenant dans le contrat). Le client n'envoie jamais de tenant, de `companyId` ni d'identifiant d'espace choisi par l'utilisateur : le serveur le déduit de la session.
 
 **3. Composants et tokens.** shadcn/ui : `Sidebar`/`NavigationMenu` (liste de liens), `Avatar`, `Button` variante `tertiary` pour le pied, `Sheet` (tiroir sous `breakpoint.lg`). Tokens :
 - Fond `color.navy` · largeur `size.sidebar-width` (264) · padding `space.4` · espace entre sections `space.6` · séparateur `color.navy-deep` (`size.border-width`).
@@ -84,8 +84,6 @@ Décisions d'architecture de l'information (design, sans règle métier) :
 | `nav.main.label` | Navigation principale |
 | `nav.skip` | Aller au contenu principal |
 | `nav.logo.label` | FlexiPay – retour à l'accueil |
-| `nav.switchSpace` | Changer d'espace |
-| `nav.switchSpace.current` | Espace actuel : {role} |
 | `nav.logout` | Se déconnecter |
 | `nav.menu.open` | Ouvrir le menu |
 | `nav.menu.close` | Fermer le menu |
@@ -103,17 +101,17 @@ Modules : clés `nav.<espace>.<module>` du tableau. Les noms de langue (`languag
 - **Solde insuffisant** : sans objet dans la navigation.
 - **Permission refusée** : un module masqué n'est pas atteignable ; l'accès direct par URL affiche C.8.8.
 
-**6. RTL.** Dans une langue RTL, la sidebar s'ancre à `start` (donc à droite) et le contenu passe à gauche ; repère actif à `start` ; chevrons du sélecteur d'espace en miroir ; texte aligné `start` ; icônes de module non directionnelles inchangées (`ArrowLeftRight` pour *Transactions* est symétrique) ; les noms de rôle restent traduits, les initiales suivent la langue du nom.
+**6. RTL.** Dans une langue RTL, la sidebar s'ancre à `start` (donc à droite) et le contenu passe à gauche ; repère actif à `start` ; texte aligné `start` ; icônes de module non directionnelles inchangées (`ArrowLeftRight` pour *Transactions* est symétrique) ; les noms de rôle restent traduits, les initiales suivent la langue du nom.
 
 **7. Accessibilité.**
 - `<nav aria-label="{nav.main.label}">` ; un **lien d'évitement** « Aller au contenu principal » (`nav.skip`) est le premier élément focalisable, visible au focus.
-- **Ordre de focus :** lien d'évitement → logo → modules (de haut en bas) → « Changer d'espace » → « Se déconnecter » → en-tête (N.2) → contenu.
+- **Ordre de focus :** lien d'évitement → logo → modules (de haut en bas) → « Se déconnecter » → en-tête (N.2) → contenu.
 - Cible ≥ 44 px sur toute la largeur de l'élément. Contraste : `on-navy-muted/navy` 11,43:1 · `on-navy/navy-deep` 12,35:1 · repère `emerald/navy` 6,69:1. Texte secondaire du profil en `on-navy-muted`, **jamais** `text-muted` (3,57:1) ni `text-faint`.
 - Élément actif : fond + repère + graisse + `aria-current` (pas la couleur seule). Tiroir (< `breakpoint.lg`) : `role="dialog"`, `aria-modal`, piège de focus, Échap ferme, le focus retourne au bouton qui l'a ouvert.
 
 **8. Responsive.** ≥ `breakpoint.lg` (1024) : sidebar **fixe** de `size.sidebar-width`, contenu à côté, contenu centré et limité à `size.desktop-max-width`. < `breakpoint.lg` : sidebar masquée, ouverte en **tiroir** depuis `start` par le bouton menu de l'en-tête (N.2), largeur `size.sidebar-width`, voile `color.overlay`, durée `motion.base` (sans animation si « Réduire les animations »). Il n'y a **pas de barre basse sur le web** (réservée aux applications mobiles Employé et Pro).
 
-**9. Données / endpoint.** `GET /me` (rôle, sous-rôle, permissions, espaces, nom) — **forme à confirmer avec backend** ; `POST /auth/logout` (spec 01) ; un changement d'espace s'appuie sur le contrat d'authentification (**à confirmer**).
+**9. Données / endpoint.** `GET /me` (rôle, sous-rôle, permissions, nom) — **forme à confirmer avec backend** ; `POST /auth/logout` (spec 01). Aucun changement d'espace ni de tenant en session au MVP.
 
 ---
 
@@ -155,9 +153,9 @@ L'action principale utilise les clés de la page (`ecran.action.principale`). Le
 
 ## N.3 Barre basse mobile Employé
 
-**1. Objectif.** Donner à l'employé (et au membre famille) un accès direct aux 5 destinations essentielles de l'app, l'action la plus fréquente étant **Payer**. Exigences : cahier §5.7, EMP-02 à EMP-08.
+**1. Objectif.** Donner à l'employé (5 destinations) et au membre famille (4 destinations, sans « Où dépenser ») un accès direct aux destinations essentielles de l'app, l'action la plus fréquente étant **Payer**. Exigences : cahier §5.7, EMP-02 à EMP-08.
 
-**2. Structure.** 5 onglets **dans cet ordre** : **Accueil · Payer · Où dépenser · Historique · Profil**. Chaque onglet = icône au-dessus du libellé. La barre est visible sur les **5 écrans racines** ; elle est **masquée** sur les écrans empilés au-dessus (confirmation PIN, scanner plein écran, détail de transaction, création de membre famille, etc.). Chaque onglet conserve son état de navigation ; un second appui sur l'onglet actif revient à la racine de l'onglet puis remonte en haut de la liste.
+**2. Structure.** Employé : 5 onglets **dans cet ordre** : **Accueil · Payer · Où dépenser · Historique · Profil**. **Membre famille (tranché le 2026-10-09, RG-2.3) : 4 onglets, Accueil · Payer · Historique · Profil, sans « Où dépenser »** (mêmes clés, mêmes icônes, onglet retiré ; pas de gestion famille). Chaque onglet = icône au-dessus du libellé. La barre est visible sur les **5 écrans racines** ; elle est **masquée** sur les écrans empilés au-dessus (confirmation PIN, scanner plein écran, détail de transaction, création de membre famille, etc.). Chaque onglet conserve son état de navigation ; un second appui sur l'onglet actif revient à la racine de l'onglet puis remonte en haut de la liste.
 
 | Onglet | Clé | FR | Icône (Lucide) |
 |---|---|---|---|
@@ -181,7 +179,7 @@ L'action principale utilise les clés de la page (`ecran.action.principale`). Le
 - **Hors connexion :** la barre reste active ; les onglets Accueil et Historique affichent les dernières données avec `common.state.offline.lastUpdate` ; l'onglet **Payer** affiche `common.state.offline.payDisabled` « Le paiement nécessite une connexion. Reconnectez-vous pour payer. » (spec 06 §4) ; Où dépenser peut être consulté en cache sinon état hors connexion.
 - **Session expirée :** N.6 plein écran, la barre disparaît.
 - **Solde insuffisant :** non porté par la barre ; l'onglet Payer affiche `FundsAlert` (C.8.6) après refus.
-- **Permission refusée :** pour un **membre famille**, un onglet non permis est retiré (la barre peut compter moins de 5 onglets) ; l'accès direct affiche C.8.8. *La liste exacte des écrans interdits aux membres famille reste à définir dans la spec de l'app (compte famille : paiement uniquement dans sa limite, RG-2.3).*
+- **Permission refusée :** pour un **membre famille**, l'onglet « Où dépenser » est retiré (barre à 4 onglets, tranché le 2026-10-09) ; l'accès direct à un écran non permis affiche C.8.8. Les écrans de l'onglet Accueil et Payer du membre famille ne montrent **jamais le solde de l'employé** (carte « Reste sur votre limite », `fondations-composants.md` C.4.3) ni dans un message d'erreur (C.8.6). Le détail des autres écrans interdits (gestion famille, etc.) est défini dans la spec de l'app Employé (RG-2.3).
 
 **6. RTL.** La barre est inversée : **Accueil est à droite**, Profil à gauche (ordre de lecture conservé) ; icônes inchangées (aucune n'est directionnelle) ; libellés dans la langue ; le sens de balayage entre onglets suit la direction.
 
@@ -189,7 +187,7 @@ L'action principale utilise les clés de la page (`ecran.action.principale`). Le
 
 **8. Responsive.** Téléphones 320–480 dp : 5 onglets égaux. Tablettes / paysage : la barre reste en bas, les onglets gardent une largeur égale, le contenu est centré et limité à `breakpoint.md`. Pas de rail latéral dans le MVP.
 
-**9. Données / endpoint.** Aucune donnée affichée dans la barre. Les permissions (membre famille) viennent de `GET /me` (**à confirmer**).
+**9. Données / endpoint.** Aucune donnée affichée dans la barre. Le rôle `FAMILY_MEMBER` (barre à 4 onglets) vient de `GET /me` (**forme à confirmer**).
 
 ---
 
@@ -319,8 +317,9 @@ L'action principale utilise les clés de la page (`ecran.action.principale`). Le
 
 ## F. Décisions et questions ouvertes
 
-1. **[QUESTION] backend (ouverte, message envoyé) :** forme de `GET /me` (rôle, sous-rôle, permissions, espaces multiples), compteur de notifications non lues, noms des permissions par module, changement d'espace.
-2. **[DÉCISION] team-lead — barre basse du membre famille :** liste des onglets/écrans permis (RG-2.3 : « paiement dans sa limite »). Recommandation design : Accueil, Payer, Historique, Profil (sans Où dépenser ni gestion famille) ; à confirmer par la spec de l'app Employé.
-3. **Information d'architecture (design) :** historique du commerçant (COM-06) = onglet du module *Encaissement* sur le web ; onglets dans *Paramétrage* pour l'Administrateur. À valider avec les écrans correspondants.
-4. **Reste de [DÉCISION] sur l'affichage du montant manquant** pour le commerçant et la famille : voir `fondations-composants.md` §E.
+1. **[QUESTION] backend (ouverte, message envoyé) :** forme de `GET /me` (rôle, sous-rôle, permissions), compteur de notifications non lues, noms des permissions par module.
+1bis. **« Changement de rôle en bas » (cahier §5.6, S8-01) : en attente de décision utilisateur (2026-10-09).** Rien n'est tranché dans cette spec ; l'élément n'y figure pas en attendant.
+2. **Tranché le 2026-10-09 — barre basse du membre famille :** Accueil · Payer · Historique · Profil (sans « Où dépenser »), cahier v4.1 RG-2.3 (N.3).
+3. **Tranché le 2026-10-09 — historique du commerçant (COM-06)** = onglet du module *Encaissement* sur le web (N.1). Les onglets du module *Paramétrage* de l'Administrateur restent une décision d'architecture de l'information (design), à vérifier avec les écrans correspondants.
+4. **Tranché le 2026-10-09 — affichage du montant manquant :** aucun solde ni motif côté commerçant ; côté membre famille, seul le reste de sa propre limite : voir `fondations-composants.md` §E (un point reste ouvert : membre famille sans plafond individuel).
 5. **Annonce `[SPEC]`** à frontend et mobile : à émettre à leur lancement (non lancés dans cette passe).

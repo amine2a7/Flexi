@@ -5,7 +5,7 @@
 Encaisser, suivre les ventes et créances, demander un virement avec simulation de la commission.
 
 ## 2. Règles
-- Encaissement : scan du QR client ou saisie du code ; validation instantanée ; affichage prénom + initiale, catégorie, solde disponible, compte à rebours du QR.
+- Encaissement : scan du QR client ou saisie du code ; validation instantanée ; affichage prénom + initiale, catégorie, compte à rebours du QR. **Aucun solde du client** (COM-04 v4.1). Résultat : « accepté » ou « refusé » (`PAYMENT_DECLINED`, sans motif ni montant ; texte « Paiement refusé. Le client peut vérifier son application. »). Une seule initiation par QR.
 - Le commerçant est crédité du **brut** ; la commission n'est visible et prélevée qu'à la demande de virement.
 - **Simulation** (`GET /payouts/quote`) : montant demandé, taux, commission, net. La demande (`POST /payouts`) fige le taux et rappelle la simulation ; si le profil a changé entre la simulation et la demande, le serveur refuse et renvoie une nouvelle simulation.
 - Seuil minimum de virement ; créances en litige exclues.

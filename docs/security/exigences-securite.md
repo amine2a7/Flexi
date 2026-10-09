@@ -1,6 +1,8 @@
 # Exigences de sécurité FlexiPay
 Référentiels : OWASP ASVS niveau 2 (API/web), OWASP MASVS (mobile). Priorité : **Must** = bloquant avant le lancement.
 
+> **Version du référentiel ASVS (décision utilisateur du 2026-10-09)** : la phase 0 est suivie en ASVS **4.0.3** (`checklist-asvs.md`). L'**ASVS 5.0** est adopté **avant le début de la phase 1** : securite produit une table de correspondance 4.0.3 → 5.0 pour chaque point de la checklist (les chapitres et identifiants ont changé en 5.0 ; ne pas transposer les numéros à la main). Les identifiants `SEC-xx` de ce document ne changent pas. Motif : le pentest externe (SEC-S6) portera sur la version courante du référentiel.
+
 ## Authentification et sessions
 | ID | Exigence | Prio |
 |---|---|---|
@@ -42,6 +44,7 @@ Référentiels : OWASP ASVS niveau 2 (API/web), OWASP MASVS (mobile). Priorité 
 | SEC-D4 | Logs sans donnée sensible (masquage automatique) | Must |
 | SEC-D5 | Sauvegardes chiffrées, restauration PITR testée trimestriellement | Must |
 | SEC-D6 | Minimisation et durées de conservation documentées (INPDP) | Should |
+| SEC-D7 | Données de dev, de test, de démonstration et de staging **synthétiques uniquement** : jamais de données personnelles réelles (employés, familles, RIB, pièces d'identité, téléphones, dumps de production) hors de la production, y compris dans les fixtures, seeds, captures, tickets et sessions d'agents IA. Tout besoin de données réelles hors production = décision de l'utilisateur, tracée (INPDP ; décision du 2026-10-09 ; menaces DEV-8, DC-6) | Must |
 
 ## API et web
 | ID | Exigence | Prio |
@@ -80,3 +83,4 @@ Référentiels : OWASP ASVS niveau 2 (API/web), OWASP MASVS (mobile). Priorité 
 | SEC-S4 | DAST (OWASP ZAP) sur staging | Should |
 | SEC-S5 | Revue humaine obligatoire sur auth, permissions et argent | Must |
 | SEC-S6 | **Pentest externe avant le lancement** | Must |
+| SEC-S7 | Fichiers de configuration Firebase / services mobiles (`google-services.json`, `GoogleService-Info.plist`) **hors Git** (motifs dans `.gitignore`), injectés en CI depuis le gestionnaire de secrets au moment du build ; un fichier par environnement, jamais celui de production dans un build de dev. Même règle pour les clés de signature (`*.jks`, `*.keystore`, `key.properties`, `*.p12`, `*.mobileprovision`). Contrôle : gitleaks avec motifs dédiés en CI (décision du 2026-10-09 ; menaces CF-06, GIT-4) | Must |

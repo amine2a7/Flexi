@@ -9,7 +9,7 @@ Permettre à l'employé et à sa famille de consulter leurs soldes et payer chez
 - **QR employé** : `POST /qr` retourne un jeton signé (nonce, TTL 60 s, usage unique, lié à l'appareil). Rafraîchi automatiquement. Aucune donnée personnelle dans le QR.
 - **Paiement** : scan du QR commerçant ou saisie du code à 8 chiffres ; confirmation par PIN/biométrie au-delà d'un seuil paramétrable (par défaut toujours).
 - Contrôles : solde de la catégorie, lots non expirés (FEFO), plafonds jour/mois, limite du membre famille, commerçant actif et catégorie acceptée, antifraude.
-- Famille : max paramétrable (4), limite individuelle optionnelle, suspension/suppression par l'employé ; les membres consomment le solde de l'employé.
+- Famille : max paramétrable (4), limite individuelle optionnelle, suspension/suppression par l'employé ; les membres consomment le solde de l'employé. **Un membre ne voit que le reste de sa propre limite**, jamais le solde de l'employé : refus « limite atteinte » avec le reste de sa limite ; refus dû au solde de l'employé sans aucun montant. Même règle dans `GET /me/wallet` et dans les erreurs. Barre basse d'un membre : Accueil · Payer · Historique · Profil.
 - Notifications : crédits reçus, expiration J-30 et J-7, paiement effectué.
 - Historique filtrable, reçu PDF.
 

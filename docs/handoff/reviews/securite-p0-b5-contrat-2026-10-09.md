@@ -270,6 +270,65 @@ Remarques pour l'implémentation (phase 2), sans nouveau constat :
 
 **Verdict final P0-S6 : OK.** 0 Critique, 0 Haute, 0 Moyenne, 0 Basse ouverts sur le contrat. Restent hors contrat : les décisions demandées au lead (membre famille, COM-04, alignement de la spec 02 §4).
 
+## Revérification P0-B7 — décisions utilisateur du 2026-10-09 (2026-10-09)
+Version revue : SHA-256 `b713b5662efe269ce3d808e61e0ae319d84f652765f222964b40befb6dfbf807`, 1 200 lignes, LF, 0 tabulation, 0 CR (empreinte recalculée par securite, identique à celle annoncée dans le `[LIVRÉ] P0-B7`).
+Méthode : `diff` complet entre la version revue au 3e tour (`e8b0a175…`, copie conservée par securite) et `b713b566…` : seuls les blocs annoncés changent (l. 67-72, 129-130, 144-173, 282-285, 587, 652, 801-806, 829-832, 1103-1122). Aucun schéma structurant modifié (enums, `required`, types identiques). `grep -niE "en attente de d|à confirmer|proposition|point ouvert|Validée"` : une seule occurrence (l. 206, « validée immédiatement », sans rapport avec le statut).
+
+| Décision | État | Preuve | Fuite de solde ? |
+|---|---|---|---|
+| Fuseau `Africa/Tunis` (règles métier), UTC dans l'API | **Reportée** | l. 67-72, l. 587 ; cohérent avec le glossaire l. 7, le cahier l. 54 et la spec 08 (J+2 en jours calendaires) | Non concerné |
+| Membre famille : seulement le reste de sa propre limite | **Reportée** | l. 154-164 : `LIMIT_EXCEEDED {FAMILY_MEMBER, remainingMillimes = reste de sa limite}` ; `INSUFFICIENT_FUNDS` **sans `details`** ; invariant « seul montant renvoyé au membre = reste de sa limite » ; l. 829-832 ; exemples l. 1103-1122 (le second sans `details`) | **Non** : aucun montant lié au solde ou aux plafonds de l'employé. Le schéma (`details` facultatif, fermé) permet la réponse sans montant |
+| COM-04 clos : commerçant sans solde | **Reportée** | l. 165-171 : `PAYMENT_DECLINED` sans motif ni montant ; « Point ouvert » supprimé ; comportement S6-10 inchangé | **Non** |
+| Statut `CONFIRMED` / « Confirmé » | **Reportée** | l. 652 ; enum inchangée | Non concerné |
+| Tenant unique, aucun changement en session | **Reportée** | l. 282-285 ; tenant tiré de la session seulement (l. 277-281) | Non concerné |
+
+Remarques, sans constat sur le contrat :
+- **Ordre des contrôles pour un paiement du membre** (à écrire dans le contrat paiements) : la limite du membre doit être contrôlée **avant** le solde de l'employé. Dans l'ordre inverse, un membre qui tente un montant supérieur à sa limite recevrait `INSUFFICIENT_FUNDS` chaque fois que le solde de l'employé est inférieur à ce montant : il pourrait sonder ce solde même au-delà de sa propre limite (avec un commerçant complice, une initiation par QR). Si la limite est contrôlée d'abord, la seule information est « solde employé < montant ≤ reste de ma limite », ce qui est le risque résiduel accepté (modèle de menaces v3).
+- **Plafond de l'employé atteint par un paiement du membre** : non tranché, remonté par backend à `main` en `[DÉCISION]`. Avis securite : l'invariant l. 160-163 suffit pour le solde. Si un `limitType` `DAILY`/`MONTHLY` était renvoyé au membre, même sans montant, il révélerait l'activité de dépense de l'employé. Option la plus minimisante : refus sans `details` (même forme que `INSUFFICIENT_FUNDS` sans `details`).
+- **`GET /me/wallet` d'un membre** (futur contrat wallet) : le « reste » affiché est calculé sur la limite seule, jamais min(limite, solde employé) (voir la recommandation du tour 1 bis).
+- l. 199 « alignement de la spec demandé au lead » : obsolète (spec 02 alignée), sans effet sur la sécurité ; signalé par backend à `main`.
+
+### Revérification `[CORRIGÉ]` P0-B7 (aller-retour 1/3, à la demande de main)
+Version revue : SHA-256 `82bf61bdb99ea20254caa589c75af73ebed00de568c0aa6b30b9952972296a8d`, 1 200 lignes, LF, 0 tabulation, 0 CR (recalculée, identique à l'annonce). Elle **remplace** `b713b566…`. `diff` contre `e8b0a175…` : mêmes blocs que ci-dessus plus `187,188c199,200` ; le bloc l. 160-164 ne diffère que par la phrase annoncée.
+- l. 160-164 : le cas « plafond de l'employé atteint par un paiement du membre » est marqué **en attente de décision utilisateur** ; l'invariant (seul montant renvoyé au membre = reste de sa propre limite) est conservé. Aucune fuite.
+- l. 197-200 : « (La contrainte `UNIQUE` de la spec 02 §4 est donc composite.) ». Aucun effet sur la sécurité.
+- `grep -niE "à confirmer|proposition|point ouvert|« Validée|demandé au lead|en attente de d"` : une seule occurrence, l. 163 (marquage voulu par le lead).
+
+Avis transmis à `main` pour la décision en attente (recommandation A du lead : `LIMIT_EXCEEDED` avec le `limitType` de l'employé, sans `remainingMillimes`) :
+- **Cohérence du schéma** : `LimitExceededProblem.details` impose `required: [limitType, remainingMillimes]` (l. 842). L'option A est donc **invalide** avec le schéma actuel : il faudra soit rendre `remainingMillimes` facultatif (en gardant la règle que, pour l'employé titulaire, il est toujours présent), soit ajouter une variante dédiée. À prévoir dans le contrat paiements, sinon l'implémentation enverra un `remainingMillimes` pour respecter le schéma, c'est-à-dire une fuite.
+- **Minimisation** : A ne révèle pas de montant (l'invariant est respecté), mais `limitType: DAILY`/`MONTHLY` révèle au membre l'activité de dépense de l'employé (« il a atteint son plafond du jour »). Risque Basse, acceptable si l'utilisateur le choisit (le membre doit comprendre pourquoi son paiement est refusé). Option plus minimisante : refus sans `details`.
+
+**Verdict P0-B7 après `[CORRIGÉ]` : OK** (version `82bf61bd…`). 0 Critique, 0 Haute, 0 Moyenne, 0 Basse ouverts sur le contrat.
+
+Point hors contrat (écart de documentation, propriétaire design) :
+```
+[CONSTAT] S8-01 La spec de navigation prévoit un changement de tenant en session, contraire à la décision du 2026-10-09
+Sévérité : Basse
+Fichier : docs/design/specs/navigation.md:69
+Preuve : « "Changer d'espace" (cahier §5.6 "changement de rôle en bas") ouvre une liste des espaces autorisés ; choisir
+  un espace recharge toute la coquille avec le nouveau tenant. » Décision du 2026-10-09 : « MVP : un compte = un seul
+  tenant […] pas de changement de tenant en session ». Contrat l. 282-285 : « aucune route ni aucun en-tête de
+  sélection ou de changement de tenant ».
+Scénario d'attaque : frontend implémente l'écran tel que spécifié. Faute de route serveur, il est tenté de passer le
+  tenant choisi dans la requête (paramètre `companyId`, en-tête, stockage local) : un utilisateur Entreprise modifie
+  cette valeur et lit les employés d'une autre société si un seul endpoint fait confiance à ce paramètre (IDOR,
+  API1:2023). La RLS et la règle « tenant tiré de la session » restent la barrière ; la spec ne doit pas inciter à la
+  contourner.
+Correctif proposé : MVP : retirer « Changer d'espace » ou le restreindre à ce que permet la décision (aucune liste de
+  tenants, aucun rechargement « avec le nouveau tenant ») ; le sens de « changement de rôle » au cahier §5.6 n'est pas
+  défini (rôles dans un même tenant ?) : question à poser à main, pas à trancher en design.
+Exigence : SEC-Z3, SEC-Z4 / ASVS 4.2.1 / décision du 2026-10-09
+```
+
+**Verdict P0-B7 : OK.** 0 Critique, 0 Haute, 0 Moyenne, 0 Basse ouverts sur le contrat. Hors contrat : S8-01 (Basse) ouvert chez design.
+
+**S8-01 — Fermé** (`[CORRIGÉ]` de design, aller-retour 1/3, revérifié le 2026-10-09). `navigation.md` l. 69 : « Pas de "Changer d'espace" dans le MVP […] Le client n'envoie jamais de tenant, de `companyId` ni d'identifiant d'espace choisi par l'utilisateur : le serveur le déduit de la session. » ; l. 20 : `memberships[]` retiré, tenant jamais transmis par le client ; l. 36 : pied de barre latérale réduit à « Se déconnecter » ; l. 114 : aucun changement d'espace ni de tenant ; l. 321 : sens de « changement de rôle en bas » (cahier §5.6) posé à `main` en `[QUESTION]`, non tranché. `grep -rniE "nouveau tenant|memberships|switchSpace|changer d'espace" docs/design/` : seules restent les mentions qui retirent la fonction.
+
+Non vérifié (P0-B7) :
+- Validité YAML / OpenAPI par un outil (Spectral, Redocly) : non installés, pnpm bloqué. Relecture manuelle et `diff` uniquement.
+- Implémentation : aucun code n'existe ; l'ordre des contrôles, l'absence de `details` pour un membre et l'indiscernabilité des refus côté commerçant (corps, en-têtes, temps de réponse) devront être testés en phase 2.
+- Conformité de la spec 06/07 et du cahier v4.1 aux mêmes règles (membre famille, COM-04) : non relue ligne à ligne dans cette revue, seulement les lignes citées.
+
 ## Suivi des allers-retours
 | Tour | Date | Événement |
 |---|---|---|
@@ -277,3 +336,6 @@ Remarques pour l'implémentation (phase 2), sans nouveau constat :
 | 1 bis | 2026-10-09 | S6-10 ajouté (question du lead sur missingMillimes) ; exposition au membre famille = décision utilisateur |
 | 2 | 2026-10-09 | `[CORRIGÉ]` de backend (SHA-256 8db62af2…17f9) : S6-01 à S6-10 fermés ; nouveau S6-11 (Moyenne) envoyé |
 | 3 | 2026-10-09 | `[CORRIGÉ]` S6-11 (SHA-256 e8b0a175…68e1) : fermé. Verdict final OK. Limite de 3 allers-retours atteinte sans `[BLOQUÉ]` |
+| P0-B7 / 1 | 2026-10-09 | `[LIVRÉ] P0-B7` (SHA-256 b713b566…f807) : 5 décisions reportées, aucune fuite. Verdict OK au 1er tour. S8-01 (Basse, hors contrat) envoyé à design |
+| P0-B7 / 2 | 2026-10-09 | `[CORRIGÉ]` (SHA-256 82bf61bd…a8d), deux phrases à la demande de main : OK. Avis sur l'option A (schéma `required`) transmis à main |
+| S8-01 / 1 | 2026-10-09 | `[CORRIGÉ]` de design sur `navigation.md` : S8-01 fermé |

@@ -2,7 +2,13 @@
 À cocher avant chaque jalon (`/release-check`). Détail des exigences : `exigences-securite.md`.
 
 ## Phase 0 – Fondations : points ASVS / MASVS concernés (état au 2026-10-09)
-Références : OWASP ASVS **4.0.3** (identifiants `Vx.y.z`) et OWASP MASVS **v2** — la version de référence est à confirmer par le lead (voir rapport P0-S5). Menaces associées : `modele-de-menaces.md` §3.
+Références : OWASP ASVS **4.0.3** (identifiants `Vx.y.z`) et OWASP MASVS **v2**. Menaces associées : `modele-de-menaces.md` §3.
+
+> **Migration vers ASVS 5.0 (décision utilisateur du 2026-10-09) — à faire avant le début de la phase 1.**
+> - Cette checklist reste numérotée en **4.0.3** pour la phase 0 : **ne pas re-numéroter maintenant**.
+> - Avant la phase 1, securite ajoute une colonne « Réf. ASVS 5.0 » et une table de correspondance 4.0.3 → 5.0 (point par point, à partir de la table de correspondance publiée par l'OWASP avec la 5.0, pas par transposition manuelle des numéros) ; les points sans équivalent ou nouveaux en 5.0 sont listés à part.
+> - Les états (« À faire », « Partiel »…) sont repris tels quels ; aucun point ne passe à « vérifié » du fait de la migration.
+> - Le niveau visé reste **L2**. MASVS v2 inchangé.
 États : **À faire** (rien n'existe) · **En attente d'outils** (pnpm/Docker/Flutter indisponibles sur ce poste) · **Partiel** (existe, constaté incomplet) · **Non vérifié** (impossible à vérifier d'ici). **Aucun point n'est « vérifié » à ce jour.**
 
 ### ASVS (API, web, chaîne de build)
@@ -16,7 +22,8 @@ Références : OWASP ASVS **4.0.3** (identifiants `Vx.y.z`) et OWASP MASVS **v2*
 | V14.1.1 / V14.1.4 | Build et déploiement automatisés, reproductibles | — | B1, B6 | En attente d'outils | Lockfiles gelés, CI ; déploiement hors phase 0 |
 | V14.1.5 | Intégrité vérifiable de la configuration sensible | — | lead, B6 | Partiel | Hooks présents mais contournables (CF-01 à CF-05) ; `CODEOWNERS` à créer |
 | V10.3.2 | Protection de l'intégrité du code (signature) | — | lead | Partiel | Commits non signés (CF-08) |
-| V6.4.1 | Secrets gérés par une solution dédiée, jamais dans le code | SEC-S2 | B4, B6 | Partiel | `.gitignore` OK ; gitleaks inactif localement (CF-02), absent en CI ; motifs mobiles manquants (CF-06) |
+| V6.4.1 | Secrets gérés par une solution dédiée, jamais dans le code | SEC-S2, S7 | B4, B6 | Partiel | `.gitignore` OK ; gitleaks inactif localement (CF-02), absent en CI ; motifs mobiles manquants (CF-06) ; `google-services.json`/`GoogleService-Info.plist` hors Git et injectés en CI : **décidé** (SEC-S7), à implémenter |
+| — (pas d'équivalent direct en 4.0.3 ; INPDP) | Données de dev et de test synthétiques uniquement | SEC-D7 | B4, M1, tous | À faire | **Décidé** le 2026-10-09 ; seeds et fixtures à relire à chaque `[LIVRÉ]` (DEV-8, DC-6) |
 | V14.3.2 | Modes debug désactivés hors dev | — | B3 | En attente d'outils | Config validée par Zod |
 | V14.3.3 | En-têtes sans version de serveur/framework | SEC-W3 | B3 | En attente d'outils | `X-Powered-By` retiré (helmet) |
 | V14.4.1 à V14.4.7 | En-têtes : Content-Type+charset, nosniff, HSTS, CSP, Referrer-Policy, frame-ancestors | SEC-W3, D1 | B3, B5, F3 | À faire | Contrat B5 (revue P0-S6), puis implémentation |
@@ -46,6 +53,11 @@ Références : OWASP ASVS **4.0.3** (identifiants `Vx.y.z`) et OWASP MASVS **v2*
 | MASVS-RESILIENCE-3 | Freins à l'analyse statique (obfuscation) | SEC-M6 | M3 | En attente d'outils | `--obfuscate --split-debug-info` ; symboles hors dépôt |
 | MASVS-CRYPTO-2 / SEC-M6 | Aucune clé secrète dans le binaire | SEC-M6 | M1, M3 | En attente d'outils | Clé de signature hors dépôt (CF-06) |
 | MASVS-RESILIENCE-1, -2 / MASVS-AUTH | Intégrité de la plateforme, attestation, auth | SEC-M3, M4 | — | Hors phase 0 | Phases 5 et 8 |
+
+## Avant le début de la phase 1
+- [ ] Migration de cette checklist vers ASVS 5.0 (colonne de correspondance, voir en tête)
+- [ ] SEC-S7 : `google-services.json` / `GoogleService-Info.plist` et clés de signature dans `.gitignore`, injection en CI documentée
+- [ ] SEC-D7 : règle « données synthétiques uniquement » connue de tous les agents ; seeds et fixtures synthétiques
 
 ## Avant la phase 1 terminée
 - [ ] SEC-A1 à A7, SEC-Z1 à Z5 implémentées et testées

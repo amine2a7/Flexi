@@ -4,13 +4,15 @@
 - Montants en **millimes** (entiers). 1 TND = 1 000 millimes. 45,000 TND = `45000`.
 - Taux en **points de base (bps)**. 2 % = `200`. 1 % = `100`. 0,5 % = `50`.
 - Commission = `round_half_up(montant × taux_bps / 10000)` (à confirmer, voir `open-questions.md`).
+- **Fuseau des règles métier :** `Africa/Tunis` (plafonds jour/mois, J+2, expirations) ; horodatages API en UTC.
+- **Formats d'affichage :** FR et AR `48 250,000 TND` (chiffres occidentaux) ; EN `48,250.000 TND`.
 
 ## Définitions
 | Terme | Définition |
 |---|---|
 | Entreprise | Société cliente qui achète et attribue des crédits |
 | Employé | Bénéficiaire, utilise l'app mobile |
-| Membre famille | Compte lié à un employé, consomme son solde dans sa limite |
+| Membre famille | Compte lié à un employé, consomme son solde dans sa limite ; ne voit que le reste de **sa propre limite**, jamais le solde de l'employé |
 | Commerçant | Partenaire qui encaisse et se fait régler |
 | Wallet | Compte virtuel d'une entité (entreprise, employé, commerçant) |
 | Lot de crédits | Montant avec date d'expiration, consommé en FEFO |
@@ -41,6 +43,6 @@
 ## Statuts
 - **Compte :** EN_ATTENTE_KYC → VALIDE / REJETE → SUSPENDU
 - **Commande :** CREEE → PAYEE → RAPPROCHEE → CREDITEE / ANNULEE
-- **Paiement :** INITIE → CONFIRME → REGLE / REFUSE / EN_LITIGE
+- **Paiement :** INITIE → CONFIRME (« Confirmé », API `CONFIRMED`) → REGLE / REFUSE / EN_LITIGE
 - **Demande de virement :** DEMANDEE → CONTROLEE → ENVOYEE → EXECUTEE / REJETEE
 - **Approbation :** EN_ATTENTE → APPROUVEE / REFUSEE (approbateur ≠ initiateur)

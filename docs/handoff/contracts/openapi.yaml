@@ -65,9 +65,11 @@ info:
       (`createdAt`, `expiresAt`). Le client convertit dans le fuseau de l'utilisateur pour
       l'affichage.
     - Dates calendaires sans heure : `YYYY-MM-DD` (schéma `CalendarDate`), champs suffixés `Date`
-      ou `On`. Le fuseau de référence de ces dates (proposition : `Africa/Tunis`) est **à confirmer**
-      par le lead (décision demandée), de même que la borne des fenêtres « jour » et « mois » des
-      plafonds.
+      ou `On`, exprimées dans le fuseau **`Africa/Tunis`**.
+    - **Fuseau des règles métier : `Africa/Tunis`** (décision du 2026-10-09, cahier v4.1) : dates
+      calendaires, fenêtres « jour » et « mois » des plafonds, échéance J+2 des règlements (jours
+      calendaires), dates d'expiration des crédits et alertes J-30/J-7. Les horodatages échangés
+      par l'API restent **toujours en UTC** (schéma `Timestamp`).
     - Identifiants de ressource : **UUID** (chaîne, format `uuid`), **opaques** : le client n'en
       déduit rien et ne les construit jamais. Jamais d'entier séquentiel exposé. Un identifiant
       n'est **jamais** une autorisation : chaque accès est contrôlé côté serveur (voir §6).
@@ -124,8 +126,8 @@ info:
     | 413 | `PAYLOAD_TOO_LARGE` | `errors.payloadTooLarge` | — |
     | 415 | `UNSUPPORTED_MEDIA_TYPE` | `errors.unsupportedMediaType` | — |
     | 422 | `IDEMPOTENCY_KEY_REUSED` | `errors.idempotencyKeyReused` | — |
-    | 422 | `INSUFFICIENT_FUNDS` | `errors.insufficientFunds` | `missingMillimes` (payeur uniquement) |
-    | 422 | `LIMIT_EXCEEDED` | `errors.limitExceeded` | `limitType`, `remainingMillimes` (payeur uniquement) |
+    | 422 | `INSUFFICIENT_FUNDS` | `errors.insufficientFunds` | `missingMillimes` (employé titulaire uniquement) ; **aucun** `details` pour un membre famille |
+    | 422 | `LIMIT_EXCEEDED` | `errors.limitExceeded` | `limitType`, `remainingMillimes` (employé titulaire ; membre famille : `FAMILY_MEMBER` et reste de sa propre limite) |
     | 422 | `PAYMENT_DECLINED` | `errors.paymentDeclined` | — (réponse commerçant, raison jamais révélée) |
     | 429 | `RATE_LIMITED` | `errors.rateLimited` | `retryAfterSeconds` |
     | 500 | `INTERNAL_ERROR` | `errors.internal` | — |
@@ -139,26 +141,36 @@ info:
     - `PASSWORD_CHANGE_REQUIRED` : redirection vers le changement obligatoire du mot de passe
       temporaire ; tant qu'il n'est pas changé, seules les routes de changement de mot de passe et
       de déconnexion sont autorisées (spec 01, SEC-A2).
-    - `INSUFFICIENT_FUNDS` : `missingMillimes` = montant manquant (E7 : solde 30 000, paiement
-      45 000 → `missingMillimes: 15000`). Ni le solde disponible ni le montant requis ne sont
-      jamais renvoyés.
+    - `INSUFFICIENT_FUNDS` : pour l'employé titulaire, `missingMillimes` = montant manquant (E7 :
+      solde 30 000, paiement 45 000 → `missingMillimes: 15000`). Ni le solde disponible ni le
+      montant requis ne sont jamais renvoyés.
     - `LIMIT_EXCEEDED` : `limitType` indique le plafond atteint, `remainingMillimes` le reste
       disponible (E8 : plafond jour 100 000, déjà 80 000, paiement 30 000 →
       `{ "limitType": "DAILY", "remainingMillimes": 20000 }`).
-    - **Règle d'exposition des refus de paiement** (anti-déduction du solde) :
-      - **Payeur** (employé titulaire du wallet) : code précis (`INSUFFICIENT_FUNDS`,
+    - **Règle d'exposition des refus de paiement** (anti-déduction du solde, décisions du
+      2026-10-09) :
+      - **Employé titulaire du wallet** (payeur) : code précis (`INSUFFICIENT_FUNDS`,
         `LIMIT_EXCEEDED`…) avec ses `details`.
+      - **Membre famille** (payeur sur le wallet de l'employé, RG-2.3) : il ne voit **que le
+        reste de sa propre limite**, jamais le solde de l'employé, ni à l'écran ni dans une
+        erreur.
+        - Limite du membre dépassée (E16) : `LIMIT_EXCEEDED` avec
+          `{ "limitType": "FAMILY_MEMBER", "remainingMillimes": <reste de sa propre limite> }`.
+        - Refus dû au solde de l'employé : `INSUFFICIENT_FUNDS` **sans `details`** (aucun
+          `missingMillimes`, aucun montant).
+        - Invariant : le seul montant jamais renvoyé à un membre famille est le reste de sa
+          propre limite. Le cas d'un plafond de l'employé (transaction, jour, mois) atteint par un
+          paiement du membre est **en attente de décision utilisateur (2026-10-09)** ; il sera
+          fixé par le contrat paiements, dans le respect de cet invariant.
       - **Commerçant** (et tout appelant autre que le payeur) : **toujours** le code générique
         `PAYMENT_DECLINED`, sans `details`, quelle que soit la raison du refus — jamais
         `INSUFFICIENT_FUNDS`, `LIMIT_EXCEEDED`, `missingMillimes` ni `remainingMillimes`. Un code
         distinct, répété sur des initiations successives, permettrait de retrouver le solde du
-        payeur par dichotomie.
-      - **Membre famille** : **en attente de décision** (demandée au lead) ; d'ici là, aucun
-        contrat de module ne fixe ce cas.
+        payeur par dichotomie. Le commerçant ne voit **jamais** le solde du client (COM-04,
+        cahier v4.1) : le résultat est seulement « accepté » ou « refusé » (`PAYMENT_DECLINED`,
+        sans motif ni montant).
       - Exigence transmise au futur contrat paiements : **une seule initiation par QR** (en plus
         de l'usage unique, E12).
-      - Point ouvert : le cahier (COM-04) prévoit l'affichage du « solde disponible » sur l'écran
-        de validation commerçant, en contradiction avec cette règle ; décision demandée au lead.
     - Refus métier (`409`, `422`) d'une opération financière : **aucune écriture au ledger** n'a
       été faite.
     - Hors connexion (aucune réponse réseau) : détecté par le client, ce n'est pas un code API.
@@ -184,8 +196,8 @@ info:
       `400 IDEMPOTENCY_KEY_INVALID`.
     - **Portée** : l'unicité est **composite** — (tenant, utilisateur authentifié, clé). La même
       valeur de clé envoyée par un autre utilisateur ou un autre tenant est une clé distincte et ne
-      peut **jamais** rejouer la réponse d'un autre. (La contrainte `UNIQUE` de la spec 02 §4 doit
-      donc être composite ; alignement de la spec demandé au lead.)
+      peut **jamais** rejouer la réponse d'un autre. (La contrainte `UNIQUE` de la spec 02 §4 est
+      donc composite.)
     - **Empreinte** (SHA-256) enregistrée avec la clé : méthode + **chemin concret** (identifiants
       compris, ex. `/v1/payments/<id A>/confirm`, et non le gabarit) + paramètres de requête
       **triés** + corps JSON **canonique**. Une clé réutilisée sur un autre chemin (autre `{id}`),
@@ -267,6 +279,10 @@ info:
       ni des paramètres pour un utilisateur non administrateur ; l'isolation est doublée par la
       Row-Level Security PostgreSQL. Ressource inexistante ou d'un autre tenant :
       `404 NOT_FOUND` ; rôle insuffisant pour la route : `403 FORBIDDEN`.
+    - **Un compte = un seul tenant** (MVP, RG-2.5, décision du 2026-10-09) : un utilisateur
+      Entreprise ou Commerçant appartient à une seule entreprise ou à un seul commerçant. Le
+      tenant de la session est **fixé à la connexion** et ne change pas pendant la session. Il
+      n'existe **aucune route ni aucun en-tête** de sélection ou de changement de tenant.
     - Les opérations sensibles (commission, règlement, rapprochement, RIB) suivent la double
       validation (initiateur ≠ approbateur) et sont journalisées ; elles seront décrites dans les
       contrats de module.
@@ -568,7 +584,7 @@ components:
       examples: ['2026-10-09T08:30:00.000Z']
     CalendarDate:
       title: CalendarDate
-      description: Date calendaire sans heure (fuseau de référence à confirmer, proposition Africa/Tunis).
+      description: Date calendaire sans heure, dans le fuseau des règles métier `Africa/Tunis`.
       type: string
       format: date
       examples: ['2026-10-11']
@@ -633,7 +649,7 @@ components:
       enum: [CREATED, PAID, RECONCILED, CREDITED, CANCELLED]
     PaymentStatus:
       title: PaymentStatus
-      description: Paiement — Initié, Confirmé (« Validée » au cahier §8), Réglé, Refusé, En litige.
+      description: Paiement — Initié, Confirmé, Réglé, Refusé, En litige (cahier v4.1 §8).
       type: string
       enum: [INITIATED, CONFIRMED, SETTLED, REFUSED, DISPUTED]
     PayoutRequestStatus:
@@ -783,9 +799,11 @@ components:
       title: InsufficientFundsProblem
       unevaluatedProperties: false
       description: |
-        Solde insuffisant (E7). Code réservé au **payeur** titulaire du wallet (le commerçant reçoit
-        `PAYMENT_DECLINED`). `details` facultatif dans le schéma tant que le cas du membre famille
-        n'est pas décidé. Jamais de solde disponible ni de montant requis.
+        Solde insuffisant (E7). Code réservé au **payeur** (le commerçant reçoit
+        `PAYMENT_DECLINED`). Employé titulaire du wallet : `details.missingMillimes` toujours
+        présent. Membre famille (refus dû au solde de l'employé) : **aucun** `details`, aucun
+        montant. `details` est donc facultatif dans le schéma. Jamais de solde disponible ni de
+        montant requis.
       allOf:
         - $ref: '#/components/schemas/ProblemBase'
         - type: object
@@ -809,7 +827,9 @@ components:
       unevaluatedProperties: false
       description: |
         Plafond dépassé (E8, E16). Même règle d'exposition que `INSUFFICIENT_FUNDS` : réservé au
-        payeur ; le commerçant reçoit `PAYMENT_DECLINED`.
+        payeur ; le commerçant reçoit `PAYMENT_DECLINED`. Membre famille : `limitType`
+        `FAMILY_MEMBER` et `remainingMillimes` = reste de **sa propre limite**, jamais un montant
+        lié au solde ou aux plafonds de l'employé.
       allOf:
         - $ref: '#/components/schemas/ProblemBase'
         - type: object
@@ -1080,6 +1100,27 @@ components:
                 details:
                   limitType: DAILY
                   remainingMillimes: 20000
+            familyMemberLimitExceeded:
+              summary: E16 — limite membre 20 000, rien de consommé, paiement 25 000 (réponse au membre famille)
+              value:
+                type: urn:flexipay:problem:limit-exceeded
+                title: Limit exceeded
+                status: 422
+                code: LIMIT_EXCEEDED
+                messageKey: errors.limitExceeded
+                requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+                details:
+                  limitType: FAMILY_MEMBER
+                  remainingMillimes: 20000
+            familyMemberInsufficientFunds:
+              summary: Solde de l'employé insuffisant (réponse au membre famille, aucun montant)
+              value:
+                type: urn:flexipay:problem:insufficient-funds
+                title: Insufficient funds
+                status: 422
+                code: INSUFFICIENT_FUNDS
+                messageKey: errors.insufficientFunds
+                requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
             paymentDeclined:
               summary: Réponse au commerçant, quelle que soit la raison du refus
               value:

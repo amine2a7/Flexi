@@ -1,6 +1,8 @@
 # Cahier des charges – FlexiPay
 **Plateforme de tickets-restaurant dématérialisés (Tunisie)**
-Version 4.0 · 07/10/2026 · Contenu fonctionnel : premier cahier des charges · Habillage : charte graphique de la démo
+Version 4.1 · 09/10/2026 · Contenu fonctionnel : premier cahier des charges · Habillage : charte graphique de la démo
+
+> **v4.1 (09/10/2026)** : COM-04 sans solde ; membre famille limité à sa propre limite ; un compte = un tenant (MVP) ; fuseau Africa/Tunis ; statut « Confirmé » ; formats EN/AR ; toasts d'erreur persistants. Détail : `docs/handoff/decisions.md`.
 
 ---
 
@@ -38,8 +40,9 @@ FlexiPay remplace les tickets-restaurant papier par des **crédits virtuels** st
 ### RG-2 Création des comptes
 - **RG-2.1** Entreprise et commerçant : créés par l'administrateur après dossier **KYC/KYB** (registre de commerce, matricule fiscal, RIB, pièce d'identité du représentant).
 - **RG-2.2** **Employés : créés par l'entreprise** (saisie manuelle ou import CSV : nom, prénom, email, téléphone, matricule). Le système génère un **mot de passe temporaire** (email/SMS), valable 72 h, avec **changement obligatoire** à la première connexion, puis création du PIN.
-- **RG-2.3** **Comptes famille : créés par l'employé** depuis son profil, avec le même mécanisme. Nombre maximum paramétrable (par défaut 4), plafond individuel optionnel, suspension et suppression par l'employé.
+- **RG-2.3** **Comptes famille : créés par l'employé** depuis son profil, avec le même mécanisme. Nombre maximum paramétrable (par défaut 4), plafond individuel optionnel, suspension et suppression par l'employé. **Un membre famille ne voit que ce qui reste sur sa propre limite, jamais le solde de l'employé** (ni à l'écran, ni dans un message d'erreur). Barre basse de l'app pour un membre famille : Accueil · Payer · Historique · Profil.
 - **RG-2.4** Une entreprise ne voit que ses employés ; un employé ne voit que sa famille.
+- **RG-2.5** **MVP : un compte = un seul tenant** (une entreprise ou un commerçant). Le modèle de données prévoit une table d'appartenance (utilisateur ↔ tenant) pour ouvrir plus tard le multi-tenant, mais aucun changement de tenant en session dans le MVP.
 
 ### RG-3 Crédits, catégories, validité
 - Catégories : Restauration (MVP), Habillement, Cadeaux, Carburant. Chacune a sa **validité** (ex. 30 / 90 / 60 / 30 jours) et son taux.
@@ -48,11 +51,13 @@ FlexiPay remplace les tickets-restaurant papier par des **crédits virtuels** st
 
 ### RG-4 Plafonds et seuils (paramétrables)
 Plafond journalier bénéficiaire (ex. 100 TND), plafond mensuel (ex. 2 000 TND), seuil de double validation (ex. 10 000 TND), seuil minimum de règlement (ex. 50 TND), cycle de règlement du commerçant (J+2 par défaut).
+**Fuseau horaire des règles métier :** `Africa/Tunis` (jour et mois des plafonds, J+2, dates d'expiration, alertes J-30/J-7). L'API échange tous les horodatages en UTC.
 
 ### RG-5 Paiement
 - QR **dynamique valable 60 s**, à usage unique, ou code manuel à 8 chiffres. Confirmation par PIN ou biométrie.
 - Contrôles temps réel : solde suffisant, crédit valide, plafonds, commerçant actif et catégorie acceptée, antifraude.
 - Le commerçant est crédité du brut ; le reçu est envoyé au client et au commerçant.
+- **Côté commerçant, le résultat est seulement « accepté » ou « refusé »**, sans motif, sans montant et sans solde du client. Texte du refus : « Paiement refusé. Le client peut vérifier son application. » Le motif (solde insuffisant, plafond) n'est montré qu'au payeur.
 
 ### RG-6 Règlement du commerçant
 Demande de virement libre ou cycle automatique J+2. Contrôles : solde virtuel suffisant, **RIB conforme à la raison sociale validée au KYC**, anti-blanchiment. L'administrateur peut aussi traiter des **lots de règlements** et exclure les transactions en litige.
@@ -131,7 +136,7 @@ L'administrateur peut signaler une transaction en litige : elle est gelée jusqu
 | COM-01 | Tableau de bord : ventes du jour, en attente (J+2), réglé, commission, panier moyen, prochain règlement avec net estimé | Must |
 | COM-02 | Encaissement par **scan QR** (caméra, flash, son) | Must |
 | COM-03 | Saisie manuelle du code à 8 chiffres | Must |
-| COM-04 | Écran de validation : client, matricule masqué, catégorie, solde disponible, montant, **compte à rebours du QR**, confirmation et annulation | Must |
+| COM-04 | Écran de validation : client (prénom + initiale), matricule masqué, catégorie, montant, **compte à rebours du QR**, confirmation et annulation ; résultat « accepté » ou « refusé » uniquement, **sans solde ni motif** (v4.1) | Must |
 | COM-05 | Reçu : envoi par email/SMS, impression, nouveau scan | Must |
 | COM-06 | Historique des transactions : filtres (date, statut, montant), recherche, export, pagination | Must |
 | COM-07 | **Demande de virement avec simulation** (montant, taux, commission, net) | Must |
@@ -192,7 +197,7 @@ Mobile-first, largeur max desktop ≈ 1280 px, multiples de 4 et 8 px, cartes es
 | Boutons | rayon 10–12 px, une action principale visible |
 | Champs | hauteur 40–44 px ; plafonds et erreurs indiqués avant validation |
 | Badges | courts, sémantiques : *En attente*, *Validé*, *À régler*, *Réglé*, *Refusé*, *Suspect* |
-| Toasts | vert pour la réussite ; message rouge pour solde insuffisant |
+| Toasts | vert pour la réussite (fermeture automatique) ; rouge pour les erreurs, **sans fermeture automatique** (WCAG 2.2.1) |
 | Tables | filtrables, recherchables ; en cartes/listes sur mobile |
 | Icônes | Lucide : WalletCards (solde), QrCode (paiement), Users (famille), Store (commerçants), ArrowUpRight (virements), FileText (factures), Check (validation), Settings2 (paramétrage) ; un label accompagne toute action ambiguë |
 
@@ -223,7 +228,7 @@ Une page = un objectif. Action principale visible. Montants lisibles en moins de
 | Traçabilité | Audit de chaque action (qui, quoi, quand, avant/après) |
 | Conformité | Cadre BCT des services de paiement, protection des données (INPDP), LAB/FT — **à valider par un juriste** |
 | Compatibilité | Navigateurs récents ; Android 9+, iOS 14+ ; WCAG 2.1 AA |
-| Langues | FR, AR (RTL), EN ; devise TND à 3 décimales |
+| Langues | FR, AR (RTL), EN ; devise TND à 3 décimales. Formats : FR et AR `48 250,000 TND` (chiffres occidentaux en arabe) ; EN `48,250.000 TND` |
 
 ## 7. Modèle de données
 `Utilisateur` · `Societe` (profil_commission_id) · `Commercant` (profil_commission_id, rib) · `ProfilCommission` · `HistoriqueCommission` · `Employe` (societe_id, matricule, must_change_password) · `MembreFamille` (employe_id, plafond) · `Commande` · `Wallet` · `Credit` (montant, expiration) · `Transaction` · `DemandeVirement` (montant, taux_snapshot, commission, net, statut) · `LotReglement` · `Litige` · `EcritureComptable` · `Notification` · `AuditLog`.
@@ -231,7 +236,7 @@ Une page = un objectif. Action principale visible. Montants lisibles en moins de
 ## 8. Statuts
 - **Compte :** En attente KYC → Validé / Rejeté → Suspendu.
 - **Commande :** Créée → Payée → Rapprochée → Créditée / Annulée.
-- **Transaction :** Initiée → Validée → Réglée / Refusée / En litige.
+- **Paiement (transaction) :** Initié → **Confirmé** → Réglé / Refusé / En litige (API : `INITIATED` → `CONFIRMED` → …).
 - **Demande de virement :** Demandée → Contrôlée → Envoyée → Exécutée / Rejetée.
 
 ## 9. Critères d'acceptation

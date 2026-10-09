@@ -42,6 +42,11 @@ Critère de fin : pipeline vert ; securite OK ; design OK sur les coquilles.
 | P0-S4 | Revue squelettes web et mobile (en-têtes, cookies, stockage, pinning, capture) | securite | En attente — outils | F1, F3, M1, M3 | — |
 | P0-S5 | Modèle de menaces : chaîne d'approvisionnement, CI, environnement de dev ; points ASVS de la phase 0 | securite | Terminé (OK avec réserves : CF-01..CF-09 ouverts, décision utilisateur) | — | — |
 | P0-S6 | Revue du contrat OpenAPI initial (B5) : authentification, IDOR par construction des routes, Idempotency-Key, format d'erreur sans fuite, en-têtes ; ajoutée par la règle (c), validée | securite | Terminé (OK, S6-01..S6-11 fermés en 3 allers-retours) | B5 | — |
+| P0-D5 | Report des décisions du 2026-10-09 dans la charte et les specs D2/D3 (+ S8-01 : suppression de « Changer d'espace ») | design | Terminé | décisions | securite (S8-01 fermé) |
+| P0-B7 | Report des décisions du 2026-10-09 dans le contrat (SHA-256 82bf61bd) | backend | Terminé (securite OK) | décisions | securite (P0-S8) |
+| P0-S7 | Report des décisions de sécurité (SEC-D7, SEC-S7, ASVS 5.0, modèle de menaces v3) | securite | Terminé | décisions | — |
+| P0-S8 | Revue de P0-B7 et constat S8-01 | securite | Terminé (OK, 0 ouvert) | B7 | — |
+| P0-L1 | Correctifs CF-01 à CF-09 sur branche dédiée (un commit par constat) | lead | À faire | décisions commitées | securite |
 
 ## Historique
 
