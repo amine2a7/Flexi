@@ -2,11 +2,22 @@
 // PreToolUse (Edit|Write|MultiEdit|NotebookEdit) : un agent de l'équipe n'écrit que dans son périmètre.
 // Code de sortie 2 = blocage, le message stderr est renvoyé à l'agent.
 // Les agents absents de lib/scopes.js (session principale, Explore, Plan…) ne sont pas concernés.
+// Échec fermé (CF-05) : entrée illisible, ou sous-agent (agent_id présent) sans agent_type → blocage.
+const fs = require('fs');
 const path = require('path');
-const readStdinJson = require('./lib/read-stdin-json');
 const { LEAD_ONLY, AGENTS, ownerOf } = require('./lib/scopes');
 
-const input = readStdinJson();
+let input;
+try {
+  input = JSON.parse(fs.readFileSync(0, 'utf8'));
+} catch {
+  process.stderr.write("Bloqué : entrée du hook enforce-scope illisible (échec fermé). Signale-le à main.\n");
+  process.exit(2);
+}
+if (input.agent_id && !input.agent_type && !input.teammate_name) {
+  process.stderr.write("Bloqué : sous-agent sans agent_type, périmètre impossible à vérifier (échec fermé). Signale-le à main.\n");
+  process.exit(2);
+}
 const agent = input.agent_type || input.teammate_name;
 const def = agent && AGENTS[agent];
 if (!def) process.exit(0);
