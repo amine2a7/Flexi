@@ -145,3 +145,50 @@ DÉCISIONS NÉCESSAIRES : … (ou « aucune »)
 | PostToolUse (Edit/Write) | `format.sh` | Prettier / dart format |
 | TaskCompleted | `task-completed.js` | Refuse la complétion si lint, typecheck ou tests du périmètre échouent |
 | TeammateIdle | `teammate-idle.js` | Réclame le rapport (j) à un coéquipier qui a travaillé sans l'envoyer |
+
+## 14. Reprise sur un nouveau poste
+
+À faire **avant de lancer l'équipe** sur toute nouvelle machine. Le lead vérifie lui-même chaque point et reporte le résultat dans `BOARD.md` (section Prérequis).
+
+### Outils et versions requis
+| Outil | Version minimale | Rôle |
+|---|---|---|
+| Git | 2.40+ | Dépôt, revues `git diff main...HEAD` |
+| Node.js | 20 LTS+ (testé : 22.22) | Hooks (`.claude/hooks/*.js`), monorepo |
+| pnpm | 9+ (doit **s'exécuter**, pas seulement être installé) | Monorepo, hook TaskCompleted |
+| Docker Desktop + WSL2 | Docker 24+, Compose v2 | PostgreSQL 16, Redis, Testcontainers |
+| Flutter SDK (canal stable) + Android Studio | Flutter 3.22+ / Dart 3.4+ ; Android SDK et un émulateur ou appareil | Apps mobiles (iOS plus tard : nécessite un Mac) |
+| Claude Code | 2.1.222+ (hooks TaskCompleted / TeammateIdle) | Équipe d'agents |
+| gitleaks (recommandé) | 8+ | Hook `guard-bash.sh` avant commit, CI |
+
+### Commandes de vérification (Git Bash)
+```bash
+git --version && node --version && npm --version
+pnpm -v                                 # doit afficher une version, pas une erreur de stratégie
+docker --version && docker compose version && docker info --format '{{.ServerVersion}}'
+flutter --version && dart --version && flutter doctor   # Android : tout en ✓
+claude --version
+gitleaks version                        # recommandé
+echo "AGENT_TEAMS=$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"   # doit valoir 1 (défini dans .claude/settings.json)
+git config --local user.name && git config --local user.email   # identité du dépôt
+git config core.autocrlf                # avec .gitattributes (eol=lf), les hooks .sh restent en LF
+```
+
+### Tests des hooks (obligatoires à chaque reprise)
+Les hooks lisent leur entrée en JSON sur stdin : on les teste en leur envoyant des entrées simulées et en vérifiant le code de sortie (0 = laisse passer, 2 = bloque).
+```bash
+export CLAUDE_PROJECT_DIR="$PWD"
+# Périmètres : doit bloquer (2), puis laisser passer (0)
+echo '{"agent_type":"securite","tool_input":{"file_path":"apps/api/x.ts"}}' | node .claude/hooks/enforce-scope.js; echo "code $?"
+echo '{"agent_type":"securite","tool_input":{"file_path":"docs/security/x.md"}}' | node .claude/hooks/enforce-scope.js; echo "code $?"
+# Fichiers protégés : doit bloquer (2)
+echo '{"tool_input":{"file_path":".env"}}' | bash .claude/hooks/protect-files.sh; echo "code $?"
+# TeammateIdle : transcript sans rapport après une écriture → 2
+```
+Pour `task-completed.js`, créer un faux projet **hors du dépôt** avec `apps/web/package.json` dont `lint` et `typecheck` réussissent (`node -e "process.exit(0)"`) et `test` échoue (`node -e "process.exit(1)"`), puis lancer avec `CLAUDE_PROJECT_DIR=<faux projet>` :
+- sujet `"Ecran X"` → **2** (tests en échec) ;
+- sujet `"TEST-FIRST: Ecran X"` → **0** (tests rouges tolérés, lint et typecheck verts) ;
+- `lint` en échec avec `TEST-FIRST:` → **2** ;
+- un `apps/mobile-pro/pubspec.yaml` présent → `flutter analyze` doit réellement tourner.
+
+**Le cas `TEST-FIRST:` n'a jamais pu être validé avec le vrai pnpm sur le premier poste** (pnpm bloqué par Device Guard) : il doit être revérifié en priorité. Ne lancer l'équipe que si tous les cas donnent le code attendu.
