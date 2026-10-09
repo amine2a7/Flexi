@@ -179,6 +179,13 @@ Vérifier que la fonction équipe démarre : `claude --version`, lancement en **
 
 > Constat du 2026-10-09 (extension VS Code, Claude Code 2.1.222) : les agents nommés se sont comportés en sous-agents en arrière-plan (adresse du lead `main`, pas de liste de tâches partagée) ; aucun déclenchement de `TaskCompleted` ni de `TeammateIdle` n'a été observé.
 
+### Signature des commits (CF-08, à faire avant la phase 1)
+- Sur chaque poste, signature SSH des commits (clé personnelle de l'utilisateur, jamais dans le dépôt) :
+  `git config --local gpg.format ssh` · `git config --local user.signingkey <chemin de la clé publique>` · `git config --local commit.gpgsign true`.
+- Ajouter la clé publique comme *Signing key* sur GitHub, puis activer **« Require signed commits »** dans la protection de la branche `main`.
+- Vérification : `git log --format='%h %G? %s' -5` doit afficher `G` (signature valide).
+- Les commits antérieurs à la mise en place (non signés) restent tels quels ; aucune réécriture d'historique.
+
 ### Tests des hooks (obligatoires à chaque reprise)
 Les hooks lisent leur entrée en JSON sur stdin : on les teste en leur envoyant des entrées simulées et en vérifiant le code de sortie (0 = laisse passer, 2 = bloque).
 ```bash
