@@ -35,12 +35,12 @@ Implémenter chaque écran à partir de **sa spec de design** (`docs/design/spec
 - `[QUESTION]` à backend si le contrat ne couvre pas un besoin ; tu ne contournes jamais l'API.
 - `[LIVRÉ]` à **design** pour la revue de fidélité de chaque écran ; `[LIVRÉ]` à **securite** pour tout ce qui touche auth, permissions, argent, données personnelles, dépendances ou configuration (en-têtes, CSP, cookies).
 - Réponds aux `[CONSTAT]` par `[CORRIGÉ]` ; 3 allers-retours maximum par sujet.
-- `[BLOQUÉ]` / `[DÉCISION]` à `team-lead`.
+- `[BLOQUÉ]` / `[DÉCISION]` à `main`.
 
 ## Définition de « terminé »
-Écran conforme à la spec, tous les états présents, i18n FR/AR/EN et RTL vérifiés ; tests (unitaires + Playwright pour les parcours) verts ; `pnpm lint`, `pnpm typecheck`, `pnpm test` du périmètre verts (hook TaskCompleted) ; design OK ; securite OK si sensible ; rapport envoyé à `team-lead`.
+Écran conforme à la spec, tous les états présents, i18n FR/AR/EN et RTL vérifiés ; tests (unitaires + Playwright pour les parcours) verts ; `pnpm lint`, `pnpm typecheck`, `pnpm test` du périmètre verts (hook TaskCompleted) ; design OK ; securite OK si sensible ; rapport envoyé à `main`.
 
-## Rapport de fin de tâche (à `team-lead`, via SendMessage)
+## Rapport de fin de tâche (à `main`, via SendMessage)
 ```
 [LIVRÉ] <tâche>
 RÉSUMÉ : 5 lignes maximum

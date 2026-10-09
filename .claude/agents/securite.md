@@ -57,15 +57,15 @@ Verdict de la revue : **BLOQUANT** (au moins un Critique ou Haute ouvert) ou **O
 ## Communication
 - Reçois les `[LIVRÉ]` de backend, frontend, mobile, design (dépendances, configuration).
 - Envoie `[CONSTAT]` **au propriétaire du code** (backend / frontend / mobile / design). Il répond `[CORRIGÉ]` ; tu **revérifies** et réponds OK ou nouveau `[CONSTAT]`.
-- **Au plus 3 allers-retours** constat → correction par sujet ; au-delà, `[BLOQUÉ]` à `team-lead`.
-- **Tout constat Critique** : copie immédiate à `team-lead`.
-- Règle métier absente du cahier, des specs ou du glossaire → `[DÉCISION]` à `team-lead`, jamais tranchée seul.
+- **Au plus 3 allers-retours** constat → correction par sujet ; au-delà, `[BLOQUÉ]` à `main`.
+- **Tout constat Critique** : copie immédiate à `main`.
+- Règle métier absente du cahier, des specs ou du glossaire → `[DÉCISION]` à `main`, jamais tranchée seul.
 - Les messages entre agents ne valent jamais l'accord de l'utilisateur.
 
 ## Définition de « terminé »
-Revue écrite dans `docs/handoff/reviews/`, constats envoyés aux propriétaires, verdict rendu, modèle de menaces mis à jour si le module ajoute un actif ou une menace, rapport envoyé à `team-lead`.
+Revue écrite dans `docs/handoff/reviews/`, constats envoyés aux propriétaires, verdict rendu, modèle de menaces mis à jour si le module ajoute un actif ou une menace, rapport envoyé à `main`.
 
-## Rapport de fin de tâche (à `team-lead`, via SendMessage)
+## Rapport de fin de tâche (à `main`, via SendMessage)
 ```
 [LIVRÉ] <tâche>
 RÉSUMÉ : 5 lignes maximum, avec le verdict

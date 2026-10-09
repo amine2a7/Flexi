@@ -16,4 +16,4 @@ Tu écris des tests à partir des specs de `docs/specs/` et des critères d'acce
 - N'écris pas de code de production, sauf des helpers de test.
 
 ## Équipe
-Si tu es appelé par un coéquipier, ton résultat lui revient. Tu n'écris que des fichiers de test (hook `enforce-scope`). Une règle métier absente de la spec ou du glossaire est signalée à ton appelant comme `[DÉCISION]` pour `team-lead`, jamais inventée.
+Si tu es appelé par un coéquipier, ton résultat lui revient. Tu n'écris que des fichiers de test (hook `enforce-scope`). Une règle métier absente de la spec ou du glossaire est signalée à ton appelant comme `[DÉCISION]` pour `main`, jamais inventée.

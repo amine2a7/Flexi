@@ -7,7 +7,7 @@ Le résumé de ce protocole est repris dans `CLAUDE.md` (section « Équipe d'ag
 
 | Nom (adresse) | Définition | Rôle |
 |---|---|---|
-| `team-lead` (« lead ») | session principale | Découpe, assigne, route, arbitre, surveille, rend compte. **Ne code pas.** |
+| `main` (le « lead ») | session principale | Découpe, assigne, route, arbitre, surveille, rend compte. **Ne code pas.** |
 | `securite` | `.claude/agents/securite.md` (opus) | Revue de sécurité, modèle de menaces, droit de blocage |
 | `design` | `.claude/agents/design.md` (sonnet) | Specs d'écran avant le code, tokens, revue de fidélité |
 | `backend` | `.claude/agents/backend.md` (opus) | API NestJS, ledger, contrat OpenAPI, infra, monorepo |
@@ -16,7 +16,7 @@ Le résumé de ce protocole est repris dans `CLAUDE.md` (section « Équipe d'ag
 
 Sous-agents de support (lancés par un coéquipier, pas membres de l'équipe) : `ledger-auditor` (invariants financiers, lecture seule) et `test-writer` (tests d'abord, fichiers de test uniquement).
 
-> Le nom technique du lead est imposé par Claude Code : **`team-lead`**. Écrire « lead » dans les textes, mais adresser les messages à `team-lead`.
+> Adresse du lead : **`main`** (session principale). Dans cette version de Claude Code, les coéquipiers nommés sont des agents en arrière-plan : l'adresse `team-lead` n'existe pas. Écrire « lead » dans les textes, adresser les messages à `main`. Un agent ne peut pas « attendre » dans son tour : il envoie son message et termine son tour ; un message entrant le relance.
 
 ## 2. Communication directe (a)
 
@@ -31,7 +31,7 @@ Les coéquipiers se parlent par message (`SendMessage`), par leur nom. **Chaque 
 | `[CONSTAT]` | Problème trouvé en revue | Sévérité, fichier:ligne, preuve, correctif proposé |
 | `[CORRIGÉ]` | Réponse à un constat | Ce qui a changé, fichier:ligne, test ajouté |
 | `[BLOQUÉ]` | Impossible d'avancer | Raison, ce qu'il faut, de qui |
-| `[DÉCISION]` | Une règle métier manque | **Toujours adressé à `team-lead`**, jamais tranché seul |
+| `[DÉCISION]` | Une règle métier manque | **Toujours adressé à `main`**, jamais tranché seul |
 
 Exemples :
 ```
@@ -55,9 +55,9 @@ Exemples :
 | propriétaire → securite | Correction faite ; securite **revérifie** | `[CORRIGÉ]` |
 | frontend / mobile → design | Écran terminé, revue de fidélité | `[LIVRÉ]` |
 | design → frontend / mobile | Résultat de la revue | OK ou `[CONSTAT]` |
-| tout agent → team-lead | Blocage, règle manquante, fin de tâche | `[BLOQUÉ]`, `[DÉCISION]`, rapport (j) |
+| tout agent → main | Blocage, règle manquante, fin de tâche | `[BLOQUÉ]`, `[DÉCISION]`, rapport (j) |
 
-Tout constat **Critique** est copié immédiatement à `team-lead`, qui le remonte à l'utilisateur.
+Tout constat **Critique** est copié immédiatement à `main`, qui le remonte à l'utilisateur.
 
 ## 4. Liste de tâches partagée (c)
 
@@ -72,7 +72,7 @@ Un agent n'écrit **que** dans son périmètre. Pour toucher au périmètre d'un
 
 | Agent | Écrit dans |
 |---|---|
-| team-lead | `docs/handoff/BOARD.md`, `decisions.md`, `README.md`, `reports/`, `CLAUDE.md`, `.claude/` (réservés) |
+| main | `docs/handoff/BOARD.md`, `decisions.md`, `README.md`, `reports/`, `CLAUDE.md`, `.claude/` (réservés) |
 | securite | `docs/security/`, `docs/handoff/` (hors fichiers du lead) — dont `reviews/securite-*` |
 | design | `docs/design/` (dont `specs/`), `packages/ui-tokens/`, `docs/handoff/reviews/design-*` |
 | backend | `apps/api/`, `packages/shared/`, `packages/api-client/`, `packages/config/`, `infra/`, `docker-compose*`, `docs/handoff/contracts/`, config racine du monorepo, `.github/` |
@@ -112,7 +112,7 @@ Il découpe, assigne, route, arbitre, surveille, attend la fin des coéquipiers 
 
 ## 11. Rapport de coéquipier (j)
 
-Envoyé à `team-lead` à la fin de **chaque** tâche (le hook `TeammateIdle` le réclame si un coéquipier a travaillé sans l'envoyer) :
+Envoyé à `main` à la fin de **chaque** tâche (le hook `TeammateIdle` le réclame si un coéquipier a travaillé sans l'envoyer) :
 ```
 [LIVRÉ] <tâche>
 RÉSUMÉ : 5 lignes maximum
@@ -173,6 +173,11 @@ echo "AGENT_TEAMS=$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"   # doit valoir 1 (déf
 git config --local user.name && git config --local user.email   # identité du dépôt
 git config core.autocrlf                # avec .gitattributes (eol=lf), les hooks .sh restent en LF
 ```
+
+### Démarrage de la fonction équipe
+Vérifier que la fonction équipe démarre : `claude --version`, lancement en **terminal interactif** (pas l'extension VS Code), `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`. Si `TaskCompleted` et `TeammateIdle` ne se déclenchent toujours pas, passer au hook `SubagentStop`.
+
+> Constat du 2026-10-09 (extension VS Code, Claude Code 2.1.222) : les agents nommés se sont comportés en sous-agents en arrière-plan (adresse du lead `main`, pas de liste de tâches partagée) ; aucun déclenchement de `TaskCompleted` ni de `TeammateIdle` n'a été observé.
 
 ### Tests des hooks (obligatoires à chaque reprise)
 Les hooks lisent leur entrée en JSON sur stdin : on les teste en leur envoyant des entrées simulées et en vérifiant le code de sortie (0 = laisse passer, 2 = bloque).

@@ -93,7 +93,7 @@ const tail = (s) => s.trimEnd().split(/\r?\n/).slice(-60).join('\n');
 process.stderr.write(
   `Tâche « ${subject} » refusée : vérifications du périmètre en échec.\n` +
     failures.map((f) => `\n--- ${f.label}\n${tail(f.output)}`).join('\n') +
-    `\n\nCorrige puis termine à nouveau la tâche. Si le blocage ne relève pas de ton périmètre, envoie [BLOQUÉ] à team-lead.\n` +
+    `\n\nCorrige puis termine à nouveau la tâche. Si le blocage ne relève pas de ton périmètre, envoie [BLOQUÉ] à main.\n` +
     (testFirst ? '' : `Tâche de tests écrits avant le code : préfixer le sujet par « TEST-FIRST: ».\n`),
 );
 process.exit(2);

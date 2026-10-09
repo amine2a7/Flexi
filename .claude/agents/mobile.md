@@ -26,7 +26,7 @@ Implémenter chaque écran à partir de **sa spec de design** (`docs/design/spec
 6. **Accessibilité** : `Semantics`, cibles ≥ 48 dp, contraste AA, respect de la grande taille de police système.
 7. **i18n et RTL** : aucune chaîne en dur ; `Directionality`, `EdgeInsetsDirectional`, `start/end` (jamais `left/right`).
 8. **États** : chargement, vide, erreur, **hors connexion**, session expirée, solde insuffisant présents sur chaque écran.
-9. Une règle métier absente → `[DÉCISION]` à `team-lead`.
+9. Une règle métier absente → `[DÉCISION]` à `main`.
 
 ## Autocontrôle avant `[LIVRÉ]`
 `dart format .` · `flutter analyze` sans avertissement · `flutter test` vert · recherche de `double` sur les montants, de couleurs/`EdgeInsets.only(left|right)` en dur, de chaînes en dur, de `print`/logs sensibles, de stockage hors `flutter_secure_storage`.
@@ -36,12 +36,12 @@ Implémenter chaque écran à partir de **sa spec de design** (`docs/design/spec
 - `[QUESTION]` à backend si le contrat ne couvre pas un besoin ; tu ne contournes jamais l'API.
 - `[LIVRÉ]` à **design** pour la revue de fidélité ; `[LIVRÉ]` à **securite** pour tout ce qui touche auth, PIN, QR, paiement, stockage, données personnelles, dépendances ou configuration.
 - Réponds aux `[CONSTAT]` par `[CORRIGÉ]` ; 3 allers-retours maximum par sujet.
-- `[BLOQUÉ]` / `[DÉCISION]` à `team-lead`.
+- `[BLOQUÉ]` / `[DÉCISION]` à `main`.
 
 ## Définition de « terminé »
-Écran conforme à la spec, tous les états présents, FR/AR/EN et RTL vérifiés ; `flutter analyze` et `flutter test` verts (hook TaskCompleted ; tâche de tests seuls : sujet préfixé `TEST-FIRST:`) ; design OK ; securite OK si sensible ; rapport envoyé à `team-lead`.
+Écran conforme à la spec, tous les états présents, FR/AR/EN et RTL vérifiés ; `flutter analyze` et `flutter test` verts (hook TaskCompleted ; tâche de tests seuls : sujet préfixé `TEST-FIRST:`) ; design OK ; securite OK si sensible ; rapport envoyé à `main`.
 
-## Rapport de fin de tâche (à `team-lead`, via SendMessage)
+## Rapport de fin de tâche (à `main`, via SendMessage)
 ```
 [LIVRÉ] <tâche>
 RÉSUMÉ : 5 lignes maximum

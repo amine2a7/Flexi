@@ -2,7 +2,7 @@
 // TeammateIdle : un coéquipier qui a travaillé ne passe pas au repos sans avoir envoyé son rapport au lead.
 // Code de sortie 2 = le coéquipier continue, le message stderr lui est renvoyé.
 // - « travail » : Write, Edit, MultiEdit, NotebookEdit, ou TaskUpdate vers « completed ».
-// - « rapport » : SendMessage à team-lead contenant les 6 rubriques du format (j),
+// - « rapport » : SendMessage à main contenant les 6 rubriques du format (j),
 //   ou message commençant par [BLOQUÉ], [DÉCISION] ou [QUESTION] (attente légitime).
 // - Garde-fou : après 3 rappels consécutifs, laisse passer (pas de boucle infinie).
 const fs = require('fs');
@@ -10,14 +10,15 @@ const os = require('os');
 const path = require('path');
 const readStdinJson = require('./lib/read-stdin-json');
 
-const LEAD_NAMES = ['team-lead', 'lead'];
+// « main » : adresse réelle de la session du lead quand les coéquipiers sont des agents nommés en arrière-plan.
+const LEAD_NAMES = ['main', 'team-lead', 'lead'];
 const WORK_TOOLS = ['Write', 'Edit', 'MultiEdit', 'NotebookEdit'];
 const SECTIONS = ['RESUME', 'FICHIERS MODIFIES', 'VERIFICATIONS', 'MESSAGES ECHANGES', 'RISQUES', 'DECISIONS NECESSAIRES'];
 const WAITING_TAGS = ['[BLOQUE]', '[DECISION]', '[QUESTION]'];
 const MAX_REMINDERS = 3;
 
 const input = readStdinJson();
-const fold = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+const fold = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
 
 let lines;
 try {
@@ -81,7 +82,7 @@ if (count > MAX_REMINDERS) {
 writeCount(count);
 
 process.stderr.write(
-  `Rapport manquant (rappel ${count}/${MAX_REMINDERS}). Avant de passer au repos, envoie ton rapport à team-lead ` +
+  `Rapport manquant (rappel ${count}/${MAX_REMINDERS}). Avant de passer au repos, envoie ton rapport à main ` +
     `avec SendMessage, exactement dans ce format :\n\n` +
     `[LIVRÉ] <titre de la tâche>\n` +
     `RÉSUMÉ : 5 lignes maximum\n` +
@@ -90,6 +91,6 @@ process.stderr.write(
     `MESSAGES ÉCHANGÉS : avec qui, sur quoi\n` +
     `RISQUES : …\n` +
     `DÉCISIONS NÉCESSAIRES : … (ou « aucune »)\n\n` +
-    `Si tu attends une réponse, envoie plutôt [BLOQUÉ], [DÉCISION] ou [QUESTION] à team-lead.\n`,
+    `Si tu attends une réponse, envoie plutôt [BLOQUÉ], [DÉCISION] ou [QUESTION] à main.\n`,
 );
 process.exit(2);

@@ -6,7 +6,7 @@
 //            { kind: 'flutter', dir } → flutter analyze, flutter test si dir/pubspec.yaml existe
 //            { kind: 'json', file }   → le fichier doit être un JSON valide
 
-// Réservés au lead (team-lead) : aucun coéquipier ne les modifie.
+// Réservés au lead (main) : aucun coéquipier ne les modifie.
 const LEAD_ONLY = [
   'docs/handoff/BOARD.md',
   'docs/handoff/decisions.md',
@@ -89,13 +89,13 @@ const AGENTS = {
 
 // Propriétaire d'un chemin, pour orienter le message de blocage.
 function ownerOf(rel) {
-  if (LEAD_ONLY.some((p) => rel === p || rel.startsWith(p))) return 'team-lead';
+  if (LEAD_ONLY.some((p) => rel === p || rel.startsWith(p))) return 'main';
   for (const [name, def] of Object.entries(AGENTS)) {
     if (name === 'securite' || name === 'test-writer') continue;
     if (def.write.some((p) => rel.startsWith(p))) return name;
   }
   if (rel.startsWith('docs/handoff/') || rel.startsWith('docs/security/')) return 'securite';
-  return 'team-lead';
+  return 'main';
 }
 
 module.exports = { LEAD_ONLY, AGENTS, ownerOf };

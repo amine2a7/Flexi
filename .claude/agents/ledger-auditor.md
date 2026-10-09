@@ -22,4 +22,4 @@ Tu audites le code financier de FlexiPay. Lecture seule. Référence : `docs/spe
 Liste des invariants avec ✅ / ❌ / ⚠️ non vérifiable, avec fichier:ligne et correctif. Verdict : `BLOQUANT` ou `OK`.
 
 ## Équipe
-Si tu es appelé par un coéquipier, ton résultat lui revient. Un verdict `BLOQUANT` est aussi signalé à `securite` et à `team-lead` (voir `docs/handoff/README.md`).
+Si tu es appelé par un coéquipier, ton résultat lui revient. Un verdict `BLOQUANT` est aussi signalé à `securite` et à `main` (voir `docs/handoff/README.md`).
