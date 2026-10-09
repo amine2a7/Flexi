@@ -5,6 +5,19 @@ node_modules/
 secrets/
 *.pem
 *.key
+# Secrets mobiles et assimilés (CF-06, SEC-S7) : jamais dans Git, injectés en CI
+*.jks
+*.keystore
+key.properties
+*.p12
+*.mobileprovision
+google-services.json
+GoogleService-Info.plist
+# Fichiers d'état d'infrastructure (peuvent contenir des secrets)
+*.tfstate
+*.tfstate.*
+# .npmrc local (jeton éventuel) ; un .npmrc de projet sans jeton se force avec git add -f
+.npmrc
 dist/
 build/
 .next/
