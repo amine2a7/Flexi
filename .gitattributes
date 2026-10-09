@@ -1,0 +1,5 @@
+# Fins de ligne LF partout (les hooks bash cassent en CRLF).
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary

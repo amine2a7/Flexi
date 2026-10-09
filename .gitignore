@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.*
+!.env.example
+secrets/
+*.pem
+*.key
+dist/
+build/
+.next/
+.dart_tool/
+*.log
+coverage/
+.DS_Store
+.claude/settings.local.json
