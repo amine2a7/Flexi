@@ -140,7 +140,7 @@ DÉCISIONS NÉCESSAIRES : … (ou « aucune »)
 | Hook | Script | Effet |
 |---|---|---|
 | PreToolUse (Edit/Write) | `enforce-scope.js` | Bloque une écriture hors périmètre |
-| PreToolUse (Edit/Write) | `protect-files.sh` | Bloque `.env*`, `secrets/`, `*.pem`, `*.key`, migrations existantes |
+| PreToolUse (Edit/Write/NotebookEdit) | `protect-files.js` | Bloque `.env*`, `secrets/`, `*.pem`, `*.key`, migrations existantes (chemins Windows, casse, flux `::$DATA`, noms courts 8.3) |
 | PreToolUse (Bash) | `guard-bash.sh` | gitleaks avant commit ; bloque UPDATE/DELETE/TRUNCATE/DROP sur ledger et audit |
 | PostToolUse (Edit/Write) | `format.sh` | Prettier / dart format |
 | TaskCompleted | `task-completed.js` | Refuse la complétion si lint, typecheck ou tests du périmètre échouent |
@@ -194,7 +194,7 @@ export CLAUDE_PROJECT_DIR="$PWD"
 echo '{"agent_type":"securite","tool_input":{"file_path":"apps/api/x.ts"}}' | node .claude/hooks/enforce-scope.js; echo "code $?"
 echo '{"agent_type":"securite","tool_input":{"file_path":"docs/security/x.md"}}' | node .claude/hooks/enforce-scope.js; echo "code $?"
 # Fichiers protégés : doit bloquer (2)
-echo '{"tool_input":{"file_path":".env"}}' | bash .claude/hooks/protect-files.sh; echo "code $?"
+echo '{"tool_input":{"file_path":".env"}}' | node .claude/hooks/protect-files.js; echo "code $?"
 # TeammateIdle : transcript sans rapport après une écriture → 2
 ```
 Pour `task-completed.js`, créer un faux projet **hors du dépôt** avec `apps/web/package.json` dont `lint` et `typecheck` réussissent (`node -e "process.exit(0)"`) et `test` échoue (`node -e "process.exit(1)"`), puis lancer avec `CLAUDE_PROJECT_DIR=<faux projet>` :
