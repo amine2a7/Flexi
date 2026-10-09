@@ -21,12 +21,12 @@ const TEST_FILE = /(^|\/)(test|tests|__tests__|e2e|integration_test)\/|\.(spec|t
 const AGENTS = {
   securite: {
     owner: 'securite',
-    write: ['docs/security/', 'docs/handoff/'],
+    write: ['docs/security/', 'docs/handoff/reviews/securite-'],
     checks: [],
   },
   design: {
     owner: 'design',
-    write: ['docs/design/', 'packages/ui-tokens/', 'docs/handoff/reviews/'],
+    write: ['docs/design/', 'packages/ui-tokens/', 'docs/handoff/reviews/design-'],
     checks: [
       { kind: 'json', file: 'docs/design/design-tokens.json' },
       { kind: 'pnpm', dir: 'packages/ui-tokens' },
@@ -91,10 +91,8 @@ const AGENTS = {
 function ownerOf(rel) {
   if (LEAD_ONLY.some((p) => rel === p || rel.startsWith(p))) return 'main';
   for (const [name, def] of Object.entries(AGENTS)) {
-    if (name === 'securite' || name === 'test-writer') continue;
     if (def.write.some((p) => rel.startsWith(p))) return name;
   }
-  if (rel.startsWith('docs/handoff/') || rel.startsWith('docs/security/')) return 'securite';
   return 'main';
 }
 

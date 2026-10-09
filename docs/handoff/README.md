@@ -73,7 +73,7 @@ Un agent n'écrit **que** dans son périmètre. Pour toucher au périmètre d'un
 | Agent | Écrit dans |
 |---|---|
 | main | `docs/handoff/BOARD.md`, `decisions.md`, `README.md`, `reports/`, `CLAUDE.md`, `.claude/` (réservés) |
-| securite | `docs/security/`, `docs/handoff/` (hors fichiers du lead) — dont `reviews/securite-*` |
+| securite | `docs/security/`, `docs/handoff/reviews/securite-*` |
 | design | `docs/design/` (dont `specs/`), `packages/ui-tokens/`, `docs/handoff/reviews/design-*` |
 | backend | `apps/api/`, `packages/shared/`, `packages/api-client/`, `packages/config/`, `infra/`, `docker-compose*`, `docs/handoff/contracts/`, config racine du monorepo, `.github/` |
 | frontend | `apps/web/` |
