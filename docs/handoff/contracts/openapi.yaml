@@ -1,0 +1,1159 @@
+openapi: 3.1.0
+info:
+  title: FlexiPay API
+  version: 0.1.0
+  summary: Contrat initial de conventions (phase 0), sans endpoint métier.
+  description: |
+    # Contrat d'API FlexiPay — conventions (phase 0, P0-B5)
+
+    Ce fichier est le **contrat de référence** entre l'API (`apps/api`), le web (`apps/web`) et les
+    apps Flutter (`apps/mobile-employe`, `apps/mobile-pro`). Il est tenu par **backend**. Toute
+    modification est annoncée par un message `[CONTRAT]` ; tout changement **cassant** est annoncé
+    **avant** d'être fait (ce qui casse, migration côté client, date).
+
+    Cette version ne contient que les conventions transverses et `GET /health`. Les endpoints
+    métier (auth, ledger, paiements, virements…) seront ajoutés module par module, en respectant
+    les règles ci-dessous. Les clients web (TypeScript) et mobile (Dart) seront **générés** à
+    partir de ce fichier (pas encore en phase 0).
+
+    Code, noms de champs, codes d'erreur et valeurs d'énumération sont en **anglais** ; les textes
+    affichés à l'utilisateur ne viennent **jamais** du serveur : le serveur renvoie des **clés i18n**
+    traduites par le client (FR, AR en RTL, EN).
+
+    ## 1. Versionnement et URL
+    - Toutes les routes métier sont préfixées par la version majeure : `/v1/...`.
+      Exception : `GET /health` (sonde d'infrastructure, hors version).
+    - Changement **non cassant** (dans `/v1`) : nouvel endpoint, nouveau champ de réponse, nouveau
+      paramètre facultatif, nouveau code d'erreur, nouvelle valeur d'énumération.
+      Les clients **ignorent les champs inconnus** et prévoient une **valeur de repli** pour toute
+      valeur d'énumération inconnue (badge neutre, message d'erreur générique).
+    - Changement **cassant** (suppression ou renommage de champ, changement de type, nouveau champ
+      obligatoire en entrée, changement de sémantique) : nouvelle version majeure `/v2`. L'ancienne
+      version annonce sa fin par les en-têtes `Deprecation` (RFC 9745) et `Sunset` (RFC 8594).
+    - Chemins en minuscules avec tirets (`/v1/commission-profiles`), ressources au pluriel.
+    - Champs JSON et paramètres de requête en `camelCase`. Valeurs d'énumération en
+      `UPPER_SNAKE_CASE`.
+
+    ## 2. Montants et taux (règle non négociable)
+    - Tout montant est un **entier en millimes** (1 TND = 1 000 millimes ; 45,000 TND = `45000`).
+      Type JSON `integer`, format `int64`, bornes `0` à `9007199254740991` (plus grand entier exact
+      en JavaScript). Le serveur n'**émet** jamais de nombre décimal ni de chaîne pour un montant.
+      En entrée, la validation porte sur la **valeur analysée** : toute valeur fractionnaire
+      (`45000.5`) ou de type chaîne (`"45000"`) est refusée (`VALIDATION_FAILED`, code de champ
+      `NOT_INTEGER` ou `INVALID_TYPE`), de même que toute valeur hors bornes (`TOO_SMALL`,
+      `TOO_BIG`). Une écriture décimale d'un entier (`45000.0`, `4.5e4`) est indiscernable de
+      l'entier après analyse JSON : elle est acceptée comme cet entier ; les clients ne doivent
+      jamais l'émettre.
+    - Nom des champs : suffixe **`Millimes`** (`amountMillimes`, `balanceMillimes`,
+      `missingMillimes`, `remainingMillimes`…), y compris dans les paramètres de requête
+      (`?amountMillimes=45000`).
+    - Devise : **TND uniquement** (le multi-devise est hors périmètre). Elle est implicite ; le
+      schéma `Currency` (`"TND"`) n'apparaît que sur les ressources qui l'exposent (ex. comptes).
+    - **Aucun montant négatif** dans l'API : le sens d'un mouvement est porté par un champ
+      `direction` (`DEBIT` | `CREDIT`), comme dans le ledger.
+    - Taux : **points de base**, entier `0` à `10000` (200 = 2 %, 150 = 1,5 %), suffixe **`Bps`**
+      (`rateBps`).
+    - Le **formatage** (3 décimales, séparateur de milliers, virgule décimale en FR, symbole TND) est
+      fait **uniquement côté client**, par un utilitaire unique par plateforme. Le serveur ne renvoie
+      jamais de montant formaté.
+    - Le serveur ne fait **aucun calcul de montant en virgule flottante**. Les règles de calcul
+      (arrondi des commissions, minimum) relèvent des contrats de module et des décisions du lead.
+
+    ## 3. Dates, heures et identifiants
+    - Horodatages : chaîne **RFC 3339 / ISO 8601 en UTC** avec le suffixe `Z` et la précision
+      milliseconde, ex. `2026-10-09T08:30:00.000Z` (schéma `Timestamp`). Champs suffixés `At`
+      (`createdAt`, `expiresAt`). Le client convertit dans le fuseau de l'utilisateur pour
+      l'affichage.
+    - Dates calendaires sans heure : `YYYY-MM-DD` (schéma `CalendarDate`), champs suffixés `Date`
+      ou `On`. Le fuseau de référence de ces dates (proposition : `Africa/Tunis`) est **à confirmer**
+      par le lead (décision demandée), de même que la borne des fenêtres « jour » et « mois » des
+      plafonds.
+    - Identifiants de ressource : **UUID** (chaîne, format `uuid`), **opaques** : le client n'en
+      déduit rien et ne les construit jamais. Jamais d'entier séquentiel exposé. Un identifiant
+      n'est **jamais** une autorisation : chaque accès est contrôlé côté serveur (voir §6).
+    - Références lisibles par un humain (numéro de commande, code de paiement manuel à 8 chiffres)
+      : champs distincts, définis par chaque module.
+
+    ## 4. Format d'erreur unique — Problem Details (RFC 9457)
+    Toute erreur (4xx, 5xx) est renvoyée avec `Content-Type: application/problem+json` et le schéma
+    `Problem` :
+
+    ```json
+    {
+      "type": "urn:flexipay:problem:insufficient-funds",
+      "title": "Insufficient funds",
+      "status": 422,
+      "code": "INSUFFICIENT_FUNDS",
+      "messageKey": "errors.insufficientFunds",
+      "requestId": "0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21",
+      "details": { "missingMillimes": 15000 }
+    }
+    ```
+
+    - `code` : identifiant machine **stable** (`UPPER_SNAKE_CASE`) ; c'est **le seul champ que le
+      client teste**. Un code n'est jamais renommé dans une version majeure.
+    - `messageKey` : clé i18n du message, traduite par le client. Le serveur ne renvoie **aucun
+      texte destiné à l'utilisateur**.
+    - `title` : libellé technique anglais, fixe par code, **jamais affiché**.
+    - `type` : URN stable dérivée du code (`urn:flexipay:problem:<code-en-kebab-case>`).
+    - `requestId` : identifiant de corrélation (UUID), identique à l'en-tête `X-Request-Id`, à
+      afficher comme « référence » pour le support.
+    - `details` : objet **typé selon le code**, absent quand le code n'a pas de détail.
+    - Le membre RFC `detail` (texte libre) et `instance` ne sont **jamais** envoyés.
+    - **Aucune fuite** : pas de trace de pile, de message SQL, de nom de table, de valeur saisie,
+      de donnée personnelle, de token, de RIB, ni de **solde complet** dans une erreur.
+    - **Aucune énumération** : connexion et mot de passe oublié répondent de façon identique, que
+      le compte existe, soit verrouillé ou non (le verrouillage est notifié au titulaire par un
+      autre canal). Une ressource d'un autre tenant répond **404**, jamais 403.
+
+    ### Catalogue des codes (phase 0)
+    | HTTP | `code` | `messageKey` | `details` |
+    |---|---|---|---|
+    | 400 | `VALIDATION_FAILED` | `errors.validationFailed` | `fields[]` : `in`, `pointer`, `code`, `messageKey`, `params?` |
+    | 400 | `IDEMPOTENCY_KEY_REQUIRED` | `errors.idempotencyKeyRequired` | — |
+    | 400 | `IDEMPOTENCY_KEY_INVALID` | `errors.idempotencyKeyInvalid` | — |
+    | 401 | `UNAUTHENTICATED` | `errors.unauthenticated` | — |
+    | 401 | `SESSION_EXPIRED` | `errors.sessionExpired` | — |
+    | 401 | `INVALID_CREDENTIALS` | `errors.invalidCredentials` | — |
+    | 403 | `PASSWORD_CHANGE_REQUIRED` | `errors.passwordChangeRequired` | — |
+    | 403 | `FORBIDDEN` | `errors.forbidden` | — |
+    | 403 | `CSRF_TOKEN_INVALID` | `errors.csrfTokenInvalid` | — |
+    | 404 | `NOT_FOUND` | `errors.notFound` | — |
+    | 409 | `IDEMPOTENCY_REQUEST_IN_PROGRESS` | `errors.idempotencyRequestInProgress` | `retryAfterSeconds` |
+    | 409 | `RESOURCE_STATE_CONFLICT` | `errors.resourceStateConflict` | — |
+    | 413 | `PAYLOAD_TOO_LARGE` | `errors.payloadTooLarge` | — |
+    | 415 | `UNSUPPORTED_MEDIA_TYPE` | `errors.unsupportedMediaType` | — |
+    | 422 | `IDEMPOTENCY_KEY_REUSED` | `errors.idempotencyKeyReused` | — |
+    | 422 | `INSUFFICIENT_FUNDS` | `errors.insufficientFunds` | `missingMillimes` (payeur uniquement) |
+    | 422 | `LIMIT_EXCEEDED` | `errors.limitExceeded` | `limitType`, `remainingMillimes` (payeur uniquement) |
+    | 422 | `PAYMENT_DECLINED` | `errors.paymentDeclined` | — (réponse commerçant, raison jamais révélée) |
+    | 429 | `RATE_LIMITED` | `errors.rateLimited` | `retryAfterSeconds` |
+    | 500 | `INTERNAL_ERROR` | `errors.internal` | — |
+    | 503 | `SERVICE_UNAVAILABLE` | `errors.serviceUnavailable` | `retryAfterSeconds?` |
+
+    Comportement attendu côté client :
+    - `SESSION_EXPIRED` (jeton d'accès expiré) : **une** tentative de rafraîchissement silencieux,
+      puis rejeu de la requête ; si le rafraîchissement échoue, écran « session expirée » puis
+      connexion. `UNAUTHENTICATED` (pas de session, session révoquée ou invalide) : connexion
+      directe, sans tentative de rafraîchissement.
+    - `PASSWORD_CHANGE_REQUIRED` : redirection vers le changement obligatoire du mot de passe
+      temporaire ; tant qu'il n'est pas changé, seules les routes de changement de mot de passe et
+      de déconnexion sont autorisées (spec 01, SEC-A2).
+    - `INSUFFICIENT_FUNDS` : `missingMillimes` = montant manquant (E7 : solde 30 000, paiement
+      45 000 → `missingMillimes: 15000`). Ni le solde disponible ni le montant requis ne sont
+      jamais renvoyés.
+    - `LIMIT_EXCEEDED` : `limitType` indique le plafond atteint, `remainingMillimes` le reste
+      disponible (E8 : plafond jour 100 000, déjà 80 000, paiement 30 000 →
+      `{ "limitType": "DAILY", "remainingMillimes": 20000 }`).
+    - **Règle d'exposition des refus de paiement** (anti-déduction du solde) :
+      - **Payeur** (employé titulaire du wallet) : code précis (`INSUFFICIENT_FUNDS`,
+        `LIMIT_EXCEEDED`…) avec ses `details`.
+      - **Commerçant** (et tout appelant autre que le payeur) : **toujours** le code générique
+        `PAYMENT_DECLINED`, sans `details`, quelle que soit la raison du refus — jamais
+        `INSUFFICIENT_FUNDS`, `LIMIT_EXCEEDED`, `missingMillimes` ni `remainingMillimes`. Un code
+        distinct, répété sur des initiations successives, permettrait de retrouver le solde du
+        payeur par dichotomie.
+      - **Membre famille** : **en attente de décision** (demandée au lead) ; d'ici là, aucun
+        contrat de module ne fixe ce cas.
+      - Exigence transmise au futur contrat paiements : **une seule initiation par QR** (en plus
+        de l'usage unique, E12).
+      - Point ouvert : le cahier (COM-04) prévoit l'affichage du « solde disponible » sur l'écran
+        de validation commerçant, en contradiction avec cette règle ; décision demandée au lead.
+    - Refus métier (`409`, `422`) d'une opération financière : **aucune écriture au ledger** n'a
+      été faite.
+    - Hors connexion (aucune réponse réseau) : détecté par le client, ce n'est pas un code API.
+
+    ### Erreurs de validation
+    `details.fields[]` liste chaque champ invalide : `in` (`body`, `query`, `path`, `header`),
+    `pointer` (JSON Pointer RFC 6901 dans le corps, ex. `/amountMillimes` ; nom du paramètre pour
+    `query`, `path`, `header`), `code` (`FieldErrorCode`), `messageKey`
+    (`errors.field.<codeEnCamelCase>`, ex. `errors.field.tooSmall`) et `params` facultatif
+    (ex. `{ "min": 1 }`). La **valeur saisie n'est jamais renvoyée**. Les corps de requête sont
+    **stricts** : un champ inconnu est refusé (`UNKNOWN_FIELD`), ce qui empêche l'affectation de
+    masse.
+
+    ## 5. Idempotence — en-tête `Idempotency-Key`
+    - **Obligatoire** sur toute opération financière (toute requête qui crée une écriture au
+      ledger, une commande, une attribution, un paiement, un virement, un règlement, une
+      contre-passation), et recommandé sur tout `POST` qui crée une ressource. Les opérations
+      concernées portent le paramètre `IdempotencyKey` et l'extension `x-financial: true`.
+    - Format : **UUID** (v4 ou v7) en texte, 36 caractères, généré par le client **une fois par
+      intention** de l'utilisateur (un clic « Payer » = une clé), et réutilisé à l'identique pour
+      chaque nouvel essai réseau de cette même intention.
+    - Absent sur une opération qui l'exige : `400 IDEMPOTENCY_KEY_REQUIRED`. Mal formé :
+      `400 IDEMPOTENCY_KEY_INVALID`.
+    - **Portée** : l'unicité est **composite** — (tenant, utilisateur authentifié, clé). La même
+      valeur de clé envoyée par un autre utilisateur ou un autre tenant est une clé distincte et ne
+      peut **jamais** rejouer la réponse d'un autre. (La contrainte `UNIQUE` de la spec 02 §4 doit
+      donc être composite ; alignement de la spec demandé au lead.)
+    - **Empreinte** (SHA-256) enregistrée avec la clé : méthode + **chemin concret** (identifiants
+      compris, ex. `/v1/payments/<id A>/confirm`, et non le gabarit) + paramètres de requête
+      **triés** + corps JSON **canonique**. Une clé réutilisée sur un autre chemin (autre `{id}`),
+      avec d'autres paramètres ou un autre corps est un **conflit**.
+    - **Registre d'idempotence distinct du ledger**. Cycle de vie d'une clé :
+      1. Réception : **réservation** de la clé (état « en cours »), validée immédiatement. La
+         réservation porte un **jeton de clôture** (identifiant de propriétaire ou numéro de
+         version, renouvelé à chaque prise ou reprise) et un **bail** qui sert uniquement à libérer
+         une réservation orpheline après un arrêt brutal. Le bail est **strictement supérieur** au
+         délai maximal d'une transaction financière : `statement_timeout` et `lock_timeout` de ces
+         transactions sont bornés en configuration, et le bail est dérivé de ces bornes. Une
+         réservation dont le bail a expiré peut être reprise par une nouvelle requête, ce qui
+         change son jeton.
+      2. Succès (`2xx`) : les écritures au ledger et l'enregistrement de la réponse dans le registre
+         sont faits dans la **même transaction SQL** (tout ou rien). Dans cette transaction, la
+         ligne de réservation est relue **sous `SELECT … FOR UPDATE`** et son jeton comparé à celui
+         détenu par la requête. Si le jeton a changé (bail expiré puis reprise), la transaction est
+         **annulée** (rollback, aucune écriture) et la requête renvoie
+         `409 IDEMPOTENCY_REQUEST_IN_PROGRESS` : un seul traitement peut valider.
+      3. **Refus métier** (`409 RESOURCE_STATE_CONFLICT`, `422 INSUFFICIENT_FUNDS`,
+         `422 LIMIT_EXCEEDED`, `422 PAYMENT_DECLINED`…) : la transaction de l'opération est annulée
+         (**aucune écriture au ledger**), puis la réponse de refus est **enregistrée de façon
+         durable** dans le registre, **sous la même vérification du jeton** (sous `FOR UPDATE`,
+         sans effet si le jeton a changé). Le refus est donc **définitif pour cette clé** : un
+         rejeu renvoie le même refus, même si le solde a changé entre-temps. Pour réessayer après
+         un refus, le client génère une **nouvelle** clé.
+      Filet de sécurité indépendant du registre : la clé est aussi enregistrée dans `transactions`
+      avec une contrainte `UNIQUE` **composite** (tenant, utilisateur, clé). Une seconde écriture
+      au ledger pour la même clé échoue donc en base, quel que soit l'état du registre.
+      Test attendu : bail expiré pendant le traitement (verrous retenus artificiellement), même clé
+      renvoyée → **une seule** écriture au ledger et une seule réponse de succès ; l'autre requête
+      reçoit `409 IDEMPOTENCY_REQUEST_IN_PROGRESS` puis, au rejeu, la réponse enregistrée.
+      4. Échec avant traitement ou technique (`400` de validation, `401`, `403`, `413`, `415`,
+         `429`, `5xx`, rollback) : **rien n'est enregistré**, la réservation est libérée ; le client
+         peut réessayer avec la **même** clé.
+    - **Rejeu** (même portée, même clé, même empreinte, état terminé) : le serveur renvoie
+      **exactement la même réponse** (même statut, même corps), sans nouvelle écriture (E11), avec
+      l'en-tête `Idempotent-Replayed: true`.
+    - **Requête concurrente** (même clé, réservation en cours) :
+      `409 IDEMPOTENCY_REQUEST_IN_PROGRESS` avec `Retry-After`.
+    - **Conflit** (même portée, même clé, empreinte différente) : `422 IDEMPOTENCY_KEY_REUSED`,
+      aucune écriture. Test attendu : même clé sur `/v1/payments/{A}/confirm` puis
+      `/v1/payments/{B}/confirm` → `422 IDEMPOTENCY_KEY_REUSED`.
+    - Conservation : 24 h minimum ; **sans limite** pour les opérations financières (spec 02 §5).
+
+    ## 6. Sécurité : authentification, autorisation, tenant
+    - **Guard global, refus par défaut** : toute route exige une authentification. Une route
+      publique est explicitement marquée (`@Public()` côté NestJS ; `security: []` et
+      `x-public: true` dans ce contrat). Phase 0 : seule `GET /health` est publique.
+    - **Web** (`apps/web`) : session par **cookies** posés par l'API — `HttpOnly`, `Secure`,
+      `SameSite=Strict`, sans attribut `Domain` : jeton d'accès `__Host-fp_at` (`Path=/`) et jeton
+      de rafraîchissement `__Secure-fp_rt` restreint à `Path=/v1/auth`. Le JavaScript n'a jamais
+      accès aux jetons.
+    - **CSRF (web)**. `SameSite=Strict` ne protège pas d'un sous-domaine du même site : trois
+      contrôles serveur s'y ajoutent, chacun refusé par `403 CSRF_TOKEN_INVALID` :
+      1. **Origin** : sur **toute** méthode non sûre (`POST`, `PUT`, `PATCH`, `DELETE`), y compris
+         les routes publiques d'authentification (connexion, rafraîchissement, mot de passe
+         oublié — protection contre le CSRF de connexion), un en-tête `Origin` présent doit être
+         **exactement** égal à une origine de la liste autorisée (comparaison de chaîne, sans
+         joker ni sous-domaine implicite) ; `Origin: null` est refusé. Toute requête non sûre
+         portant un cookie FlexiPay **sans** en-tête `Origin` est refusée.
+      2. **Jeton** : toute méthode non sûre authentifiée par cookie exige l'en-tête
+         **`X-CSRF-Token`** — jeton lié à la session (HMAC côté serveur), remis dans le **corps**
+         des réponses qui établissent ou renouvellent la session (contrat du module auth) et
+         conservé **en mémoire** par le client web. `GET`, `HEAD` et `OPTIONS` ne sont **pas**
+         soumis au jeton CSRF (ils ne modifient jamais d'état).
+      3. **Rafraîchissement** (`POST /v1/auth/refresh` par cookie) : exige en plus l'en-tête
+         personnalisé **`X-FlexiPay-Client: web`** (qui impose un pré-vol CORS). C'est le mode de
+         **récupération du jeton CSRF après rechargement de page** : le client web appelle le
+         rafraîchissement, dont la réponse remet un nouveau jeton CSRF.
+    - **Mobile** (Flutter) : `Authorization: Bearer <jeton d'accès>` (durée de vie 10 à 15 min,
+      SEC-A3), jeton de rafraîchissement rotatif avec détection de réutilisation ; stockage
+      Keychain/Keystore uniquement. Pas de CSRF (le jeton n'est pas envoyé automatiquement).
+    - **Un seul mécanisme par requête** : une requête portant à la fois un cookie de session et un
+      en-tête `Authorization` est refusée (`401 UNAUTHENTICATED`).
+    - Les jetons ne sont **jamais** acceptés dans l'URL (paramètre de requête).
+    - **Tenant et rôle vérifiés côté serveur sur chaque ressource** : le tenant (`companyId`,
+      `merchantId`) et l'utilisateur proviennent **exclusivement de la session**, jamais du corps
+      ni des paramètres pour un utilisateur non administrateur ; l'isolation est doublée par la
+      Row-Level Security PostgreSQL. Ressource inexistante ou d'un autre tenant :
+      `404 NOT_FOUND` ; rôle insuffisant pour la route : `403 FORBIDDEN`.
+    - Les opérations sensibles (commission, règlement, rapprochement, RIB) suivent la double
+      validation (initiateur ≠ approbateur) et sont journalisées ; elles seront décrites dans les
+      contrats de module.
+    - **CORS** : liste blanche d'origines exactes (configuration par environnement) ; comparaison
+      exacte de chaîne, jamais de reflet de l'`Origin` reçu, jamais `*`, `null` refusé ;
+      `Access-Control-Allow-Credentials: true` uniquement pour une origine autorisée ;
+      `Vary: Origin` sur toute réponse ; méthodes autorisées `GET, POST, PUT, PATCH, DELETE` ;
+      en-têtes de requête autorisés `Content-Type, Authorization, Idempotency-Key, X-CSRF-Token,
+      X-FlexiPay-Client, Accept-Language` ; en-têtes exposés `X-Request-Id, Retry-After,
+      RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset, Idempotent-Replayed`.
+    - **Transport** : HTTPS (TLS 1.2 minimum) partout, HSTS, hors développement local
+      (`http://localhost`) ; aucune option de désactivation de la vérification TLS.
+
+    ## 7. Pagination, tri et filtres
+    - Pagination **par curseur** (stable malgré les insertions concurrentes) :
+      `?limit=` (1 à 100, défaut 20), `?cursor=` (chaîne **opaque** renvoyée par la page
+      précédente), `?sort=` (champ autorisé par l'endpoint, préfixe `-` pour l'ordre décroissant ;
+      défaut `-createdAt`).
+    - Réponse : `{ "data": [ ... ], "page": { "limit": 20, "hasMore": true, "nextCursor": "..." } }`
+      (`nextCursor` vaut `null` sur la dernière page). Pas de total ni de numéro de page.
+    - Curseur invalide, altéré, ou réutilisé avec d'autres filtres/tri : `400 VALIDATION_FAILED`.
+      Le curseur ne contourne jamais le filtrage par tenant.
+    - Champs de tri et de filtre : **liste blanche** par endpoint ; tout autre valeur est refusée.
+      Filtres de période : `createdFrom` / `createdTo` (`Timestamp`, borne haute exclue).
+
+    ## 8. En-têtes communs
+    - Requête : `Accept-Language` (`fr`, `ar`, `en`) — utilisé pour les notifications et documents
+      générés, pas pour les erreurs ; `Content-Type: application/json` pour tout corps.
+    - Réponse, systématiquement : `X-Request-Id` (UUID généré par le serveur ; une valeur envoyée
+      par le client est ignorée), `Cache-Control: no-store` sur toute réponse authentifiée, en-têtes
+      de sécurité (`Strict-Transport-Security`, `X-Content-Type-Options: nosniff`,
+      `Referrer-Policy: no-referrer`, `Content-Security-Policy: default-src 'none';
+      frame-ancestors 'none'` pour les réponses JSON de l'API).
+    - **Rate limiting** (par IP, par compte et par route, SEC-W2) : chaque réponse porte
+      `RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset` (secondes), qui décrivent la
+      politique **la plus restrictive** applicable ; au-delà : `429 RATE_LIMITED` avec
+      `Retry-After` (secondes).
+    - **Routes publiques d'authentification** (connexion, défi MFA, rafraîchissement, mot de passe
+      oublié ou réinitialisation) — anti-énumération : le compteur « par compte » est indexé sur
+      l'**identifiant soumis, normalisé puis haché**, qu'un compte existe ou non (même politique,
+      mêmes seuils, même réponse) ; les en-têtes `RateLimit-*` et `Retry-After` de ces routes ne
+      reflètent **que** la politique par IP et par route, jamais le compteur par identifiant.
+      Le dépassement du compteur par identifiant renvoie la même réponse générique que des
+      identifiants invalides.
+    - Idempotence : `Idempotent-Replayed: true` sur une réponse rejouée.
+    - Corps de requête limité en taille (`413 PAYLOAD_TOO_LARGE`) ; type autre que JSON refusé
+      (`415 UNSUPPORTED_MEDIA_TYPE`).
+
+    ## 9. Statuts métier
+    Les énumérations `AccountStatus`, `OrderStatus`, `PaymentStatus`, `PayoutRequestStatus` et
+    `ApprovalStatus` reprennent le cahier des charges (§8) et le glossaire, traduits en anglais.
+    Elles sont **provisoires** jusqu'au contrat de chaque module et peuvent s'enrichir (le client
+    prévoit une valeur de repli).
+  contact:
+    name: Équipe backend FlexiPay
+  license:
+    name: Propriétaire — usage interne
+    identifier: LicenseRef-Proprietary
+servers:
+  - url: http://localhost:3000
+    description: |
+      Développement local uniquement (seul cas sans TLS). Tout autre environnement est servi en
+      HTTPS (TLS 1.2+) ; aucun n'est défini en phase 0.
+tags:
+  - name: system
+    description: Sondes techniques
+security:
+  - cookieAuth: []
+    csrfToken: []
+  - bearerAuth: []
+paths:
+  /health:
+    get:
+      tags: [system]
+      operationId: getHealth
+      summary: Sonde de vivacité de l'API
+      description: |
+        Route **publique** (`@Public()`). Indique seulement que le processus répond.
+        Ne renvoie **aucune** information sur la version, les dépendances, l'hôte ou la
+        configuration. Les contrôles détaillés de dépendances (PostgreSQL, Redis) ne sont pas
+        exposés publiquement. Soumise au rate limiting par IP.
+      security: []
+      x-public: true
+      responses:
+        '200':
+          description: L'API répond.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimit-Limit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimit-Remaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimit-Reset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+              example:
+                status: OK
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: __Host-fp_at
+      description: |
+        Web uniquement. Jeton d'accès dans un cookie `HttpOnly; Secure; SameSite=Strict; Path=/`,
+        sans `Domain`. Toujours combiné à `csrfToken` pour les méthodes non sûres. Le cookie de
+        rafraîchissement `__Secure-fp_rt` (`Path=/v1/auth`) n'est utilisé que par le module auth.
+    csrfToken:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: |
+        Web uniquement. Jeton anti-CSRF lié à la session, exigé **uniquement** sur `POST`, `PUT`,
+        `PATCH`, `DELETE` quand l'authentification se fait par cookie ; **ignoré** sur `GET`,
+        `HEAD` et `OPTIONS` (l'exigence de sécurité globale `cookieAuth` + `csrfToken` s'applique
+        donc sans ce jeton aux méthodes sûres). Remis dans le corps des réponses d'établissement ou
+        de renouvellement de session, conservé en mémoire ; récupéré après rechargement par
+        `POST /v1/auth/refresh` (avec `X-FlexiPay-Client: web`). Toujours complété par le contrôle
+        exact de l'en-tête `Origin` (section 6). Échec : `403 CSRF_TOKEN_INVALID`.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Mobile uniquement. Jeton d'accès de courte durée (10 à 15 min) dans l'en-tête
+        `Authorization`. Jamais dans l'URL. Une requête qui combine cookie de session et
+        `Authorization` est refusée.
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: |
+        Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+        UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+        Voir la section 5 de la description.
+      schema:
+        type: string
+        format: uuid
+        minLength: 36
+        maxLength: 36
+        pattern: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+      example: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: Nombre maximal d'éléments par page.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 20
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      description: Curseur opaque renvoyé par `page.nextCursor`. Absent pour la première page.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 512
+        pattern: '^[A-Za-z0-9_-]+$'
+    Sort:
+      name: sort
+      in: query
+      required: false
+      description: |
+        Champ de tri autorisé par l'endpoint (liste blanche), préfixe `-` pour l'ordre
+        décroissant. Défaut : `-createdAt`.
+      schema:
+        type: string
+        maxLength: 64
+        pattern: '^-?[a-z][A-Za-z0-9]*$'
+        default: -createdAt
+    CreatedFrom:
+      name: createdFrom
+      in: query
+      required: false
+      description: Borne basse incluse de la période (UTC).
+      schema:
+        $ref: '#/components/schemas/Timestamp'
+    CreatedTo:
+      name: createdTo
+      in: query
+      required: false
+      description: Borne haute exclue de la période (UTC).
+      schema:
+        $ref: '#/components/schemas/Timestamp'
+    AcceptLanguage:
+      name: Accept-Language
+      in: header
+      required: false
+      description: Langue des notifications et documents générés. Les erreurs restent des clés i18n.
+      schema:
+        type: string
+        enum: [fr, ar, en]
+        default: fr
+  headers:
+    X-Request-Id:
+      description: Identifiant de corrélation généré par le serveur, repris dans `Problem.requestId`.
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Cache-Control-No-Store:
+      description: Les réponses de l'API ne sont jamais mises en cache.
+      required: true
+      schema:
+        type: string
+        const: no-store
+    RateLimit-Limit:
+      description: Quota de requêtes de la politique la plus restrictive applicable (IP, compte, route).
+      schema:
+        type: integer
+        minimum: 0
+    RateLimit-Remaining:
+      description: Requêtes restantes dans la fenêtre courante.
+      schema:
+        type: integer
+        minimum: 0
+    RateLimit-Reset:
+      description: Secondes avant la réinitialisation de la fenêtre.
+      schema:
+        type: integer
+        minimum: 0
+    Retry-After:
+      description: Délai en secondes avant de réessayer.
+      schema:
+        type: integer
+        minimum: 1
+    Idempotent-Replayed:
+      description: Présent avec la valeur `true` quand la réponse est le rejeu d'une requête déjà traitée.
+      schema:
+        type: string
+        const: 'true'
+    WWW-Authenticate:
+      description: 'Pour le schéma bearer : `Bearer error="invalid_token"`, sans autre information.'
+      schema:
+        type: string
+  schemas:
+    # ---------------------------------------------------------------- montants, taux
+    AmountMillimes:
+      title: AmountMillimes
+      description: |
+        Montant en **millimes** (1 TND = 1 000). Entier, jamais décimal ni chaîne. Devise : TND.
+        Exemple : 45,000 TND = 45000. Les champs de ce type sont suffixés `Millimes`.
+      type: integer
+      format: int64
+      minimum: 0
+      maximum: 9007199254740991
+      examples: [45000]
+    PositiveAmountMillimes:
+      title: PositiveAmountMillimes
+      description: Montant en millimes strictement positif (montant d'une opération demandée).
+      type: integer
+      format: int64
+      minimum: 1
+      maximum: 9007199254740991
+      examples: [45000]
+    RateBps:
+      title: RateBps
+      description: Taux en **points de base** (200 = 2 %, 150 = 1,5 %). Champs suffixés `Bps`.
+      type: integer
+      format: int32
+      minimum: 0
+      maximum: 10000
+      examples: [200]
+    Currency:
+      title: Currency
+      description: Devise ; seule la valeur TND existe (3 décimales, unité de stockage le millime).
+      type: string
+      enum: [TND]
+    Direction:
+      title: Direction
+      description: Sens d'un mouvement (les montants ne sont jamais négatifs).
+      type: string
+      enum: [DEBIT, CREDIT]
+    # ---------------------------------------------------------------- dates, identifiants
+    Timestamp:
+      title: Timestamp
+      description: Horodatage RFC 3339 en UTC, suffixe `Z`, précision milliseconde.
+      type: string
+      format: date-time
+      pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$'
+      examples: ['2026-10-09T08:30:00.000Z']
+    CalendarDate:
+      title: CalendarDate
+      description: Date calendaire sans heure (fuseau de référence à confirmer, proposition Africa/Tunis).
+      type: string
+      format: date
+      examples: ['2026-10-11']
+    Uuid:
+      title: Uuid
+      description: Identifiant opaque de ressource.
+      type: string
+      format: uuid
+      examples: ['0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21']
+    # ---------------------------------------------------------------- pagination
+    PageInfo:
+      title: PageInfo
+      type: object
+      additionalProperties: false
+      required: [limit, hasMore, nextCursor]
+      properties:
+        limit:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 100
+        hasMore:
+          type: boolean
+        nextCursor:
+          description: Curseur de la page suivante, `null` sur la dernière page.
+          type: [string, 'null']
+    # Modèle de liste paginée : chaque endpoint de liste déclare
+    #   { data: [<Ressource>], page: PageInfo }
+    PaginatedEnvelope:
+      title: PaginatedEnvelope
+      description: |
+        Enveloppe commune des listes. Chaque endpoint de liste la spécialise avec
+        `allOf` en précisant le type des éléments de `data`.
+      type: object
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          items: {}
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    # ---------------------------------------------------------------- santé
+    HealthStatus:
+      title: HealthStatus
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          const: OK
+    # ---------------------------------------------------------------- statuts métier (provisoires)
+    AccountStatus:
+      title: AccountStatus
+      description: Compte (cahier §8) — En attente KYC, Validé, Rejeté, Suspendu.
+      type: string
+      enum: [PENDING_KYC, APPROVED, REJECTED, SUSPENDED]
+    OrderStatus:
+      title: OrderStatus
+      description: Commande — Créée, Payée, Rapprochée, Créditée, Annulée.
+      type: string
+      enum: [CREATED, PAID, RECONCILED, CREDITED, CANCELLED]
+    PaymentStatus:
+      title: PaymentStatus
+      description: Paiement — Initié, Confirmé (« Validée » au cahier §8), Réglé, Refusé, En litige.
+      type: string
+      enum: [INITIATED, CONFIRMED, SETTLED, REFUSED, DISPUTED]
+    PayoutRequestStatus:
+      title: PayoutRequestStatus
+      description: Demande de virement — Demandée, Contrôlée, Envoyée, Exécutée, Rejetée.
+      type: string
+      enum: [REQUESTED, CHECKED, SENT, EXECUTED, REJECTED]
+    ApprovalStatus:
+      title: ApprovalStatus
+      description: Approbation (double validation, approbateur ≠ initiateur) — En attente, Approuvée, Refusée.
+      type: string
+      enum: [PENDING, APPROVED, REJECTED]
+    # ---------------------------------------------------------------- erreurs
+    ProblemCode:
+      title: ProblemCode
+      description: Code d'erreur machine stable (catalogue en section 4). Liste extensible.
+      type: string
+      enum:
+        - VALIDATION_FAILED
+        - IDEMPOTENCY_KEY_REQUIRED
+        - IDEMPOTENCY_KEY_INVALID
+        - UNAUTHENTICATED
+        - SESSION_EXPIRED
+        - INVALID_CREDENTIALS
+        - PASSWORD_CHANGE_REQUIRED
+        - FORBIDDEN
+        - CSRF_TOKEN_INVALID
+        - NOT_FOUND
+        - IDEMPOTENCY_REQUEST_IN_PROGRESS
+        - RESOURCE_STATE_CONFLICT
+        - PAYLOAD_TOO_LARGE
+        - UNSUPPORTED_MEDIA_TYPE
+        - IDEMPOTENCY_KEY_REUSED
+        - INSUFFICIENT_FUNDS
+        - LIMIT_EXCEEDED
+        - PAYMENT_DECLINED
+        - RATE_LIMITED
+        - INTERNAL_ERROR
+        - SERVICE_UNAVAILABLE
+    ProblemBase:
+      title: ProblemBase
+      description: |
+        Membres communs de toute erreur RFC 9457 (`application/problem+json`). Schéma de base
+        **non utilisé seul** : il est composé par `Problem` (sans détails) et par les variantes
+        typées `*Problem`, chacune **fermée** par `unevaluatedProperties: false`. Les membres RFC
+        `detail` et `instance` ne sont jamais envoyés. Aucun texte destiné à l'utilisateur : le
+        client traduit `messageKey`.
+      type: object
+      required: [type, title, status, code, messageKey, requestId]
+      properties:
+        type:
+          description: URN stable dérivée du code, ex. `urn:flexipay:problem:insufficient-funds`.
+          type: string
+          format: uri
+          pattern: '^urn:flexipay:problem:[a-z0-9]+(-[a-z0-9]+)*$'
+        title:
+          description: Libellé technique anglais fixe par code. Jamais affiché.
+          type: string
+          maxLength: 100
+        status:
+          description: Statut HTTP, identique à celui de la réponse.
+          type: integer
+          minimum: 400
+          maximum: 599
+        code:
+          $ref: '#/components/schemas/ProblemCode'
+        messageKey:
+          description: Clé i18n du message (`errors.<codeEnCamelCase>`).
+          type: string
+          pattern: '^errors\.[a-z][A-Za-z0-9]*$'
+        requestId:
+          description: Identifiant de corrélation, identique à l'en-tête `X-Request-Id`.
+          type: string
+          format: uuid
+    Problem:
+      title: Problem
+      description: |
+        Erreur **sans détails** (aucun membre `details`, aucun membre supplémentaire). Seules les
+        variantes typées (`ValidationProblem`, `InsufficientFundsProblem`, `LimitExceededProblem`,
+        `RateLimitedProblem`, `IdempotencyInProgressProblem`, `ServiceUnavailableProblem`)
+        déclarent un `details`, avec un schéma fermé.
+      allOf:
+        - $ref: '#/components/schemas/ProblemBase'
+      unevaluatedProperties: false
+    FieldErrorCode:
+      title: FieldErrorCode
+      description: Motif d'invalidité d'un champ. Liste extensible.
+      type: string
+      enum:
+        - REQUIRED
+        - INVALID_TYPE
+        - INVALID_FORMAT
+        - INVALID_ENUM
+        - NOT_INTEGER
+        - TOO_SMALL
+        - TOO_BIG
+        - TOO_SHORT
+        - TOO_LONG
+        - UNKNOWN_FIELD
+        - INVALID_CURSOR
+    FieldError:
+      title: FieldError
+      type: object
+      additionalProperties: false
+      required: [in, pointer, code, messageKey]
+      properties:
+        in:
+          type: string
+          enum: [body, query, path, header]
+        pointer:
+          description: JSON Pointer (RFC 6901) pour `body`, ex. `/amountMillimes` ; nom du paramètre sinon.
+          type: string
+          maxLength: 256
+        code:
+          $ref: '#/components/schemas/FieldErrorCode'
+        messageKey:
+          description: Clé i18n, ex. `errors.field.tooSmall`.
+          type: string
+          pattern: '^errors\.field\.[a-z][A-Za-z0-9]*$'
+        params:
+          description: 'Paramètres de la règle (ex. `{"min": 1}`). Jamais la valeur saisie.'
+          type: object
+          additionalProperties:
+            type: [integer, string]
+    ValidationProblem:
+      title: ValidationProblem
+      unevaluatedProperties: false
+      allOf:
+        - $ref: '#/components/schemas/ProblemBase'
+        - type: object
+          required: [details]
+          properties:
+            code:
+              const: VALIDATION_FAILED
+            details:
+              type: object
+              additionalProperties: false
+              required: [fields]
+              properties:
+                fields:
+                  type: array
+                  minItems: 1
+                  maxItems: 100
+                  items:
+                    $ref: '#/components/schemas/FieldError'
+    InsufficientFundsProblem:
+      title: InsufficientFundsProblem
+      unevaluatedProperties: false
+      description: |
+        Solde insuffisant (E7). Code réservé au **payeur** titulaire du wallet (le commerçant reçoit
+        `PAYMENT_DECLINED`). `details` facultatif dans le schéma tant que le cas du membre famille
+        n'est pas décidé. Jamais de solde disponible ni de montant requis.
+      allOf:
+        - $ref: '#/components/schemas/ProblemBase'
+        - type: object
+          properties:
+            code:
+              const: INSUFFICIENT_FUNDS
+            details:
+              type: object
+              additionalProperties: false
+              required: [missingMillimes]
+              properties:
+                missingMillimes:
+                  $ref: '#/components/schemas/PositiveAmountMillimes'
+    LimitType:
+      title: LimitType
+      description: Plafond atteint (RG-4, spec 02 §5). Liste extensible.
+      type: string
+      enum: [TRANSACTION, DAILY, MONTHLY, FAMILY_MEMBER]
+    LimitExceededProblem:
+      title: LimitExceededProblem
+      unevaluatedProperties: false
+      description: |
+        Plafond dépassé (E8, E16). Même règle d'exposition que `INSUFFICIENT_FUNDS` : réservé au
+        payeur ; le commerçant reçoit `PAYMENT_DECLINED`.
+      allOf:
+        - $ref: '#/components/schemas/ProblemBase'
+        - type: object
+          properties:
+            code:
+              const: LIMIT_EXCEEDED
+            details:
+              type: object
+              additionalProperties: false
+              required: [limitType, remainingMillimes]
+              properties:
+                limitType:
+                  $ref: '#/components/schemas/LimitType'
+                remainingMillimes:
+                  $ref: '#/components/schemas/AmountMillimes'
+    RetryAfterDetails:
+      title: RetryAfterDetails
+      type: object
+      additionalProperties: false
+      required: [retryAfterSeconds]
+      properties:
+        retryAfterSeconds:
+          type: integer
+          minimum: 1
+    RateLimitedProblem:
+      title: RateLimitedProblem
+      unevaluatedProperties: false
+      allOf:
+        - $ref: '#/components/schemas/ProblemBase'
+        - type: object
+          required: [details]
+          properties:
+            code:
+              const: RATE_LIMITED
+            details:
+              $ref: '#/components/schemas/RetryAfterDetails'
+    IdempotencyInProgressProblem:
+      title: IdempotencyInProgressProblem
+      unevaluatedProperties: false
+      allOf:
+        - $ref: '#/components/schemas/ProblemBase'
+        - type: object
+          required: [details]
+          properties:
+            code:
+              const: IDEMPOTENCY_REQUEST_IN_PROGRESS
+            details:
+              $ref: '#/components/schemas/RetryAfterDetails'
+    ServiceUnavailableProblem:
+      title: ServiceUnavailableProblem
+      unevaluatedProperties: false
+      allOf:
+        - $ref: '#/components/schemas/ProblemBase'
+        - type: object
+          properties:
+            code:
+              const: SERVICE_UNAVAILABLE
+            details:
+              $ref: '#/components/schemas/RetryAfterDetails'
+  responses:
+    # Réponses d'erreur réutilisables. Chaque endpoint métier référence celles qui s'appliquent.
+    BadRequest:
+      description: Requête invalide (validation, ou en-tête d'idempotence absent ou mal formé).
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/X-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ValidationProblem'
+              - $ref: '#/components/schemas/Problem'
+          examples:
+            validation:
+              value:
+                type: urn:flexipay:problem:validation-failed
+                title: Validation failed
+                status: 400
+                code: VALIDATION_FAILED
+                messageKey: errors.validationFailed
+                requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+                details:
+                  fields:
+                    - in: body
+                      pointer: /amountMillimes
+                      code: NOT_INTEGER
+                      messageKey: errors.field.notInteger
+            idempotencyKeyRequired:
+              value:
+                type: urn:flexipay:problem:idempotency-key-required
+                title: Idempotency key required
+                status: 400
+                code: IDEMPOTENCY_KEY_REQUIRED
+                messageKey: errors.idempotencyKeyRequired
+                requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+    Unauthorized:
+      description: Non authentifié, session expirée, ou identifiants refusés (message générique).
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/X-Request-Id'
+        WWW-Authenticate:
+          $ref: '#/components/headers/WWW-Authenticate'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            unauthenticated:
+              value:
+                type: urn:flexipay:problem:unauthenticated
+                title: Unauthenticated
+                status: 401
+                code: UNAUTHENTICATED
+                messageKey: errors.unauthenticated
+                requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+            sessionExpired:
+              value:
+                type: urn:flexipay:problem:session-expired
+                title: Session expired
+                status: 401
+                code: SESSION_EXPIRED
+                messageKey: errors.sessionExpired
+                requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+            invalidCredentials:
+              value:
+                type: urn:flexipay:problem:invalid-credentials
+                title: Invalid credentials
+                status: 401
+                code: INVALID_CREDENTIALS
+                messageKey: errors.invalidCredentials
+                requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+    Forbidden:
+      description: Rôle insuffisant, mot de passe temporaire à changer, ou jeton CSRF invalide.
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/X-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            forbidden:
+              value:
+                type: urn:flexipay:problem:forbidden
+                title: Forbidden
+                status: 403
+                code: FORBIDDEN
+                messageKey: errors.forbidden
+                requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+            passwordChangeRequired:
+              value:
+                type: urn:flexipay:problem:password-change-required
+                title: Password change required
+                status: 403
+                code: PASSWORD_CHANGE_REQUIRED
+                messageKey: errors.passwordChangeRequired
+                requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+            csrfTokenInvalid:
+              value:
+                type: urn:flexipay:problem:csrf-token-invalid
+                title: CSRF token invalid
+                status: 403
+                code: CSRF_TOKEN_INVALID
+                messageKey: errors.csrfTokenInvalid
+                requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+    NotFound:
+      description: Ressource introuvable **ou appartenant à un autre tenant** (indiscernables).
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/X-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: urn:flexipay:problem:not-found
+            title: Not found
+            status: 404
+            code: NOT_FOUND
+            messageKey: errors.notFound
+            requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+    Conflict:
+      description: Requête idempotente encore en cours, ou état de la ressource incompatible.
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/X-Request-Id'
+        Retry-After:
+          $ref: '#/components/headers/Retry-After'
+      content:
+        application/problem+json:
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/IdempotencyInProgressProblem'
+              - $ref: '#/components/schemas/Problem'
+          examples:
+            idempotencyInProgress:
+              value:
+                type: urn:flexipay:problem:idempotency-request-in-progress
+                title: Idempotent request in progress
+                status: 409
+                code: IDEMPOTENCY_REQUEST_IN_PROGRESS
+                messageKey: errors.idempotencyRequestInProgress
+                requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+                details:
+                  retryAfterSeconds: 1
+            resourceStateConflict:
+              value:
+                type: urn:flexipay:problem:resource-state-conflict
+                title: Resource state conflict
+                status: 409
+                code: RESOURCE_STATE_CONFLICT
+                messageKey: errors.resourceStateConflict
+                requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+    PayloadTooLarge:
+      description: Corps de requête trop volumineux.
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/X-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnsupportedMediaType:
+      description: Type de contenu non pris en charge (seul `application/json` est accepté).
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/X-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnprocessableFinancial:
+      description: |
+        Refus métier d'une opération financière, **sans aucune écriture au ledger** : solde
+        insuffisant ou plafond dépassé (au payeur), paiement refusé sans raison (au commerçant), ou
+        clé d'idempotence réutilisée avec un contenu différent.
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/X-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/InsufficientFundsProblem'
+              - $ref: '#/components/schemas/LimitExceededProblem'
+              - $ref: '#/components/schemas/Problem'
+          examples:
+            insufficientFunds:
+              summary: E7 — solde 30 000, paiement 45 000 (réponse au payeur)
+              value:
+                type: urn:flexipay:problem:insufficient-funds
+                title: Insufficient funds
+                status: 422
+                code: INSUFFICIENT_FUNDS
+                messageKey: errors.insufficientFunds
+                requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+                details:
+                  missingMillimes: 15000
+            limitExceeded:
+              summary: E8 — plafond jour 100 000, déjà 80 000, paiement 30 000
+              value:
+                type: urn:flexipay:problem:limit-exceeded
+                title: Limit exceeded
+                status: 422
+                code: LIMIT_EXCEEDED
+                messageKey: errors.limitExceeded
+                requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+                details:
+                  limitType: DAILY
+                  remainingMillimes: 20000
+            paymentDeclined:
+              summary: Réponse au commerçant, quelle que soit la raison du refus
+              value:
+                type: urn:flexipay:problem:payment-declined
+                title: Payment declined
+                status: 422
+                code: PAYMENT_DECLINED
+                messageKey: errors.paymentDeclined
+                requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+            idempotencyKeyReused:
+              value:
+                type: urn:flexipay:problem:idempotency-key-reused
+                title: Idempotency key reused
+                status: 422
+                code: IDEMPOTENCY_KEY_REUSED
+                messageKey: errors.idempotencyKeyReused
+                requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+    TooManyRequests:
+      description: Limite de débit atteinte (par IP, compte ou route).
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/X-Request-Id'
+        Retry-After:
+          $ref: '#/components/headers/Retry-After'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimit-Limit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimit-Remaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimit-Reset'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/RateLimitedProblem'
+          example:
+            type: urn:flexipay:problem:rate-limited
+            title: Rate limited
+            status: 429
+            code: RATE_LIMITED
+            messageKey: errors.rateLimited
+            requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+            details:
+              retryAfterSeconds: 30
+    InternalError:
+      description: Erreur interne générique (aucun détail technique exposé).
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/X-Request-Id'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: urn:flexipay:problem:internal-error
+            title: Internal error
+            status: 500
+            code: INTERNAL_ERROR
+            messageKey: errors.internal
+            requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+    ServiceUnavailable:
+      description: Service temporairement indisponible.
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/X-Request-Id'
+        Retry-After:
+          $ref: '#/components/headers/Retry-After'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ServiceUnavailableProblem'
+          example:
+            type: urn:flexipay:problem:service-unavailable
+            title: Service unavailable
+            status: 503
+            code: SERVICE_UNAVAILABLE
+            messageKey: errors.serviceUnavailable
+            requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
