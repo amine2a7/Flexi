@@ -183,11 +183,13 @@ Vérifier que la fonction équipe démarre : `claude --version`, lancement en **
 - Sur chaque poste, signature SSH des commits (clé personnelle de l'utilisateur, jamais dans le dépôt) :
   `git config --local gpg.format ssh` · `git config --local user.signingkey <chemin de la clé publique>` · `git config --local commit.gpgsign true`.
 - Ajouter la clé publique comme *Signing key* sur GitHub, puis activer **« Require signed commits »** dans la protection de la branche `main`.
+- Vérification locale des signatures SSH : créer un fichier de signataires autorisés hors du dépôt (ligne `<email> <clé publique>`) puis `git config --local gpg.ssh.allowedSignersFile <chemin du fichier>` ; sans ce fichier, `%G?` n'affiche pas `G` (S9-06, à confirmer à la mise en place).
 - Vérification : `git log --format='%h %G? %s' -5` doit afficher `G` (signature valide).
 - Les commits antérieurs à la mise en place (non signés) restent tels quels ; aucune réécriture d'historique.
 
 ### Tests des hooks (obligatoires à chaque reprise)
 Les hooks lisent leur entrée en JSON sur stdin : on les teste en leur envoyant des entrées simulées et en vérifiant le code de sortie (0 = laisse passer, 2 = bloque).
+Toujours **exécuter le hook comme fichier** (`bash .claude/hooks/x.sh`, `node .claude/hooks/x.js`), jamais son contenu via `bash -c` (sous Windows, guillemets et antislashs sont altérés et le test donne un faux résultat). `CLAUDE_PROJECT_DIR` au format Windows (`C:/Users/...`), pas `/c/Users/...`.
 ```bash
 export CLAUDE_PROJECT_DIR="$PWD"
 # Périmètres : doit bloquer (2), puis laisser passer (0)
