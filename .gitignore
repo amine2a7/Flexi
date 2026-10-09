@@ -13,9 +13,19 @@ key.properties
 *.mobileprovision
 google-services.json
 GoogleService-Info.plist
-# Fichiers d'état d'infrastructure (peuvent contenir des secrets)
+*.p8
+*.pfx
+*firebase-adminsdk*.json
+service-account*.json
+# Fichiers d'état et de variables d'infrastructure (peuvent contenir des secrets)
 *.tfstate
 *.tfstate.*
+*.tfvars
+# Environnements et clés locales
+.envrc
+id_rsa*
+id_ed25519*
+id_ecdsa*
 # .npmrc local (jeton éventuel) ; un .npmrc de projet sans jeton se force avec git add -f
 .npmrc
 dist/
