@@ -1,0 +1,76 @@
+diff --git a/.claude/hooks/guard-bash.sh b/.claude/hooks/guard-bash.sh
+index 596aaa2..2b2a36b 100644
+--- a/.claude/hooks/guard-bash.sh
++++ b/.claude/hooks/guard-bash.sh
+@@ -4,12 +4,34 @@ input=$(cat)
+ cmd=$(echo "$input" | node "$CLAUDE_PROJECT_DIR/.claude/hooks/lib/json-get.js" tool_input.command)
+ [ -z "$cmd" ] && exit 0
+ 
+-if echo "$cmd" | grep -qE 'git commit'; then
+-  if command -v gitleaks >/dev/null 2>&1; then
+-    if ! gitleaks protect --staged --no-banner >&2; then
+-      echo "Bloqué : secret détecté dans les fichiers indexés (gitleaks)." >&2
+-      exit 2
+-    fi
++# Commit détecté aussi sous les formes « git -C dir commit », « git -c k=v commit », espaces multiples (S9-02).
++commit_re='(^|[;&|(`[:space:]])git([[:space:]]+-[cC][[:space:]]*[^[:space:]]+)*[[:space:]]+commit([[:space:]]|$)'
++if echo "$cmd" | grep -qE "$commit_re"; then
++  # gitleaks ne scanne que l'index : refuser ce qui commit hors index ou saute la vérification (S9-02).
++  set -f
++  for tok in $cmd; do
++    case "$tok" in
++      --all|--include|--only|--no-verify|-i|-o|-n)
++        echo "Bloqué : « $tok » sur git commit contourne le scan de l'index. Indexe avec git add puis commit sans cette option." >&2
++        exit 2 ;;
++      --*) ;;
++      -[a-zA-Z]*)
++        if [[ "$tok" =~ ^-[a-zA-Z]+$ ]] && [[ "$tok" == *a* || "$tok" == *n* ]]; then
++          echo "Bloqué : « $tok » sur git commit (-a ou -n) contourne le scan de l'index. Indexe avec git add puis commit sans cette option." >&2
++          exit 2
++        fi ;;
++    esac
++  done
++  set +f
++  # Échec fermé (CF-02) : pas de commit sans scan de secrets.
++  if ! command -v gitleaks >/dev/null 2>&1; then
++    echo "Bloqué : gitleaks est introuvable, le commit est refusé sans scan de secrets (échec fermé)." >&2
++    echo "Installe gitleaks (voir docs/handoff/README.md §14), ou laisse l'utilisateur commiter lui-même après vérification." >&2
++    exit 2
++  fi
++  if ! gitleaks protect --staged --no-banner >&2; then
++    echo "Bloqué : secret détecté dans les fichiers indexés (gitleaks)." >&2
++    exit 2
+   fi
+ fi
+ 
+diff --git a/docs/handoff/README.md b/docs/handoff/README.md
+index a2345e4..4ca97ec 100644
+--- a/docs/handoff/README.md
++++ b/docs/handoff/README.md
+@@ -141,7 +141,7 @@ DÉCISIONS NÉCESSAIRES : … (ou « aucune »)
+ |---|---|---|
+ | PreToolUse (Edit/Write) | `enforce-scope.js` | Bloque une écriture hors périmètre |
+ | PreToolUse (Edit/Write/NotebookEdit) | `protect-files.js` | Bloque `.env*`, `secrets/`, `*.pem`, `*.key`, migrations existantes (chemins Windows, casse, flux `::$DATA`, noms courts 8.3) |
+-| PreToolUse (Bash) | `guard-bash.sh` | gitleaks avant commit ; bloque UPDATE/DELETE/TRUNCATE/DROP sur ledger et audit |
++| PreToolUse (Bash) | `guard-bash.sh` | gitleaks avant commit (**commit refusé si gitleaks est absent**, CF-02) ; bloque les écritures SQL destructrices sur ledger et audit |
+ | PostToolUse (Edit/Write) | `format.sh` | Prettier / dart format |
+ | TaskCompleted | `task-completed.js` | Refuse la complétion si lint, typecheck ou tests du périmètre échouent |
+ | TeammateIdle | `teammate-idle.js` | Réclame le rapport (j) à un coéquipier qui a travaillé sans l'envoyer |
+@@ -159,7 +159,7 @@ DÉCISIONS NÉCESSAIRES : … (ou « aucune »)
+ | Docker Desktop + WSL2 | Docker 24+, Compose v2 | PostgreSQL 16, Redis, Testcontainers |
+ | Flutter SDK (canal stable) + Android Studio | Flutter 3.22+ / Dart 3.4+ ; Android SDK et un émulateur ou appareil | Apps mobiles (iOS plus tard : nécessite un Mac) |
+ | Claude Code | 2.1.222+ (hooks TaskCompleted / TeammateIdle) | Équipe d'agents |
+-| gitleaks (recommandé) | 8+ | Hook `guard-bash.sh` avant commit, CI |
++| gitleaks (**obligatoire**) | 8+ | Hook `guard-bash.sh` : sans gitleaks, aucun commit depuis Claude (CF-02) ; CI |
+ 
+ ### Commandes de vérification (Git Bash)
+ ```bash
+@@ -168,7 +168,7 @@ pnpm -v                                 # doit afficher une version, pas une err
+ docker --version && docker compose version && docker info --format '{{.ServerVersion}}'
+ flutter --version && dart --version && flutter doctor   # Android : tout en ✓
+ claude --version
+-gitleaks version                        # recommandé
++gitleaks version                        # obligatoire (sinon tout commit depuis Claude est refusé)
+ echo "AGENT_TEAMS=$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"   # doit valoir 1 (défini dans .claude/settings.json)
+ git config --local user.name && git config --local user.email   # identité du dépôt
+ git config core.autocrlf                # avec .gitattributes (eol=lf), les hooks .sh restent en LF
