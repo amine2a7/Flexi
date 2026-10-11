@@ -36,3 +36,5 @@ build/
 coverage/
 .DS_Store
 .claude/settings.local.json
+.turbo/
+*.tsbuildinfo
