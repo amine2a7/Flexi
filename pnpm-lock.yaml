@@ -48,6 +48,9 @@ importers:
       '@testcontainers/redis':
         specifier: 11.14.0
         version: 11.14.0
+      pg:
+        specifier: 8.23.0
+        version: 8.23.0
       testcontainers:
         specifier: 11.14.0
         version: 11.14.0
@@ -67,9 +70,6 @@ importers:
       ioredis:
         specifier: 5.11.1
         version: 5.11.1
-      pg:
-        specifier: 8.23.0
-        version: 8.23.0
       typescript:
         specifier: 6.0.3
         version: 6.0.3

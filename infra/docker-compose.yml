@@ -1,0 +1,55 @@
+# FlexiPay — environnement de DÉVELOPPEMENT local uniquement (jamais staging ni production).
+# Démarrage (depuis la racine du dépôt) :
+#   docker compose -f infra/docker-compose.yml --env-file infra/.env.example up -d   # valeurs factices
+#   ou : copier infra/.env.example vers infra/.env (non commité) et changer les mots de passe.
+# Règles (menaces DC-1, DC-2, DC-4, SC-7) :
+#   - ports liés à 127.0.0.1 uniquement ;
+#   - aucun secret en dur : variables obligatoires (${VAR:?...}) ;
+#   - images officielles épinglées par version ET empreinte sha256 (mêmes valeurs que infra/testing/src/images.ts, vérifié par test) ;
+#   - pas de privileged, pas de socket Docker, pas de network_mode: host.
+name: flexipay-dev
+
+services:
+  postgres:
+    image: postgres:16.15-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required (see infra/.env.example)}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required (see infra/.env.example)}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required (see infra/.env.example)}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --auth-local=scram-sha-256
+    ports:
+      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+
+  redis:
+    image: redis:7.4.11-alpine@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required (see infra/.env.example)}
+    command: ['sh', '-c', 'exec redis-server --requirepass "$$REDIS_PASSWORD" --appendonly yes']
+    ports:
+      - '127.0.0.1:${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  postgres-data:
+  redis-data:
