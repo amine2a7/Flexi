@@ -1,0 +1,32 @@
+{
+  "name": "@flexipay/ui-tokens",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Design tokens: docs/design/design-tokens.json to Tailwind preset and Flutter ThemeData",
+  "type": "module",
+  "exports": {
+    "./tailwind-preset": {
+      "types": "./generated/tailwind-preset.d.cts",
+      "default": "./generated/tailwind-preset.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "generated",
+    "dart"
+  ],
+  "scripts": {
+    "generate": "tsc -p tsconfig.build.json && node dist/generate.js",
+    "build": "tsc -p tsconfig.build.json && node dist/generate.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@flexipay/config": "workspace:*",
+    "@types/node": "22.20.4",
+    "eslint": "10.11.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.11"
+  }
+}

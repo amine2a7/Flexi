@@ -1,0 +1,11 @@
+name: flexipay_tokens
+description: FlexiPay design tokens and ThemeData (generated file in lib/, source docs/design/design-tokens.json).
+publish_to: none
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.27.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
