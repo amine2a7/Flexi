@@ -174,6 +174,13 @@ git config --local user.name && git config --local user.email   # identité du d
 git config core.autocrlf                # avec .gitattributes (eol=lf), les hooks .sh restent en LF
 ```
 
+### Pièges Windows (constatés le 2026-10-11 sur le PC personnel)
+- **`echo` de Git Bash et chemins Windows** : `echo "C:\Program Files\Docker\Docker\resources\bin"` interprète `\r` et `\b` (retour chariot, retour arrière) et produit un chemin corrompu, y compris dans un fichier écrit par redirection. Utiliser des barres obliques (`C:/Program Files/...` ou `/c/Program Files/...`) ou `printf '%s\n' '<chemin>'` (guillemets simples).
+- **CLI `claude`** : l'extension VS Code ne fournit pas la commande `claude` dans le terminal. Installer la CLI (`npm install -g @anthropic-ai/claude-code` ou l'installeur officiel), puis vérifier `claude --version` (2.1.296 sur le PC personnel). La fonction équipe se lance depuis la CLI en terminal interactif.
+- **Docker hors PATH** : Docker Desktop installe ses binaires dans `C:/Program Files/Docker/Docker/resources/bin`. Si `docker` est introuvable, rouvrir le terminal après le premier démarrage de Docker Desktop, ou ajouter ce dossier au PATH utilisateur.
+- **Hyperviseur non chargé** (N-02) : `docker run hello-world` → `open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified`, et les logs (`%LOCALAPPDATA%/Docker/log/host/com.docker.backend.exe.log`) affichent `HCS_E_HYPERV_NOT_INSTALLED`, alors que la virtualisation est active dans le BIOS et que WSL, VirtualMachinePlatform et Hyper-V sont activés. Diagnostic : `(Get-CimInstance Win32_ComputerSystem).HypervisorPresent` vaut `False`. Correctif (PowerShell **administrateur**) : `bcdedit /set hypervisorlaunchtype auto`, puis **redémarrage complet** (pas un arrêt avec démarrage rapide). Si la valeur était déjà `Auto` : `wsl --install --no-distribution` puis redémarrage.
+- **gitleaks** : installé par `winget install Gitleaks.Gitleaks` ; rouvrir le terminal pour qu'il soit dans le PATH. Il est obligatoire (CF-02) : sans lui, tout commit lancé par Claude est refusé.
+
 ### Démarrage de la fonction équipe
 Vérifier que la fonction équipe démarre : `claude --version`, lancement en **terminal interactif** (pas l'extension VS Code), `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`. Si `TaskCompleted` et `TeammateIdle` ne se déclenchent toujours pas, passer au hook `SubagentStop`.
 

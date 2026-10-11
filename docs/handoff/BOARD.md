@@ -3,30 +3,32 @@
 Tenu par le lead (`team-lead`) à chaque étape. Statuts : À faire · En cours · En revue · Bloqué · Terminé.
 Préfixe `TEST-FIRST:` = tâche de tests écrits avant le code (tests rouges acceptés).
 
-## Phase en cours : Phase 0 – Fondations — passe « équipe réduite » TERMINÉE le 2026-10-09 ; 17 tâches en attente d'outils (reprise sur PC personnel, README §14)
+## Phase en cours : Phase 0 – Fondations — passe « équipe réduite » TERMINÉE le 2026-10-09 ; reprise sur PC personnel le 2026-10-11 (README §14) : pnpm, Docker et gitleaks OK, Flutter absent ; vague 1 préparée (B1, B2, B4, D1, S1)
 
 Objectif (roadmap) : monorepo, CI, Docker Compose (Postgres, Redis), lint/format ; pipeline de génération des tokens ; environnement dev. **Staging exclu de cette passe** (après le choix de l'hébergeur). Aucune fonctionnalité métier.
 Critère de fin : pipeline vert ; securite OK ; design OK sur les coquilles.
 
-### Prérequis (vérifiés par le lead le 2026-10-09)
+### Prérequis (vérifiés par le lead le 2026-10-09, revérifiés le 2026-10-11 sur le PC personnel, après correctif de l'hyperviseur)
 | ID | Sujet | État | Bloque |
 |---|---|---|---|
-| PRE-1 | pnpm utilisable | ❌ bloqué par Device Guard sur le PC d'entreprise — **pas de contournement** (décision) ; reprise sur PC personnel | B1 et toutes les tâches JS |
-| PRE-2 | Docker | ❌ introuvable (ni PATH, ni C:\Program Files\Docker) | B4, tests d'intégration |
-| PRE-3 | Flutter SDK (Android) | ❌ introuvable (ni PATH, ni emplacements usuels) | M1–M3 |
-| PRE-4 | Dépôt git + remote | ✅ `git init` (main), origin = https://github.com/amine2a7/Flexi, commit 0219ad1 (auteur corrigé), rien de poussé | — |
+| PRE-1 | pnpm utilisable | ✅ PC personnel : pnpm 9.15.4 s'exécute (2026-10-11). PC d'entreprise : bloqué par Device Guard, pas de contournement (décision) | — |
+| PRE-2 | Docker | ❌ (N-02) Docker Desktop installé (`C:\Program Files\Docker\Docker\resources\bin`esourcesin`) mais hors PATH ; `docker run hello-world` → « Docker Desktop is unable to start » (2026-10-11) | B4, tests d'intégration (« En attente — Docker ») |
+| PRE-3 | Flutter SDK (Android) | ❌ toujours absent (`flutter` introuvable, revérifié le 2026-10-11) | M1–M3, M2 (thème), test Dart de D1 |
+| PRE-4 | Dépôt git + remote | ✅ origin = https://github.com/amine2a7/Flexi ; identité `--local` reposée sur le PC personnel ; `main` recréée à 8e2a02a et poussée par l'utilisateur (2026-10-11, après correction d'un 403 d'identifiants) ; PR `fix/cf-chaine-dev` → `main` à ouvrir par l'utilisateur (`gh` absent), sans fusion | — |
 | PRE-5 | Staging | ⏸ exclu de cette passe (décision utilisateur) | — |
+| PRE-6 | gitleaks | ✅ (N-01 fermé) gitleaks 8.30.1 (winget) ; CF-02/S9-02 appliqué et testé (2026-10-11) | — |
+| PRE-7 | Protection de `main` sur GitHub | ⏳ à régler par l'utilisateur : PR obligatoire, 0 approbation, signature reportée à S9-06 (décision du 2026-10-11) | Fusion de la PR CF |
 
 ### Tâches
 | ID | Titre | Responsable | Statut | Dépend de | Relecteur |
 |---|---|---|---|---|---|
-| P0-B1 | Monorepo pnpm + Turborepo : workspace, `turbo.json`, `tsconfig.base`, ESLint/Prettier partagés (`packages/config`), scripts lint/typecheck/test/build | backend | En attente — outils | PRE-1 | securite (S1) |
-| P0-B2 | `packages/shared` : squelette Zod, types, constantes (millimes, bps), outillage de tests | backend | En attente — outils | B1 | securite (S1) |
-| P0-B3 | `TEST-FIRST:` puis squelette `apps/api` NestJS : guard global (refus par défaut), `@Public()`, `GET /health`, validation de la config par Zod, logger avec masquage, en-têtes (helmet), rate limiting de base | backend | En attente — outils | B1, B2 | securite (S2) |
-| P0-B4 | Docker Compose dev (PostgreSQL 16, Redis, healthchecks, aucun secret en dur) + socle Testcontainers | backend | En attente — outils | B1, PRE-2 | securite (S1) |
+| P0-B1 | Monorepo pnpm + Turborepo : workspace, `turbo.json`, `tsconfig.base`, ESLint/Prettier partagés (`packages/config`), scripts lint/typecheck/test/build | backend | À faire (vague 1) | PRE-1 | securite (S1) |
+| P0-B2 | `packages/shared` : squelette Zod, types, constantes (millimes, bps), outillage de tests | backend | À faire (vague 1) | B1 | securite (S1) |
+| P0-B3 | `TEST-FIRST:` puis squelette `apps/api` NestJS : guard global (refus par défaut), `@Public()`, `GET /health`, validation de la config par Zod, logger avec masquage, en-têtes (helmet), rate limiting de base | backend | À faire (après la vague 1) | B1, B2 | securite (S2) |
+| P0-B4 | Docker Compose dev (PostgreSQL 16, Redis, healthchecks, aucun secret en dur) + socle Testcontainers | backend | À faire (vague 1) | B1, PRE-2 | securite (S1) |
 | P0-B5 | Rédaction du contrat initial `docs/handoff/contracts/openapi.yaml` (health, format d'erreur, Idempotency-Key, pagination, montants en millimes, auth par cookie/bearer, en-têtes) — **sans génération de client ni code** ; `[CONTRAT]` annoncé (frontend/mobile inactifs : consigné dans le rapport) | backend | Terminé (securite OK, contrat e8b0a175) | — | securite (P0-S6) |
-| P0-B6 | CI GitHub Actions : lint, typecheck, test, build, gitleaks, `pnpm audit`, CodeQL/Semgrep, Trivy, job Flutter ; pas de déploiement | backend | En attente — outils | B1, PRE-4 | securite (S3) |
-| P0-D1 | `packages/ui-tokens` : génération `design-tokens.json` → preset Tailwind + `ThemeData` Flutter, tests (dont contrastes AA des paires texte/fond) | design | En attente — outils | B1 | securite (S1, dépendances) |
+| P0-B6 | CI GitHub Actions : lint, typecheck, test, build, gitleaks, `pnpm audit`, CodeQL/Semgrep, Trivy, job Flutter ; pas de déploiement | backend | À faire (après la vague 1) | B1, PRE-4 | securite (S3) |
+| P0-D1 | `packages/ui-tokens` : génération `design-tokens.json` → preset Tailwind + `ThemeData` Flutter, tests (dont contrastes AA des paires texte/fond) | design | À faire (vague 1) | B1 | securite (S1, dépendances) |
 | P0-D2 | Spec `docs/design/specs/fondations-composants.md` : bouton, champ, badge de statut, carte, toast, montant, squelette, états vide/erreur/hors connexion | design | Terminé (hypothèses GET /me à confirmer ; fidélité à revoir en D4) | — | — |
 | P0-D3 | Spec `docs/design/specs/navigation.md` : sidebar web (3 espaces), barres basses Employé et Pro, écrans session expirée / hors connexion | design | Terminé (hypothèses GET /me à confirmer ; fidélité à revoir en D4) | — | — |
 | P0-D4 | Revue de fidélité des coquilles web et mobile | design | En attente — outils | F2, M2 | — |
@@ -36,7 +38,7 @@ Critère de fin : pipeline vert ; securite OK ; design OK sur les coquilles.
 | P0-M1 | Squelettes `apps/mobile-employe` et `apps/mobile-pro` : Riverpod, go_router, dio, freezed, lints stricts, l10n FR/AR/EN + RTL | mobile | En attente — outils | PRE-3 | securite (S4) |
 | P0-M2 | Thème généré depuis les tokens + coquilles barre basse + écran de santé via client Dart généré + formateur de montants unique (tests) | mobile | En attente — outils | M1, D1, D3, B5 | design (D4) |
 | P0-M3 | Socle sécurité mobile : `flutter_secure_storage`, intercepteur dio avec pinning (configurable), blocage de capture d'écran, build release obfusqué | mobile | En attente — outils | M1 | securite (S4) |
-| P0-S1 | Revue monorepo, dépendances, Compose, ui-tokens | securite | En attente — outils | B1, B2, B4, D1 | — |
+| P0-S1 | Revue monorepo, dépendances, Compose, ui-tokens | securite | À faire (vague 1) | B1, B2, B4, D1 | — |
 | P0-S2 | Revue squelette API et contrat initial | securite | En attente — outils | B3, B5 | — |
 | P0-S3 | Revue CI (permissions des jobs, secrets, scans) | securite | En attente — outils | B6 | — |
 | P0-S4 | Revue squelettes web et mobile (en-têtes, cookies, stockage, pinning, capture) | securite | En attente — outils | F1, F3, M1, M3 | — |
@@ -46,7 +48,8 @@ Critère de fin : pipeline vert ; securite OK ; design OK sur les coquilles.
 | P0-B7 | Report des décisions du 2026-10-09 dans le contrat (SHA-256 82bf61bd) | backend | Terminé (securite OK) | décisions | securite (P0-S8) |
 | P0-S7 | Report des décisions de sécurité (SEC-D7, SEC-S7, ASVS 5.0, modèle de menaces v3) | securite | Terminé | décisions | — |
 | P0-S8 | Revue de P0-B7 et constat S8-01 | securite | Terminé (OK, 0 ouvert) | B7 | — |
-| P0-L1 | Correctifs CF-01 à CF-09 sur branche dédiée (un commit par constat) | lead | En revue (CF-01..09 + S9-01..06 commités ; CF-02/S9-02 en patch, à commiter avec gitleaks ; revérification securite interrompue par la limite d’usage) | décisions commitées | securite |
+| P0-L1 | Correctifs CF-01 à CF-09 sur branche dédiée (un commit par constat) | lead | En revue (CF-01..09 + S9-01..06 commités ; CF-02/S9-02 appliqué et testé le 2026-10-11 : commit normal → 0, faux secret indexé → 2, `-a`/`--no-verify` → 2, gitleaks absent → 2 ; revérification securite à faire) | décisions commitées | securite |
+| P0-S9 | Revue securite de `fix/cf-chaine-dev` (CF-01..09, S9-01..07) — constats de poste du 2026-10-11 : **N-01** gitleaks absent → fermé par le lead (installé, CF-02 appliqué et testé) ; **N-02** Docker ne démarre pas → fermé par le lead (hyperviseur) | securite | En cours (verdict OK provisoire ; revérification de CF-02/S9-02, N-01 et N-02 à faire dans S1) | L1 | — |
 
 ## Historique
 
