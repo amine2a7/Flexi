@@ -1,0 +1,33 @@
+{
+  "name": "@flexipay/shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared Zod schemas, types and constants (money in integer millimes, rates in basis points)",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@flexipay/config": "workspace:*",
+    "@types/node": "22.20.4",
+    "eslint": "10.11.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.11"
+  }
+}
