@@ -141,7 +141,7 @@ DÉCISIONS NÉCESSAIRES : … (ou « aucune »)
 |---|---|---|
 | PreToolUse (Edit/Write) | `enforce-scope.js` | Bloque une écriture hors périmètre |
 | PreToolUse (Edit/Write/NotebookEdit) | `protect-files.js` | Bloque `.env*`, `secrets/`, `*.pem`, `*.key`, migrations existantes (chemins Windows, casse, flux `::$DATA`, noms courts 8.3) |
-| PreToolUse (Bash) | `guard-bash.sh` | gitleaks avant commit ; bloque UPDATE/DELETE/TRUNCATE/DROP sur ledger et audit |
+| PreToolUse (Bash) | `guard-bash.sh` | gitleaks avant commit (**commit refusé si gitleaks est absent**, CF-02) ; bloque les écritures SQL destructrices sur ledger et audit |
 | PostToolUse (Edit/Write) | `format.sh` | Prettier / dart format |
 | TaskCompleted | `task-completed.js` | Refuse la complétion si lint, typecheck ou tests du périmètre échouent |
 | TeammateIdle | `teammate-idle.js` | Réclame le rapport (j) à un coéquipier qui a travaillé sans l'envoyer |
@@ -159,7 +159,7 @@ DÉCISIONS NÉCESSAIRES : … (ou « aucune »)
 | Docker Desktop + WSL2 | Docker 24+, Compose v2 | PostgreSQL 16, Redis, Testcontainers |
 | Flutter SDK (canal stable) + Android Studio | Flutter 3.22+ / Dart 3.4+ ; Android SDK et un émulateur ou appareil | Apps mobiles (iOS plus tard : nécessite un Mac) |
 | Claude Code | 2.1.222+ (hooks TaskCompleted / TeammateIdle) | Équipe d'agents |
-| gitleaks (recommandé) | 8+ | Hook `guard-bash.sh` avant commit, CI |
+| gitleaks (**obligatoire**) | 8+ | Hook `guard-bash.sh` : sans gitleaks, aucun commit depuis Claude (CF-02) ; CI |
 
 ### Commandes de vérification (Git Bash)
 ```bash
@@ -168,7 +168,7 @@ pnpm -v                                 # doit afficher une version, pas une err
 docker --version && docker compose version && docker info --format '{{.ServerVersion}}'
 flutter --version && dart --version && flutter doctor   # Android : tout en ✓
 claude --version
-gitleaks version                        # recommandé
+gitleaks version                        # obligatoire (sinon tout commit depuis Claude est refusé)
 echo "AGENT_TEAMS=$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"   # doit valoir 1 (défini dans .claude/settings.json)
 git config --local user.name && git config --local user.email   # identité du dépôt
 git config core.autocrlf                # avec .gitattributes (eol=lf), les hooks .sh restent en LF
