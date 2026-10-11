@@ -1,0 +1,51 @@
+{
+  "name": "flexipay",
+  "private": true,
+  "description": "FlexiPay monorepo (pnpm workspaces + Turborepo)",
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=22.14.0 <23",
+    "pnpm": ">=9.15.4 <10"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:integration": "turbo run test:integration --concurrency=1",
+    "test:e2e": "node -e \"console.log('test:e2e: no end-to-end suite yet (no-op until apps/web and apps/api exist)')\"",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "prettier": "@flexipay/config/prettier",
+  "devDependencies": {
+    "@flexipay/config": "workspace:*",
+    "prettier": "3.9.8",
+    "turbo": "2.11.4"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [],
+    "overrides": {
+      "@grpc/grpc-js@^1": "1.13.6",
+      "@types/dockerode@^4": "4.0.1",
+      "acorn@^8": "8.18.0",
+      "ansi-regex@^6": "6.3.0",
+      "bare-fs@^4": "4.8.2",
+      "chai@^6": "6.2.2",
+      "ignore@^7": "7.0.10",
+      "nanoid@^3": "3.3.19",
+      "pg-cloudflare@^1": "1.4.0",
+      "pg-connection-string@^2": "2.14.0",
+      "pg-protocol@^1": "1.16.0",
+      "postcss@^8": "8.5.28",
+      "readable-stream@^4": "4.7.0",
+      "rolldown@^1": "1.2.11",
+      "source-map-js@^1": "1.2.2",
+      "std-env@^4": "4.2.0",
+      "tar-stream@^3": "3.2.1",
+      "tinyrainbow@^3": "3.1.1",
+      "uuid@^10": "11.1.1",
+      "vite@^8": "8.3.1"
+    }
+  }
+}

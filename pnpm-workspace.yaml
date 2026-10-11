@@ -1,0 +1,6 @@
+# Workspace FlexiPay. Paquets internes référencés en `workspace:*` uniquement (menace SC-2).
+# apps/mobile-* (Flutter) n'ont pas de package.json : pnpm les ignore.
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'infra/testing'

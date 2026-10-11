@@ -1,0 +1,17 @@
+# Générés ou externes
+node_modules/
+dist/
+coverage/
+.turbo/
+pnpm-lock.yaml
+# Documentation et fichiers du lead : pas de reformatage automatique (format.sh s'exécute sur chaque écriture)
+**/*.md
+.claude/
+docs/handoff/contracts/
+# Flutter (formaté par dart format)
+apps/mobile-employe/
+apps/mobile-pro/
+# Design (demande de design, D1) : JSON source aligné à la main ; fichiers générés comparés octet à octet par les tests
+docs/design/design-tokens.json
+packages/ui-tokens/generated/
+packages/ui-tokens/dart/
