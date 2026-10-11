@@ -199,6 +199,8 @@ gitleaks version                        # obligatoire (sinon tout commit depuis 
 echo "AGENT_TEAMS=$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"   # doit valoir 1 (défini dans .claude/settings.json)
 git config --local user.name && git config --local user.email   # identité du dépôt
 git config core.autocrlf                # avec .gitattributes (eol=lf), les hooks .sh restent en LF
+pnpm turbo telemetry disable            # une fois par poste (S1-07) ; en CI : TURBO_TELEMETRY_DISABLED=1
+pnpm audit -P                           # audit des dépendances de production (« --prod » est refusé par la règle deny *prod*)
 ```
 
 ### Pièges Windows (constatés le 2026-10-11 sur le PC personnel)

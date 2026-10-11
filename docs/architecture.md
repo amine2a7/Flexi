@@ -24,8 +24,9 @@ docs/  infra/  .claude/  CLAUDE.md
 | Sujet | Choix |
 |---|---|
 | Mobile | **Flutter** (Riverpod, go_router, dio, freezed, flutter_secure_storage, local_auth, mobile_scanner, qr_flutter) |
-| Contrat API | OpenAPI généré par NestJS → clients TypeScript (web) et Dart (mobile) |
-| Design tokens | `docs/design/design-tokens.json` → Tailwind (web) et `ThemeData` (Flutter), via un script de génération |
+| Contrat API | **Contrat d'abord** : `docs/handoff/contracts/openapi.yaml`, écrit à la main, est la source de vérité (décision du 2026-10-11). L'API NestJS l'implémente et sa conformité est vérifiée en CI. Web : client généré par `openapi-typescript` + `openapi-fetch` dans `packages/api-client` ; mobile : `openapi-generator` cible `dart-dio` (plus tard) |
+| Données fictives (web) | MSW simule l'API avec des données conformes aux types du contrat ; isolées et désactivées au build de production (vérifié par test) |
+| Design tokens | `docs/design/design-tokens.json` → `packages/ui-tokens` (`pnpm --filter @flexipay/ui-tokens generate`) → preset Tailwind (`generated/tailwind-preset.cjs`) et paquet Dart (`dart/lib/flexipay_tokens.dart`, `FlexiTheme.light()`) |
 | Argent | Millimes entiers `BIGINT`, taux en bps, ledger en partie double immuable |
 | Isolation | Row-Level Security PostgreSQL par `company_id` / `merchant_id` |
 | Jobs | BullMQ : expirations, règlements J+2, notifications, réconciliation |
