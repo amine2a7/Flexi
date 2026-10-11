@@ -1,0 +1,5 @@
+#!/bin/sh
+# Hook git natif (S1-01) : gitleaks scanne l'index réel du commit, APRÈS l'indexation
+# (y compris « commit -a », « commit <chemin> », alias). Activé par : git config --local core.hooksPath .githooks
+command -v gitleaks >/dev/null 2>&1 || { echo "Bloqué : gitleaks est absent, commit refusé sans scan de secrets (échec fermé). Voir docs/handoff/README.md §14." >&2; exit 1; }
+exec gitleaks git --staged --redact --no-banner --exit-code 1 .

@@ -168,7 +168,8 @@ DÉCISIONS NÉCESSAIRES : … (ou « aucune »)
 |---|---|---|
 | PreToolUse (Edit/Write) | `enforce-scope.js` | Bloque une écriture hors périmètre |
 | PreToolUse (Edit/Write/NotebookEdit) | `protect-files.js` | Bloque `.env*`, `secrets/`, `*.pem`, `*.key`, migrations existantes (chemins Windows, casse, flux `::$DATA`, noms courts 8.3) |
-| PreToolUse (Bash) | `guard-bash.sh` | gitleaks avant commit (**commit refusé si gitleaks est absent**, CF-02) ; bloque les écritures SQL destructrices sur ledger et audit |
+| git pre-commit (natif) | `.githooks/pre-commit` | gitleaks sur l'index réel du commit, après l'indexation (`-a`, chemins, alias compris) ; refus si gitleaks est absent (S1-01). Protège aussi les commits de l'utilisateur. Activé par poste (§14) |
+| PreToolUse (Bash) | `guard-bash.sh` → `guard-bash.js` | Analyse le seul segment `git … commit` (jamais le message) : refuse `-n`/`--no-verify` (et abréviations), toute modification de `core.hooksPath` ou de `.githooks/`, les alias à la volée, `commit-tree` ; vérifie avant commit que le hook natif est actif et intact (S1-01, S1-02). Aide : SQL destructeur sur ledger et audit, hors messages de commit (CF-09). Une modification de `.githooks/` déjà commité est commitée par l'utilisateur |
 | PostToolUse (Edit/Write) | `format.sh` | Prettier / dart format |
 | TaskCompleted | `task-completed.js` | Refuse la complétion si lint, typecheck ou tests du périmètre échouent |
 | TeammateIdle | `teammate-idle.js` | Réclame le rapport (j) à un coéquipier qui a travaillé sans l'envoyer |
@@ -186,7 +187,7 @@ DÉCISIONS NÉCESSAIRES : … (ou « aucune »)
 | Docker Desktop + WSL2 | Docker 24+, Compose v2 | PostgreSQL 16, Redis, Testcontainers |
 | Flutter SDK (canal stable) + Android Studio | Flutter 3.22+ / Dart 3.4+ ; Android SDK et un émulateur ou appareil | Apps mobiles (iOS plus tard : nécessite un Mac) |
 | Claude Code | 2.1.222+ (hooks TaskCompleted / TeammateIdle) | Équipe d'agents |
-| gitleaks (**obligatoire**) | 8+ | Hook `guard-bash.sh` : sans gitleaks, aucun commit depuis Claude (CF-02) ; CI |
+| gitleaks (**obligatoire**) | 8+ | Hook git natif `.githooks/pre-commit` : sans gitleaks, aucun commit (CF-02, S1-01) ; CI |
 
 ### Commandes de vérification (Git Bash)
 ```bash
@@ -195,7 +196,8 @@ pnpm -v                                 # doit afficher une version, pas une err
 docker --version && docker compose version && docker info --format '{{.ServerVersion}}'
 flutter --version && dart --version && flutter doctor   # Android : tout en ✓
 claude --version
-gitleaks version                        # obligatoire (sinon tout commit depuis Claude est refusé)
+gitleaks version                        # obligatoire (sinon tout commit est refusé)
+git config --local core.hooksPath .githooks   # active le hook natif (une fois par clone) ; vérifier avec --get
 echo "AGENT_TEAMS=$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"   # doit valoir 1 (défini dans .claude/settings.json)
 git config --local user.name && git config --local user.email   # identité du dépôt
 git config core.autocrlf                # avec .gitattributes (eol=lf), les hooks .sh restent en LF
@@ -230,6 +232,8 @@ Toujours **exécuter le hook comme fichier** (`bash .claude/hooks/x.sh`, `node .
 export CLAUDE_PROJECT_DIR="$PWD"
 # Périmètres de tous les agents (55 cas, dont ux, qualite, conformite) : tous doivent passer
 node --test .claude/hooks/test/enforce-scope.test.js
+# guard-bash (53 cas : -n, --no-verify, core.hooksPath, .githooks, faux positifs S1-02, SQL) : tous doivent passer
+node --test .claude/hooks/test/guard-bash.test.js
 # Périmètres : doit bloquer (2), puis laisser passer (0)
 echo '{"agent_type":"securite","tool_input":{"file_path":"apps/api/x.ts"}}' | node .claude/hooks/enforce-scope.js; echo "code $?"
 echo '{"agent_type":"securite","tool_input":{"file_path":"docs/security/x.md"}}' | node .claude/hooks/enforce-scope.js; echo "code $?"

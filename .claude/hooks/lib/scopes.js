@@ -14,6 +14,7 @@ const LEAD_ONLY = [
   'docs/handoff/reports/',
   'CLAUDE.md',
   '.claude/',
+  '.githooks/',
 ];
 
 const TEST_FILE = /(^|\/)(test|tests|__tests__|e2e|integration_test)\/|\.(spec|test)\.(ts|tsx|js)$|_test\.dart$/;
