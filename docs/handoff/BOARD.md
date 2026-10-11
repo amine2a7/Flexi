@@ -12,7 +12,7 @@ Critère de fin : pipeline vert ; securite OK ; design OK sur les coquilles.
 | ID | Sujet | État | Bloque |
 |---|---|---|---|
 | PRE-1 | pnpm utilisable | ✅ PC personnel : pnpm 9.15.4 s'exécute (2026-10-11). PC d'entreprise : bloqué par Device Guard, pas de contournement (décision) | — |
-| PRE-2 | Docker | ❌ (N-02) Docker Desktop installé (`C:\Program Files\Docker\Docker\resources\bin`esourcesin`) mais hors PATH ; `docker run hello-world` → « Docker Desktop is unable to start » (2026-10-11) | B4, tests d'intégration (« En attente — Docker ») |
+| PRE-2 | Docker | ⚠️ (N-02 fermé le 2026-10-11 : hyperviseur activé, Docker 29.8.2 a fonctionné, Testcontainers 5/5) — depuis 12h56 le moteur est arrêté : disque C: plein (« not enough space on the disk »), image disque déplacée sur D: par l'utilisateur, place à libérer sur C: | B4 (compose healthy, test:integration)
 | PRE-3 | Flutter SDK (Android) | ❌ toujours absent (`flutter` introuvable, revérifié le 2026-10-11) | M1–M3, M2 (thème), test Dart de D1 |
 | PRE-4 | Dépôt git + remote | ✅ origin = https://github.com/amine2a7/Flexi ; identité `--local` reposée sur le PC personnel ; `main` recréée à 8e2a02a et poussée par l'utilisateur (2026-10-11, après correction d'un 403 d'identifiants) ; PR `fix/cf-chaine-dev` → `main` à ouvrir par l'utilisateur (`gh` absent), sans fusion | — |
 | PRE-5 | Staging | ⏸ exclu de cette passe (décision utilisateur) | — |
@@ -26,13 +26,13 @@ Critère de fin : pipeline vert ; securite OK ; design OK sur les coquilles.
 | P0-B2 | `packages/shared` : squelette Zod, types, constantes (millimes, bps), outillage de tests | backend | Terminé (securite OK, commit 4431e45) | B1 | securite (S1) |
 | P0-B3 | `TEST-FIRST:` puis squelette `apps/api` NestJS : guard global (refus par défaut), `@Public()`, `GET /health`, validation de la config par Zod, logger avec masquage, en-têtes (helmet), rate limiting de base | backend | À faire (web, étape 2) | B1, B2 | securite (S2) |
 | P0-B4 | Docker Compose dev (PostgreSQL 16, Redis, healthchecks, aucun secret en dur) + socle Testcontainers | backend | En revue (commit 7606a7a ; securite OK sur lecture) — reste : docker compose healthy + pnpm test:integration, Docker arrêté (C: plein) | B1, PRE-2 | securite (S1) |
-| P0-B5 | Rédaction du contrat initial `docs/handoff/contracts/openapi.yaml` (health, format d'erreur, Idempotency-Key, pagination, montants en millimes, auth par cookie/bearer, en-têtes) — **sans génération de client ni code** ; `[CONTRAT]` annoncé (frontend/mobile inactifs : consigné dans le rapport) | backend | Terminé (securite OK, contrat e8b0a175) | — | securite (P0-S6) |
+| P0-B5 | Rédaction du contrat initial `docs/handoff/contracts/openapi.yaml` (health, format d'erreur, Idempotency-Key, pagination, montants en millimes, auth par cookie/bearer, en-têtes) — **sans génération de client ni code** ; `[CONTRAT]` annoncé (frontend/mobile inactifs : consigné dans le rapport) | backend | Terminé (securite OK ; empreinte SHA-256 du contrat à la fin de B7 : 82bf61bd) | — | securite (P0-S6) |
 | P0-B6 | CI GitHub Actions : lint, typecheck, test, build, gitleaks, `pnpm audit`, CodeQL/Semgrep, Trivy, job Flutter ; pas de déploiement | backend | À faire (web, étape 2) | B1, PRE-4 | securite (S3) |
 | P0-D1 | `packages/ui-tokens` : génération `design-tokens.json` → preset Tailwind + `ThemeData` Flutter, tests (dont contrastes AA des paires texte/fond) | design | Terminé (securite OK, commit a63412b ; Dart non compilé, décision) | B1 | securite (S1, dépendances) |
-| P0-D2 | Spec `docs/design/specs/fondations-composants.md` : bouton, champ, badge de statut, carte, toast, montant, squelette, états vide/erreur/hors connexion | design | Terminé (hypothèses GET /me à confirmer ; fidélité à revoir en D4) | — | — |
-| P0-D3 | Spec `docs/design/specs/navigation.md` : sidebar web (3 espaces), barres basses Employé et Pro, écrans session expirée / hors connexion | design | Terminé (hypothèses GET /me à confirmer ; fidélité à revoir en D4) | — | — |
+| P0-D2 | Spec `docs/design/specs/fondations-composants.md` : bouton, champ, badge de statut, carte, toast, montant, squelette, états vide/erreur/hors connexion | design | À REVOIR (ux : 21 constats ; conformite : NON CONFORME S-01..S-06) — repris dans WD2 ; ne pas coder avant | — | — |
+| P0-D3 | Spec `docs/design/specs/navigation.md` : sidebar web (3 espaces), barres basses Employé et Pro, écrans session expirée / hors connexion | design | À REVOIR (ux et conformite) — repris dans WD1 ; ne pas coder avant | — | — |
 | P0-D4 | Revue de fidélité des coquilles web et mobile | design | En attente — outils | F2, M2 | — |
-| P0-F1 | Squelette `apps/web` : Next.js App Router, TS strict, Tailwind sur le preset ui-tokens, shadcn/ui, Lucide, i18n FR/AR/EN + RTL, Vitest + Playwright | frontend | À faire (web, étape 2) | B1, D1 | securite (S4) |
+| P0-F1 | Squelette `apps/web` : Next.js App Router, TS strict, Tailwind sur le preset ui-tokens, shadcn/ui, Lucide, i18n FR/AR/EN + RTL, Vitest + Playwright | frontend | En cours (frontend) | B1, D1 | securite (S4) |
 | P0-F2 | Coquille de navigation web + page de santé via le client généré + utilitaire unique de formatage des montants (tests) | frontend | À faire (web, étape 3) | F1, D2, D3, B5 | design (D4) |
 | P0-F3 | En-têtes de sécurité web : CSP stricte, frame-ancestors, Referrer-Policy, X-Content-Type-Options, cookies (tests) | frontend | À faire (web, étape 2) | F1 | securite (S4) |
 | P0-M1 | Squelettes `apps/mobile-employe` et `apps/mobile-pro` : Riverpod, go_router, dio, freezed, lints stricts, l10n FR/AR/EN + RTL | mobile | En attente — mobile reporté (« web d'abord », décision du 2026-10-11) | PRE-3 | securite (S4) |
@@ -59,14 +59,14 @@ Données fictives : MSW dans `apps/web/src/mocks/`, typées par `packages/api-cl
 
 | ID | Titre | Responsable | Statut | Dépend de | Relecteur |
 |---|---|---|---|---|---|
-| Q0 | Revue qualité rétroactive de B1, B2, D1, B4 | qualite | À faire | — | — |
+| Q0 | Revue qualité rétroactive de B1, B2, D1, B4 | qualite | Terminé (OK, 13 constats : 3 Importants ; commit 8e5327a) | — | — |
 | WD1 | Specs Commun : connexion, première connexion (mot de passe temporaire), MFA, session expirée, 404/500 | design | À faire | WB2 (auth) | ux, conformite, securite |
 | WD2 | Spec page bibliothèque de composants `/dev/composants` (boutons, champs, badges, cartes, toasts, tableaux, modales, montants ; tous les états) | design | À faire | D2 | ux, conformite |
 | WD3 | Specs Commerçant : tableau de bord, encaissement (code manuel), succès/refus, historique, créances, simulation et demande de virement (brut → commission → net, taux figé), règlements, mon commerce | design | À faire | WD2 | ux, conformite, securite |
 | WD4 | Specs Entreprise : tableau de bord, commande de crédits (frais), employés + import CSV (erreurs, doublons), attribution, factures, reporting, paramètres | design | À faire | WD2 | ux, conformite, securite |
 | WD5 | Specs Administrateur : tableau de bord, comptes, création société et commerçant (profil de commission obligatoire), KYC, commissions (double validation), transactions et alertes, paramètres, audit | design | À faire | WD2 | ux, conformite, securite |
 | WD6 | Revue de fidélité de chaque écran | design | À faire | WF2–WF5 | — |
-| WB1 | `packages/api-client` : openapi-typescript + openapi-fetch depuis le contrat, test de fraîcheur | backend | À faire | B1 | securite, qualite |
+| WB1 | `packages/api-client` : openapi-typescript + openapi-fetch depuis le contrat, test de fraîcheur | backend | En revue (securite OK, qualite OK avec WB1-01 Important ; conformite à venir ; commit avec le lockfile après F1) | B1 | securite, qualite |
 | WB2 | Contrat complété au fil des [QUESTION] de design, espace par espace ([CONTRAT]) | backend | À faire | questions design | securite, conformite |
 | WF1 | Bibliothèque de composants codée (`/dev/composants`, hors production) | frontend | À faire | F1, WD2 validée | qualite, design, ux, conformite |
 | WF2 | Écrans Commun + Playwright connexion | frontend | À faire | F2, WD1 validée, WB2 | securite, qualite, ux, design, conformite |
