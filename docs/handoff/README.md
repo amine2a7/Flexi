@@ -13,6 +13,11 @@ Le résumé de ce protocole est repris dans `CLAUDE.md` (section « Équipe d'ag
 | `backend` | `.claude/agents/backend.md` (opus) | API NestJS, ledger, contrat OpenAPI, infra, monorepo |
 | `frontend` | `.claude/agents/frontend.md` (sonnet) | Web Next.js : Administrateur, Entreprise, Commerçant |
 | `mobile` | `.claude/agents/mobile.md` (sonnet) | Flutter : app Employé, app Pro (Commerçant) |
+| `ux` | `.claude/agents/ux.md` (opus) | **Relecteur** : expérience utilisateur des specs (avant le code) et des écrans réels (Nielsen, WCAG 2.1 AA, RTL, microcopie) ; user stories proposées au lead |
+| `qualite` | `.claude/agents/qualite.md` (opus) | **Relecteur** : qualité du code hors sécurité (architecture, typage, tests, conventions, performances) |
+| `conformite` | `.claude/agents/conformite.md` (sonnet) | **Relecteur**, en dernier : conformité aux demandes (cahier, specs, décisions, contrat, BOARD), matrice de traçabilité |
+
+Les **relecteurs** (`securite`, `ux`, `qualite`, `conformite`) ne modifient jamais le code ni les specs des autres : ils écrivent leurs revues dans `docs/handoff/reviews/` et envoient leurs constats au propriétaire.
 
 Sous-agents de support (lancés par un coéquipier, pas membres de l'équipe) : `ledger-auditor` (invariants financiers, lecture seule) et `test-writer` (tests d'abord, fichiers de test uniquement).
 
@@ -54,6 +59,11 @@ Exemples :
 | securite → propriétaire du code | Revue terminée avec problème | `[CONSTAT]` |
 | propriétaire → securite | Correction faite ; securite **revérifie** | `[CORRIGÉ]` |
 | frontend / mobile → design | Écran terminé, revue de fidélité | `[LIVRÉ]` |
+| producteur → qualite | Fin de chaque tâche de code (en parallèle de securite) | `[LIVRÉ]` |
+| design → ux puis conformite | Spec d'écran prête, **avant** qu'elle soit codée | `[SPEC]` |
+| frontend / mobile → ux | Écran terminé, après securite et qualite | `[LIVRÉ]` |
+| relecteurs → conformite | Verdicts de securite, qualite, ux ; conformite relit en dernier | verdict |
+| ux / qualite / conformite → propriétaire | Revue avec problème ; le propriétaire répond `[CORRIGÉ]`, le relecteur revérifie | `[CONSTAT]` |
 | design → frontend / mobile | Résultat de la revue | OK ou `[CONSTAT]` |
 | tout agent → main | Blocage, règle manquante, fin de tâche | `[BLOQUÉ]`, `[DÉCISION]`, rapport (j) |
 
@@ -78,6 +88,9 @@ Un agent n'écrit **que** dans son périmètre. Pour toucher au périmètre d'un
 | backend | `apps/api/`, `packages/shared/`, `packages/api-client/`, `packages/config/`, `infra/`, `docker-compose*`, `docs/handoff/contracts/`, config racine du monorepo, `.github/` |
 | frontend | `apps/web/` |
 | mobile | `apps/mobile-employe/`, `apps/mobile-pro/` |
+| ux | `docs/handoff/reviews/ux-*` (dont `ux-captures/`) |
+| qualite | `docs/handoff/reviews/qualite-*` |
+| conformite | `docs/handoff/reviews/conformite-*`, `docs/handoff/reviews/tracabilite.md` |
 | test-writer (sous-agent) | fichiers de test sous `apps/` et `packages/` |
 | ledger-auditor (sous-agent) | rien (lecture seule) |
 
@@ -85,12 +98,23 @@ Limite connue : une écriture passant par `Bash` n'est pas interceptée ; la rè
 
 ## 6. Droit de blocage (e)
 
-- Aucune tâche n'est « terminée » avec un constat **Critique** ou **Haute** ouvert.
+- Aucune tâche n'est « terminée » avec un constat **Critique** ou **Haute** ouvert (securite), ni un constat **Bloquant** ouvert (ux ou qualite), ni un écart ouvert (conformite).
+- Une tâche n'est « terminée » qu'avec : **securite OK**, **qualite OK** (si code), **ux OK** (si interface), **conformite CONFORME**. Le lead la marque alors terminée et la commite.
 - Le lead ne déclare pas une phase finie tant que **securite** n'a pas donné OK, **design** OK pour l'interface, **ledger-auditor** OK pour l'argent.
+
+### Chaîne de revue
+
+```
+Tâche de code :  producteur [LIVRÉ] ──► securite ┐
+                                    └─► qualite  ┴─► ux (si interface) ──► conformite (en dernier) ──► lead : terminée + commit
+Spec de design : design [SPEC] ──► ux ──► conformite ──► lead : spec validée ──► seulement alors codée par frontend / mobile
+```
+
+Pas de chevauchement : **design** produit les specs et veille à la charte et aux tokens ; **ux** juge l'expérience ; **securite** les failles ; **qualite** le code ; **conformite** l'adéquation aux demandes. Un relecteur qui repère un sujet d'un autre le lui transmet.
 
 ## 7. Boucle limitée (f)
 
-Au plus **3 allers-retours** constat → correction par sujet. Au-delà, l'agent envoie `[BLOQUÉ]` au lead, qui s'arrête et pose la question à l'utilisateur.
+Au plus **3 allers-retours** constat → correction par sujet, pour tous les relecteurs (securite, design, ux, qualite, conformite). Au-delà, l'agent envoie `[BLOQUÉ]` au lead, qui s'arrête et pose la question à l'utilisateur.
 
 ## 8. Pas d'invention (g)
 
@@ -108,7 +132,7 @@ Il découpe, assigne, route, arbitre, surveille, attend la fin des coéquipiers 
 | `decisions.md` | Décisions : date, question, décision, raison, décidé par (l'utilisateur) | lead |
 | `reports/<phase>-<date>.md` | Rapport de fin de phase | lead |
 | `contracts/` | `openapi.yaml`, événements, schémas partagés | backend |
-| `reviews/` | Revues securite (`securite-*`), design (`design-*`), ledger (`ledger-*`) | securite, design |
+| `reviews/` | Revues securite (`securite-*`), design (`design-*`), ux (`ux-*`), qualite (`qualite-*`), conformite (`conformite-*`, `tracabilite.md`), ledger (`ledger-*`) | chaque relecteur, sur ses fichiers |
 
 ## 11. Rapport de coéquipier (j)
 
@@ -132,8 +156,11 @@ DÉCISIONS NÉCESSAIRES : … (ou « aucune »)
 5. Vérifications : lint, typecheck, tests, analyse statique — avec résultats réels
 6. Sécurité : constats par sévérité, ouverts / fermés, verdict
 7. Design : verdict de fidélité et accessibilité (si interface)
-8. Questions pour l'utilisateur, avec la recommandation du lead pour chacune
-9. Prochaine étape proposée
+8. UX : verdict (OK / À REVOIR) et constats ouverts par gravité (si interface)
+9. Qualité : verdict (OK / À REVOIR) et constats ouverts par gravité
+10. Conformité : verdict (CONFORME / NON CONFORME), écarts ouverts, état de la matrice de traçabilité
+11. Questions pour l'utilisateur, avec la recommandation du lead pour chacune
+12. Prochaine étape proposée
 
 ## 13. Hooks qualité
 
@@ -199,6 +226,8 @@ Les hooks lisent leur entrée en JSON sur stdin : on les teste en leur envoyant 
 Toujours **exécuter le hook comme fichier** (`bash .claude/hooks/x.sh`, `node .claude/hooks/x.js`), jamais son contenu via `bash -c` (sous Windows, guillemets et antislashs sont altérés et le test donne un faux résultat). `CLAUDE_PROJECT_DIR` au format Windows (`C:/Users/...`), pas `/c/Users/...`.
 ```bash
 export CLAUDE_PROJECT_DIR="$PWD"
+# Périmètres de tous les agents (55 cas, dont ux, qualite, conformite) : tous doivent passer
+node --test .claude/hooks/test/enforce-scope.test.js
 # Périmètres : doit bloquer (2), puis laisser passer (0)
 echo '{"agent_type":"securite","tool_input":{"file_path":"apps/api/x.ts"}}' | node .claude/hooks/enforce-scope.js; echo "code $?"
 echo '{"agent_type":"securite","tool_input":{"file_path":"docs/security/x.md"}}' | node .claude/hooks/enforce-scope.js; echo "code $?"

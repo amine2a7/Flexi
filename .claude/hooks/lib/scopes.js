@@ -74,6 +74,22 @@ const AGENTS = {
       { kind: 'flutter', dir: 'apps/mobile-pro' },
     ],
   },
+  // Relecteurs : n'écrivent que leurs propres revues (préfixes disjoints, CF-03).
+  ux: {
+    owner: 'ux',
+    write: ['docs/handoff/reviews/ux-'],
+    checks: [],
+  },
+  qualite: {
+    owner: 'qualite',
+    write: ['docs/handoff/reviews/qualite-'],
+    checks: [],
+  },
+  conformite: {
+    owner: 'conformite',
+    write: ['docs/handoff/reviews/conformite-', 'docs/handoff/reviews/tracabilite.md'],
+    checks: [],
+  },
   'test-writer': {
     owner: 'test-writer',
     write: [],
