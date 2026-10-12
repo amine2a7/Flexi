@@ -1,0 +1,36 @@
+{
+  "name": "@flexipay/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Typed TypeScript client generated from docs/handoff/contracts/openapi.yaml (openapi-typescript + openapi-fetch)",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "generate": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/codegen.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "openapi-fetch": "0.17.0"
+  },
+  "devDependencies": {
+    "@flexipay/config": "workspace:*",
+    "@types/node": "22.20.4",
+    "eslint": "10.11.0",
+    "openapi-typescript": "7.13.0",
+    "prettier": "3.9.8",
+    "typescript": "6.0.3",
+    "vitest": "4.1.11"
+  }
+}
