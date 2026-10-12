@@ -90,6 +90,16 @@ const API_TO_TOKEN: Record<string, string> = {
   EXPIRED: 'EXPIRE',
 };
 
+/** Credit orders (OrderStatus): colour and icon of an existing token, label of the order circuit. */
+const ORDER_TOKENS: Record<string, string> = {
+  AWAITING_CONFIRMATION: 'EN_ATTENTE',
+  AWAITING_PAYMENT: 'A_REGLER',
+  AWAITING_VALIDATION: 'PAYEE',
+  VALIDATED: 'CREDITEE',
+  REFUSED: 'REFUSEE',
+  CANCELLED: 'ANNULEE',
+};
+
 /** Contract enums whose glossary token differs by context (approval REJECTED -> REFUSEE). */
 const CONTEXT_OVERRIDES: Record<string, Record<string, string>> = {
   approval: { REJECTED: 'REFUSEE', APPROVED: 'APPROUVEE' },
@@ -99,14 +109,16 @@ const CONTEXT_OVERRIDES: Record<string, Record<string, string>> = {
 interface StatusBadgeProps {
   /** Status as sent by the API. */
   readonly status: string;
-  readonly context?: 'approval' | 'payout';
+  readonly context?: 'approval' | 'payout' | 'order';
   /** i18n key replacing the default label (e.g. merchant wording of A_REGLER, decision 2). */
   readonly labelKey?: string;
 }
 
 export function StatusBadge({ status, context, labelKey }: StatusBadgeProps) {
   const t = useTranslations();
+  const orderToken = context === 'order' ? ORDER_TOKENS[status] : undefined;
   const tokenKey =
+    orderToken ??
     (context === undefined ? undefined : CONTEXT_OVERRIDES[context]?.[status]) ??
     API_TO_TOKEN[status] ??
     'INCONNU';
@@ -122,7 +134,7 @@ export function StatusBadge({ status, context, labelKey }: StatusBadgeProps) {
       )}
     >
       <Icon aria-hidden="true" className="size-icon-sm" />
-      {t(messageKey(labelKey ?? token.labelKey))}
+      {t(messageKey(labelKey ?? (orderToken === undefined ? token.labelKey : `orders.status.${status}`)))}
     </span>
   );
 }

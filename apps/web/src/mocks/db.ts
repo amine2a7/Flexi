@@ -29,6 +29,9 @@ export type MockApproval = Omit<S['Approval'], 'initiatedByMe'> & {
   settings?: S['PlatformSettings'];
 };
 
+/** Credit order with the uploaded transfer proof (kept in memory only). */
+export type MockOrder = S['CreditOrderDetail'] & { proof?: Blob };
+
 export interface MockSession {
   accountId: string;
   step: 'NONE' | 'PASSWORD_CHANGE' | 'MFA_ENROLL';
@@ -52,7 +55,6 @@ export interface MockDb {
   company: {
     walletMillimes: number;
     employees: S['Employee'][];
-    orders: S['CreditOrder'][];
     invoices: S['Invoice'][];
     previews: Map<string, S['EmployeeImportPreview']>;
   };
@@ -65,6 +67,8 @@ export interface MockDb {
     audit: S['AuditLogEntry'][];
     settings: S['PlatformSettings'];
   };
+  /** Credit orders of every company (company space: own orders only; admin space: all). */
+  orders: MockOrder[];
 }
 
 const SHOP_PREFIXES = [
@@ -283,7 +287,7 @@ function buildMerchant(now: number) {
   };
 }
 
-function buildCompany(now: number) {
+function buildCompany() {
   const random = createRandom(11);
   const employees: S['Employee'][] = Array.from({ length: 84 }, (_, index) => {
     const { firstName, lastName } = personName(random);
@@ -307,46 +311,8 @@ function buildCompany(now: number) {
     };
   });
 
-  const orderStatuses: S['OrderStatus'][] = [
-    'CREDITED',
-    'CREDITED',
-    'CREDITED',
-    'CREDITED',
-    'RECONCILED',
-    'PAID',
-  ];
-  const orders: S['CreditOrder'][] = Array.from({ length: 36 }, (_, index) => {
-    const value = amount(random, 4_000_000, 32_000_000, 100_000);
-    const fees = commissionOf(value, 150);
-    return {
-      id: random.uuid(),
-      reference: `CMD-2026-${String(7200 - index)}`,
-      status:
-        index < 2
-          ? 'CREATED'
-          : index === 7 || index === 19
-            ? 'CANCELLED'
-            : random.pick(orderStatuses),
-      amountMillimes: value,
-      feesMillimes: fees,
-      totalMillimes: value + fees,
-      createdAt: iso(now - (index * 8 + 1) * DAY - random.int(0, 600) * MINUTE),
-      paymentReference: `FXP-${random.digits(8)}`,
-    };
-  });
-
-  const invoices: S['Invoice'][] = orders
-    .filter((order) => order.status !== 'CREATED' && order.status !== 'CANCELLED')
-    .map((order, index) => ({
-      id: random.uuid(),
-      number: `FAC-2026-${String(5400 - index)}`,
-      orderReference: order.reference,
-      totalMillimes: order.totalMillimes,
-      issuedAt: order.createdAt,
-      status: order.status === 'PAID' ? 'UNPAID' : 'PAID',
-    }));
-
-  return { walletMillimes: 48_250_000, employees, orders, invoices, previews: new Map() };
+  const invoices: S['Invoice'][] = [];
+  return { walletMillimes: 48_250_000, employees, invoices, previews: new Map() };
 }
 
 function buildAdmin(now: number, merchantRate: number) {
@@ -541,16 +507,231 @@ function buildAdmin(now: number, merchantRate: number) {
   };
 }
 
+const HOUR = 60 * MINUTE;
+const ADMIN_NAMES = ['Amine K.', 'Hela R.'] as const;
+const REFUSAL_REASONS = [
+  "Dossier KYC de l'entreprise incomplet : merci de transmettre l'extrait du registre de commerce.",
+  'Montant inhabituel : merci de contacter votre chargé de compte avant de commander.',
+];
+const PROOF_REJECTION_REASON = 'Virement introuvable sur le compte FlexiPay à la date indiquée.';
+
+type OrderScenario =
+  | 'AWAITING_CONFIRMATION'
+  | 'AWAITING_PAYMENT'
+  | 'PROOF_REJECTED'
+  | 'AWAITING_VALIDATION'
+  | 'AMOUNT_MISMATCH'
+  | 'VALIDATED'
+  | 'REFUSED'
+  | 'CANCELLED';
+
+/** One credit order and its history, consistent with its status (who did what, and when). */
+function buildOrder(
+  random: ReturnType<typeof createRandom>,
+  company: { id: string; name: string },
+  requester: string,
+  reference: string,
+  createdAtMs: number,
+  scenario: OrderScenario,
+): MockOrder {
+  const value = amount(random, 4_000_000, 32_000_000, 100_000);
+  const fees = commissionOf(value, 150);
+  const total = value + fees;
+  const admin = random.pick(ADMIN_NAMES);
+  const at = (offset: number) => iso(createdAtMs + offset);
+  const event = (
+    action: S['CreditOrderEventAction'],
+    offset: number,
+    actorRole: S['Role'],
+    reason?: string,
+  ): S['CreditOrderEvent'] => ({
+    action,
+    occurredAt: at(offset),
+    actorName: actorRole === 'ADMIN' ? admin : requester,
+    actorRole,
+    ...(reason === undefined ? {} : { reason }),
+  });
+  const order: MockOrder = {
+    id: random.uuid(),
+    reference,
+    status: 'AWAITING_CONFIRMATION',
+    companyId: company.id,
+    companyName: company.name,
+    amountMillimes: value,
+    feesMillimes: fees,
+    totalMillimes: total,
+    createdAt: at(0),
+    paymentReference: `FXP-${random.digits(8)}`,
+    history: [event('CREATED', 0, 'COMPANY')],
+  };
+  const declare = (offset: number, declared: number) => {
+    order.declaration = {
+      transferReference: `VIR${random.digits(10)}`,
+      transferDate: calendarDate(createdAtMs + offset - 2 * HOUR),
+      amountMillimes: declared,
+      proof: {
+        fileName: `avis-virement-${reference.toLowerCase()}.png`,
+        contentType: 'image/png',
+        sizeBytes: random.int(140_000, 880_000),
+      },
+      declaredAt: at(offset),
+    };
+    order.declaredAmountMillimes = declared;
+    order.history.push(event('TRANSFER_DECLARED', offset, 'COMPANY'));
+  };
+  if (scenario === 'AWAITING_CONFIRMATION') return order;
+  if (scenario === 'REFUSED') {
+    const reason = random.pick(REFUSAL_REASONS);
+    order.status = 'REFUSED';
+    order.refusalReason = reason;
+    order.history.push(event('REFUSED', 3 * HOUR, 'ADMIN', reason));
+    return order;
+  }
+  if (scenario === 'CANCELLED') {
+    order.status = 'CANCELLED';
+    order.history.push(event('CANCELLED', HOUR, 'COMPANY'));
+    return order;
+  }
+  order.history.push(event('CONFIRMED', 2 * HOUR, 'ADMIN'));
+  order.status = 'AWAITING_PAYMENT';
+  if (scenario === 'AWAITING_PAYMENT') return order;
+  if (scenario === 'PROOF_REJECTED') {
+    declare(18 * HOUR, total);
+    order.history.push(event('PROOF_REJECTED', 22 * HOUR, 'ADMIN', PROOF_REJECTION_REASON));
+    order.proofRejectionReason = PROOF_REJECTION_REASON;
+    delete order.declaration;
+    delete order.declaredAmountMillimes;
+    return order;
+  }
+  declare(18 * HOUR, scenario === 'AMOUNT_MISMATCH' ? total - 600_000 : total);
+  order.status = 'AWAITING_VALIDATION';
+  if (scenario === 'AWAITING_VALIDATION' || scenario === 'AMOUNT_MISMATCH') return order;
+  order.history.push(event('VALIDATED', 30 * HOUR, 'ADMIN'));
+  order.status = 'VALIDATED';
+  return order;
+}
+
+function buildOrders(now: number, companies: readonly S['CompanyAccount'][]): MockOrder[] {
+  const random = createRandom(31);
+  const tenant = companies.find((company) => company.id === COMPANY_TENANT.id);
+  const own = { id: COMPANY_TENANT.id, name: tenant?.name ?? COMPANY_TENANT.label };
+  const ownScenarios: Partial<Record<number, OrderScenario>> = {
+    0: 'AWAITING_CONFIRMATION',
+    1: 'AWAITING_PAYMENT',
+    2: 'PROOF_REJECTED',
+    3: 'AWAITING_VALIDATION',
+    5: 'REFUSED',
+    7: 'CANCELLED',
+    19: 'CANCELLED',
+  };
+  const orders = Array.from({ length: 36 }, (_, index) =>
+    buildOrder(
+      random,
+      own,
+      'Leïla M.',
+      `CMD-2026-${String(7200 - index)}`,
+      now - (index * 8 + 2) * DAY - random.int(0, 600) * MINUTE,
+      ownScenarios[index] ?? 'VALIDATED',
+    ),
+  );
+  const others = companies.filter(
+    (company) => company.id !== COMPANY_TENANT.id && company.status === 'APPROVED',
+  );
+  const recentScenarios: OrderScenario[] = [
+    'AWAITING_CONFIRMATION',
+    'AWAITING_VALIDATION',
+    'AMOUNT_MISMATCH',
+    'AWAITING_CONFIRMATION',
+    'AWAITING_PAYMENT',
+    'AWAITING_VALIDATION',
+    'AWAITING_CONFIRMATION',
+  ];
+  for (let index = 0; index < 28; index += 1) {
+    const company = random.pick(others);
+    const { firstName, lastName } = personName(random);
+    const recent = recentScenarios[index];
+    const scenario =
+      recent ??
+      random.pick<OrderScenario>(['VALIDATED', 'VALIDATED', 'VALIDATED', 'CANCELLED', 'REFUSED']);
+    const daysAgo = recent === undefined ? random.int(10, 150) : 1 + index;
+    orders.push(
+      buildOrder(
+        random,
+        { id: company.id, name: company.name },
+        `${firstName} ${lastName.charAt(0)}.`,
+        `CMD-2026-${String(6900 - index)}`,
+        now - daysAgo * DAY - random.int(0, 600) * MINUTE,
+        scenario,
+      ),
+    );
+  }
+  return orders.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+/** Invoices of the demo company: one per order that went past the confirmation step. */
+export function invoicesOf(orders: readonly MockOrder[]): S['Invoice'][] {
+  const random = createRandom(37);
+  return orders
+    .filter(
+      (order) =>
+        order.companyId === COMPANY_TENANT.id &&
+        order.status !== 'AWAITING_CONFIRMATION' &&
+        order.status !== 'REFUSED' &&
+        order.status !== 'CANCELLED',
+    )
+    .map((order, index) => ({
+      id: random.uuid(),
+      number: `FAC-2026-${String(5400 - index)}`,
+      orderReference: order.reference,
+      totalMillimes: order.totalMillimes,
+      issuedAt: order.createdAt,
+      status: order.status === 'VALIDATED' ? 'PAID' : 'UNPAID',
+    }));
+}
+
+// The order circuit spans two accounts (company, then admin) and page reloads: orders and the
+// company balance are kept in this tab's sessionStorage (demo data only; uploaded files are not
+// kept, a demo transfer notice replaces them after a reload).
+const ORDERS_KEY = 'fp_mock_orders';
+
+export function saveOrders(): void {
+  try {
+    const orders = db.orders.map(({ proof: _proof, ...order }) => order);
+    sessionStorage.setItem(
+      ORDERS_KEY,
+      JSON.stringify({ orders, walletMillimes: db.company.walletMillimes }),
+    );
+  } catch {
+    // Storage unavailable (tests, private mode): the data simply restarts from the seed.
+  }
+}
+
+function savedOrders(): { orders: MockOrder[]; walletMillimes: number } | undefined {
+  try {
+    const raw = sessionStorage.getItem(ORDERS_KEY);
+    return raw === null ? undefined : (JSON.parse(raw) as { orders: MockOrder[]; walletMillimes: number });
+  } catch {
+    return undefined;
+  }
+}
+
 function build(): MockDb {
   const now = Date.now();
   const merchant = buildMerchant(now);
+  const admin = buildAdmin(now, merchant.rateBps);
+  const saved = savedOrders();
+  const orders = saved?.orders ?? buildOrders(now, admin.companies);
+  const company = buildCompany();
+  if (saved !== undefined) company.walletMillimes = saved.walletMillimes;
+  company.invoices = invoicesOf(orders);
   return {
     accounts: createDemoAccounts(),
     session: null,
     challenges: new Map(),
     merchant,
-    company: buildCompany(now),
-    admin: buildAdmin(now, merchant.rateBps),
+    company,
+    admin,
+    orders,
   };
 }
 

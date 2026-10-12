@@ -1769,6 +1769,203 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/company/orders/{orderId}:
+    get:
+      tags: [company]
+      operationId: getCreditOrder
+      summary: Détail d'une commande de crédits (déclaration, motif, historique)
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditOrderDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/orders/{orderId}/cancel:
+    post:
+      tags: [company]
+      operationId: cancelCreditOrder
+      summary: Annuler une commande tant qu'aucun virement n'a été déclaré
+      description: |
+        Possible en `AWAITING_CONFIRMATION` et en `AWAITING_PAYMENT` sans déclaration en attente.
+        Sinon `409 RESOURCE_STATE_CONFLICT`.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditOrderDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/orders/{orderId}/transfer-declarations:
+    post:
+      tags: [company]
+      operationId: declareCreditOrderTransfer
+      summary: Déclarer le virement d'une commande (référence, date, montant, capture)
+      description: |
+        Possible en `AWAITING_PAYMENT` uniquement (`409 RESOURCE_STATE_CONFLICT` sinon) ; la
+        commande passe en `AWAITING_VALIDATION`. **Exception à la règle « JSON uniquement »**
+        (section 8) : corps `multipart/form-data`. La capture est obligatoire : JPG, PNG ou PDF,
+        5 Mo maximum, type vérifié sur le contenu (signature) et non sur le nom ; au-delà
+        `413 PAYLOAD_TOO_LARGE`, autre type `415 UNSUPPORTED_MEDIA_TYPE`. Champ invalide :
+        `400 VALIDATION_FAILED` (`IN_FUTURE` pour une date future).
+      x-financial: true
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TransferDeclarationForm'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditOrderDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/orders/{orderId}/proof:
+    get:
+      tags: [company]
+      operationId: getCreditOrderProof
+      summary: Capture du virement déclaré (entreprise)
+      description: |
+        Fichier tel que déposé (JPG, PNG ou PDF, 5 Mo maximum), servi avec son type d'origine,
+        `Content-Disposition: attachment` et `X-Content-Type-Options: nosniff`.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Le fichier.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/funding-account:
+    get:
+      tags: [company]
+      operationId: getFundingAccount
+      summary: Compte bancaire de FlexiPay à créditer par virement
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FundingBankAccount'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/company/allocations:
     post:
       tags: [company]
@@ -2214,6 +2411,294 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/credit-orders:
+    get:
+      tags: [admin]
+      operationId: listAdminCreditOrders
+      summary: Toutes les commandes de crédits (filtre par statut et par entreprise)
+      description: |
+        Tri : les commandes qui attendent une action de l'administrateur
+        (`AWAITING_CONFIRMATION`, `AWAITING_VALIDATION`) d'abord, puis par date décroissante.
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - name: status
+          in: query
+          required: false
+          description: Filtre par statut.
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+        - name: companyId
+          in: query
+          required: false
+          description: Filtre par entreprise.
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditOrderPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/credit-orders/{orderId}:
+    get:
+      tags: [admin]
+      operationId: getAdminCreditOrder
+      summary: Détail d'une commande de crédits
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditOrderDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/credit-orders/{orderId}/confirm:
+    post:
+      tags: [admin]
+      operationId: confirmCreditOrder
+      summary: Confirmer une commande (AWAITING_CONFIRMATION → AWAITING_PAYMENT)
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditOrderDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/credit-orders/{orderId}/refuse:
+    post:
+      tags: [admin]
+      operationId: refuseCreditOrder
+      summary: Refuser une commande avec un motif (AWAITING_CONFIRMATION → REFUSED)
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreditOrderDecisionReason'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditOrderDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/credit-orders/{orderId}/validate:
+    post:
+      tags: [admin]
+      operationId: validateCreditOrderPayment
+      summary: Valider le virement reçu et créditer le solde de l'entreprise (AWAITING_VALIDATION → VALIDATED)
+      description: |
+        L'administrateur a vérifié l'arrivée des fonds sur le compte de FlexiPay. Les crédits
+        (`amountMillimes`) sont ajoutés au solde de l'entreprise dans la même transaction.
+      x-financial: true
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditOrderDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/credit-orders/{orderId}/reject-proof:
+    post:
+      tags: [admin]
+      operationId: rejectCreditOrderProof
+      summary: Rejeter le justificatif avec un motif (AWAITING_VALIDATION → AWAITING_PAYMENT)
+      description: L'entreprise voit le motif et peut déclarer de nouveau son virement.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreditOrderDecisionReason'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditOrderDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/credit-orders/{orderId}/proof:
+    get:
+      tags: [admin]
+      operationId: getAdminCreditOrderProof
+      summary: Capture du virement déclaré (administrateur)
+      description: |
+        Fichier tel que déposé (JPG, PNG ou PDF, 5 Mo maximum), servi avec son type d'origine,
+        `Content-Disposition: attachment` et `X-Content-Type-Options: nosniff`.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Le fichier.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -3076,9 +3561,12 @@ components:
       enum: [PENDING_KYC, APPROVED, REJECTED, SUSPENDED]
     OrderStatus:
       title: OrderStatus
-      description: Commande — Créée, Payée, Rapprochée, Créditée, Annulée.
+      description: |
+        Commande de crédits — En attente de confirmation (par l'administrateur), En attente de
+        paiement (virement à déclarer par l'entreprise), En attente de validation (virement déclaré,
+        à vérifier par l'administrateur), Validée (crédits ajoutés au solde), Refusée, Annulée.
       type: string
-      enum: [CREATED, PAID, RECONCILED, CREDITED, CANCELLED]
+      enum: [AWAITING_CONFIRMATION, AWAITING_PAYMENT, AWAITING_VALIDATION, VALIDATED, REFUSED, CANCELLED]
     PaymentStatus:
       title: PaymentStatus
       description: Paiement — Initié, Confirmé, Réglé, Refusé, En litige (cahier v4.1 §8).
@@ -3736,7 +4224,7 @@ components:
       title: CreditOrder
       type: object
       additionalProperties: false
-      required: [id, reference, status, amountMillimes, feesMillimes, totalMillimes, createdAt, paymentReference]
+      required: [id, reference, status, companyId, companyName, amountMillimes, feesMillimes, totalMillimes, createdAt, paymentReference]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -3746,6 +4234,12 @@ components:
           maxLength: 32
         status:
           $ref: '#/components/schemas/OrderStatus'
+        companyId:
+          $ref: '#/components/schemas/Uuid'
+        companyName:
+          type: string
+          minLength: 1
+          maxLength: 120
         amountMillimes:
           $ref: '#/components/schemas/PositiveAmountMillimes'
         feesMillimes:
@@ -3759,6 +4253,173 @@ components:
           type: string
           minLength: 1
           maxLength: 32
+        declaredAmountMillimes:
+          description: Montant du dernier virement déclaré (absent sans déclaration en cours).
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+    CreditOrderDetail:
+      title: CreditOrderDetail
+      description: Commande avec sa déclaration de virement, son dernier motif et son historique.
+      type: object
+      additionalProperties: false
+      required: [id, reference, status, companyId, companyName, amountMillimes, feesMillimes, totalMillimes, createdAt, paymentReference, history]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 32
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        companyId:
+          $ref: '#/components/schemas/Uuid'
+        companyName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        feesMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        totalMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        paymentReference:
+          description: Référence à indiquer sur le virement.
+          type: string
+          minLength: 1
+          maxLength: 32
+        declaredAmountMillimes:
+          description: Montant du dernier virement déclaré (absent sans déclaration en cours).
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        declaration:
+          description: Dernière déclaration de virement (absente avant la première déclaration).
+          $ref: '#/components/schemas/TransferDeclaration'
+        refusalReason:
+          description: Motif du refus de la commande (statut REFUSED).
+          type: string
+          maxLength: 500
+        proofRejectionReason:
+          description: Motif du dernier rejet de justificatif, affiché à l'entreprise pour redéclarer.
+          type: string
+          maxLength: 500
+        history:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/CreditOrderEvent'
+    CreditOrderEventAction:
+      title: CreditOrderEventAction
+      type: string
+      enum: [CREATED, CONFIRMED, REFUSED, CANCELLED, TRANSFER_DECLARED, PROOF_REJECTED, VALIDATED]
+    CreditOrderEvent:
+      title: CreditOrderEvent
+      description: Étape de l'historique d'une commande (qui, quoi, quand).
+      type: object
+      additionalProperties: false
+      required: [action, occurredAt, actorName, actorRole]
+      properties:
+        action:
+          $ref: '#/components/schemas/CreditOrderEventAction'
+        occurredAt:
+          $ref: '#/components/schemas/Timestamp'
+        actorName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        actorRole:
+          $ref: '#/components/schemas/Role'
+        reason:
+          type: string
+          maxLength: 500
+    TransferDeclaration:
+      title: TransferDeclaration
+      type: object
+      additionalProperties: false
+      required: [transferReference, transferDate, amountMillimes, proof, declaredAt]
+      properties:
+        transferReference:
+          type: string
+          minLength: 1
+          maxLength: 64
+        transferDate:
+          $ref: '#/components/schemas/CalendarDate'
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        proof:
+          $ref: '#/components/schemas/TransferProof'
+        declaredAt:
+          $ref: '#/components/schemas/Timestamp'
+    TransferProof:
+      title: TransferProof
+      description: Métadonnées de la capture ; le fichier se lit par la route `…/proof`.
+      type: object
+      additionalProperties: false
+      required: [fileName, contentType, sizeBytes]
+      properties:
+        fileName:
+          type: string
+          minLength: 1
+          maxLength: 255
+        contentType:
+          type: string
+          enum: [image/jpeg, image/png, application/pdf]
+        sizeBytes:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 5242880
+    TransferDeclarationForm:
+      title: TransferDeclarationForm
+      description: Corps multipart de la déclaration de virement.
+      type: object
+      required: [transferReference, transferDate, amountMillimes, proof]
+      properties:
+        transferReference:
+          type: string
+          minLength: 1
+          maxLength: 64
+        transferDate:
+          description: Date du virement, jamais dans le futur.
+          $ref: '#/components/schemas/CalendarDate'
+        amountMillimes:
+          description: Montant viré, entier en millimes.
+          type: string
+          pattern: '^[1-9][0-9]{0,14}$'
+        proof:
+          description: Capture du virement (JPG, PNG ou PDF, 5 Mo maximum).
+          type: string
+          format: binary
+    CreditOrderDecisionReason:
+      title: CreditOrderDecisionReason
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+    FundingBankAccount:
+      title: FundingBankAccount
+      description: Compte bancaire de FlexiPay sur lequel l'entreprise vire le total de la commande.
+      type: object
+      additionalProperties: false
+      required: [bankName, holder, rib, iban]
+      properties:
+        bankName:
+          type: string
+          maxLength: 120
+        holder:
+          type: string
+          maxLength: 120
+        rib:
+          type: string
+          pattern: '^[0-9]{20}$'
+        iban:
+          type: string
+          pattern: '^TN[0-9]{22}$'
     CreditOrderPage:
       title: CreditOrderPage
       description: Liste paginée de CreditOrder (§7).
@@ -4313,6 +4974,7 @@ components:
         - INVALID_CURSOR
         - CURRENT_PASSWORD_INVALID
         - PASSWORD_POLICY_VIOLATION
+        - IN_FUTURE
     FieldError:
       title: FieldError
       type: object

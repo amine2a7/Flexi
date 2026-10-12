@@ -50,6 +50,7 @@ export const NAVIGATION: Partial<Record<Role, readonly NavItem[]>> = {
     { href: '/admin', labelKey: 'nav.admin.dashboard', icon: LayoutDashboard },
     { href: '/admin/commercants', labelKey: 'nav.admin.merchants', icon: Store },
     { href: '/admin/entreprises', labelKey: 'nav.admin.companies', icon: Building2 },
+    { href: '/admin/commandes', labelKey: 'nav.admin.orders', icon: ShoppingCart },
     { href: '/admin/commissions', labelKey: 'nav.admin.commissions', icon: Percent },
     { href: '/admin/validations', labelKey: 'nav.admin.approvals', icon: ClipboardCheck },
     { href: '/admin/reglements', labelKey: 'nav.admin.settlements', icon: ArrowLeftRight },

@@ -4,6 +4,7 @@ import { adminHandlers } from './handlers/admin';
 import { authHandlers } from './handlers/auth';
 import { companyHandlers } from './handlers/company';
 import { merchantHandlers } from './handlers/merchant';
+import { orderHandlers } from './handlers/orders';
 import { apiUrl, MOCK_SESSION_COOKIE, restoreSession } from './handlers/util';
 
 // Runs before every route and falls through (returns nothing): restores the session after a reload.
@@ -21,6 +22,7 @@ export const handlers: RequestHandler[] = [
   ...authHandlers,
   ...merchantHandlers,
   ...companyHandlers,
+  ...orderHandlers,
   ...adminHandlers,
 ];
 

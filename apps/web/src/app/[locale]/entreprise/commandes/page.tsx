@@ -8,23 +8,16 @@ import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
 import { usePagedList } from '@/lib/api/use-paged-list';
 import { useOrderColumns } from '@/components/entreprise/order-columns';
+import { ORDER_STATUSES } from '@/components/orders/order-parts';
 import { buttonClasses } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { PageHeader } from '@/components/ui/layout-blocks';
 
-const STATUSES: Schemas['OrderStatus'][] = [
-  'CREATED',
-  'PAID',
-  'RECONCILED',
-  'CREDITED',
-  'CANCELLED',
-];
-
 export default function OrdersPage() {
   const t = useTranslations('company.orders');
-  const tStatus = useTranslations('statusLabel');
+  const tOrders = useTranslations('orders');
   const columns = useOrderColumns();
   const [filters, setFilters] = useState({ q: '', status: '' });
   const list = usePagedList(
@@ -44,8 +37,8 @@ export default function OrdersPage() {
   return (
     <>
       <PageHeader
-        title={t('title')}
-        description={t('description')}
+        title={tOrders('company.title')}
+        description={tOrders('company.description')}
         actions={
           <Link href="/entreprise/commandes/nouvelle" className={buttonClasses('primary')}>
             <Plus aria-hidden="true" className="size-icon-sm" />
@@ -56,11 +49,14 @@ export default function OrdersPage() {
       <Card>
         <FilterBar
           statusLabel={t('status')}
-          statusOptions={STATUSES.map((value) => ({ value, label: tStatus(value) }))}
+          statusOptions={ORDER_STATUSES.map((value) => ({
+            value,
+            label: tOrders(`status.${value}`),
+          }))}
           onApply={setFilters}
         />
         <DataTable
-          caption={t('title')}
+          caption={tOrders('company.title')}
           columns={columns}
           rows={list.rows}
           rowKey={(row) => row.id}

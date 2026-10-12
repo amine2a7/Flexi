@@ -658,6 +658,107 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/company/orders/{orderId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Détail d'une commande de crédits (déclaration, motif, historique) */
+    get: operations['getCreditOrder'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/company/orders/{orderId}/cancel': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Annuler une commande tant qu'aucun virement n'a été déclaré
+     * @description Possible en `AWAITING_CONFIRMATION` et en `AWAITING_PAYMENT` sans déclaration en attente.
+     *     Sinon `409 RESOURCE_STATE_CONFLICT`.
+     */
+    post: operations['cancelCreditOrder'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/company/orders/{orderId}/transfer-declarations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Déclarer le virement d'une commande (référence, date, montant, capture)
+     * @description Possible en `AWAITING_PAYMENT` uniquement (`409 RESOURCE_STATE_CONFLICT` sinon) ; la
+     *     commande passe en `AWAITING_VALIDATION`. **Exception à la règle « JSON uniquement »**
+     *     (section 8) : corps `multipart/form-data`. La capture est obligatoire : JPG, PNG ou PDF,
+     *     5 Mo maximum, type vérifié sur le contenu (signature) et non sur le nom ; au-delà
+     *     `413 PAYLOAD_TOO_LARGE`, autre type `415 UNSUPPORTED_MEDIA_TYPE`. Champ invalide :
+     *     `400 VALIDATION_FAILED` (`IN_FUTURE` pour une date future).
+     */
+    post: operations['declareCreditOrderTransfer'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/company/orders/{orderId}/proof': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Capture du virement déclaré (entreprise)
+     * @description Fichier tel que déposé (JPG, PNG ou PDF, 5 Mo maximum), servi avec son type d'origine,
+     *     `Content-Disposition: attachment` et `X-Content-Type-Options: nosniff`.
+     */
+    get: operations['getCreditOrderProof'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/company/funding-account': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Compte bancaire de FlexiPay à créditer par virement */
+    get: operations['getFundingAccount'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/company/allocations': {
     parameters: {
       query?: never;
@@ -830,6 +931,140 @@ export interface paths {
     put?: never;
     /** Refuser une demande (motif obligatoire) */
     post: operations['rejectApproval'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/credit-orders': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Toutes les commandes de crédits (filtre par statut et par entreprise)
+     * @description Tri : les commandes qui attendent une action de l'administrateur
+     *     (`AWAITING_CONFIRMATION`, `AWAITING_VALIDATION`) d'abord, puis par date décroissante.
+     */
+    get: operations['listAdminCreditOrders'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/credit-orders/{orderId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Détail d'une commande de crédits */
+    get: operations['getAdminCreditOrder'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/credit-orders/{orderId}/confirm': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Confirmer une commande (AWAITING_CONFIRMATION → AWAITING_PAYMENT) */
+    post: operations['confirmCreditOrder'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/credit-orders/{orderId}/refuse': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Refuser une commande avec un motif (AWAITING_CONFIRMATION → REFUSED) */
+    post: operations['refuseCreditOrder'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/credit-orders/{orderId}/validate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Valider le virement reçu et créditer le solde de l'entreprise (AWAITING_VALIDATION → VALIDATED)
+     * @description L'administrateur a vérifié l'arrivée des fonds sur le compte de FlexiPay. Les crédits
+     *     (`amountMillimes`) sont ajoutés au solde de l'entreprise dans la même transaction.
+     */
+    post: operations['validateCreditOrderPayment'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/credit-orders/{orderId}/reject-proof': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Rejeter le justificatif avec un motif (AWAITING_VALIDATION → AWAITING_PAYMENT)
+     * @description L'entreprise voit le motif et peut déclarer de nouveau son virement.
+     */
+    post: operations['rejectCreditOrderProof'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/credit-orders/{orderId}/proof': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Capture du virement déclaré (administrateur)
+     * @description Fichier tel que déposé (JPG, PNG ou PDF, 5 Mo maximum), servi avec son type d'origine,
+     *     `Content-Disposition: attachment` et `X-Content-Type-Options: nosniff`.
+     */
+    get: operations['getAdminCreditOrderProof'];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -1272,10 +1507,18 @@ export interface components {
     AccountStatus: 'PENDING_KYC' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
     /**
      * OrderStatus
-     * @description Commande — Créée, Payée, Rapprochée, Créditée, Annulée.
+     * @description Commande de crédits — En attente de confirmation (par l'administrateur), En attente de
+     *     paiement (virement à déclarer par l'entreprise), En attente de validation (virement déclaré,
+     *     à vérifier par l'administrateur), Validée (crédits ajoutés au solde), Refusée, Annulée.
      * @enum {string}
      */
-    OrderStatus: 'CREATED' | 'PAID' | 'RECONCILED' | 'CREDITED' | 'CANCELLED';
+    OrderStatus:
+      | 'AWAITING_CONFIRMATION'
+      | 'AWAITING_PAYMENT'
+      | 'AWAITING_VALIDATION'
+      | 'VALIDATED'
+      | 'REFUSED'
+      | 'CANCELLED';
     /**
      * PaymentStatus
      * @description Paiement — Initié, Confirmé, Réglé, Refusé, En litige (cahier v4.1 §8).
@@ -1622,12 +1865,114 @@ export interface components {
       id: components['schemas']['Uuid'];
       reference: string;
       status: components['schemas']['OrderStatus'];
+      companyId: components['schemas']['Uuid'];
+      companyName: string;
       amountMillimes: components['schemas']['PositiveAmountMillimes'];
       feesMillimes: components['schemas']['AmountMillimes'];
       totalMillimes: components['schemas']['PositiveAmountMillimes'];
       createdAt: components['schemas']['Timestamp'];
       /** @description Référence à indiquer sur le virement. */
       paymentReference: string;
+      /** @description Montant du dernier virement déclaré (absent sans déclaration en cours). */
+      declaredAmountMillimes?: components['schemas']['PositiveAmountMillimes'];
+    };
+    /**
+     * CreditOrderDetail
+     * @description Commande avec sa déclaration de virement, son dernier motif et son historique.
+     */
+    CreditOrderDetail: {
+      id: components['schemas']['Uuid'];
+      reference: string;
+      status: components['schemas']['OrderStatus'];
+      companyId: components['schemas']['Uuid'];
+      companyName: string;
+      amountMillimes: components['schemas']['PositiveAmountMillimes'];
+      feesMillimes: components['schemas']['AmountMillimes'];
+      totalMillimes: components['schemas']['PositiveAmountMillimes'];
+      createdAt: components['schemas']['Timestamp'];
+      /** @description Référence à indiquer sur le virement. */
+      paymentReference: string;
+      /** @description Montant du dernier virement déclaré (absent sans déclaration en cours). */
+      declaredAmountMillimes?: components['schemas']['PositiveAmountMillimes'];
+      /** @description Dernière déclaration de virement (absente avant la première déclaration). */
+      declaration?: components['schemas']['TransferDeclaration'];
+      /** @description Motif du refus de la commande (statut REFUSED). */
+      refusalReason?: string;
+      /** @description Motif du dernier rejet de justificatif, affiché à l'entreprise pour redéclarer. */
+      proofRejectionReason?: string;
+      history: components['schemas']['CreditOrderEvent'][];
+    };
+    /**
+     * CreditOrderEventAction
+     * @enum {string}
+     */
+    CreditOrderEventAction:
+      | 'CREATED'
+      | 'CONFIRMED'
+      | 'REFUSED'
+      | 'CANCELLED'
+      | 'TRANSFER_DECLARED'
+      | 'PROOF_REJECTED'
+      | 'VALIDATED';
+    /**
+     * CreditOrderEvent
+     * @description Étape de l'historique d'une commande (qui, quoi, quand).
+     */
+    CreditOrderEvent: {
+      action: components['schemas']['CreditOrderEventAction'];
+      occurredAt: components['schemas']['Timestamp'];
+      actorName: string;
+      actorRole: components['schemas']['Role'];
+      reason?: string;
+    };
+    /** TransferDeclaration */
+    TransferDeclaration: {
+      transferReference: string;
+      transferDate: components['schemas']['CalendarDate'];
+      amountMillimes: components['schemas']['PositiveAmountMillimes'];
+      proof: components['schemas']['TransferProof'];
+      declaredAt: components['schemas']['Timestamp'];
+    };
+    /**
+     * TransferProof
+     * @description Métadonnées de la capture ; le fichier se lit par la route `…/proof`.
+     */
+    TransferProof: {
+      fileName: string;
+      /** @enum {string} */
+      contentType: 'image/jpeg' | 'image/png' | 'application/pdf';
+      /** Format: int32 */
+      sizeBytes: number;
+    };
+    /**
+     * TransferDeclarationForm
+     * @description Corps multipart de la déclaration de virement.
+     */
+    TransferDeclarationForm: {
+      transferReference: string;
+      /** @description Date du virement, jamais dans le futur. */
+      transferDate: components['schemas']['CalendarDate'];
+      /** @description Montant viré, entier en millimes. */
+      amountMillimes: string;
+      /**
+       * Format: binary
+       * @description Capture du virement (JPG, PNG ou PDF, 5 Mo maximum).
+       */
+      proof: string;
+    };
+    /** CreditOrderDecisionReason */
+    CreditOrderDecisionReason: {
+      reason: string;
+    };
+    /**
+     * FundingBankAccount
+     * @description Compte bancaire de FlexiPay sur lequel l'entreprise vire le total de la commande.
+     */
+    FundingBankAccount: {
+      bankName: string;
+      holder: string;
+      rib: string;
+      iban: string;
     };
     /**
      * CreditOrderPage
@@ -1930,7 +2275,8 @@ export interface components {
       | 'UNKNOWN_FIELD'
       | 'INVALID_CURSOR'
       | 'CURRENT_PASSWORD_INVALID'
-      | 'PASSWORD_POLICY_VIOLATION';
+      | 'PASSWORD_POLICY_VIOLATION'
+      | 'IN_FUTURE';
     /** FieldError */
     FieldError: {
       /** @enum {string} */
@@ -3480,6 +3826,167 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  getCreditOrder: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orderId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CreditOrderDetail'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  cancelCreditOrder: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orderId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CreditOrderDetail'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  declareCreditOrderTransfer: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        orderId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['TransferDeclarationForm'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CreditOrderDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      413: components['responses']['PayloadTooLarge'];
+      415: components['responses']['UnsupportedMediaType'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getCreditOrderProof: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orderId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Le fichier. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'image/jpeg': string;
+          'image/png': string;
+          'application/pdf': string;
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getFundingAccount: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FundingBankAccount'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   allocateCredits: {
     parameters: {
       query?: never;
@@ -3911,6 +4418,246 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  listAdminCreditOrders: {
+    parameters: {
+      query?: {
+        /** @description Nombre maximal d'éléments par page. */
+        limit?: components['parameters']['Limit'];
+        /** @description Curseur opaque renvoyé par `page.nextCursor`. Absent pour la première page. */
+        cursor?: components['parameters']['Cursor'];
+        /**
+         * @description Demande le compteur borné `page.count` (§7). À n'envoyer qu'au premier chargement et à
+         *     chaque changement de filtre.
+         */
+        withCount?: components['parameters']['WithCount'];
+        /** @description Filtre par statut. */
+        status?: components['schemas']['OrderStatus'];
+        /** @description Filtre par entreprise. */
+        companyId?: components['schemas']['Uuid'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CreditOrderPage'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getAdminCreditOrder: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orderId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CreditOrderDetail'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  confirmCreditOrder: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orderId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CreditOrderDetail'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  refuseCreditOrder: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orderId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreditOrderDecisionReason'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CreditOrderDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  validateCreditOrderPayment: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        orderId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CreditOrderDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  rejectCreditOrderProof: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orderId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreditOrderDecisionReason'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CreditOrderDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getAdminCreditOrderProof: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        orderId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Le fichier. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'image/jpeg': string;
+          'image/png': string;
+          'application/pdf': string;
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   listSettlementBatches: {
     parameters: {
       query?: {
@@ -4098,7 +4845,14 @@ export const accountStatusValues: ReadonlyArray<
 > = ['PENDING_KYC', 'APPROVED', 'REJECTED', 'SUSPENDED'];
 export const orderStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['OrderStatus']
-> = ['CREATED', 'PAID', 'RECONCILED', 'CREDITED', 'CANCELLED'];
+> = [
+  'AWAITING_CONFIRMATION',
+  'AWAITING_PAYMENT',
+  'AWAITING_VALIDATION',
+  'VALIDATED',
+  'REFUSED',
+  'CANCELLED',
+];
 export const paymentStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['PaymentStatus']
 > = ['INITIATED', 'CONFIRMED', 'SETTLED', 'REFUSED', 'DISPUTED'];
@@ -4132,6 +4886,20 @@ export const importIssueCodeValues: ReadonlyArray<
 export const importIssueFieldValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['ImportIssue']['field']
 > = ['employeeNumber', 'firstName', 'lastName', 'email', 'phone'];
+export const creditOrderEventActionValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['CreditOrderEventAction']
+> = [
+  'CREATED',
+  'CONFIRMED',
+  'REFUSED',
+  'CANCELLED',
+  'TRANSFER_DECLARED',
+  'PROOF_REJECTED',
+  'VALIDATED',
+];
+export const transferProofContentTypeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['TransferProof']['contentType']
+> = ['image/jpeg', 'image/png', 'application/pdf'];
 export const invoiceStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['InvoiceStatus']
 > = ['PAID', 'UNPAID'];
@@ -4182,6 +4950,7 @@ export const fieldErrorCodeValues: ReadonlyArray<
   'INVALID_CURSOR',
   'CURRENT_PASSWORD_INVALID',
   'PASSWORD_POLICY_VIOLATION',
+  'IN_FUTURE',
 ];
 export const fieldErrorInValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['FieldError']['in']

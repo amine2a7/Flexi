@@ -18,7 +18,7 @@
   },
   "orders": {
     "title": "Credit orders",
-    "description": "Your orders and their progress: created, paid, reconciled, credited.",
+    "description": "Each order is confirmed by FlexiPay, then you declare your transfer; credits are added once it is validated.",
     "new": "New order",
     "status": "Status",
     "reference": "Reference",
@@ -32,7 +32,7 @@
   },
   "newOrder": {
     "title": "New credit order",
-    "description": "Credits are added to your balance once your transfer is received and reconciled.",
+    "description": "FlexiPay confirms your order, you make and declare the transfer, then the credits are added to your balance once checked.",
     "amount": "Credit amount (TND)",
     "amountHint": "Minimum amount: 100.000 TND.",
     "amountPreview": "Amount read: {amount}",

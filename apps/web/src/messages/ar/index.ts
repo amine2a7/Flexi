@@ -15,6 +15,7 @@ import category from './category.json';
 import subRole from './subRole.json';
 import dev from './dev.json';
 import company from './company.json';
+import orders from './orders.json';
 
 const messages = {
   admin: admin,
@@ -34,6 +35,7 @@ const messages = {
   subRole: subRole,
   dev: dev,
   company: company,
+  orders: orders,
 };
 
 export default messages;

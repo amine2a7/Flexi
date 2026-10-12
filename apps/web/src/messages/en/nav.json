@@ -21,6 +21,7 @@
     "dashboard": "Overview",
     "merchants": "Merchants",
     "companies": "Companies",
+    "orders": "Orders",
     "commissions": "Commissions",
     "approvals": "Approvals",
     "settlements": "Settlements",

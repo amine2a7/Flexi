@@ -4,22 +4,26 @@ import type { Schemas } from '@flexipay/api-client';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
-import { Link } from '@/i18n/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { getApi, newIdempotencyKey } from '@/lib/api/client';
 import { errorMessageKey } from '@/lib/api/problem';
 import { formatMillimesWithCurrency, formatRateBps } from '@/lib/format/money';
 import { parseMillimes } from '@/lib/format/money-input';
 import { AmountBreakdown } from '@/components/ui/amount';
-import { Button, buttonClasses } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
 import { TextField } from '@/components/ui/field';
 import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { ConfirmDialog } from '@/components/ui/modal';
+import { useToast } from '@/components/ui/toast';
 
 /** Credit order: fees summary computed by the server, confirmation, then the transfer reference. */
 export default function NewOrderPage() {
   const t = useTranslations('company.newOrder');
   const tRoot = useTranslations();
+  const tOrders = useTranslations('orders');
+  const router = useRouter();
+  const toast = useToast();
   const locale = useLocale();
   const [amountText, setAmountText] = useState('');
   const [quote, setQuote] = useState<Schemas['CreditOrderQuote'] | undefined>(undefined);
@@ -27,7 +31,6 @@ export default function NewOrderPage() {
   const [confirming, setConfirming] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<unknown>(undefined);
-  const [order, setOrder] = useState<Schemas['CreditOrder'] | undefined>(undefined);
   const [intentKey, setIntentKey] = useState(newIdempotencyKey);
   const millimes = useMemo(() => parseMillimes(amountText, locale), [amountText, locale]);
 
@@ -60,43 +63,13 @@ export default function NewOrderPage() {
       });
       setConfirming(false);
       if (data === undefined) setError(problem);
-      else setOrder(data);
+      else {
+        toast.notify('success', tOrders('company.createdToast', { reference: data.reference }));
+        router.push(`/entreprise/commandes/${data.id}`);
+      }
     } finally {
       setSending(false);
     }
-  }
-
-  if (order !== undefined) {
-    return (
-      <>
-        <PageHeader title={t('doneTitle')} />
-        <Card>
-          <div className="flex flex-col gap-5">
-            <Alert tone="success" title={t('doneTitle')}>
-              {t('doneMessage', {
-                amount: formatMillimesWithCurrency(order.totalMillimes, locale),
-                reference: order.paymentReference,
-              })}
-            </Alert>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/entreprise/commandes" className={buttonClasses('primary')}>
-                {t('backToOrders')}
-              </Link>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setOrder(undefined);
-                  setQuote(undefined);
-                  setAmountText('');
-                }}
-              >
-                {t('another')}
-              </Button>
-            </div>
-          </div>
-        </Card>
-      </>
-    );
   }
 
   const lines =

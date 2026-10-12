@@ -18,7 +18,7 @@
   },
   "orders": {
     "title": "Commandes de crédits",
-    "description": "Vos commandes et leur avancement : créée, payée, rapprochée, créditée.",
+    "description": "Chaque commande est confirmée par FlexiPay, puis vous déclarez votre virement ; les crédits sont ajoutés après validation.",
     "new": "Nouvelle commande",
     "status": "Statut",
     "reference": "Référence",
@@ -32,7 +32,7 @@
   },
   "newOrder": {
     "title": "Nouvelle commande de crédits",
-    "description": "Les crédits sont ajoutés à votre solde après réception et rapprochement de votre virement.",
+    "description": "FlexiPay confirme votre commande, vous faites le virement et le déclarez, puis les crédits sont ajoutés à votre solde après vérification.",
     "amount": "Montant des crédits (TND)",
     "amountHint": "Montant minimal : 100,000 TND.",
     "amountPreview": "Montant lu : {amount}",

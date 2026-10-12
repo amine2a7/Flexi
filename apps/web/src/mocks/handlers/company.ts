@@ -1,6 +1,8 @@
 import type { Schemas } from '@flexipay/api-client';
 import { http, HttpResponse } from 'msw';
 import { commissionOf, db } from '../db';
+import { COMPANY_TENANT } from '../fixtures/accounts';
+import { OPEN_ORDER_STATUSES, orderSummary } from './orders';
 import {
   apiUrl,
   audit,
@@ -72,7 +74,8 @@ export const companyHandlers = [
   http.get(apiUrl('/v1/company/dashboard'), async () => {
     const account = await guardRead('COMPANY');
     if (isResponse(account)) return account;
-    const { employees, orders, walletMillimes } = db.company;
+    const { employees, walletMillimes } = db.company;
+    const orders = db.orders.filter((order) => order.companyId === COMPANY_TENANT.id);
     return HttpResponse.json<S['CompanyDashboard']>({
       walletBalanceMillimes: walletMillimes,
       employeesCount: employees.length,
@@ -81,10 +84,9 @@ export const companyHandlers = [
         (sum, employee) => sum + employee.monthAllocatedMillimes,
         0,
       ),
-      pendingOrdersCount: orders.filter(
-        (order) => order.status === 'CREATED' || order.status === 'PAID',
-      ).length,
-      recentOrders: orders.slice(0, 5),
+      pendingOrdersCount: orders.filter((order) => OPEN_ORDER_STATUSES.includes(order.status))
+        .length,
+      recentOrders: orders.slice(0, 5).map(orderSummary),
     });
   }),
 
@@ -189,37 +191,6 @@ export const companyHandlers = [
       feesMillimes: fees,
       totalMillimes: body.amountMillimes + fees,
     });
-  }),
-
-  http.get(apiUrl('/v1/company/orders'), async ({ request }) => {
-    const account = await guardRead('COMPANY');
-    if (isResponse(account)) return account;
-    const status = listParams(request).query.get('status');
-    const items = db.company.orders.filter((order) => status === null || order.status === status);
-    return HttpResponse.json<S['CreditOrderPage']>(paginate(items, request));
-  }),
-
-  http.post(apiUrl('/v1/company/orders'), async ({ request }) => {
-    const account = await guardWrite(request, 'COMPANY', true);
-    if (isResponse(account)) return account;
-    const body = (await request.json()) as S['CreditOrderCreate'];
-    if (!Number.isInteger(body.amountMillimes) || body.amountMillimes < 100_000) {
-      return validationProblem([{ pointer: '/amountMillimes', code: 'TOO_SMALL' }]);
-    }
-    const fees = commissionOf(body.amountMillimes, db.admin.settings.orderFeeRateBps);
-    const order: S['CreditOrder'] = {
-      id: crypto.randomUUID(),
-      reference: `CMD-2026-${String(7300 + db.company.orders.length)}`,
-      status: 'CREATED',
-      amountMillimes: body.amountMillimes,
-      feesMillimes: fees,
-      totalMillimes: body.amountMillimes + fees,
-      createdAt: new Date().toISOString(),
-      paymentReference: `FXP-${String(Date.now()).slice(-8)}`,
-    };
-    db.company.orders.unshift(order);
-    audit('orders.create', order.reference);
-    return HttpResponse.json<S['CreditOrder']>(order, { status: 201 });
   }),
 
   http.post(apiUrl('/v1/company/allocations'), async ({ request }) => {

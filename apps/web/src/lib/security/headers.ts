@@ -27,7 +27,8 @@ export function buildContentSecurityPolicy({
       ...(isDevelopment ? ["'unsafe-eval'"] : []),
     ],
     ['style-src', "'self'", ...(isDevelopment ? ["'unsafe-inline'"] : [nonceSource])],
-    ['img-src', "'self'", 'data:'],
+    // blob: = preview of a transfer proof fetched by the app itself (credit orders), images only.
+    ['img-src', "'self'", 'data:', 'blob:'],
     ['font-src', "'self'"],
     ['connect-src', "'self'", ...(apiOrigin === undefined ? [] : [apiOrigin])],
     ['worker-src', isDevelopment ? "'self'" : "'none'"],
