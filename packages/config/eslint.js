@@ -6,6 +6,9 @@ import js from '@eslint/js';
 import prettier from 'eslint-config-prettier';
 import tseslint from 'typescript-eslint';
 
+/** CLI entry points (code generators, maintenance scripts): console output is their interface. */
+export const cliFiles = ['**/scripts/**/*.{ts,mts,js,mjs}', '**/generate.{ts,mts,js,mjs}'];
+
 /** Ignored everywhere: build output, caches, coverage. */
 export const ignores = ['**/dist/**', '**/coverage/**', '**/.turbo/**', '**/node_modules/**'];
 
@@ -14,6 +17,8 @@ export const ignores = ['**/dist/**', '**/coverage/**', '**/.turbo/**', '**/node
  * Amounts are integer millimes: no decimal formatting/parsing in code that may touch money.
  */
 export const safetyRules = {
+  // Logs go through the application logger, which masks sensitive data (SEC-D4, Q0-03).
+  'no-console': 'error',
   'no-eval': 'error',
   'no-implied-eval': 'error',
   'no-new-func': 'error',
@@ -66,6 +71,10 @@ export function createConfig({ tsconfigRootDir }) {
       // Plain JS config files are not part of a TS project: no type-aware rules.
       files: ['**/*.{js,mjs,cjs}'],
       extends: [tseslint.configs.disableTypeChecked],
+    },
+    {
+      files: cliFiles,
+      rules: { 'no-console': 'off' },
     },
     prettier,
   );
