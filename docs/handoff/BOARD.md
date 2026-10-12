@@ -3,7 +3,7 @@
 Tenu par le lead (`team-lead`) à chaque étape. Statuts : À faire · En cours · En revue · Bloqué · Terminé.
 Préfixe `TEST-FIRST:` = tâche de tests écrits avant le code (tests rouges acceptés).
 
-## Phase en cours : Phase 0 → « web d'abord » (décision du 2026-10-11) — branche `feat/web` ; vague 1 close sauf exécution Docker de B4 ; mobile reporté
+## Phase en cours : « web d'abord » — EN PAUSE (STOP de l'utilisateur, 2026-10-12 08h30) ; branche `feat/web` ; 24 décisions en attente ; Docker arrêté (C: plein)
 
 Objectif (roadmap) : monorepo, CI, Docker Compose (Postgres, Redis), lint/format ; pipeline de génération des tokens ; environnement dev. **Staging exclu de cette passe** (après le choix de l'hébergeur). Aucune fonctionnalité métier.
 Critère de fin : pipeline vert ; securite OK ; design OK sur les coquilles.
@@ -32,9 +32,9 @@ Critère de fin : pipeline vert ; securite OK ; design OK sur les coquilles.
 | P0-D2 | Spec `docs/design/specs/fondations-composants.md` : bouton, champ, badge de statut, carte, toast, montant, squelette, états vide/erreur/hors connexion | design | À REVOIR (ux : 21 constats ; conformite : NON CONFORME S-01..S-06) — repris dans WD2 ; ne pas coder avant | — | — |
 | P0-D3 | Spec `docs/design/specs/navigation.md` : sidebar web (3 espaces), barres basses Employé et Pro, écrans session expirée / hors connexion | design | À REVOIR (ux et conformite) — repris dans WD1 ; ne pas coder avant | — | — |
 | P0-D4 | Revue de fidélité des coquilles web et mobile | design | En attente — outils | F2, M2 | — |
-| P0-F1 | Squelette `apps/web` : Next.js App Router, TS strict, Tailwind sur le preset ui-tokens, shadcn/ui, Lucide, i18n FR/AR/EN + RTL, Vitest + Playwright | frontend | En cours (frontend) | B1, D1 | securite (S4) |
+| P0-F1 | Squelette `apps/web` : Next.js App Router, TS strict, Tailwind sur le preset ui-tokens, shadcn/ui, Lucide, i18n FR/AR/EN + RTL, Vitest + Playwright | frontend | En pause (STOP 12/10) — quasi fini, non commité : lint 1 erreur, 47 tests Vitest verts, Playwright 14/16 ; reste skip link, favicon, test « MSW absent en production » | B1, D1 | securite (S4) |
 | P0-F2 | Coquille de navigation web + page de santé via le client généré + utilitaire unique de formatage des montants (tests) | frontend | À faire (web, étape 3) | F1, D2, D3, B5 | design (D4) |
-| P0-F3 | En-têtes de sécurité web : CSP stricte, frame-ancestors, Referrer-Policy, X-Content-Type-Options, cookies (tests) | frontend | À faire (web, étape 2) | F1 | securite (S4) |
+| P0-F3 | En-têtes de sécurité web : CSP stricte, frame-ancestors, Referrer-Policy, X-Content-Type-Options, cookies (tests) | frontend | En pause (STOP 12/10) — CSP à nonce et en-têtes écrits, tests unitaires verts ; non vérifié en build de production | F1 | securite (S4) |
 | P0-M1 | Squelettes `apps/mobile-employe` et `apps/mobile-pro` : Riverpod, go_router, dio, freezed, lints stricts, l10n FR/AR/EN + RTL | mobile | En attente — mobile reporté (« web d'abord », décision du 2026-10-11) | PRE-3 | securite (S4) |
 | P0-M2 | Thème généré depuis les tokens + coquilles barre basse + écran de santé via client Dart généré + formateur de montants unique (tests) | mobile | En attente — mobile reporté (« web d'abord », décision du 2026-10-11) | M1, D1, D3, B5 | design (D4) |
 | P0-M3 | Socle sécurité mobile : `flutter_secure_storage`, intercepteur dio avec pinning (configurable), blocage de capture d'écran, build release obfusqué | mobile | En attente — mobile reporté (« web d'abord », décision du 2026-10-11) | M1 | securite (S4) |
@@ -60,14 +60,14 @@ Données fictives : MSW dans `apps/web/src/mocks/`, typées par `packages/api-cl
 | ID | Titre | Responsable | Statut | Dépend de | Relecteur |
 |---|---|---|---|---|---|
 | Q0 | Revue qualité rétroactive de B1, B2, D1, B4 | qualite | Terminé (OK, 13 constats : 3 Importants ; commit 8e5327a) | — | — |
-| WD1 | Specs Commun : connexion, première connexion (mot de passe temporaire), MFA, session expirée, 404/500 | design | En revue — 6 specs Commun livrées : ux OK (4 Importants à corriger), securite OK, conformite NON CONFORME (WD-01..04) ; décisions utilisateur en attente | WB2 (auth) | ux, conformite, securite |
-| WD2 | Spec page bibliothèque de composants `/dev/composants` (boutons, champs, badges, cartes, toasts, tableaux, modales, montants ; tous les états) | design | En revue — dev-composants.md livré : ux OK (R-01), conformite NON CONFORME (WD-05..07) | D2 | ux, conformite |
-| WD3 | Specs Commerçant : tableau de bord, encaissement (code manuel), succès/refus, historique, créances, simulation et demande de virement (brut → commission → net, taux figé), règlements, mon commerce | design | À faire | WD2 | ux, conformite, securite |
+| WD1 | Specs Commun : connexion, première connexion (mot de passe temporaire), MFA, session expirée, 404/500 | design | Validé (ux OK, securite OK, conformite CONFORME) — non commité ; décisions utilisateur en attente | WB2 (auth) | ux, conformite, securite |
+| WD2 | Spec page bibliothèque de composants `/dev/composants` (boutons, champs, badges, cartes, toasts, tableaux, modales, montants ; tous les états) | design | Validé (ux OK, conformite CONFORME sous réserve D-03) — non commité | D2 | ux, conformite |
+| WD3 | Specs Commerçant : tableau de bord, encaissement (code manuel), succès/refus, historique, créances, simulation et demande de virement (brut → commission → net, taux figé), règlements, mon commerce | design | En pause (STOP 12/10) — 6 specs Commerçant sur 8 écrites, non soumises en revue | WD2 | ux, conformite, securite |
 | WD4 | Specs Entreprise : tableau de bord, commande de crédits (frais), employés + import CSV (erreurs, doublons), attribution, factures, reporting, paramètres | design | À faire | WD2 | ux, conformite, securite |
 | WD5 | Specs Administrateur : tableau de bord, comptes, création société et commerçant (profil de commission obligatoire), KYC, commissions (double validation), transactions et alertes, paramètres, audit | design | À faire | WD2 | ux, conformite, securite |
 | WD6 | Revue de fidélité de chaque écran | design | À faire | WF2–WF5 | — |
 | WB1 | `packages/api-client` : openapi-typescript + openapi-fetch depuis le contrat, test de fraîcheur | backend | En revue (securite OK, qualite OK, 0 constat ; commit avec le lockfile après F1) | B1 | securite, qualite |
-| WB2 | Contrat complété au fil des [QUESTION] de design, espace par espace ([CONTRAT]) | backend | En revue — auth/Commun publié (contrat 0.2.0) : securite OK (WD1-S01, WB2-S01 Moyennes), qualite OK, conformite NON CONFORME (W-03, côté spec 01) ; Commerçant à suivre | questions design | securite, conformite |
+| WB2 | Contrat complété au fil des [QUESTION] de design, espace par espace ([CONTRAT]) | backend | Auth/Commun : contrat 0.2.1 non commité ; securite OK (reste WD1-S01 b, décision), qualite OK, conformite CONFORME sauf W-03 (spec 01, lead) ; Commerçant non commencé | questions design | securite, conformite |
 | WF1 | Bibliothèque de composants codée (`/dev/composants`, hors production) | frontend | À faire | F1, WD2 validée | qualite, design, ux, conformite |
 | WF2 | Écrans Commun + Playwright connexion | frontend | À faire | F2, WD1 validée, WB2 | securite, qualite, ux, design, conformite |
 | WF3 | Écrans Commerçant + Playwright encaissement, simulation et demande de virement | frontend | À faire | WF2, WD3 validée | idem |
