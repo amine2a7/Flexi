@@ -1,20 +1,26 @@
 openapi: 3.1.0
 info:
   title: FlexiPay API
-  version: 0.1.0
-  summary: Contrat initial de conventions (phase 0), sans endpoint métier.
+  version: 0.2.1
+  summary: Conventions transverses, authentification web et profil (WB2, espace Commun).
   description: |
-    # Contrat d'API FlexiPay — conventions (phase 0, P0-B5)
+    # Contrat d'API FlexiPay (version 0.2.1)
 
     Ce fichier est le **contrat de référence** entre l'API (`apps/api`), le web (`apps/web`) et les
     apps Flutter (`apps/mobile-employe`, `apps/mobile-pro`). Il est tenu par **backend**. Toute
     modification est annoncée par un message `[CONTRAT]` ; tout changement **cassant** est annoncé
     **avant** d'être fait (ce qui casse, migration côté client, date).
 
-    Cette version ne contient que les conventions transverses et `GET /health`. Les endpoints
-    métier (auth, ledger, paiements, virements…) seront ajoutés module par module, en respectant
-    les règles ci-dessous. Les clients web (TypeScript) et mobile (Dart) seront **générés** à
-    partir de ce fichier (pas encore en phase 0).
+    Contenu : conventions transverses (§1 à §9), `GET /health`, authentification web et profil
+    (§10, espace Commun). Les autres endpoints métier (Commerçant, Entreprise, Administrateur,
+    ledger, paiements, virements…) sont ajoutés module par module, en respectant les règles
+    ci-dessous. Le client web TypeScript est **généré** à partir de ce fichier
+    (`packages/api-client`, test de fraîcheur) ; le client mobile Dart le sera plus tard.
+
+    **Paramètres provisoires** : toute valeur marquée « provisoire » est un choix technique de
+    backend, sans document source, soumis à securite puis consigné par le lead dans
+    `docs/handoff/decisions.md` ; elle peut changer d'ici là. Les points « en attente de
+    décision » attendent une décision de l'utilisateur.
 
     Code, noms de champs, codes d'erreur et valeurs d'énumération sont en **anglais** ; les textes
     affichés à l'utilisateur ne viennent **jamais** du serveur : le serveur renvoie des **clés i18n**
@@ -117,7 +123,10 @@ info:
     | 401 | `UNAUTHENTICATED` | `errors.unauthenticated` | — |
     | 401 | `SESSION_EXPIRED` | `errors.sessionExpired` | — |
     | 401 | `INVALID_CREDENTIALS` | `errors.invalidCredentials` | — |
+    | 401 | `MFA_CODE_INVALID` | `errors.mfaCodeInvalid` | — |
+    | 401 | `MFA_CHALLENGE_EXPIRED` | `errors.mfaChallengeExpired` | — |
     | 403 | `PASSWORD_CHANGE_REQUIRED` | `errors.passwordChangeRequired` | — |
+    | 403 | `MFA_ENROLLMENT_REQUIRED` | `errors.mfaEnrollmentRequired` | — |
     | 403 | `FORBIDDEN` | `errors.forbidden` | — |
     | 403 | `CSRF_TOKEN_INVALID` | `errors.csrfTokenInvalid` | — |
     | 404 | `NOT_FOUND` | `errors.notFound` | — |
@@ -307,6 +316,16 @@ info:
       Le curseur ne contourne jamais le filtrage par tenant.
     - Champs de tri et de filtre : **liste blanche** par endpoint ; tout autre valeur est refusée.
       Filtres de période : `createdFrom` / `createdTo` (`Timestamp`, borne haute exclue).
+    - **Compteur borné facultatif** (UX-02, convention commune à **toutes** les listes paginées) :
+      `?withCount=true` ajoute `page.count: { value, isLowerBound }`. Le serveur compte au plus
+      jusqu'à **10 000** (provisoire) (comptage d'une sous-requête limitée à 10 001 lignes, coût borné quelle
+      que soit la taille de la table) : `isLowerBound: false` → `value` est le nombre exact de
+      résultats (`0` pour une liste vide) ; `isLowerBound: true` → « plus de `value` ». Mêmes filtres
+      et même tenant (RLS) que la liste. À n'envoyer qu'au premier chargement et à chaque
+      changement de filtre, jamais en tournant les pages. Si le comptage échoue ou dépasse son
+      délai, la page est renvoyée **sans** `page.count` (jamais d'erreur pour cette raison). Le
+      compte reflète l'instant de la requête (des insertions concurrentes peuvent le décaler).
+      Sans `withCount`, `page.count` est absent. Pas de `totalCount` exact.
 
     ## 8. En-têtes communs
     - Requête : `Accept-Language` (`fr`, `ar`, `en`) — utilisé pour les notifications et documents
@@ -336,6 +355,70 @@ info:
     `ApprovalStatus` reprennent le cahier des charges (§8) et le glossaire, traduits en anglais.
     Elles sont **provisoires** jusqu'au contrat de chaque module et peuvent s'enrichir (le client
     prévoit une valeur de repli).
+    - **Tout statut affiché est fourni par le serveur** (conformite S-03) : le client n'en déduit
+      jamais un à partir d'autres champs ni de l'heure de l'appareil. « À régler » (créance du
+      commerçant) = `PaymentStatus` `CONFIRMED` (paiement encaissé non encore réglé, glossaire
+      « Créance »). Les statuts d'un lot de crédit (expiré) et d'une alerte antifraude (suspect)
+      ne figurent pas au glossaire : **en attente de décision** (2026-10-11), ils seront ajoutés
+      avec les contrats Entreprise et Administrateur ; d'ici là, aucun champ n'existe.
+
+    ## 10. Authentification web : séquence et états de session (spec 01, SEC-A1 à SEC-A4)
+    Le web ne sert que `ADMIN`, `COMPANY` et `MERCHANT` (cahier §1.2), pour qui la MFA TOTP est
+    obligatoire (spec 01 §3). Toutes les routes `/v1/auth/*` du web exigent l'en-tête
+    `X-FlexiPay-Client: web` (la variante mobile sera ajoutée avec le contrat mobile).
+
+    **Séquence** (la MFA est toujours vérifiée **avant** d'ouvrir une session, même partielle) :
+    1. `POST /v1/auth/login` avec identifiant + mot de passe.
+       - Identifiants refusés, compte inconnu, **verrouillé**, suspendu, ou **mot de passe
+         temporaire expiré** (72 h) : `401 INVALID_CREDENTIALS`, réponse identique dans tous les
+         cas (§4, anti-énumération). Le titulaire est prévenu par un autre canal ; un mot de passe
+         temporaire expiré est renvoyé par l'entreprise ou l'administrateur (spec 01 §3).
+       - **Durée de réponse indépendante du compte** (WD1-S01) : pour un identifiant inconnu, le
+         serveur calcule un hachage Argon2id factice avec les mêmes paramètres ; le verrouillage,
+         l'état du compte et l'expiration du mot de passe temporaire sont évalués **après** ce
+         hachage, de sorte que tous les cas `INVALID_CREDENTIALS` ont un coût comparable.
+       - **Verrouillage vérifié avant le mot de passe** : un compte verrouillé reçoit
+         `INVALID_CREDENTIALS` même avec le bon mot de passe.
+       - Mot de passe correct d'un `EMPLOYEE` ou `FAMILY_MEMBER` (compte non verrouillé) :
+         `403 FORBIDDEN` (provisoire), sans cookie ni session, journalisé (ces rôles utilisent
+         l'application mobile). Le contrôle n'a lieu qu'après vérification du mot de passe : il ne
+         révèle rien sans le bon mot de passe.
+       - **Portée du verrouillage** (spec 01 §3 : 5 échecs → 15 min, puis progressif) : **en
+         attente de décision** (2026-10-12). Un compteur global par compte permet à n'importe qui
+         de bloquer un compte ADMIN ou commerçant ; deux options soumises à l'utilisateur
+         (compteur par couple compte + IP/appareil avec un seuil global plus haut, ou blocage
+         global levé par une réinitialisation réussie, avec notification au titulaire).
+       - MFA enrôlée : `200` `nextStep: MFA_CHALLENGE` + `challengeId` (opaque, usage unique,
+         valable 5 min, provisoire) ; **aucun cookie** n'est posé.
+       - MFA pas encore enrôlée : `200` avec une **session restreinte** (cookies posés,
+         `csrfToken` dans le corps) et `nextStep: PASSWORD_CHANGE` (mot de passe temporaire) ou
+         `MFA_ENROLL`.
+    2. `POST /v1/auth/mfa/verify` (`challengeId` + code TOTP à 6 chiffres, SHA-1, 30 s, provisoire) : session ouverte
+       (cookies + `csrfToken`), `nextStep: PASSWORD_CHANGE` si le mot de passe est temporaire,
+       sinon `NONE`. Code faux : `401 MFA_CODE_INVALID`. Défi inconnu, consommé ou expiré :
+       `401 MFA_CHALLENGE_EXPIRED` (retour à la connexion). Les échecs MFA comptent dans le **même
+       compteur de verrouillage** que la connexion (5 échecs, spec 01 §3) ; au verrouillage, le
+       défi est invalidé.
+    3. `POST /v1/auth/password/change` (session restreinte `PASSWORD_CHANGE`) : `nextStep`
+       `MFA_ENROLL` si la MFA n'est pas enrôlée, sinon `NONE`.
+    4. `POST /v1/auth/mfa/enroll` puis `POST /v1/auth/mfa/enroll/confirm` (session restreinte
+       `MFA_ENROLL`) : `nextStep: NONE`, session complète.
+
+    **Routes autorisées par état de session** (tout autre appel est refusé) :
+    | État (`nextStep`) | Routes autorisées | Refus des autres routes |
+    |---|---|---|
+    | `PASSWORD_CHANGE` (10 min au plus, en absolu ; usage unique) | `POST /v1/auth/password/change`, `POST /v1/auth/logout`, `POST /v1/auth/refresh` | `403 PASSWORD_CHANGE_REQUIRED` |
+    | `MFA_ENROLL` | `POST /v1/auth/mfa/enroll`, `POST /v1/auth/mfa/enroll/confirm`, `POST /v1/auth/logout`, `POST /v1/auth/refresh` | `403 MFA_ENROLLMENT_REQUIRED` |
+    | `NONE` (session complète) | toutes les routes permises par le rôle | — |
+
+    - Le **rafraîchissement** renvoie l'état courant (`nextStep`) : après un rechargement de page,
+      le client sait où reprendre la séquence sans autre appel.
+    - Chaque réponse qui établit, renouvelle ou fait changer d'état la session **renouvelle**
+      l'identifiant de session et le `csrfToken` (le précédent devient invalide).
+    - Les paramètres encore **en attente de décision** (2026-10-11) : politique de mot de passe
+      (valeurs de `GET /v1/auth/password-policy`), codes de secours MFA (SEC-A4), mécanisme de
+      réinitialisation (lien ou OTP, `POST /v1/auth/password/reset`), révocation des autres
+      sessions après changement du mot de passe, matrice des permissions (`GET /v1/me`).
   contact:
     name: Équipe backend FlexiPay
   license:
@@ -349,6 +432,10 @@ servers:
 tags:
   - name: system
     description: Sondes techniques
+  - name: auth
+    description: Connexion, MFA, mot de passe, session (spec 01)
+  - name: me
+    description: Profil de l'utilisateur connecté
 security:
   - cookieAuth: []
     csrfToken: []
@@ -392,6 +479,489 @@ paths:
           $ref: '#/components/responses/InternalError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  # ================================================================== authentification (spec 01)
+  /v1/auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      summary: Connexion par identifiant (e-mail ou téléphone) et mot de passe
+      description: |
+        Route **publique** (`@Public()`), contrôle exact de l'en-tête `Origin` (§6, CSRF de
+        connexion), rate limiting par IP, route et identifiant haché (§8). Voir la séquence en §10.
+        Réponse identique (`401 INVALID_CREDENTIALS`) pour un compte inconnu, verrouillé, suspendu,
+        un mot de passe faux ou un mot de passe temporaire expiré. Journal d'audit : succès et
+        échec (sans le mot de passe ni l'identifiant en clair).
+      security: []
+      x-public: true
+      parameters:
+        - $ref: '#/components/parameters/ClientChannel'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: |
+            Mot de passe accepté. `MFA_CHALLENGE` : aucun cookie, défi à résoudre par
+            `POST /v1/auth/mfa/verify`. Sinon : session (restreinte si `nextStep` ≠ `NONE`), cookies
+            posés et `csrfToken` dans le corps.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+            Set-Cookie:
+              $ref: '#/components/headers/Set-Cookie-Session'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResult'
+              examples:
+                mfaChallenge:
+                  value:
+                    nextStep: MFA_CHALLENGE
+                    challengeId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+                    challengeExpiresAt: '2026-10-11T08:35:00.000Z'
+                firstLogin:
+                  summary: Mot de passe temporaire, MFA pas encore enrôlée
+                  value:
+                    nextStep: PASSWORD_CHANGE
+                    csrfToken: 3q2-7wEAAAB0ZXN0LWNzcmYtdG9rZW4tZXhhbXBsZQ
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/auth/mfa/verify:
+    post:
+      tags: [auth]
+      operationId: verifyMfa
+      summary: Réponse au défi MFA (code TOTP)
+      description: |
+        Route **publique** (le défi tient lieu d'authentification partielle). Code TOTP RFC 6238
+        à 6 chiffres (provisoire). Échecs comptés dans le compteur de verrouillage de la connexion (5 échecs).
+        **Anti-rejeu** (WB2-S02) : tolérance de ±1 pas de 30 s ; un code accepté est refusé
+        (`MFA_CODE_INVALID`) pour ce compte jusqu'à la fin de sa fenêtre de validité.
+        Erreurs : `401 MFA_CODE_INVALID` (code faux, le défi reste valable jusqu'au verrouillage),
+        `401 MFA_CHALLENGE_EXPIRED` (défi inconnu, déjà utilisé, expiré ou invalidé par le
+        verrouillage : retour à la connexion). Journal d'audit : succès et échec.
+        Codes de secours (SEC-A4) : en attente de décision, ajoutés ensuite (champ facultatif).
+      security: []
+      x-public: true
+      parameters:
+        - $ref: '#/components/parameters/ClientChannel'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaVerifyRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SessionEstablished'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/auth/mfa/enroll:
+    post:
+      tags: [auth]
+      operationId: startMfaEnrollment
+      summary: Démarre l'enrôlement TOTP (secret et URI otpauth)
+      description: |
+        Session restreinte `MFA_ENROLL` : sans corps. Session **complète** (changement d'appareil
+        d'authentification, WB2-S01) : corps **obligatoire** `{ currentPassword, currentCode }`,
+        `currentCode` étant un code de l'**ancien** secret (ou, après décision, un code de
+        secours) ; champ absent : `400 VALIDATION_FAILED` (`REQUIRED`) ; mot de passe faux :
+        `CURRENT_PASSWORD_INVALID` ; code faux : `401 MFA_CODE_INVALID` ; chaque échec compte
+        dans le verrouillage. L'ancien secret reste **actif** jusqu'à la confirmation du nouveau.
+        Génère un **nouveau** secret à chaque appel (le précédent, non confirmé, est abandonné) ;
+        il n'est actif qu'après `POST /v1/auth/mfa/enroll/confirm`. Le secret n'est renvoyé
+        **qu'ici**, jamais journalisé ; le client l'affiche une seule fois (QR généré côté client à
+        partir d'`otpauthUri`, rendu par `img`/`canvas`, jamais `innerHTML` ; saisie manuelle avec
+        `secretBase32`) et ne le conserve pas. `Cache-Control: no-store`. Journal d'audit :
+        démarrage d'enrôlement (sans le secret) ; notification au titulaire en session complète.
+      parameters:
+        - $ref: '#/components/parameters/ClientChannel'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaReEnrollmentRequest'
+      responses:
+        '200':
+          description: Secret TOTP en attente de confirmation.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaEnrollment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/auth/mfa/enroll/confirm:
+    post:
+      tags: [auth]
+      operationId: confirmMfaEnrollment
+      summary: Confirme l'enrôlement TOTP avec un premier code
+      description: |
+        Active le secret si le code est valable (`401 MFA_CODE_INVALID` sinon, échec compté dans
+        le compteur de verrouillage ; `409 RESOURCE_STATE_CONFLICT` si aucun enrôlement n'est en
+        cours ou s'il a expiré, 10 min, provisoire). La session devient complète (`nextStep: NONE`),
+        identifiant de session et `csrfToken` renouvelés. Journal d'audit et notification au
+        titulaire. Codes de secours (SEC-A4) : en attente de décision, ajoutés à cette réponse.
+      parameters:
+        - $ref: '#/components/parameters/ClientChannel'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaEnrollmentConfirmRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SessionEstablished'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/auth/password/change:
+    post:
+      tags: [auth]
+      operationId: changePassword
+      summary: Change le mot de passe (dont le mot de passe temporaire)
+      description: |
+        Session restreinte `PASSWORD_CHANGE` ou session complète.
+        **`currentPassword`** (ux N-02, avis securite du 2026-10-12, écart ASVS 4.0.3 §2.1.6 assumé) :
+        - session **complète** : obligatoire (absent : `VALIDATION_FAILED`, code `REQUIRED`) ;
+        - état **`PASSWORD_CHANGE`** : non demandé et ignoré s'il est envoyé. Cette exemption tient
+          aux conditions suivantes : (1) la session restreinte dure **10 min au plus, en absolu**,
+          après la vérification du mot de passe temporaire ; le rafraîchissement ne prolonge jamais
+          cette échéance, exposée dans `SessionResult.restrictedUntil` (au-delà :
+          `401 UNAUTHENTICATED` générique, retour à la connexion ; le mot de passe temporaire
+          reste valable jusqu'à ses 72 h ou jusqu'au changement réussi) ; (2) elle est à
+          **usage unique** : un changement réussi la consomme (nouvel identifiant de session,
+          nouveau `csrfToken`, état suivant) et invalide le mot de passe temporaire ; (3) elle est
+          liée à la **version** du mot de passe temporaire : un renvoi par l'entreprise ou
+          l'administrateur, ou l'expiration des 72 h, la révoque ; (4) `X-CSRF-Token`, rate
+          limiting et compteur de verrouillage s'appliquent (refus répétés de la politique
+          compris) ; (5) aucune autre route d'écriture n'est ouverte dans cet état (§10).
+        `currentPassword` faux (session complète) :
+        `400 VALIDATION_FAILED`, champ `/currentPassword` code `CURRENT_PASSWORD_INVALID` ;
+        l'échec compte dans le compteur de verrouillage (au verrouillage, toutes les sessions sont
+        révoquées et la requête suivante reçoit `401 UNAUTHENTICATED`). Nouveau mot de passe
+        refusé par la politique : champ `/newPassword`, code `PASSWORD_POLICY_VIOLATION`, une
+        entrée par règle non respectée avec `params.rule` (code de `PasswordPolicyRuleCode`) et les
+        paramètres de la règle. Succès : session renouvelée, `nextStep` suivant (§10). Révocation
+        des autres sessions et familles de jetons de rafraîchissement : en attente de décision
+        (recommandation backend et securite : oui, automatique). Journal d'audit et notification
+        au titulaire. Jamais de mot de passe dans les journaux ni les erreurs.
+      parameters:
+        - $ref: '#/components/parameters/ClientChannel'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SessionEstablished'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/auth/password-policy:
+    get:
+      tags: [auth]
+      operationId: getPasswordPolicy
+      summary: Règles de la politique de mot de passe (aide à la saisie)
+      description: |
+        Route **publique** (utile à la réinitialisation, sans session). Liste structurée de règles
+        que le client affiche via ses clés i18n (`passwordPolicy.rule.<codeEnCamelCase>`), sans
+        aucune règle codée en dur. Le serveur reste seul juge (`PASSWORD_POLICY_VIOLATION`).
+        Les **valeurs** sont en attente de décision (SEC-A1) ; l'exemple suit la recommandation.
+      security: []
+      x-public: true
+      responses:
+        '200':
+          description: Politique en vigueur.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordPolicy'
+              example:
+                rules:
+                  - code: MIN_LENGTH
+                    params: { min: 12 }
+                  - code: MAX_LENGTH
+                    params: { max: 128 }
+                  - code: NOT_COMPROMISED
+                  - code: NOT_IDENTIFIER
+                  - code: DIFFERENT_FROM_CURRENT
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/auth/refresh:
+    post:
+      tags: [auth]
+      operationId: refreshSession
+      summary: Renouvelle la session (rotation du jeton de rafraîchissement)
+      description: |
+        Authentifiée par le cookie `__Secure-fp_rt` (`Path=/v1/auth`) et l'en-tête
+        `X-FlexiPay-Client: web` (pré-vol CORS) ; pas de `X-CSRF-Token` (c'est le moyen de le
+        récupérer après un rechargement, §6). Rotation : nouveau jeton d'accès, nouveau jeton de
+        rafraîchissement, nouveau `csrfToken`, état courant (`nextStep`). Jeton absent, invalide,
+        expiré ou **réutilisé** (toute la famille est alors révoquée, SEC-A3) :
+        `401 UNAUTHENTICATED` et cookies effacés.
+      security: []
+      x-public: true
+      parameters:
+        - $ref: '#/components/parameters/ClientChannel'
+      responses:
+        '200':
+          $ref: '#/components/responses/SessionEstablished'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/auth/logout:
+    post:
+      tags: [auth]
+      operationId: logout
+      summary: Déconnexion (révoque la session courante)
+      description: |
+        Autorisée dans tous les états de session. Révoque la session et sa famille de jetons de
+        rafraîchissement, efface les cookies (`Max-Age=0`). Idempotente : sans session valable,
+        `204` quand même (cookies effacés). Journal d'audit.
+      parameters:
+        - $ref: '#/components/parameters/ClientChannel'
+      responses:
+        '204':
+          description: Session révoquée, cookies effacés.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Set-Cookie:
+              $ref: '#/components/headers/Set-Cookie-Session'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/auth/password/forgot:
+    post:
+      tags: [auth]
+      operationId: requestPasswordReset
+      summary: Demande de réinitialisation du mot de passe
+      description: |
+        Route **publique**. Réponse **toujours** `202`, identique et de durée comparable que le
+        compte existe ou non (anti-énumération, §4) ; rate limiting par IP, route et identifiant
+        haché. Mécanisme d'envoi (lien ou OTP, durée de validité) : **en attente de décision**
+        (recommandation : lien par e-mail à usage unique, 15 min). Journal d'audit.
+      security: []
+      x-public: true
+      parameters:
+        - $ref: '#/components/parameters/ClientChannel'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordForgotRequest'
+      responses:
+        '202':
+          description: Demande prise en compte (aucune indication sur l'existence du compte).
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/auth/password/reset:
+    post:
+      tags: [auth]
+      operationId: resetPassword
+      summary: Réinitialise le mot de passe (forme provisoire, en attente de décision)
+      description: |
+        Route **publique**. **Forme provisoire** tant que le mécanisme n'est pas décidé : elle
+        suit la recommandation (lien). Le jeton du lien est placé dans le **fragment** de l'URL
+        (`#token=…`), jamais envoyé au serveur dans l'URL ni journalisé ; la page web le lit et
+        l'envoie dans le corps. Jeton (WB2-S02) : au moins 128 bits issus d'un générateur
+        cryptographique, stocké **haché** (SHA-256), usage unique, invalidé par une nouvelle
+        demande ou par un changement de mot de passe. Jeton inconnu, utilisé ou expiré :
+        `400 VALIDATION_FAILED` (champ `/token`, code `INVALID_FORMAT`), sans distinguer les cas.
+        Politique non respectée : `PASSWORD_POLICY_VIOLATION`. Succès : toutes les sessions du
+        compte sont révoquées, aucune session n'est ouverte (le client renvoie vers la connexion,
+        MFA comprise). Journal d'audit et notification au titulaire.
+      security: []
+      x-public: true
+      x-pending-decision: true
+      parameters:
+        - $ref: '#/components/parameters/ClientChannel'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+      responses:
+        '204':
+          description: Mot de passe réinitialisé ; se reconnecter.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  # ================================================================== profil
+  /v1/me:
+    get:
+      tags: [me]
+      operationId: getMe
+      summary: Profil de l'utilisateur connecté (rôle, permissions, tenant)
+      description: |
+        Session **complète** uniquement (une session restreinte reçoit
+        `403 PASSWORD_CHANGE_REQUIRED` ou `403 MFA_ENROLLMENT_REQUIRED`, §10). Rôle, sous-rôle,
+        permissions et tenant viennent **uniquement** de la session ; la navigation du client est
+        calculée à partir de cette réponse, le serveur restant l'autorité sur chaque route.
+        Aucune donnée sensible (ni e-mail, ni téléphone, ni solde).
+      responses:
+        '200':
+          description: Profil.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+              example:
+                id: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+                displayName: Salma B.
+                role: MERCHANT
+                subRole: CASHIER
+                permissions: [payments.collect, sales.read]
+                tenant:
+                  id: 0192f0c4-7b2f-7d4c-8e3f-6c8b2a1f5d32
+                  label: Café du Lac
+                mfa:
+                  required: true
+                  enrolled: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
 components:
   securitySchemes:
     cookieAuth:
@@ -485,6 +1055,27 @@ components:
       description: Borne haute exclue de la période (UTC).
       schema:
         $ref: '#/components/schemas/Timestamp'
+    WithCount:
+      name: withCount
+      in: query
+      required: false
+      description: |
+        Demande le compteur borné `page.count` (§7). À n'envoyer qu'au premier chargement et à
+        chaque changement de filtre.
+      schema:
+        type: boolean
+        default: false
+    ClientChannel:
+      name: X-FlexiPay-Client
+      in: header
+      required: true
+      description: |
+        Canal du client. `web` : session par cookies + `csrfToken` dans le corps (§6, §10).
+        En-tête personnalisé : impose un pré-vol CORS. La valeur `mobile` sera ajoutée avec le
+        contrat mobile (non cassant).
+      schema:
+        type: string
+        enum: [web]
     AcceptLanguage:
       name: Accept-Language
       in: header
@@ -534,6 +1125,14 @@ components:
         const: 'true'
     WWW-Authenticate:
       description: 'Pour le schéma bearer : `Bearer error="invalid_token"`, sans autre information.'
+      schema:
+        type: string
+    Set-Cookie-Session:
+      description: |
+        Web uniquement. Cookies de session (§6) : `__Host-fp_at` (jeton d'accès, `Path=/`) et
+        `__Secure-fp_rt` (jeton de rafraîchissement, `Path=/v1/auth`), tous deux `HttpOnly; Secure;
+        SameSite=Strict`, sans `Domain`. À la déconnexion ou à l'échec du rafraîchissement : mêmes
+        noms avec `Max-Age=0`. Jamais lisibles par le JavaScript.
       schema:
         type: string
   schemas:
@@ -611,6 +1210,25 @@ components:
         nextCursor:
           description: Curseur de la page suivante, `null` sur la dernière page.
           type: [string, 'null']
+        count:
+          $ref: '#/components/schemas/PageCount'
+    PageCount:
+      title: PageCount
+      description: |
+        Compteur borné (§7), présent seulement avec `?withCount=true` et si le comptage a abouti.
+        `isLowerBound: false` : `value` = nombre exact de résultats ; `true` : plus de `value`
+        résultats (plafond 10 000, provisoire).
+      type: object
+      additionalProperties: false
+      required: [value, isLowerBound]
+      properties:
+        value:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 10000
+        isLowerBound:
+          type: boolean
     # Modèle de liste paginée : chaque endpoint de liste déclare
     #   { data: [<Ressource>], page: PageInfo }
     PaginatedEnvelope:
@@ -636,6 +1254,311 @@ components:
         status:
           type: string
           const: OK
+    # ---------------------------------------------------------------- authentification (spec 01)
+    LoginRequest:
+      title: LoginRequest
+      type: object
+      additionalProperties: false
+      required: [identifier, password]
+      properties:
+        identifier:
+          description: |
+            E-mail **ou** numéro de téléphone (une seule zone de saisie, spec 01 §5), normalisé par
+            le serveur. Jamais renvoyé dans une réponse ni une erreur.
+          type: string
+          minLength: 1
+          maxLength: 254
+        password:
+          description: Jamais journalisé. Aucune règle de politique n'est appliquée à la connexion.
+          type: string
+          format: password
+          minLength: 1
+          maxLength: 256
+    SessionNextStep:
+      title: SessionNextStep
+      description: |
+        Étape suivante d'une session ouverte (§10). `NONE` : session complète.
+        `PASSWORD_CHANGE` : mot de passe temporaire à changer. `MFA_ENROLL` : MFA à enrôler.
+        Liste extensible (valeur inconnue : renvoyer vers la connexion).
+      type: string
+      enum: [NONE, PASSWORD_CHANGE, MFA_ENROLL]
+    CsrfToken:
+      title: CsrfToken
+      description: |
+        Jeton anti-CSRF lié à la session (§6), à conserver **en mémoire** uniquement et à envoyer
+        dans `X-CSRF-Token` sur `POST`, `PUT`, `PATCH`, `DELETE`. Renouvelé à chaque réponse qui
+        établit ou renouvelle la session.
+      type: string
+      minLength: 32
+      maxLength: 128
+      pattern: '^[A-Za-z0-9_-]+$'
+    SessionResult:
+      title: SessionResult
+      description: Session ouverte ou renouvelée (cookies posés par la même réponse).
+      type: object
+      additionalProperties: false
+      required: [nextStep, csrfToken]
+      properties:
+        nextStep:
+          $ref: '#/components/schemas/SessionNextStep'
+        csrfToken:
+          $ref: '#/components/schemas/CsrfToken'
+        restrictedUntil:
+          description: |
+            Présent seulement quand `nextStep` = `PASSWORD_CHANGE` : échéance **absolue** de la
+            session restreinte (10 min après la vérification du mot de passe temporaire, jamais
+            prolongée par le rafraîchissement). Sert à l'avertissement d'expiration (WCAG 2.2.1).
+            À l'échéance : `401 UNAUTHENTICATED` générique ; le mot de passe temporaire reste
+            valable jusqu'à ses 72 h ou jusqu'au changement réussi.
+          allOf:
+            - $ref: '#/components/schemas/Timestamp'
+    MfaChallengeResult:
+      title: MfaChallengeResult
+      description: Mot de passe accepté, défi MFA à résoudre ; aucune session ni cookie.
+      type: object
+      additionalProperties: false
+      required: [nextStep, challengeId, challengeExpiresAt]
+      properties:
+        nextStep:
+          type: string
+          const: MFA_CHALLENGE
+        challengeId:
+          description: Identifiant opaque du défi, usage unique, valable 5 min (provisoire).
+          type: string
+          format: uuid
+        challengeExpiresAt:
+          $ref: '#/components/schemas/Timestamp'
+    LoginResult:
+      title: LoginResult
+      description: |
+        Résultat d'une connexion acceptée : défi MFA (`nextStep: MFA_CHALLENGE`) ou session
+        (`SessionResult`, `nextStep` ∈ `NONE`, `PASSWORD_CHANGE`, `MFA_ENROLL`).
+      oneOf:
+        - $ref: '#/components/schemas/MfaChallengeResult'
+        - $ref: '#/components/schemas/SessionResult'
+    TotpCode:
+      title: TotpCode
+      description: Code TOTP (RFC 6238) à 6 chiffres (provisoire). Jamais journalisé.
+      type: string
+      pattern: '^[0-9]{6}$'
+    MfaVerifyRequest:
+      title: MfaVerifyRequest
+      type: object
+      additionalProperties: false
+      required: [challengeId, code]
+      properties:
+        challengeId:
+          type: string
+          format: uuid
+        code:
+          $ref: '#/components/schemas/TotpCode'
+    MfaEnrollment:
+      title: MfaEnrollment
+      description: |
+        Secret TOTP en attente de confirmation (10 min, provisoire). Affiché une seule fois, jamais
+        journalisé, jamais conservé par le client après l'écran.
+      type: object
+      additionalProperties: false
+      required: [otpauthUri, secretBase32, expiresAt]
+      properties:
+        otpauthUri:
+          description: |
+            URI `otpauth://totp/FlexiPay:<libellé>?secret=…&issuer=FlexiPay&algorithm=SHA1&digits=6&period=30` (paramètres provisoires),
+            à transformer en QR **côté client**. Le libellé ne contient ni e-mail ni téléphone.
+          type: string
+          pattern: '^otpauth://totp/'
+          maxLength: 512
+        secretBase32:
+          description: Même secret, en Base32, pour la saisie manuelle.
+          type: string
+          pattern: '^[A-Z2-7]+=*$'
+          minLength: 16
+          maxLength: 128
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
+    MfaReEnrollmentRequest:
+      title: MfaReEnrollmentRequest
+      description: |
+        Preuve exigée pour remplacer un secret MFA en session complète (WB2-S01). Les deux champs
+        sont obligatoires dans ce cas ; le corps est absent en session restreinte `MFA_ENROLL`.
+      type: object
+      additionalProperties: false
+      properties:
+        currentPassword:
+          type: string
+          format: password
+          minLength: 1
+          maxLength: 256
+        currentCode:
+          $ref: '#/components/schemas/TotpCode'
+    MfaEnrollmentConfirmRequest:
+      title: MfaEnrollmentConfirmRequest
+      type: object
+      additionalProperties: false
+      required: [code]
+      properties:
+        code:
+          $ref: '#/components/schemas/TotpCode'
+    PasswordChangeRequest:
+      title: PasswordChangeRequest
+      type: object
+      additionalProperties: false
+      required: [newPassword]
+      properties:
+        currentPassword:
+          description: |
+            Mot de passe actuel. **Obligatoire en session complète**, non demandé à l'état
+            `PASSWORD_CHANGE` (voir l'opération `changePassword`). Jamais journalisé.
+          type: string
+          format: password
+          minLength: 1
+          maxLength: 256
+        newPassword:
+          description: Soumis à la politique (`GET /v1/auth/password-policy`). Jamais journalisé.
+          type: string
+          format: password
+          minLength: 1
+          maxLength: 256
+    PasswordPolicyRuleCode:
+      title: PasswordPolicyRuleCode
+      description: |
+        Règle de la politique de mot de passe. Liste extensible (règle inconnue : ne pas
+        l'afficher). Les règles en vigueur et leurs paramètres sont en attente de décision
+        (SEC-A1) : `MIN_LENGTH {min}`, `MAX_LENGTH {max}`, `NOT_COMPROMISED` (absent des listes
+        de mots de passe compromis), `NOT_IDENTIFIER` (différent de l'identifiant),
+        `DIFFERENT_FROM_CURRENT`.
+      type: string
+      enum: [MIN_LENGTH, MAX_LENGTH, NOT_COMPROMISED, NOT_IDENTIFIER, DIFFERENT_FROM_CURRENT]
+    PasswordPolicyRule:
+      title: PasswordPolicyRule
+      type: object
+      additionalProperties: false
+      required: [code]
+      properties:
+        code:
+          $ref: '#/components/schemas/PasswordPolicyRuleCode'
+        params:
+          type: object
+          additionalProperties:
+            type: integer
+    PasswordPolicy:
+      title: PasswordPolicy
+      type: object
+      additionalProperties: false
+      required: [rules]
+      properties:
+        rules:
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/PasswordPolicyRule'
+    PasswordForgotRequest:
+      title: PasswordForgotRequest
+      type: object
+      additionalProperties: false
+      required: [identifier]
+      properties:
+        identifier:
+          description: E-mail ou téléphone. Jamais renvoyé ni journalisé en clair.
+          type: string
+          minLength: 1
+          maxLength: 254
+    PasswordResetRequest:
+      title: PasswordResetRequest
+      description: Forme provisoire (mécanisme « lien », en attente de décision).
+      type: object
+      additionalProperties: false
+      required: [token, newPassword]
+      properties:
+        token:
+          description: Jeton à usage unique lu dans le fragment de l'URL du lien. Jamais journalisé.
+          type: string
+          minLength: 32
+          maxLength: 256
+          pattern: '^[A-Za-z0-9_-]+$'
+        newPassword:
+          type: string
+          format: password
+          minLength: 1
+          maxLength: 256
+    # ---------------------------------------------------------------- profil
+    Role:
+      title: Role
+      description: Rôle de l'utilisateur (spec 01 §2). Le web ne sert que ADMIN, COMPANY et MERCHANT.
+      type: string
+      enum: [ADMIN, COMPANY, MERCHANT, EMPLOYEE, FAMILY_MEMBER]
+    SubRole:
+      title: SubRole
+      description: |
+        Sous-rôle (spec 01 §2, cahier ENT-10, spec 07 §2). ADMIN : `SUPER_ADMIN`, `FINANCE`,
+        `SUPPORT`, `COMPLIANCE`. COMPANY : `OWNER`, `MANAGER`, `ACCOUNTANT`, `READ_ONLY`.
+        MERCHANT : `OWNER`, `CASHIER`, `ACCOUNTANT`. Aucun pour EMPLOYEE et FAMILY_MEMBER.
+        Liste extensible. Le client ne déduit **aucun droit** du sous-rôle : il utilise
+        `permissions`.
+      type: string
+      enum: [SUPER_ADMIN, FINANCE, SUPPORT, COMPLIANCE, OWNER, MANAGER, ACCOUNTANT, READ_ONLY, CASHIER]
+    Permission:
+      title: Permission
+      description: |
+        Permission calculée par le serveur, sous la forme `module.action` (ex. `payments.collect`).
+        Les noms sont publiés espace par espace avec chaque contrat de module ; la matrice rôle ×
+        sous-rôle est en attente de décision pour les cases que les documents ne fixent pas.
+        Une permission inconnue du client est ignorée.
+      type: string
+      pattern: '^[a-z][A-Za-z]*\.[a-z][A-Za-z]*$'
+      maxLength: 64
+    Me:
+      title: Me
+      type: object
+      additionalProperties: false
+      required: [id, displayName, role, subRole, permissions, tenant, mfa]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        displayName:
+          description: Prénom et initiale du nom (aucune autre donnée personnelle).
+          type: string
+          maxLength: 120
+        role:
+          $ref: '#/components/schemas/Role'
+        subRole:
+          oneOf:
+            - $ref: '#/components/schemas/SubRole'
+            - type: 'null'
+        permissions:
+          type: array
+          maxItems: 200
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Permission'
+        tenant:
+          description: |
+            Tenant unique du compte (RG-2.5), fixé à la connexion : entreprise ou commerçant.
+            `null` pour un administrateur.
+          oneOf:
+            - $ref: '#/components/schemas/TenantSummary'
+            - type: 'null'
+        mfa:
+          type: object
+          additionalProperties: false
+          required: [required, enrolled]
+          properties:
+            required:
+              type: boolean
+            enrolled:
+              type: boolean
+    TenantSummary:
+      title: TenantSummary
+      type: object
+      additionalProperties: false
+      required: [id, label]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        label:
+          description: Raison sociale de l'entreprise ou nom du commerce.
+          type: string
+          maxLength: 200
     # ---------------------------------------------------------------- statuts métier (provisoires)
     AccountStatus:
       title: AccountStatus
@@ -674,7 +1597,10 @@ components:
         - UNAUTHENTICATED
         - SESSION_EXPIRED
         - INVALID_CREDENTIALS
+        - MFA_CODE_INVALID
+        - MFA_CHALLENGE_EXPIRED
         - PASSWORD_CHANGE_REQUIRED
+        - MFA_ENROLLMENT_REQUIRED
         - FORBIDDEN
         - CSRF_TOKEN_INVALID
         - NOT_FOUND
@@ -750,6 +1676,8 @@ components:
         - TOO_LONG
         - UNKNOWN_FIELD
         - INVALID_CURSOR
+        - CURRENT_PASSWORD_INVALID
+        - PASSWORD_POLICY_VIOLATION
     FieldError:
       title: FieldError
       type: object
@@ -890,6 +1818,24 @@ components:
             details:
               $ref: '#/components/schemas/RetryAfterDetails'
   responses:
+    SessionEstablished:
+      description: |
+        Session ouverte, renouvelée ou passée à l'état suivant (§10) : cookies posés (web),
+        identifiant de session et `csrfToken` renouvelés, `nextStep` = état courant.
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/X-Request-Id'
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control-No-Store'
+        Set-Cookie:
+          $ref: '#/components/headers/Set-Cookie-Session'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SessionResult'
+          example:
+            nextStep: NONE
+            csrfToken: 3q2-7wEAAAB0ZXN0LWNzcmYtdG9rZW4tZXhhbXBsZQ
     # Réponses d'erreur réutilisables. Chaque endpoint métier référence celles qui s'appliquent.
     BadRequest:
       description: Requête invalide (validation, ou en-tête d'idempotence absent ou mal formé).
@@ -926,7 +1872,7 @@ components:
                 messageKey: errors.idempotencyKeyRequired
                 requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
     Unauthorized:
-      description: Non authentifié, session expirée, ou identifiants refusés (message générique).
+      description: Non authentifié, session expirée, identifiants ou code MFA refusés (message générique).
       headers:
         X-Request-Id:
           $ref: '#/components/headers/X-Request-Id'
@@ -961,8 +1907,24 @@ components:
                 code: INVALID_CREDENTIALS
                 messageKey: errors.invalidCredentials
                 requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+            mfaCodeInvalid:
+              value:
+                type: urn:flexipay:problem:mfa-code-invalid
+                title: MFA code invalid
+                status: 401
+                code: MFA_CODE_INVALID
+                messageKey: errors.mfaCodeInvalid
+                requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+            mfaChallengeExpired:
+              value:
+                type: urn:flexipay:problem:mfa-challenge-expired
+                title: MFA challenge expired
+                status: 401
+                code: MFA_CHALLENGE_EXPIRED
+                messageKey: errors.mfaChallengeExpired
+                requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
     Forbidden:
-      description: Rôle insuffisant, mot de passe temporaire à changer, ou jeton CSRF invalide.
+      description: Rôle insuffisant, mot de passe temporaire à changer, MFA à enrôler, ou jeton CSRF invalide.
       headers:
         X-Request-Id:
           $ref: '#/components/headers/X-Request-Id'
@@ -986,6 +1948,14 @@ components:
                 status: 403
                 code: PASSWORD_CHANGE_REQUIRED
                 messageKey: errors.passwordChangeRequired
+                requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+            mfaEnrollmentRequired:
+              value:
+                type: urn:flexipay:problem:mfa-enrollment-required
+                title: MFA enrollment required
+                status: 403
+                code: MFA_ENROLLMENT_REQUIRED
+                messageKey: errors.mfaEnrollmentRequired
                 requestId: 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
             csrfTokenInvalid:
               value:
