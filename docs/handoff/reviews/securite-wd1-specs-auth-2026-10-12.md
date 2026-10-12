@@ -157,6 +157,25 @@ Exigence : ASVS 5.3.3, 14.4.3 (4.0.3)
 - Réponses d'authentification : `Cache-Control: no-store`, déjà au contrat. Le `secretBase32`
   n'est jamais journalisé ni présent dans une trace d'erreur.
 
+## Revérification (1er aller-retour, 2026-10-12)
+
+- **WD1-S02 fermé** : `commun-session-expiree.md` §3.1 applique les règles sur la valeur décodée
+  une fois, impose la liste blanche exacte, la navigation par le routeur et la revalidation par le
+  serveur, et donne des exemples rejetés.
+- **WD1-S03 fermé** : `commun-mfa.md` §7 prévoit un rendu par `<img>` (data URI) ou `<canvas>`,
+  jamais `innerHTML`. La bibliothèque de QR passera ma revue en F1.
+- N-02 (ux) reporté : `commun-premiere-connexion.md` §3, §6, §7 et §11 ; `commun-connexion.md` §6.
+- Condition de l'option B (saisie liée à l'utilisateur) notée dans §3.1.
+- Reste ouvert : WD1-S01 (backend, contrat). Voir la revue WB2.
+
+**Avis sur ux N-07** (restituer la chaîne de requête des listes après reconnexion) : acceptable si
+seuls des paramètres de filtre **en liste blanche par route** et **non personnels** sont restitués :
+énumérations (statut, type), dates, montants bornés, identifiants opaques. Les recherches en texte
+libre (`q`, nom, téléphone, e-mail, CIN, RIB) et le curseur ne sont jamais restitués, car ils
+passeraient par `/login?returnTo=…` dans l'historique, les journaux du serveur et l'en-tête
+`Referer`. Les valeurs sont validées par le schéma de la route (sinon le paramètre est abandonné),
+la longueur totale est bornée, et la chaîne est encodée une seule fois puis revalidée selon §3.1.
+
 ## Non vérifié
 
 1. Le contrat d'authentification (WB2) n'est pas encore livré : toutes les recommandations

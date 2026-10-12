@@ -60,14 +60,14 @@ Données fictives : MSW dans `apps/web/src/mocks/`, typées par `packages/api-cl
 | ID | Titre | Responsable | Statut | Dépend de | Relecteur |
 |---|---|---|---|---|---|
 | Q0 | Revue qualité rétroactive de B1, B2, D1, B4 | qualite | Terminé (OK, 13 constats : 3 Importants ; commit 8e5327a) | — | — |
-| WD1 | Specs Commun : connexion, première connexion (mot de passe temporaire), MFA, session expirée, 404/500 | design | À faire | WB2 (auth) | ux, conformite, securite |
-| WD2 | Spec page bibliothèque de composants `/dev/composants` (boutons, champs, badges, cartes, toasts, tableaux, modales, montants ; tous les états) | design | À faire | D2 | ux, conformite |
+| WD1 | Specs Commun : connexion, première connexion (mot de passe temporaire), MFA, session expirée, 404/500 | design | En revue — 6 specs Commun livrées : ux OK (4 Importants à corriger), securite OK, conformite NON CONFORME (WD-01..04) ; décisions utilisateur en attente | WB2 (auth) | ux, conformite, securite |
+| WD2 | Spec page bibliothèque de composants `/dev/composants` (boutons, champs, badges, cartes, toasts, tableaux, modales, montants ; tous les états) | design | En revue — dev-composants.md livré : ux OK (R-01), conformite NON CONFORME (WD-05..07) | D2 | ux, conformite |
 | WD3 | Specs Commerçant : tableau de bord, encaissement (code manuel), succès/refus, historique, créances, simulation et demande de virement (brut → commission → net, taux figé), règlements, mon commerce | design | À faire | WD2 | ux, conformite, securite |
 | WD4 | Specs Entreprise : tableau de bord, commande de crédits (frais), employés + import CSV (erreurs, doublons), attribution, factures, reporting, paramètres | design | À faire | WD2 | ux, conformite, securite |
 | WD5 | Specs Administrateur : tableau de bord, comptes, création société et commerçant (profil de commission obligatoire), KYC, commissions (double validation), transactions et alertes, paramètres, audit | design | À faire | WD2 | ux, conformite, securite |
 | WD6 | Revue de fidélité de chaque écran | design | À faire | WF2–WF5 | — |
-| WB1 | `packages/api-client` : openapi-typescript + openapi-fetch depuis le contrat, test de fraîcheur | backend | En revue (securite OK, qualite OK avec WB1-01 Important ; conformite à venir ; commit avec le lockfile après F1) | B1 | securite, qualite |
-| WB2 | Contrat complété au fil des [QUESTION] de design, espace par espace ([CONTRAT]) | backend | À faire | questions design | securite, conformite |
+| WB1 | `packages/api-client` : openapi-typescript + openapi-fetch depuis le contrat, test de fraîcheur | backend | En revue (securite OK, qualite OK, 0 constat ; commit avec le lockfile après F1) | B1 | securite, qualite |
+| WB2 | Contrat complété au fil des [QUESTION] de design, espace par espace ([CONTRAT]) | backend | En revue — auth/Commun publié (contrat 0.2.0) : securite OK (WD1-S01, WB2-S01 Moyennes), qualite OK, conformite NON CONFORME (W-03, côté spec 01) ; Commerçant à suivre | questions design | securite, conformite |
 | WF1 | Bibliothèque de composants codée (`/dev/composants`, hors production) | frontend | À faire | F1, WD2 validée | qualite, design, ux, conformite |
 | WF2 | Écrans Commun + Playwright connexion | frontend | À faire | F2, WD1 validée, WB2 | securite, qualite, ux, design, conformite |
 | WF3 | Écrans Commerçant + Playwright encaissement, simulation et demande de virement | frontend | À faire | WF2, WD3 validée | idem |
