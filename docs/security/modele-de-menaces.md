@@ -36,10 +36,10 @@
 | Import CSV | Injection de formules, fichiers piégés, doublons | T, D | Validation stricte, taille limitée, neutralisation des formules | 05 |
 | API publique | Déni de service au pic de midi | D | WAF, rate limiting, mise à l'échelle, files | 02, 06 |
 | Back-office | Compte administrateur compromis | E | MFA, double validation, moindre privilège, alertes | 01, 04 |
-| Compte back-office (MFA) | Remplacement du secret TOTP depuis une session ouverte ou volée (poste de caisse resté ouvert) : le titulaire est évincé, la MFA est neutralisée si le mot de passe est connu | S, E, D | Ré-enrôlement en session complète conditionné au mot de passe et au code de l'ancien secret ; notification ; audit (WB2-S01, ouvert) | 01 |
-| Compte back-office | Verrouillage provoqué par un tiers (5 échecs) sur ADMIN ou les commerçants : déni de service ciblé | D | Compteur par couple (compte, IP/appareil) ou déblocage par réinitialisation ; notification (WD1-S01, ouvert) | 01 |
+| Compte back-office (MFA) | Remplacement du secret TOTP depuis une session ouverte ou volée (poste de caisse resté ouvert) : le titulaire est évincé, la MFA est neutralisée si le mot de passe est connu | S, E, D | Ré-enrôlement en session complète conditionné au mot de passe et au code de l'ancien secret ; notification ; audit (WB2-S01, fermé : contrat 0.2.1) | 01 |
+| Compte back-office | Verrouillage provoqué par un tiers (5 échecs) sur ADMIN ou les commerçants : déni de service ciblé | D | Compteur par couple (compte, IP/appareil) ou déblocage par réinitialisation ; notification (WD1-S01 b, en attente de décision de l'utilisateur ; durée de réponse constante fermée en 0.2.1) | 01 |
 | Session web | Redirection ouverte après connexion via `returnTo` (hameçonnage du mot de passe ou du code MFA) | S | Liste blanche exacte de routes après décodage, navigation par le routeur, revalidation serveur (WD1-S02) | 01 |
-| Code TOTP | Rejeu d'un code vu ou intercepté sur un autre défi dans sa fenêtre | S | Dernier pas accepté mémorisé, tolérance ±1 pas (WB2-S02) | 01 |
+| Code TOTP | Rejeu d'un code vu ou intercepté sur un autre défi dans sa fenêtre | S | Dernier pas accepté mémorisé, tolérance ±1 pas (WB2-S02, fermé : contrat 0.2.1) | 01 |
 | Saisie conservée à l'expiration | Fuite de la saisie d'un utilisateur vers le suivant sur un poste partagé | I | Saisie liée à l'utilisateur, jetée si un autre compte se reconnecte (avis WD1, si l'option B est décidée) | 01 |
 | Application mobile | Rétro-ingénierie, appareil rooté | T, E | Obfuscation, attestation, contrôles serveur | 06 |
 | Règlements | Virement frauduleux | T | Contrôle RIB/KYC, double validation au-delà du seuil, rapprochement | 08 |
