@@ -10,6 +10,7 @@
 | 5 | 2026-10-11 | securite (P0-S1) | Vague 1 (B1, B2, D1 ; B4 en attente) : SC-3 constaté efficace avec pnpm 9 (`onlyBuiltDependencies: []`, aucun build exécuté) ; SC-5 contrôlé à la main ; ajout de SC-11 (générateur de tokens Dart, S1-08) et DC-7 (ports Testcontainers sur toutes les interfaces avec Ryuk désactivé) |
 | 6 | 2026-10-11 | securite (P0-S1) | Revérification de 594f06e : GIT-1 mis à jour (hook pre-commit natif actif, S1-01 fermé ; contournements résiduels S1-09) |
 | 7 | 2026-10-11 | securite (P0-S1) | Décisions utilisateur (4727e85) : S1-11 risque résiduel accepté jusqu'à B6 (plus d'aller-retour sur guard-bash sauf Critique ou Haute) ; protection des pushs GitHub activée ; dérogations d'âge source-map-js 1.2.2 et uuid 11.1.1 acceptées (SC-4) ; rôle applicatif Compose dev créé par la première migration d'`apps/api` en B3 (DC-5) |
+| 8 | 2026-10-12 | securite (WD1, WB2) | §1 : menaces de l'authentification web (ré-enrôlement MFA, verrouillage provoqué par un tiers, `returnTo`, rejeu TOTP, saisie conservée sur poste partagé) |
 
 ## 1. Menaces applicatives (version initiale)
 
@@ -35,6 +36,11 @@
 | Import CSV | Injection de formules, fichiers piégés, doublons | T, D | Validation stricte, taille limitée, neutralisation des formules | 05 |
 | API publique | Déni de service au pic de midi | D | WAF, rate limiting, mise à l'échelle, files | 02, 06 |
 | Back-office | Compte administrateur compromis | E | MFA, double validation, moindre privilège, alertes | 01, 04 |
+| Compte back-office (MFA) | Remplacement du secret TOTP depuis une session ouverte ou volée (poste de caisse resté ouvert) : le titulaire est évincé, la MFA est neutralisée si le mot de passe est connu | S, E, D | Ré-enrôlement en session complète conditionné au mot de passe et au code de l'ancien secret ; notification ; audit (WB2-S01, ouvert) | 01 |
+| Compte back-office | Verrouillage provoqué par un tiers (5 échecs) sur ADMIN ou les commerçants : déni de service ciblé | D | Compteur par couple (compte, IP/appareil) ou déblocage par réinitialisation ; notification (WD1-S01, ouvert) | 01 |
+| Session web | Redirection ouverte après connexion via `returnTo` (hameçonnage du mot de passe ou du code MFA) | S | Liste blanche exacte de routes après décodage, navigation par le routeur, revalidation serveur (WD1-S02) | 01 |
+| Code TOTP | Rejeu d'un code vu ou intercepté sur un autre défi dans sa fenêtre | S | Dernier pas accepté mémorisé, tolérance ±1 pas (WB2-S02) | 01 |
+| Saisie conservée à l'expiration | Fuite de la saisie d'un utilisateur vers le suivant sur un poste partagé | I | Saisie liée à l'utilisateur, jetée si un autre compte se reconnecte (avis WD1, si l'option B est décidée) | 01 |
 | Application mobile | Rétro-ingénierie, appareil rooté | T, E | Obfuscation, attestation, contrôles serveur | 06 |
 | Règlements | Virement frauduleux | T | Contrôle RIB/KYC, double validation au-delà du seuil, rapprochement | 08 |
 | Notifications | Hameçonnage imitant FlexiPay | S | Domaine dédié, SPF/DKIM/DMARC, pas de lien de connexion dans les SMS | 09 |
