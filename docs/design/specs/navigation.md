@@ -1,5 +1,5 @@
 # Spec design – Navigation (web et mobile) et écrans de session
-**Statut :** prête pour relecture · **Tâche :** P0-D3 · **Auteur :** design · **Date :** 2026-10-09
+**Statut :** prête pour relecture (mise à jour WD1 du 2026-10-11 : UX-16 à UX-21, N.8, N.9) · **Tâche :** P0-D3 · **Auteur :** design · **Date :** 2026-10-09
 **Exigences couvertes :** cahier §5.6 (navigation desktop, modules par espace), §5.7 (navigation mobile), §5.8 (principes UX) ; charte §5 (lignes « Navigation desktop / mobile ») et §10 (écrans de sécurité : session expirée) ; spec 06 §4 (hors connexion) ; spec 07 (rôles du commerçant) ; EMP-08 (langue), RG-2.4 (chacun ne voit que son périmètre).
 **Destinataires :** frontend (coquille web, P0-F2) et mobile (coquilles barre basse, P0-M2). **Non annoncé** (équipes non lancées) : `[SPEC]` à émettre à leur lancement.
 **Dépend de :** `docs/design/specs/fondations-composants.md` (boutons, badges, `Amount`, `StateView`, squelette, toast). Les références « C.x » et « A.x » renvoient à ce fichier. Contrat : `docs/handoff/contracts/openapi.yaml` (B5, en cours) — format d'erreur Problem Details et pagination déjà **confirmés par backend** ; la forme de `GET /me` est **en attente de confirmation** (§F).
@@ -145,7 +145,7 @@ L'action principale utilise les clés de la page (`ecran.action.principale`). Le
 
 **7. Accessibilité.** `<header role="banner">` ; fil d'Ariane `<nav aria-label>` en liste ordonnée, `aria-current="page"` sur le segment courant ; cloche : nom accessible `nav.notifications` + compteur annoncé (`nav.notifications.unread`) — le compteur n'est pas la seule information ; menu du compte : `aria-haspopup="menu"`, flèches Haut/Bas, Échap ; cibles ≥ 44 px. **Ordre de focus :** (après la sidebar) bouton menu → fil d'Ariane → **action principale** → notifications → menu du compte → contenu. Titre de page `h1` unique dans le contenu ; `document.title` = « {page} – FlexiPay ».
 
-**8. Responsive.** ≥ `breakpoint.lg` : tous les éléments. < `breakpoint.lg` : bouton menu à `start`, fil d'Ariane réduit au **titre de la page courante** (segments parents dans le menu au clic), action principale réduite à une icône avec nom accessible si l'espace manque (cible ≥ 44 px), badge de rôle déplacé dans le menu du compte. < `breakpoint.sm` : cloche + menu du compte seuls ; l'action principale passe en bas de page (pleine largeur, C.1).
+**8. Responsive.** ≥ `breakpoint.lg` : tous les éléments. < `breakpoint.lg` : bouton menu à `start`, fil d'Ariane réduit au **titre de la page courante** (segments parents dans le menu au clic), action principale **conservée avec son texte** : si l'espace manque, elle passe sous le `h1` (jamais réduite à une icône, ux R-03) ; badge de rôle déplacé dans le menu du compte. **Pages de niveau 2 ou plus (UX-20) :** le fil d'Ariane réduit est remplacé par un lien `common.nav.backTo` « Retour à {page parente} » (chevron miroir en RTL) placé au-dessus du `h1`, qui ramène à la liste **avec ses filtres et son curseur** (état dans l'URL, `dev-composants.md` NC.1) ; plus de « menu caché sous le titre ». **< `breakpoint.sm` : cloche + menu du compte seuls ; l'action principale (UX-18) n'est jamais « en bas de page » :** elle se place **sous le `h1`, en pleine largeur, en tête du contenu** ; pour un **formulaire ou un écran de décision** (récapitulatif de virement, de commande, création de compte) elle va dans une **barre d'action collante en bas de l'écran** (padding `space.4`, zone sûre, sans masquer le dernier champ ni le dernier message d'erreur). Elle reste la première action dans l'ordre de focus après le `h1`.
 
 **9. Données / endpoint.** `GET /me` (nom, rôle, sous-rôle, compteur éventuel) ; `GET /me/notifications` (liste paginée par curseur, A.8) pour le panneau de notifications ; `PATCH` de la langue préférée : **à confirmer** (la langue peut rester locale au client au MVP). Pas de montant dans l'en-tête.
 
@@ -249,7 +249,7 @@ L'action principale utilise les clés de la page (`ecran.action.principale`). Le
 
 **1. Objectif.** Expliquer calmement qu'une reconnexion est nécessaire et ramener l'utilisateur à ce qu'il faisait. Exigences : charte §7 et §10, contrat B5 (`401 SESSION_EXPIRED`, `401 UNAUTHENTICATED`).
 
-**2. Structure.** Écran **hors coquille** (sans sidebar ni barre basse, aucune donnée de l'écran précédent) : logo, `StateView` `page` (C.8.5) : pastille `Clock`, titre, message, **un seul bouton principal « Se reconnecter »**.
+**2. Structure.** Écran **hors coquille** (sans sidebar ni barre basse, aucune donnée de l'écran précédent) : logo, `StateView` `page` (C.8.5) : pastille `Clock`, titre, message, **un seul bouton principal « Se reconnecter »** (`common.button.signInAgain`, UX-16), et le **sélecteur de langue** de `commun-session-expiree.md` (UX-21). Spec détaillée de la page : `commun-session-expiree.md` (WD1).
 
 **Déclenchement.** (a) `401 SESSION_EXPIRED` : le client tente **un seul** rafraîchissement silencieux ; s'il échoue (nouveau 401) → cet écran, variante *expirée*. (b) `401 UNAUTHENTICATED` pendant une session active → variante *déconnecté* (cause jamais indiquée). (c) Aucun jeton → écran de connexion normal (pas cet écran).
 
@@ -263,7 +263,7 @@ L'action principale utilise les clés de la page (`ecran.action.principale`). Le
 | `common.state.sessionExpired.message` | Pour votre sécurité, votre session a expiré. Reconnectez-vous pour continuer. |
 | `common.state.signedOut.title` | Vous avez été déconnecté |
 | `common.state.signedOut.message` | Pour votre sécurité, votre session a été fermée. Reconnectez-vous pour continuer. |
-| `common.button.signIn` | Se connecter |
+| `common.button.signInAgain` | Se reconnecter (UX-16 ; `common.button.signIn` « Se connecter » reste réservée à l'écran de connexion) |
 
 **5. États.** Chargement : sans objet (écran statique) ; pendant la tentative de rafraîchissement silencieux : squelette du contenu en cours, **pas** de flash de cet écran. Erreur réseau pendant la reconnexion : voir hors connexion (N.7). Vide / solde insuffisant / permission refusée : sans objet. **Session expirée** : c'est cet écran.
 
@@ -312,6 +312,46 @@ L'action principale utilise les clés de la page (`ecran.action.principale`). Le
 **8. Responsive.** Bandeau pleine largeur du contenu ; mobile : au-dessus de la barre basse sans la recouvrir ; ne bouge pas la mise en page de façon brutale (hauteur réservée dès `motion.base`, sans animation si « Réduire les animations »).
 
 **9. Données / endpoint.** Aucun endpoint métier. `GET /health` (publique) pour confirmer le retour réseau — **à confirmer** avec backend (route prévue en P0-B3).
+
+---
+
+## N.8 Panneau des notifications (web) — UX-19
+
+**1. Objectif.** Faire de la cloche (N.2) une porte vers l'objet concerné (virement exécuté, commande créditée, alerte), pas une impasse. Exigences : spec 09 §1, cahier §5.6.
+
+**2. Structure.** Déclencheur = cloche de l'en-tête. ≥ `breakpoint.sm` : `Popover` ancré à `end` sous l'en-tête ; < `breakpoint.sm` : **page** `/notifications` (même contenu, lien « Retour »). Contenu : titre `h2` · action « Tout marquer comme lu » · liste `<ul>` d'éléments · « Charger plus » (A.8) · état vide. **Élément** = icône de type (`size.icon-md`, décorative) · phrase (clé + paramètres fournis par l'API) · date (`formatDateTime`) · pastille « non lue » **doublée d'un texte masqué** `nav.notifications.item.unread` · **lien** vers l'objet concerné (toute la ligne est le lien).
+
+**3. Composants et tokens.** `Popover`, `Button` `tertiary`, `StateView` `inline`. Panneau : `color.surface`, `radius.card-desktop`, `shadow.raised`, largeur max `size.toast-max-width`, corps défilant ; élément : hauteur min `size.touch-target-min`, padding `space.3`, séparateur `color.border` ; non lue = pastille `color.navy` `size.icon-sm` à `start` + graisse `font.weight.title` ; lue = `font.weight.regular` ; texte `type-scale.body` `color.text`, date `type-scale.caption` `color.text-muted`.
+
+**4. Textes.** `nav.notifications.title` « Notifications » · `nav.notifications.markAllRead` « Tout marquer comme lu » · `nav.notifications.empty.title` « Aucune notification » · `nav.notifications.empty.message` « Vos notifications apparaîtront ici. » · `nav.notifications.item.unread` « Non lue » · `nav.notifications.open` « Ouvrir : {title} ». Le texte de chaque notification vient de `titleKey` + `params` (clés `notifications.<type>`), jamais d'un texte serveur. **Montants :** affichés via `Amount` si l'API fournit des `…Millimes` dans `params` ; la règle « pas de montant détaillé sur l'écran verrouillé » de la spec 09 vise les notifications push mobiles ; son application au web est **à confirmer** (rien n'est inventé).
+
+**5. États.** Chargement (3 `list-item` en squelette) · vide · erreur (`StateView` `inline` + « Réessayer ») · hors connexion (dernières notifications + `common.state.offline.lastUpdate`) · session expirée (N.6) · permission refusée (cloche absente) · « tout marquer comme lu » en cours (bouton `loading`) · objet devenu inaccessible (le lien mène à `404`, C.8.9, sans distinguer les causes).
+
+**6. RTL.** Popover ancré à `end` (gauche en RTL) ; pastille et icône à `start` ; chevrons miroir.
+
+**7. Accessibilité.** Déclencheur `aria-haspopup="dialog"` `aria-expanded` ; `dialog` non modal, Échap ferme et rend le focus à la cloche ; l'état non lu n'est pas porté par la couleur seule (pastille + graisse + texte masqué) ; cibles ≥ 44 px.
+
+**8. Responsive.** < `breakpoint.sm` : page dédiée ; ≥ `breakpoint.sm` : popover.
+
+**9. Données.** `GET /v1/me/notifications` (liste paginée par curseur, A.8) et marquage comme lu : **CT-X-7, à créer**.
+
+---
+
+## N.9 Avertissement avant l'expiration de la session (`SessionTimeoutWarning`) — UX-17
+
+**1. Objectif.** Respecter WCAG 2.2.1 (limite de temps) : prévenir l'utilisateur **avant** l'expiration de sa session et lui permettre de la prolonger. Exigence : cahier §6 (WCAG 2.1 AA).
+
+**2. Structure.** Modale `alertdialog` (NC.3 de `dev-composants.md`, variante `confirm`) sur n'importe quelle page de la coquille : titre « Votre session va bientôt expirer » · message avec le **temps restant** (annoncé au plus toutes les 30 s) · bouton principal « Rester connecté » · bouton secondaire « Se déconnecter ». Pour une **durée absolue non prolongeable** : « Votre session se terminera à {time}. Vous devrez vous reconnecter. », sans bouton de prolongation.
+
+**3. Tokens.** Ceux de NC.3 (`size.modal-max-width`, `color.overlay`, `radius.card-desktop`, `shadow.raised`, `space.6`) ; icône `Clock` `color.info-text` sur pastille `info-soft` ; temps restant `type-scale.title`, `tabular-nums`.
+
+**4. Textes (`common.session.*`).** `common.session.warning.title` « Votre session va bientôt expirer » · `common.session.warning.message` « Pour votre sécurité, vous serez déconnecté dans {time}. » · `common.session.warning.absolute` « Votre session se terminera à {time}. Vous devrez vous reconnecter. » · `common.session.warning.stay` « Rester connecté » · `common.session.warning.logout` = `nav.logout` · `common.session.warning.extended` « Votre session a été prolongée. » (toast `success`).
+
+**5. États.** Masquée · affichée (décompte) · prolongation en cours (`loading`) · réussie (modale fermée, toast) · **échouée** (`401` → N.6 ; réseau → hors connexion, la modale reste) · expirée pendant l'affichage (N.6). L'avertissement est **synchronisé entre onglets** (un seul avertissement ; prolonger ou se déconnecter agit sur tous les onglets, ux N-10). Une écriture en cours d'envoi n'est **pas** interrompue ; si l'expiration survient pendant une écriture, le résultat réel est vérifié après reconnexion avec la même clé (C.8.3).
+
+**6. RTL.** Comme NC.3 ; le temps est un bloc LTR isolé. **7. Accessibilité.** `role="alertdialog"`, focus initial sur « Rester connecté », piège de focus, Échap = « Rester connecté » ; annonce initiale assertive, mises à jour polies toutes les 30 s au plus. **8. Responsive.** Comme NC.3.
+
+**9. Données.** **Les durées ne sont pas fixées par design** : échéance d'inactivité, durée absolue et délai d'avertissement (au moins 2 minutes avant, recommandation ux) viennent de `securite` / backend via l'API (CT-X-6). « Rester connecté » = `POST /v1/auth/refresh` (E, avec `X-FlexiPay-Client: web`). **Conservation de la saisie à l'expiration : en attente de décision de l'utilisateur** (option B recommandée, non adoptée ; recommandation ux : avertissement, reconnexion par-dessus le formulaire, saisie conservée en mémoire seulement, champs sensibles vidés, jamais de soumission automatique d'une opération financière).
 
 ---
 
