@@ -189,7 +189,15 @@ module.exports = {
       "icon-md": "1.25rem",
       "icon-lg": "1.5rem",
       "avatar-md": "2.5rem",
-      "avatar-lg": "3rem"
+      "avatar-lg": "3rem",
+      "table-row-height": "3.5rem",
+      "chip-height": "2rem",
+      "modal-max-width": "30rem",
+      "modal-max-width-lg": "45rem",
+      "auth-card-max-width": "27.5rem",
+      "form-max-width": "40rem",
+      "qr-code": "12rem",
+      "viewport-min": "22.5rem"
     },
     "motion": {
       "fast": 120,
@@ -375,7 +383,7 @@ module.exports = {
       },
       "INCONNU": {
         "label": "Statut inconnu",
-        "labelKey": "status.UNKNOWN",
+        "labelKey": "status.INCONNU",
         "icon": "CircleHelp",
         "bg": "border",
         "fg": "neutral-text"

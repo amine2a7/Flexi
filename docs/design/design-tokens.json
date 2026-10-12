@@ -1,6 +1,7 @@
 {
   "$description": "Source unique des tokens FlexiPay. Génère Tailwind (web) et ThemeData (Flutter). Ne jamais coder de valeur en dur.",
   "$changelog": [
+    "2026-10-11 (design, WD2) : ajout des tailles table-row-height (56), chip-height (32, zone tactile étendue à 44), modal-max-width (480), modal-max-width-lg (720), auth-card-max-width (440), form-max-width (640), qr-code (192), viewport-min (360, largeur minimale supportée) pour les composants tableau, filtre actif, modale, écrans d'authentification, formulaires et QR d'enrôlement MFA. Aucune couleur modifiée.",
     "2026-10-09 (design, P0-D2/D3) : ajout des couleurs danger-text, info-text, neutral-text, on-danger, on-navy-muted, border-strong, overlay ; des groupes focus, breakpoint, opacity ; des tailles (touch-target-mobile, icônes, avatars, en-tête, barre basse, toast, illustration, border-width) ; des durées motion (toast-duration, skeleton) ; de icon + labelKey sur chaque statut ; des statuts du glossaire (EN_ATTENTE_KYC, REJETE, CREEE, PAYEE, RAPPROCHEE, CREDITEE, ANNULEE, INITIE, CONFIRME, DEMANDEE, CONTROLEE, ENVOYEE, EXECUTEE, REJETEE, APPROUVEE, REFUSEE) et du repli INCONNU (valeur d'enum API inconnue).",
     "2026-10-09 (design) : correction AA des badges existants (danger sur danger-soft 3,95:1 ; info sur info-soft 4,24:1 ; text-muted sur border 3,86:1) : fg passe à danger-text / info-text / neutral-text. Les anciennes valeurs de couleur sont inchangées."
   ],
@@ -85,7 +86,15 @@
     "icon-md": 20,
     "icon-lg": 24,
     "avatar-md": 40,
-    "avatar-lg": 48
+    "avatar-lg": 48,
+    "table-row-height": 56,
+    "chip-height": 32,
+    "modal-max-width": 480,
+    "modal-max-width-lg": 720,
+    "auth-card-max-width": 440,
+    "form-max-width": 640,
+    "qr-code": 192,
+    "viewport-min": 360
   },
   "focus": {
     "width": 2,
@@ -125,7 +134,7 @@
     "EXECUTEE":       { "label": "Exécutée",       "labelKey": "status.EXECUTEE",       "icon": "CheckCheck",    "bg": "emerald-soft", "fg": "emerald-text" },
     "REJETEE":        { "label": "Rejetée",        "labelKey": "status.REJETEE",        "icon": "CircleX",       "bg": "danger-soft",  "fg": "danger-text" },
     "APPROUVEE":      { "label": "Approuvée",      "labelKey": "status.APPROUVEE",      "icon": "CircleCheck",   "bg": "emerald-soft", "fg": "emerald-text" },
-    "INCONNU":        { "label": "Statut inconnu", "labelKey": "status.UNKNOWN", "icon": "CircleHelp", "bg": "border", "fg": "neutral-text" },
+    "INCONNU":        { "label": "Statut inconnu", "labelKey": "status.INCONNU", "icon": "CircleHelp", "bg": "border", "fg": "neutral-text" },
     "REFUSEE":        { "label": "Refusée",        "labelKey": "status.REFUSEE",        "icon": "CircleX",       "bg": "danger-soft",  "fg": "danger-text" }
   }
 }

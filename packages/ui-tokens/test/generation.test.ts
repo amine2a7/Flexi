@@ -216,6 +216,14 @@ describe('Dart generator output encoding (SC-9)', () => {
     b.font.family.value = "Inter', evil: '${x}";
     expect(() => renderDart(b)).toThrow(/unsafe or invalid/);
   });
+  it('rejects a token that FlexiTheme.light() depends on (rename of navy)', () => {
+    const t = clone();
+    const navy = t.color.navy;
+    if (!navy) throw new Error('no navy');
+    delete t.color.navy;
+    t.color['navy-renamed'] = navy;
+    expect(() => renderDart(t)).toThrow(/FlexiTheme requires token color.navy/);
+  });
   it('generated Dart contains no dollar sign', () => {
     expect(renderDart(tokens)).not.toContain('$');
   });

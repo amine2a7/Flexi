@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "generate": "tsc -p tsconfig.build.json && node dist/generate.js",
-    "build": "tsc -p tsconfig.build.json && node dist/generate.js",
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
     "test": "vitest run"

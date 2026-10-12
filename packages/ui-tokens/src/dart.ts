@@ -95,6 +95,56 @@ export function assertSafeTokens(t: Tokens): void {
   check(FAMILY.test(t.font['family-ar'].value), 'font.family-ar');
 }
 
+/**
+ * Tokens referenced by name in the generated `FlexiTheme.light()`. A renamed or removed token would
+ * break the Dart build without any Node test noticing (Flutter is not installed), so fail here.
+ */
+const THEME_REQUIRED: Record<string, readonly string[]> = {
+  color: [
+    'navy',
+    'on-navy',
+    'emerald',
+    'on-emerald',
+    'danger',
+    'on-danger',
+    'surface',
+    'bg',
+    'text',
+    'text-muted',
+    'border',
+    'border-strong',
+    'overlay',
+  ],
+  'type-scale': [
+    'amount-xl',
+    'amount',
+    'headline',
+    'title',
+    'title-sm',
+    'body-lg',
+    'body',
+    'caption',
+    'label',
+    'micro',
+  ],
+  radius: ['input', 'button', 'card-mobile'],
+  size: ['border-width', 'header-height', 'touch-target-mobile'],
+};
+
+export function assertThemeTokens(t: Tokens): void {
+  const groups: Record<string, object> = {
+    color: t.color,
+    'type-scale': t['type-scale'],
+    radius: t.radius,
+    size: t.size,
+  };
+  for (const [group, keys] of Object.entries(THEME_REQUIRED)) {
+    for (const key of keys) {
+      check(Object.hasOwn(groups[group] ?? {}, key), `FlexiTheme requires token ${group}.${key}`);
+    }
+  }
+}
+
 function family(value: string): { primary: string; fallback: string[] } {
   const [primary = '', ...fallback] = value.split(',').map((s) => s.trim());
   return { primary, fallback };
@@ -104,6 +154,7 @@ const num = (n: number): string => String(n);
 
 export function renderDart(t: Tokens): string {
   assertSafeTokens(t);
+  assertThemeTokens(t);
   const out: string[] = [];
   const w = (s = ''): void => {
     out.push(s);

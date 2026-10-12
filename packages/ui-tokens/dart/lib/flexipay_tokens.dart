@@ -85,6 +85,14 @@ abstract final class FlexiSize {
   static const double iconLg = 24;
   static const double avatarMd = 40;
   static const double avatarLg = 48;
+  static const double tableRowHeight = 56;
+  static const double chipHeight = 32;
+  static const double modalMaxWidth = 480;
+  static const double modalMaxWidthLg = 720;
+  static const double authCardMaxWidth = 440;
+  static const double formMaxWidth = 640;
+  static const double qrCode = 192;
+  static const double viewportMin = 360;
   static const double focusWidth = 2;
   static const double focusOffset = 2;
 }
@@ -373,7 +381,7 @@ abstract final class FlexiStatus {
       fg: FlexiColors.emeraldText,
     ),
     'INCONNU': FlexiStatusStyle(
-      labelKey: 'status.UNKNOWN',
+      labelKey: 'status.INCONNU',
       icon: 'CircleHelp',
       bg: FlexiColors.border,
       fg: FlexiColors.neutralText,
