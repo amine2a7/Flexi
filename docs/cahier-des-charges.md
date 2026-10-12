@@ -196,13 +196,13 @@ Mobile-first, largeur max desktop ≈ 1280 px, multiples de 4 et 8 px, cartes es
 | Cartes mobiles | rayon 20–32 px |
 | Boutons | rayon 10–12 px, une action principale visible |
 | Champs | hauteur 40–44 px ; plafonds et erreurs indiqués avant validation |
-| Badges | courts, sémantiques : *En attente*, *Validé*, *À régler*, *Réglé*, *Refusé*, *Suspect* |
+| Badges | courts, sémantiques : *En attente*, *Validé*, *À régler* (affiché *En attente de règlement* côté Commerçant, décision provisoire n° 2), *Réglé*, *Refusé*, *Suspect* |
 | Toasts | vert pour la réussite (fermeture automatique) ; rouge pour les erreurs, **sans fermeture automatique** (WCAG 2.2.1) |
 | Tables | filtrables, recherchables ; en cartes/listes sur mobile |
 | Icônes | Lucide : WalletCards (solde), QrCode (paiement), Users (famille), Store (commerçants), ArrowUpRight (virements), FileText (factures), Check (validation), Settings2 (paramétrage) ; un label accompagne toute action ambiguë |
 
 ### 5.6 Navigation desktop
-**Sidebar bleu nuit** : logo, profil et rôle actif, modules, élément actif en bleu légèrement contrasté, changement de rôle en bas. **En-tête** : fil d'Ariane, utilisateur, badge de rôle, notifications, action principale. Contenu sur `#F8FAFC`.
+**Sidebar bleu nuit** : logo, profil et rôle actif, modules, élément actif en bleu légèrement contrasté (pas de changement de rôle : un compte = un tenant, décision du 09/10/2026 ; décision provisoire n° 25). **En-tête** : fil d'Ariane, utilisateur, badge de rôle, notifications, action principale. Contenu sur `#F8FAFC`.
 
 | Espace | Modules |
 |---|---|

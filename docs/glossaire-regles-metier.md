@@ -46,3 +46,5 @@
 - **Paiement :** INITIE → CONFIRME (« Confirmé », API `CONFIRMED`) → REGLE / REFUSE / EN_LITIGE
 - **Demande de virement :** DEMANDEE → CONTROLEE → ENVOYEE → EXECUTEE / REJETEE
 - **Approbation :** EN_ATTENTE → APPROUVEE / REFUSEE (approbateur ≠ initiateur)
+- **Lot de crédits :** ACTIF → EXPIRE (calculé par le serveur en Africa/Tunis, E10) — décision provisoire n° 14
+- **Alerte antifraude :** OUVERTE → EN_COURS → CLOSE (clôture motivée et journalisée) — décision provisoire n° 14

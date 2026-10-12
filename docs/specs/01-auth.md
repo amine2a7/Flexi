@@ -9,10 +9,10 @@ Authentifier Administrateurs, Entreprises, Commerçants, Employés et membres fa
 
 ## 3. Règles
 - Création d'employé par l'entreprise : mot de passe temporaire généré (aléatoire fort), envoyé par SMS/email, `must_change_password = true`, expiration 72 h. Renvoi possible (invalide l'ancien).
-- Tant que `must_change_password`, seules `POST /auth/password/change` et `POST /auth/logout` sont autorisées.
+- Tant que `must_change_password`, seules `POST /auth/password/change` et `POST /auth/logout` sont autorisées, plus `POST /auth/refresh` (reprise de la session restreinte après rechargement) et, dans l'état d'enrôlement MFA, `POST /auth/mfa/enroll` et `/auth/mfa/enroll/confirm` (décision provisoire n° 22, contrat 0.2.1 §10).
 - Après changement : création du PIN (4–6 chiffres, refus des suites évidentes) puis proposition de biométrie.
 - Membre famille : même mécanisme, créé par l'employé, limité par `max_family_members` (défaut 4).
-- Verrouillage : 5 échecs → blocage 15 min, puis progressif ; notification.
+- Verrouillage : 5 échecs par couple (compte, IP ou appareil) → blocage 15 min de ce couple, puis progressif ; au-delà d'un seuil global plus élevé (20 échecs, toutes origines), blocage du compte et alerte (SEC-L3) ; notification du titulaire (décision provisoire n° 24 ; empêche un tiers de bloquer un compte en 5 essais).
 - MFA TOTP obligatoire pour ADMIN, COMPANY, MERCHANT ; facultatif pour EMPLOYEE (PIN + appareil).
 - Refresh token rotatif : chaque usage émet un nouveau token ; la réutilisation d'un ancien révoque toute la famille.
 - Appareil : enregistrement à la première connexion mobile ; max 2 appareils actifs (paramétrable).
