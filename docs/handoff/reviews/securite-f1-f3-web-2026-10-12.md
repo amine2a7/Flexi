@@ -8,7 +8,8 @@
 
 ## Verdict : **OK**
 
-Aucun constat Critique, Haute ni Moyenne. Ouverts : 2 Basses (+ extension de S1-07).
+Aucun constat Critique, Haute ni Moyenne. F1-S01 et F1-S02 fermés au 1er aller-retour. Reste :
+l'extension de S1-07 (télémétrie de Next).
 
 ## Contrôles
 
@@ -69,6 +70,29 @@ Correctif proposé :
     d'instructions ne viennent que du dépôt relu ».
 Exigence : menaces DEV-11 et SC-4 (modèle de menaces §3.5)
 ```
+
+### Revérification (1er aller-retour, 2026-10-12)
+
+- **F1-S01 fermé** : le matcher (`proxy.ts:36`) n'exclut plus que `api/`, `_next/`, `_vercel/`,
+  `favicon.ico`, `icon.svg`, `robots.txt` et les `*.js` à la racine. `/fr/a.b` passe par le proxy
+  (test unitaire du matcher ; e2e de production : 404 avec CSP et `no-store`, déclaré). Pas de CSP de
+  base statique : l'argument de frontend est juste. Une seconde CSP avec `default-src 'self'`
+  ferait retomber `script-src` sur `'self'` et bloquerait les scripts à nonce (intersection des
+  politiques). Résiduel accepté : une URL `/<nom>.js` à la racine reçoit un 404 sans CSP (page
+  statique, sans reflet).
+- **F1-S02 fermé côté frontend** : `pnpm dev` passe par `scripts/dev.mjs`, qui supprime
+  AGENTS.md et CLAUDE.md puis lance `next dev` sans les variables d'environnement d'agent
+  (`CLAUDE*`, `AI_AGENT`, `CURSOR*`…) ; Next ne détecte donc plus d'agent. Le test de conventions
+  échoue si ces fichiers existent ; aucun fichier présent au moment de ma vérification. Le hook
+  côté `.claude/` reste une recommandation au lead (défense en profondeur), sans constat ouvert.
+- Remarque : le serveur Playwright « production » lance `pnpm exec next build` au lieu de
+  `pnpm build`. Il ne passe donc pas par `remove-mock-worker.mjs`, et l'e2e ne prouve pas le chemin
+  de build réel. Ce dernier est prouvé par `test/build/no-mocks-in-production.test.ts`. Mieux vaut
+  utiliser `pnpm build` (`playwright.config.ts:54`). **Réponse de frontend, acceptée** : `pnpm build`
+  supprimerait le worker pendant que le serveur de développement, lancé en parallèle, en a besoin.
+  Le chemin réel est couvert par `test:build` (le script `build` commence par
+  `remove-mock-worker.mjs`, lui-même testé) et par `no-mocks-in-production.test.ts`.
+- Vérifié : `vitest run test/security test/conventions` → 47/47.
 
 **Extension de S1-07 (Basse, déjà ouvert)** : Next.js envoie aussi de la télémétrie par défaut.
 Il faut ajouter `NEXT_TELEMETRY_DISABLED=1` à côté de `TURBO_TELEMETRY_DISABLED=1` (CI en B6 ;
