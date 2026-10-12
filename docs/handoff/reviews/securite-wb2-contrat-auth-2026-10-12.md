@@ -104,6 +104,29 @@ Correctif proposé : écrire au contrat :
 Exigence : ASVS 2.8.4, 2.5.x, 2.3.1 (4.0.3)
 ```
 
+## Revérification : contrat 0.2.1 (1er aller-retour, 2026-10-12)
+
+- **WB2-S01 fermé** : `/v1/auth/mfa/enroll` exige, en session complète, `MfaReEnrollmentRequest`
+  `{ currentPassword, currentCode }` (ancien secret). Chaque champ a son code d'erreur, et chaque
+  échec compte dans le verrouillage. L'ancien secret reste actif jusqu'à la confirmation, le titulaire
+  est notifié. Rendu du QR par img/canvas écrit au contrat.
+- **WD1-S01 (a) fermé** : §10, Argon2id factice avec les mêmes paramètres ; verrouillage, état du
+  compte et expiration évalués après le hachage ; compte verrouillé = `INVALID_CREDENTIALS` même
+  avec le bon mot de passe ; `403` EMPLOYEE/FAMILY_MEMBER seulement pour un compte non verrouillé,
+  sans cookie, journalisé.
+- **WD1-S01 (b) en attente de décision de l'utilisateur** (portée du verrouillage, qui modifie la
+  spec 01 §3) : écrit au §10 avec les deux options, `[DÉCISION]` envoyé à main par backend. Ce
+  point reste ouvert, en Moyenne, jusqu'à la décision.
+- **WB2-S02 fermé** : anti-rejeu TOTP (±1 pas, code accepté refusé jusqu'à la fin de sa fenêtre) ;
+  jeton de réinitialisation d'au moins 128 bits CSPRNG, haché SHA-256, usage unique, invalidé.
+- **N-02 conforme** : `currentPassword` facultatif dans le schéma, obligatoire en session complète
+  et ignoré à l'état `PASSWORD_CHANGE`. Conditions 1 à 5 et 7 écrites dans `changePassword` ;
+  §10 « 10 min au plus, en absolu ; usage unique » ; `SessionResult.restrictedUntil`, y compris
+  dans `/refresh` ; 401 générique ; mot de passe temporaire valable jusqu'à 72 h. Condition 6
+  (révocation des autres sessions) en attente de décision, avec la recommandation commune.
+
+Non reproduit : redocly et api-client 13/13 (déclaration de backend). Mise en œuvre : à tester en B3.
+
 ## Réponses aux questions de backend
 
 | Question | Réponse |
