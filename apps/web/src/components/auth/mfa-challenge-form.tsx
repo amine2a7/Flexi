@@ -27,7 +27,9 @@ export function MfaChallengeForm() {
   const [code, setCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<unknown>(undefined);
-  const challengeId = getAuthFlow().challengeId;
+  // Read once: entering the space resets the flow before the route changes, and a re-render must
+  // not then send the user back to /login.
+  const [challengeId] = useState(() => getAuthFlow().challengeId);
 
   useEffect(() => {
     if (challengeId === undefined) router.replace('/login');
@@ -87,7 +89,9 @@ export function MfaChallengeForm() {
             autoCapitalize="characters"
             spellCheck={false}
             value={code}
-            onChange={(event) => { setCode(event.target.value); }}
+            onChange={(event) => {
+              setCode(event.target.value);
+            }}
           />
         ) : (
           <TextField
@@ -98,7 +102,9 @@ export function MfaChallengeForm() {
             autoComplete="one-time-code"
             maxLength={6}
             value={code}
-            onChange={(event) => { setCode(event.target.value.replace(/\D/g, '')); }}
+            onChange={(event) => {
+              setCode(event.target.value.replace(/\D/g, ''));
+            }}
           />
         )}
         <Button type="submit" loading={submitting} disabled={!valid}>
