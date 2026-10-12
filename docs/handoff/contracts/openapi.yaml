@@ -1,10 +1,10 @@
 openapi: 3.1.0
 info:
   title: FlexiPay API
-  version: 0.2.1
+  version: 0.3.0
   summary: Conventions transverses, authentification web et profil (WB2, espace Commun).
   description: |
-    # Contrat d'API FlexiPay (version 0.2.1)
+    # Contrat d'API FlexiPay (version 0.2.2)
 
     Ce fichier est le **contrat de référence** entre l'API (`apps/api`), le web (`apps/web`) et les
     apps Flutter (`apps/mobile-employe`, `apps/mobile-pro`). Il est tenu par **backend**. Toute
@@ -17,10 +17,11 @@ info:
     ci-dessous. Le client web TypeScript est **généré** à partir de ce fichier
     (`packages/api-client`, test de fraîcheur) ; le client mobile Dart le sera plus tard.
 
-    **Paramètres provisoires** : toute valeur marquée « provisoire » est un choix technique de
-    backend, sans document source, soumis à securite puis consigné par le lead dans
-    `docs/handoff/decisions.md` ; elle peut changer d'ici là. Les points « en attente de
-    décision » attendent une décision de l'utilisateur.
+    **Décisions provisoires** : les choix appliqués à titre provisoire par l'utilisateur le
+    2026-10-12 sont listés dans `docs/decisions-provisoires.md` et cités ici par leur numéro
+    (« DP n° 23 ») ; ils peuvent changer. Une valeur marquée « provisoire » sans numéro est un
+    choix technique de backend, soumis à securite. Les points « en attente de décision »
+    attendent une décision de l'utilisateur (`[DÉCISION]` envoyé au lead).
 
     Code, noms de champs, codes d'erreur et valeurs d'énumération sont en **anglais** ; les textes
     affichés à l'utilisateur ne viennent **jamais** du serveur : le serveur renvoie des **clés i18n**
@@ -318,7 +319,7 @@ info:
       Filtres de période : `createdFrom` / `createdTo` (`Timestamp`, borne haute exclue).
     - **Compteur borné facultatif** (UX-02, convention commune à **toutes** les listes paginées) :
       `?withCount=true` ajoute `page.count: { value, isLowerBound }`. Le serveur compte au plus
-      jusqu'à **10 000** (provisoire) (comptage d'une sous-requête limitée à 10 001 lignes, coût borné quelle
+      jusqu'à **10 000** (DP n° 23) (comptage d'une sous-requête limitée à 10 001 lignes, coût borné quelle
       que soit la taille de la table) : `isLowerBound: false` → `value` est le nombre exact de
       résultats (`0` pour une liste vide) ; `isLowerBound: true` → « plus de `value` ». Mêmes filtres
       et même tenant (RLS) que la liste. À n'envoyer qu'au premier chargement et à chaque
@@ -358,9 +359,9 @@ info:
     - **Tout statut affiché est fourni par le serveur** (conformite S-03) : le client n'en déduit
       jamais un à partir d'autres champs ni de l'heure de l'appareil. « À régler » (créance du
       commerçant) = `PaymentStatus` `CONFIRMED` (paiement encaissé non encore réglé, glossaire
-      « Créance »). Les statuts d'un lot de crédit (expiré) et d'une alerte antifraude (suspect)
-      ne figurent pas au glossaire : **en attente de décision** (2026-10-11), ils seront ajoutés
-      avec les contrats Entreprise et Administrateur ; d'ici là, aucun champ n'existe.
+      « Créance »). Lot de crédits `ACTIVE` → `EXPIRED` et alerte antifraude `OPEN` →
+      `IN_PROGRESS` → `CLOSED` : ajoutés au glossaire (DP n° 14), schémas `CreditBatchStatus` et
+      `FraudAlertStatus`, utilisés par les contrats Entreprise et Administrateur.
 
     ## 10. Authentification web : séquence et états de session (spec 01, SEC-A1 à SEC-A4)
     Le web ne sert que `ADMIN`, `COMPANY` et `MERCHANT` (cahier §1.2), pour qui la MFA TOTP est
@@ -371,8 +372,9 @@ info:
     1. `POST /v1/auth/login` avec identifiant + mot de passe.
        - Identifiants refusés, compte inconnu, **verrouillé**, suspendu, ou **mot de passe
          temporaire expiré** (72 h) : `401 INVALID_CREDENTIALS`, réponse identique dans tous les
-         cas (§4, anti-énumération). Le titulaire est prévenu par un autre canal ; un mot de passe
-         temporaire expiré est renvoyé par l'entreprise ou l'administrateur (spec 01 §3).
+         cas (§4, anti-énumération). Le titulaire est prévenu par un autre canal. Mot de passe
+         temporaire expiré : « mot de passe oublié », ou nouveau mot de passe temporaire demandé à
+         l'administrateur de son organisation (DP n° 15).
        - **Durée de réponse indépendante du compte** (WD1-S01) : pour un identifiant inconnu, le
          serveur calcule un hachage Argon2id factice avec les mêmes paramètres ; le verrouillage,
          l'état du compte et l'expiration du mot de passe temporaire sont évalués **après** ce
@@ -380,29 +382,31 @@ info:
        - **Verrouillage vérifié avant le mot de passe** : un compte verrouillé reçoit
          `INVALID_CREDENTIALS` même avec le bon mot de passe.
        - Mot de passe correct d'un `EMPLOYEE` ou `FAMILY_MEMBER` (compte non verrouillé) :
-         `403 FORBIDDEN` (provisoire), sans cookie ni session, journalisé (ces rôles utilisent
+         `403 FORBIDDEN` (DP n° 23), sans cookie ni session, journalisé (ces rôles utilisent
          l'application mobile). Le contrôle n'a lieu qu'après vérification du mot de passe : il ne
          révèle rien sans le bon mot de passe.
-       - **Portée du verrouillage** (spec 01 §3 : 5 échecs → 15 min, puis progressif) : **en
-         attente de décision** (2026-10-12). Un compteur global par compte permet à n'importe qui
-         de bloquer un compte ADMIN ou commerçant ; deux options soumises à l'utilisateur
-         (compteur par couple compte + IP/appareil avec un seuil global plus haut, ou blocage
-         global levé par une réinitialisation réussie, avec notification au titulaire).
+       - **Portée du verrouillage** (spec 01 §3, DP n° 24) : 5 échecs par couple (compte, IP ou
+         appareil) → blocage de ce couple 15 min, puis progressif ; seuil global de 20 échecs
+         toutes origines → blocage du compte, alerte (SEC-L3) et notification du titulaire.
+         Un tiers ne peut donc pas bloquer un compte en 5 essais.
        - MFA enrôlée : `200` `nextStep: MFA_CHALLENGE` + `challengeId` (opaque, usage unique,
-         valable 5 min, provisoire) ; **aucun cookie** n'est posé.
+         valable 5 min, DP n° 23) ; **aucun cookie** n'est posé.
        - MFA pas encore enrôlée : `200` avec une **session restreinte** (cookies posés,
          `csrfToken` dans le corps) et `nextStep: PASSWORD_CHANGE` (mot de passe temporaire) ou
          `MFA_ENROLL`.
-    2. `POST /v1/auth/mfa/verify` (`challengeId` + code TOTP à 6 chiffres, SHA-1, 30 s, provisoire) : session ouverte
+    2. `POST /v1/auth/mfa/verify` (`challengeId` + code TOTP à 6 chiffres, SHA-1, 30 s, DP n° 23,
+       **ou** code de secours, DP n° 10) : session ouverte
        (cookies + `csrfToken`), `nextStep: PASSWORD_CHANGE` si le mot de passe est temporaire,
        sinon `NONE`. Code faux : `401 MFA_CODE_INVALID`. Défi inconnu, consommé ou expiré :
        `401 MFA_CHALLENGE_EXPIRED` (retour à la connexion). Les échecs MFA comptent dans le **même
-       compteur de verrouillage** que la connexion (5 échecs, spec 01 §3) ; au verrouillage, le
-       défi est invalidé.
+       compteur de verrouillage** que la connexion (spec 01 §3) ; au verrouillage, le défi est
+       invalidé. Téléphone perdu sans code de secours : réinitialisation de la MFA par un
+       Administrateur en double validation (DP n° 16, contrat Administrateur).
     3. `POST /v1/auth/password/change` (session restreinte `PASSWORD_CHANGE`) : `nextStep`
        `MFA_ENROLL` si la MFA n'est pas enrôlée, sinon `NONE`.
     4. `POST /v1/auth/mfa/enroll` puis `POST /v1/auth/mfa/enroll/confirm` (session restreinte
-       `MFA_ENROLL`) : `nextStep: NONE`, session complète.
+       `MFA_ENROLL`) : `nextStep: NONE`, session complète, et les **10 codes de secours**
+       affichés une seule fois (DP n° 10).
 
     **Routes autorisées par état de session** (tout autre appel est refusé) :
     | État (`nextStep`) | Routes autorisées | Refus des autres routes |
@@ -415,10 +419,15 @@ info:
       le client sait où reprendre la séquence sans autre appel.
     - Chaque réponse qui établit, renouvelle ou fait changer d'état la session **renouvelle**
       l'identifiant de session et le `csrfToken` (le précédent devient invalide).
-    - Les paramètres encore **en attente de décision** (2026-10-11) : politique de mot de passe
-      (valeurs de `GET /v1/auth/password-policy`), codes de secours MFA (SEC-A4), mécanisme de
-      réinitialisation (lien ou OTP, `POST /v1/auth/password/reset`), révocation des autres
-      sessions après changement du mot de passe, matrice des permissions (`GET /v1/me`).
+    - **Durées de session** (DP n° 18), appliquées par le serveur : inactivité 15 min ; durée
+      absolue 8 h (Entreprise, Commerçant), 4 h (Administrateur). `SessionResult` les expose
+      (`idleTimeoutSeconds`, `absoluteExpiresAt`) pour l'avertissement 2 min avant l'échéance
+      (WCAG 2.2.1) ; « Rester connecté » = `POST /v1/auth/refresh` (remet à zéro l'inactivité,
+      jamais l'échéance absolue). Toute requête authentifiée remet à zéro le délai d'inactivité.
+    - Décisions appliquées (provisoires) : politique de mot de passe (DP n° 9), codes de secours
+      (DP n° 10), réinitialisation (DP n° 11), fermeture des autres sessions après un changement
+      de mot de passe et de toutes après une réinitialisation (DP n° 12), permissions calculées
+      par le serveur (DP n° 13).
   contact:
     name: Équipe backend FlexiPay
   license:
@@ -436,6 +445,12 @@ tags:
     description: Connexion, MFA, mot de passe, session (spec 01)
   - name: me
     description: Profil de l'utilisateur connecté
+  - name: merchant
+    description: Espace Commerçant (spec 07, données fictives côté web)
+  - name: company
+    description: Espace Entreprise (spec 05)
+  - name: admin
+    description: Espace Administrateur (spec 04)
 security:
   - cookieAuth: []
     csrfToken: []
@@ -529,6 +544,9 @@ paths:
                   value:
                     nextStep: PASSWORD_CHANGE
                     csrfToken: 3q2-7wEAAAB0ZXN0LWNzcmYtdG9rZW4tZXhhbXBsZQ
+                    idleTimeoutSeconds: 900
+                    absoluteExpiresAt: '2026-10-11T08:40:00.000Z'
+                    restrictedUntil: '2026-10-11T08:40:00.000Z'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -549,16 +567,17 @@ paths:
     post:
       tags: [auth]
       operationId: verifyMfa
-      summary: Réponse au défi MFA (code TOTP)
+      summary: Réponse au défi MFA (code TOTP ou code de secours)
       description: |
-        Route **publique** (le défi tient lieu d'authentification partielle). Code TOTP RFC 6238
-        à 6 chiffres (provisoire). Échecs comptés dans le compteur de verrouillage de la connexion (5 échecs).
+        Route **publique** (le défi tient lieu d'authentification partielle). Corps : `code`
+        (TOTP RFC 6238 à 6 chiffres, DP n° 23) **ou** `recoveryCode` (code de secours à usage
+        unique, DP n° 10 : consommé, journalisé et notifié au titulaire). Échecs comptés dans le
+        compteur de verrouillage de la connexion.
         **Anti-rejeu** (WB2-S02) : tolérance de ±1 pas de 30 s ; un code accepté est refusé
         (`MFA_CODE_INVALID`) pour ce compte jusqu'à la fin de sa fenêtre de validité.
         Erreurs : `401 MFA_CODE_INVALID` (code faux, le défi reste valable jusqu'au verrouillage),
         `401 MFA_CHALLENGE_EXPIRED` (défi inconnu, déjà utilisé, expiré ou invalidé par le
         verrouillage : retour à la connexion). Journal d'audit : succès et échec.
-        Codes de secours (SEC-A4) : en attente de décision, ajoutés ensuite (champ facultatif).
       security: []
       x-public: true
       parameters:
@@ -650,9 +669,11 @@ paths:
       description: |
         Active le secret si le code est valable (`401 MFA_CODE_INVALID` sinon, échec compté dans
         le compteur de verrouillage ; `409 RESOURCE_STATE_CONFLICT` si aucun enrôlement n'est en
-        cours ou s'il a expiré, 10 min, provisoire). La session devient complète (`nextStep: NONE`),
+        cours ou s'il a expiré, 10 min, DP n° 23). La session devient complète (`nextStep: NONE`),
         identifiant de session et `csrfToken` renouvelés. Journal d'audit et notification au
-        titulaire. Codes de secours (SEC-A4) : en attente de décision, ajoutés à cette réponse.
+        titulaire. **Codes de secours** (SEC-A4, DP n° 10) : 10 nouveaux codes à usage unique,
+        renvoyés **une seule fois** dans cette réponse (les anciens sont annulés) ; jamais
+        journalisés, stockés hachés côté serveur ; le client les affiche sans les conserver.
       parameters:
         - $ref: '#/components/parameters/ClientChannel'
       requestBody:
@@ -663,7 +684,18 @@ paths:
               $ref: '#/components/schemas/MfaEnrollmentConfirmRequest'
       responses:
         '200':
-          $ref: '#/components/responses/SessionEstablished'
+          description: Secret activé, session complète, codes de secours (affichés une seule fois).
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+            Set-Cookie:
+              $ref: '#/components/headers/Set-Cookie-Session'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaEnrollmentConfirmResult'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -672,6 +704,52 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '409':
           $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/auth/mfa/recovery-codes:
+    post:
+      tags: [auth]
+      operationId: regenerateRecoveryCodes
+      summary: Régénère les 10 codes de secours (les anciens sont annulés)
+      description: |
+        Session **complète**. Preuve exigée comme pour un ré-enrôlement : `currentPassword` et
+        `currentCode` (code TOTP ou code de secours encore valable) ; échecs comptés dans le
+        verrouillage (`CURRENT_PASSWORD_INVALID`, `401 MFA_CODE_INVALID`). Renvoie 10 nouveaux
+        codes une seule fois (DP n° 10). Journal d'audit et notification au titulaire.
+      parameters:
+        - $ref: '#/components/parameters/ClientChannel'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaProofRequest'
+      responses:
+        '200':
+          description: Nouveaux codes de secours (affichés une seule fois).
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecoveryCodes'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -709,10 +787,10 @@ paths:
         révoquées et la requête suivante reçoit `401 UNAUTHENTICATED`). Nouveau mot de passe
         refusé par la politique : champ `/newPassword`, code `PASSWORD_POLICY_VIOLATION`, une
         entrée par règle non respectée avec `params.rule` (code de `PasswordPolicyRuleCode`) et les
-        paramètres de la règle. Succès : session renouvelée, `nextStep` suivant (§10). Révocation
-        des autres sessions et familles de jetons de rafraîchissement : en attente de décision
-        (recommandation backend et securite : oui, automatique). Journal d'audit et notification
-        au titulaire. Jamais de mot de passe dans les journaux ni les erreurs.
+        paramètres de la règle. Succès : session renouvelée, `nextStep` suivant (§10) ; **toutes
+        les autres sessions** et familles de jetons de rafraîchissement sont fermées (DP n° 12).
+        Journal d'audit et notification au titulaire. Jamais de mot de passe dans les journaux ni
+        les erreurs.
       parameters:
         - $ref: '#/components/parameters/ClientChannel'
       requestBody:
@@ -749,7 +827,7 @@ paths:
         Route **publique** (utile à la réinitialisation, sans session). Liste structurée de règles
         que le client affiche via ses clés i18n (`passwordPolicy.rule.<codeEnCamelCase>`), sans
         aucune règle codée en dur. Le serveur reste seul juge (`PASSWORD_POLICY_VIOLATION`).
-        Les **valeurs** sont en attente de décision (SEC-A1) ; l'exemple suit la recommandation.
+        Valeurs en vigueur : DP n° 9 (12 à 128 caractères, aucune règle de composition, mots de passe compromis refusés par une liste locale, différent de l'identifiant), comme dans l'exemple.
       security: []
       x-public: true
       responses:
@@ -839,8 +917,14 @@ paths:
       description: |
         Route **publique**. Réponse **toujours** `202`, identique et de durée comparable que le
         compte existe ou non (anti-énumération, §4) ; rate limiting par IP, route et identifiant
-        haché. Mécanisme d'envoi (lien ou OTP, durée de validité) : **en attente de décision**
-        (recommandation : lien par e-mail à usage unique, 15 min). Journal d'audit.
+        haché. Mécanisme (DP n° 11), choisi **d'après la forme de l'identifiant saisi** (aucun
+        oracle : le client sait déjà ce qu'il a tapé) :
+        - **e-mail** : lien à usage unique valable 15 min, jeton dans le fragment de l'URL ; la
+          page de réinitialisation envoie `{ token, newPassword }` ;
+        - **téléphone** : code SMS de 6 chiffres, valable 10 min, 5 essais ; la page envoie
+          `{ identifier, otp, newPassword }`.
+        Une nouvelle demande annule le lien ou le code précédent. Un mot de passe temporaire
+        expiré peut être remplacé par ce moyen (DP n° 15). Journal d'audit.
       security: []
       x-public: true
       parameters:
@@ -875,21 +959,26 @@ paths:
     post:
       tags: [auth]
       operationId: resetPassword
-      summary: Réinitialise le mot de passe (forme provisoire, en attente de décision)
+      summary: Réinitialise le mot de passe (lien par e-mail ou code SMS)
       description: |
-        Route **publique**. **Forme provisoire** tant que le mécanisme n'est pas décidé : elle
-        suit la recommandation (lien). Le jeton du lien est placé dans le **fragment** de l'URL
-        (`#token=…`), jamais envoyé au serveur dans l'URL ni journalisé ; la page web le lit et
-        l'envoie dans le corps. Jeton (WB2-S02) : au moins 128 bits issus d'un générateur
-        cryptographique, stocké **haché** (SHA-256), usage unique, invalidé par une nouvelle
-        demande ou par un changement de mot de passe. Jeton inconnu, utilisé ou expiré :
-        `400 VALIDATION_FAILED` (champ `/token`, code `INVALID_FORMAT`), sans distinguer les cas.
-        Politique non respectée : `PASSWORD_POLICY_VIOLATION`. Succès : toutes les sessions du
-        compte sont révoquées, aucune session n'est ouverte (le client renvoie vers la connexion,
-        MFA comprise). Journal d'audit et notification au titulaire.
+        Route **publique** (DP n° 11). Deux formes de corps :
+        - **lien** `{ token, newPassword }` : le jeton est placé dans le **fragment** de l'URL
+          (`#token=…`), jamais envoyé au serveur dans l'URL ni journalisé ; la page web le lit et
+          l'envoie dans le corps. Jeton (WB2-S02) : au moins 128 bits issus d'un générateur
+          cryptographique, stocké **haché** (SHA-256), usage unique, 15 min, invalidé par une
+          nouvelle demande ou par un changement de mot de passe. Jeton inconnu, utilisé ou
+          expiré : `400 VALIDATION_FAILED` (champ `/token`, code `INVALID_FORMAT`), sans
+          distinguer les cas ;
+        - **code SMS** `{ identifier, otp, newPassword }` : 6 chiffres, 10 min, 5 essais au plus
+          (au-delà le code est annulé). Identifiant inconnu, code faux, épuisé ou expiré :
+          `400 VALIDATION_FAILED` (champ `/otp`, code `INVALID_FORMAT`), même réponse dans tous
+          les cas.
+        Politique non respectée : `PASSWORD_POLICY_VIOLATION`. Succès : **toutes** les sessions du
+        compte sont fermées (DP n° 12), aucune session n'est ouverte (le client renvoie vers la
+        connexion). La réinitialisation ne désactive **jamais** la MFA. Journal d'audit et
+        notification au titulaire.
       security: []
       x-public: true
-      x-pending-decision: true
       parameters:
         - $ref: '#/components/parameters/ClientChannel'
       requestBody:
@@ -954,10 +1043,1310 @@ paths:
                 mfa:
                   required: true
                   enrolled: true
+                  recoveryCodesRemaining: 10
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/merchant/dashboard:
+    get:
+      tags: [merchant]
+      operationId: getMerchantDashboard
+      summary: Tableau de bord du commerçant
+      description: |
+        Encaissé du jour, créances à régler et prochain règlement (J+2). Aucun solde d'un client.
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MerchantDashboard'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/merchant/payments:
+    get:
+      tags: [merchant]
+      operationId: listMerchantPayments
+      summary: Historique des encaissements
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - $ref: '#/components/parameters/CreatedFrom'
+        - $ref: '#/components/parameters/CreatedTo'
+        - name: status
+          in: query
+          required: false
+          description: Filtre par statut de paiement.
+          schema:
+            $ref: '#/components/schemas/PaymentStatus'
+        - name: q
+          in: query
+          required: false
+          description: Recherche par nom, référence ou ville (insensible à la casse). Jamais journalisée.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MerchantPaymentPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [merchant]
+      operationId: initiateMerchantPayment
+      summary: Initier un encaissement par code client (DP n° 17)
+      description: |
+        Le commerçant saisit le code à 8 chiffres affiché par le client et le montant. Paiement `INITIATED`,
+        valable `expiresAt` (60 s, DP n° 8) ; le client confirme sur son téléphone. Limitation de débit par
+        commerçant et terminal (429 `RATE_LIMITED`, `Retry-After`). Code inconnu, expiré ou déjà utilisé :
+        `422 PAYMENT_DECLINED` générique, sans révéler si le code existe.
+      x-financial: true
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentInitiateRequest'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MerchantPayment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableFinancial'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/merchant/payments/{paymentId}:
+    get:
+      tags: [merchant]
+      operationId: getMerchantPayment
+      summary: État d'un encaissement (suivi de la confirmation)
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MerchantPayment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/merchant/payments/{paymentId}/cancel:
+    post:
+      tags: [merchant]
+      operationId: cancelMerchantPayment
+      summary: Annuler un encaissement encore « Initié »
+      description: |
+        Possible seulement au statut `INITIATED` (DP n° 17). Après confirmation : `409 RESOURCE_STATE_CONFLICT` ;
+        une annulation passe alors par une demande motivée validée par l'Administrateur.
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MerchantPayment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/merchant/receivables:
+    get:
+      tags: [merchant]
+      operationId: listMerchantReceivables
+      summary: "Créances : paiements confirmés non encore réglés"
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - $ref: '#/components/parameters/CreatedFrom'
+        - $ref: '#/components/parameters/CreatedTo'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceivablePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/merchant/payout-quotes:
+    post:
+      tags: [merchant]
+      operationId: createPayoutQuote
+      summary: Simuler une demande de virement (brut → commission → net)
+      description: |
+        Calculé par le serveur ; le taux de commission est figé dans `quoteId` jusqu'à `expiresAt` (règle 5).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayoutQuoteRequest'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutQuote'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableFinancial'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/merchant/payouts:
+    get:
+      tags: [merchant]
+      operationId: listPayoutRequests
+      summary: Demandes de virement
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - $ref: '#/components/parameters/CreatedFrom'
+        - $ref: '#/components/parameters/CreatedTo'
+        - name: status
+          in: query
+          required: false
+          description: Filtre par statut.
+          schema:
+            $ref: '#/components/schemas/PayoutRequestStatus'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutRequestPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [merchant]
+      operationId: createPayoutRequest
+      summary: Demander un virement à partir d'une simulation
+      description: |
+        Simulation expirée ou profil de commission modifié : `409 RESOURCE_STATE_CONFLICT`, refaire la simulation.
+      x-financial: true
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayoutRequestCreate'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableFinancial'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/merchant/settlements:
+    get:
+      tags: [merchant]
+      operationId: listMerchantSettlements
+      summary: Règlements reçus et prévus (J+2)
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - $ref: '#/components/parameters/CreatedFrom'
+        - $ref: '#/components/parameters/CreatedTo'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/merchant/documents:
+    get:
+      tags: [merchant]
+      operationId: listMerchantDocuments
+      summary: Factures de commission, relevés et attestations
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - $ref: '#/components/parameters/CreatedFrom'
+        - $ref: '#/components/parameters/CreatedTo'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MerchantDocumentPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/merchant/profile:
+    get:
+      tags: [merchant]
+      operationId: getMerchantProfile
+      summary: "Mon commerce : coordonnées, profil de commission, points de vente, équipe"
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MerchantProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/dashboard:
+    get:
+      tags: [company]
+      operationId: getCompanyDashboard
+      summary: Tableau de bord de l'entreprise
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyDashboard'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/employees:
+    get:
+      tags: [company]
+      operationId: listEmployees
+      summary: Employés
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - $ref: '#/components/parameters/CreatedFrom'
+        - $ref: '#/components/parameters/CreatedTo'
+        - name: status
+          in: query
+          required: false
+          description: Filtre par statut.
+          schema:
+            $ref: '#/components/schemas/EmployeeStatus'
+        - name: q
+          in: query
+          required: false
+          description: Recherche par nom, référence ou ville (insensible à la casse). Jamais journalisée.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [company]
+      operationId: createEmployee
+      summary: Créer un employé (mot de passe temporaire envoyé, RG-2.2)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeCreate'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/employees/import-previews:
+    post:
+      tags: [company]
+      operationId: previewEmployeeImport
+      summary: Aperçu d'un import CSV (erreurs et doublons)
+      description: |
+        Le serveur analyse le fichier (taille bornée, formules `= + - @` neutralisées) ; rien n'est créé.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeImportRequest'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeImportPreview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/employees/imports:
+    post:
+      tags: [company]
+      operationId: confirmEmployeeImport
+      summary: Confirmer un import (lignes valides de l'aperçu)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeImportConfirm'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeImportResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/order-quotes:
+    post:
+      tags: [company]
+      operationId: createCreditOrderQuote
+      summary: Récapitulatif d'une commande de crédits (montant, frais, total)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreditOrderQuoteRequest'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditOrderQuote'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/orders:
+    get:
+      tags: [company]
+      operationId: listCreditOrders
+      summary: Commandes de crédits
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - $ref: '#/components/parameters/CreatedFrom'
+        - $ref: '#/components/parameters/CreatedTo'
+        - name: status
+          in: query
+          required: false
+          description: Filtre par statut.
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditOrderPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [company]
+      operationId: createCreditOrder
+      summary: Passer une commande de crédits
+      x-financial: true
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreditOrderCreate'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditOrder'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableFinancial'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/allocations:
+    post:
+      tags: [company]
+      operationId: allocateCredits
+      summary: Attribuer des crédits à des employés
+      description: |
+        Débite le wallet de l'entreprise ; solde insuffisant : `422 INSUFFICIENT_FUNDS`.
+      x-financial: true
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllocationRequest'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllocationResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableFinancial'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/invoices:
+    get:
+      tags: [company]
+      operationId: listCompanyInvoices
+      summary: Factures
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - $ref: '#/components/parameters/CreatedFrom'
+        - $ref: '#/components/parameters/CreatedTo'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoicePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/dashboard:
+    get:
+      tags: [admin]
+      operationId: getAdminDashboard
+      summary: Tableau de bord Administrateur
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDashboard'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/merchants:
+    get:
+      tags: [admin]
+      operationId: listMerchantAccounts
+      summary: Commerçants
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - $ref: '#/components/parameters/CreatedFrom'
+        - $ref: '#/components/parameters/CreatedTo'
+        - name: status
+          in: query
+          required: false
+          description: Filtre par statut.
+          schema:
+            $ref: '#/components/schemas/AccountStatus'
+        - name: q
+          in: query
+          required: false
+          description: Recherche par nom, référence ou ville (insensible à la casse). Jamais journalisée.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MerchantAccountPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [admin]
+      operationId: createMerchantAccount
+      summary: Créer un commerçant (profil de commission obligatoire)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MerchantCreate'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MerchantAccount'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/companies:
+    get:
+      tags: [admin]
+      operationId: listCompanyAccounts
+      summary: Entreprises
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - $ref: '#/components/parameters/CreatedFrom'
+        - $ref: '#/components/parameters/CreatedTo'
+        - name: status
+          in: query
+          required: false
+          description: Filtre par statut.
+          schema:
+            $ref: '#/components/schemas/AccountStatus'
+        - name: q
+          in: query
+          required: false
+          description: Recherche par nom, référence ou ville (insensible à la casse). Jamais journalisée.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyAccountPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [admin]
+      operationId: createCompanyAccount
+      summary: Créer une entreprise
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyCreate'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyAccount'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/commission-profiles:
+    get:
+      tags: [admin]
+      operationId: listCommissionProfiles
+      summary: Profils de commission
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommissionProfileList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/commission-profiles/{profileId}/change-requests:
+    post:
+      tags: [admin]
+      operationId: requestCommissionChange
+      summary: Demander un changement de taux (double validation, règle 12)
+      parameters:
+        - name: profileId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommissionChangeRequest'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Approval'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/approvals:
+    get:
+      tags: [admin]
+      operationId: listApprovals
+      summary: Demandes en attente de double validation
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - $ref: '#/components/parameters/CreatedFrom'
+        - $ref: '#/components/parameters/CreatedTo'
+        - name: status
+          in: query
+          required: false
+          description: Filtre par statut.
+          schema:
+            $ref: '#/components/schemas/ApprovalStatus'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/approvals/{approvalId}/approve:
+    post:
+      tags: [admin]
+      operationId: approveApproval
+      summary: Approuver (approbateur différent de l'initiateur)
+      description: |
+        L'initiateur ne peut pas approuver sa propre demande : `403 FORBIDDEN` (règle 12).
+      parameters:
+        - name: approvalId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Approval'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/approvals/{approvalId}/reject:
+    post:
+      tags: [admin]
+      operationId: rejectApproval
+      summary: Refuser une demande (motif obligatoire)
+      parameters:
+        - name: approvalId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalRejectRequest'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Approval'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/settlements:
+    get:
+      tags: [admin]
+      operationId: listSettlementBatches
+      summary: Lots de règlement des commerçants (J+2)
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - $ref: '#/components/parameters/CreatedFrom'
+        - $ref: '#/components/parameters/CreatedTo'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementBatchPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/audit-logs:
+    get:
+      tags: [admin]
+      operationId: listAuditLogs
+      summary: Journal d'audit (lecture seule)
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - $ref: '#/components/parameters/CreatedFrom'
+        - $ref: '#/components/parameters/CreatedTo'
+        - name: q
+          in: query
+          required: false
+          description: Recherche par nom, référence ou ville (insensible à la casse). Jamais journalisée.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/settings:
+    get:
+      tags: [admin]
+      operationId: getPlatformSettings
+      summary: Paramétrage de la plateforme
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags: [admin]
+      operationId: requestPlatformSettingsChange
+      summary: Demander une modification du paramétrage (double validation)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlatformSettingsChange'
+      responses:
+        '202':
+          description: Demande créée, en attente de double validation.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Approval'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -1217,7 +2606,7 @@ components:
       description: |
         Compteur borné (§7), présent seulement avec `?withCount=true` et si le comptage a abouti.
         `isLowerBound: false` : `value` = nombre exact de résultats ; `true` : plus de `value`
-        résultats (plafond 10 000, provisoire).
+        résultats (plafond 10 000, DP n° 23).
       type: object
       additionalProperties: false
       required: [value, isLowerBound]
@@ -1297,12 +2686,26 @@ components:
       description: Session ouverte ou renouvelée (cookies posés par la même réponse).
       type: object
       additionalProperties: false
-      required: [nextStep, csrfToken]
+      required: [nextStep, csrfToken, idleTimeoutSeconds, absoluteExpiresAt]
       properties:
         nextStep:
           $ref: '#/components/schemas/SessionNextStep'
         csrfToken:
           $ref: '#/components/schemas/CsrfToken'
+        idleTimeoutSeconds:
+          description: |
+            Délai d'inactivité de la session (DP n° 18 : 900 s). Toute requête authentifiée le
+            remet à zéro ; avertissement 2 min avant.
+          type: integer
+          minimum: 60
+          maximum: 86400
+        absoluteExpiresAt:
+          description: |
+            Échéance absolue de la session (DP n° 18 : 8 h Entreprise et Commerçant, 4 h
+            Administrateur ; égale à `restrictedUntil` en session restreinte `PASSWORD_CHANGE`).
+            Jamais prolongée par le rafraîchissement.
+          allOf:
+            - $ref: '#/components/schemas/Timestamp'
         restrictedUntil:
           description: |
             Présent seulement quand `nextStep` = `PASSWORD_CHANGE` : échéance **absolue** de la
@@ -1323,7 +2726,7 @@ components:
           type: string
           const: MFA_CHALLENGE
         challengeId:
-          description: Identifiant opaque du défi, usage unique, valable 5 min (provisoire).
+          description: Identifiant opaque du défi, usage unique, valable 5 min (DP n° 23).
           type: string
           format: uuid
         challengeExpiresAt:
@@ -1338,24 +2741,104 @@ components:
         - $ref: '#/components/schemas/SessionResult'
     TotpCode:
       title: TotpCode
-      description: Code TOTP (RFC 6238) à 6 chiffres (provisoire). Jamais journalisé.
+      description: Code TOTP (RFC 6238) à 6 chiffres (DP n° 23). Jamais journalisé.
       type: string
       pattern: '^[0-9]{6}$'
+    RecoveryCode:
+      title: RecoveryCode
+      description: |
+        Code de secours MFA (DP n° 10) : 10 caractères à usage unique, alphabet sans caractère
+        ambigu (provisoire). Saisie insensible à la casse et aux tirets : le client met en
+        majuscules et retire espaces et tirets avant l'envoi. Jamais journalisé.
+      type: string
+      pattern: '^[A-HJ-NP-Z2-9]{10}$'
     MfaVerifyRequest:
       title: MfaVerifyRequest
+      description: Code TOTP (`code`) **ou** code de secours (`recoveryCode`), jamais les deux.
+      oneOf:
+        - type: object
+          title: MfaVerifyWithTotp
+          additionalProperties: false
+          required: [challengeId, code]
+          properties:
+            challengeId:
+              type: string
+              format: uuid
+            code:
+              $ref: '#/components/schemas/TotpCode'
+        - type: object
+          title: MfaVerifyWithRecoveryCode
+          additionalProperties: false
+          required: [challengeId, recoveryCode]
+          properties:
+            challengeId:
+              type: string
+              format: uuid
+            recoveryCode:
+              $ref: '#/components/schemas/RecoveryCode'
+    RecoveryCodes:
+      title: RecoveryCodes
+      description: |
+        Les 10 codes de secours, renvoyés une seule fois (DP n° 10). Les précédents sont annulés.
       type: object
       additionalProperties: false
-      required: [challengeId, code]
+      required: [recoveryCodes]
       properties:
-        challengeId:
+        recoveryCodes:
+          type: array
+          minItems: 10
+          maxItems: 10
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/RecoveryCode'
+    MfaEnrollmentConfirmResult:
+      title: MfaEnrollmentConfirmResult
+      description: Session complète et codes de secours (affichés une seule fois).
+      type: object
+      additionalProperties: false
+      required:
+        [nextStep, csrfToken, idleTimeoutSeconds, absoluteExpiresAt, recoveryCodes]
+      properties:
+        nextStep:
+          $ref: '#/components/schemas/SessionNextStep'
+        csrfToken:
+          $ref: '#/components/schemas/CsrfToken'
+        idleTimeoutSeconds:
+          type: integer
+          minimum: 60
+          maximum: 86400
+        absoluteExpiresAt:
+          $ref: '#/components/schemas/Timestamp'
+        recoveryCodes:
+          type: array
+          minItems: 10
+          maxItems: 10
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/RecoveryCode'
+    MfaCurrentCode:
+      title: MfaCurrentCode
+      description: Code de l'ancien secret TOTP (6 chiffres) ou code de secours encore valable.
+      type: string
+      pattern: '^([0-9]{6}|[A-HJ-NP-Z2-9]{10})$'
+    MfaProofRequest:
+      title: MfaProofRequest
+      description: Preuve de possession du compte et de la MFA actuelle (session complète).
+      type: object
+      additionalProperties: false
+      required: [currentPassword, currentCode]
+      properties:
+        currentPassword:
           type: string
-          format: uuid
-        code:
-          $ref: '#/components/schemas/TotpCode'
+          format: password
+          minLength: 1
+          maxLength: 256
+        currentCode:
+          $ref: '#/components/schemas/MfaCurrentCode'
     MfaEnrollment:
       title: MfaEnrollment
       description: |
-        Secret TOTP en attente de confirmation (10 min, provisoire). Affiché une seule fois, jamais
+        Secret TOTP en attente de confirmation (10 min, DP n° 23). Affiché une seule fois, jamais
         journalisé, jamais conservé par le client après l'écran.
       type: object
       additionalProperties: false
@@ -1363,7 +2846,7 @@ components:
       properties:
         otpauthUri:
           description: |
-            URI `otpauth://totp/FlexiPay:<libellé>?secret=…&issuer=FlexiPay&algorithm=SHA1&digits=6&period=30` (paramètres provisoires),
+            URI `otpauth://totp/FlexiPay:<libellé>?secret=…&issuer=FlexiPay&algorithm=SHA1&digits=6&period=30` (DP n° 23),
             à transformer en QR **côté client**. Le libellé ne contient ni e-mail ni téléphone.
           type: string
           pattern: '^otpauth://totp/'
@@ -1390,7 +2873,7 @@ components:
           minLength: 1
           maxLength: 256
         currentCode:
-          $ref: '#/components/schemas/TotpCode'
+          $ref: '#/components/schemas/MfaCurrentCode'
     MfaEnrollmentConfirmRequest:
       title: MfaEnrollmentConfirmRequest
       type: object
@@ -1423,10 +2906,9 @@ components:
       title: PasswordPolicyRuleCode
       description: |
         Règle de la politique de mot de passe. Liste extensible (règle inconnue : ne pas
-        l'afficher). Les règles en vigueur et leurs paramètres sont en attente de décision
-        (SEC-A1) : `MIN_LENGTH {min}`, `MAX_LENGTH {max}`, `NOT_COMPROMISED` (absent des listes
-        de mots de passe compromis), `NOT_IDENTIFIER` (différent de l'identifiant),
-        `DIFFERENT_FROM_CURRENT`.
+        l'afficher). Règles en vigueur (SEC-A1, DP n° 9) : `MIN_LENGTH {min: 12}`,
+        `MAX_LENGTH {max: 128}`, `NOT_COMPROMISED` (absent d'une liste locale de mots de passe
+        compromis), `NOT_IDENTIFIER` (différent de l'identifiant), `DIFFERENT_FROM_CURRENT`.
       type: string
       enum: [MIN_LENGTH, MAX_LENGTH, NOT_COMPROMISED, NOT_IDENTIFIER, DIFFERENT_FROM_CURRENT]
     PasswordPolicyRule:
@@ -1465,22 +2947,43 @@ components:
           maxLength: 254
     PasswordResetRequest:
       title: PasswordResetRequest
-      description: Forme provisoire (mécanisme « lien », en attente de décision).
-      type: object
-      additionalProperties: false
-      required: [token, newPassword]
-      properties:
-        token:
-          description: Jeton à usage unique lu dans le fragment de l'URL du lien. Jamais journalisé.
-          type: string
-          minLength: 32
-          maxLength: 256
-          pattern: '^[A-Za-z0-9_-]+$'
-        newPassword:
-          type: string
-          format: password
-          minLength: 1
-          maxLength: 256
+      description: Lien par e-mail (`token`) ou code SMS (`identifier` + `otp`), DP n° 11.
+      oneOf:
+        - type: object
+          title: PasswordResetWithToken
+          additionalProperties: false
+          required: [token, newPassword]
+          properties:
+            token:
+              description: Jeton à usage unique lu dans le fragment de l'URL du lien. Jamais journalisé.
+              type: string
+              minLength: 32
+              maxLength: 256
+              pattern: '^[A-Za-z0-9_-]+$'
+            newPassword:
+              type: string
+              format: password
+              minLength: 1
+              maxLength: 256
+        - type: object
+          title: PasswordResetWithOtp
+          additionalProperties: false
+          required: [identifier, otp, newPassword]
+          properties:
+            identifier:
+              description: Numéro de téléphone saisi à la demande. Jamais renvoyé ni journalisé en clair.
+              type: string
+              minLength: 1
+              maxLength: 254
+            otp:
+              description: Code SMS à 6 chiffres (10 min, 5 essais). Jamais journalisé.
+              type: string
+              pattern: '^[0-9]{6}$'
+            newPassword:
+              type: string
+              format: password
+              minLength: 1
+              maxLength: 256
     # ---------------------------------------------------------------- profil
     Role:
       title: Role
@@ -1500,10 +3003,11 @@ components:
     Permission:
       title: Permission
       description: |
-        Permission calculée par le serveur, sous la forme `module.action` (ex. `payments.collect`).
-        Les noms sont publiés espace par espace avec chaque contrat de module ; la matrice rôle ×
-        sous-rôle est en attente de décision pour les cases que les documents ne fixent pas.
-        Une permission inconnue du client est ignorée.
+        Permission calculée par le serveur (DP n° 13), sous la forme `module.action`. Les noms
+        sont publiés espace par espace (§11 Commerçant) ; les cases de la matrice rôle ×
+        sous-rôle que les documents ne fixent pas sont soumises à l'utilisateur. Une permission
+        inconnue du client est ignorée ; le web masque ce qui n'est pas permis, le serveur
+        refuse (`403 FORBIDDEN`).
       type: string
       pattern: '^[a-z][A-Za-z]*\.[a-z][A-Za-z]*$'
       maxLength: 64
@@ -1541,12 +3045,17 @@ components:
         mfa:
           type: object
           additionalProperties: false
-          required: [required, enrolled]
+          required: [required, enrolled, recoveryCodesRemaining]
           properties:
             required:
               type: boolean
             enrolled:
               type: boolean
+            recoveryCodesRemaining:
+              description: Codes de secours encore utilisables (0 à 10, DP n° 10).
+              type: integer
+              minimum: 0
+              maximum: 10
     TenantSummary:
       title: TenantSummary
       type: object
@@ -1585,6 +3094,1132 @@ components:
       description: Approbation (double validation, approbateur ≠ initiateur) — En attente, Approuvée, Refusée.
       type: string
       enum: [PENDING, APPROVED, REJECTED]
+    CreditBatchStatus:
+      title: CreditBatchStatus
+      description: |
+        Lot de crédits — Actif, Expiré (glossaire, DP n° 14). Calculé par le serveur en
+        `Africa/Tunis` (E10) ; le client ne compare jamais une date d'expiration à l'heure locale.
+      type: string
+      enum: [ACTIVE, EXPIRED]
+    FraudAlertStatus:
+      title: FraudAlertStatus
+      description: Alerte antifraude — Ouverte, En cours, Close (clôture motivée et journalisée, DP n° 14).
+      type: string
+      enum: [OPEN, IN_PROGRESS, CLOSED]
+    # ---------------------------------------------------------------- espaces web (0.3.0)
+    PhoneNumber:
+      title: PhoneNumber
+      description: Numéro tunisien au format E.164.
+      type: string
+      pattern: '^\+216[0-9]{8}$'
+      examples: ['+21698123456']
+    MerchantCategory:
+      title: MerchantCategory
+      description: "Catégorie du commerce (MVP : Restauration)."
+      type: string
+      enum: [RESTAURANT, CAFE, GROCERY, BAKERY, FAST_FOOD]
+    CustomerSummary:
+      title: CustomerSummary
+      description: "Client vu par le commerçant : prénom, initiale, matricule masqué (COM-04). Jamais de solde."
+      type: object
+      additionalProperties: false
+      required: [firstName, lastInitial, maskedEmployeeNumber]
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 60
+        lastInitial:
+          type: string
+          minLength: 1
+          maxLength: 1
+        maskedEmployeeNumber:
+          description: Matricule masqué (4 derniers caractères).
+          type: string
+          minLength: 1
+          maxLength: 20
+    MerchantPayment:
+      title: MerchantPayment
+      description: Encaissement vu par le commerçant.
+      type: object
+      additionalProperties: false
+      required: [id, reference, status, amountMillimes, customer, createdAt, expiresAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 32
+        status:
+          $ref: '#/components/schemas/PaymentStatus'
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        customer:
+          $ref: '#/components/schemas/CustomerSummary'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        expiresAt:
+          description: Fin de validité tant que `INITIATED` ; `null` ensuite.
+          oneOf:
+            - $ref: '#/components/schemas/Timestamp'
+            - type: 'null'
+    MerchantPaymentPage:
+      title: MerchantPaymentPage
+      description: Liste paginée de MerchantPayment (§7).
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/MerchantPayment'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    PaymentInitiateRequest:
+      title: PaymentInitiateRequest
+      type: object
+      additionalProperties: false
+      required: [customerCode, amountMillimes]
+      properties:
+        customerCode:
+          description: Code à 8 chiffres affiché par le client (60 s). Jamais journalisé.
+          type: string
+          pattern: '^[0-9]{8}$'
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+    MerchantDashboard:
+      title: MerchantDashboard
+      type: object
+      additionalProperties: false
+      required: [todayCollectedMillimes, todayPaymentsCount, receivablesMillimes, nextSettlementDate, commissionRateBps, recentPayments]
+      properties:
+        todayCollectedMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        todayPaymentsCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100000
+        receivablesMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        nextSettlementDate:
+          oneOf:
+            - $ref: '#/components/schemas/CalendarDate'
+            - type: 'null'
+        commissionRateBps:
+          $ref: '#/components/schemas/RateBps'
+        recentPayments:
+          type: array
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/MerchantPayment'
+    Receivable:
+      title: Receivable
+      description: Paiement confirmé non encore réglé (statut affiché « En attente de règlement », DP n° 2).
+      type: object
+      additionalProperties: false
+      required: [paymentId, reference, amountMillimes, confirmedAt, settlementDate]
+      properties:
+        paymentId:
+          $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 32
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        confirmedAt:
+          $ref: '#/components/schemas/Timestamp'
+        settlementDate:
+          $ref: '#/components/schemas/CalendarDate'
+    ReceivablePage:
+      title: ReceivablePage
+      type: object
+      additionalProperties: false
+      required: [data, page, totalMillimes]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/Receivable'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+        totalMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+    PayoutQuoteRequest:
+      title: PayoutQuoteRequest
+      type: object
+      additionalProperties: false
+      required: [grossMillimes]
+      properties:
+        grossMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+    PayoutQuote:
+      title: PayoutQuote
+      description: Simulation calculée par le serveur ; taux figé jusqu'à `expiresAt`.
+      type: object
+      additionalProperties: false
+      required: [quoteId, grossMillimes, commissionRateBps, commissionMillimes, netMillimes, availableMillimes, expiresAt]
+      properties:
+        quoteId:
+          $ref: '#/components/schemas/Uuid'
+        grossMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        commissionRateBps:
+          $ref: '#/components/schemas/RateBps'
+        commissionMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        netMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        availableMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
+    PayoutRequestCreate:
+      title: PayoutRequestCreate
+      type: object
+      additionalProperties: false
+      required: [quoteId]
+      properties:
+        quoteId:
+          $ref: '#/components/schemas/Uuid'
+    PayoutRequest:
+      title: PayoutRequest
+      type: object
+      additionalProperties: false
+      required: [id, reference, status, grossMillimes, commissionRateBps, commissionMillimes, netMillimes, requestedAt, maskedIban]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 32
+        status:
+          $ref: '#/components/schemas/PayoutRequestStatus'
+        grossMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        commissionRateBps:
+          $ref: '#/components/schemas/RateBps'
+        commissionMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        netMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        requestedAt:
+          $ref: '#/components/schemas/Timestamp'
+        maskedIban:
+          description: RIB masqué (4 derniers chiffres).
+          type: string
+          minLength: 1
+          maxLength: 40
+    PayoutRequestPage:
+      title: PayoutRequestPage
+      description: Liste paginée de PayoutRequest (§7).
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/PayoutRequest'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    SettlementStatus:
+      title: SettlementStatus
+      description: Règlement J+2 — Prévu, Payé (provisoire).
+      type: string
+      enum: [SCHEDULED, PAID]
+    Settlement:
+      title: Settlement
+      type: object
+      additionalProperties: false
+      required: [id, reference, settlementDate, paymentsCount, grossMillimes, commissionMillimes, netMillimes, status]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 32
+        settlementDate:
+          $ref: '#/components/schemas/CalendarDate'
+        paymentsCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100000
+        grossMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        commissionMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        netMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        status:
+          $ref: '#/components/schemas/SettlementStatus'
+    SettlementPage:
+      title: SettlementPage
+      description: Liste paginée de Settlement (§7).
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/Settlement'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    MerchantDocumentType:
+      title: MerchantDocumentType
+      description: Facture de commission, relevé, attestation (COM-08).
+      type: string
+      enum: [COMMISSION_INVOICE, STATEMENT, CERTIFICATE]
+    MerchantDocument:
+      title: MerchantDocument
+      type: object
+      additionalProperties: false
+      required: [id, type, period, issuedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        type:
+          $ref: '#/components/schemas/MerchantDocumentType'
+        period:
+          description: Mois couvert (AAAA-MM).
+          type: string
+          pattern: '^\d{4}-\d{2}$'
+        issuedAt:
+          $ref: '#/components/schemas/Timestamp'
+    MerchantDocumentPage:
+      title: MerchantDocumentPage
+      description: Liste paginée de MerchantDocument (§7).
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/MerchantDocument'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    PointOfSale:
+      title: PointOfSale
+      type: object
+      additionalProperties: false
+      required: [id, name, city]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+    StaffMember:
+      title: StaffMember
+      type: object
+      additionalProperties: false
+      required: [id, displayName, subRole]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        subRole:
+          $ref: '#/components/schemas/SubRole'
+    CommissionProfileSummary:
+      title: CommissionProfileSummary
+      type: object
+      additionalProperties: false
+      required: [id, name, rateBps]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        rateBps:
+          $ref: '#/components/schemas/RateBps'
+    MerchantProfile:
+      title: MerchantProfile
+      type: object
+      additionalProperties: false
+      required: [name, category, city, address, phone, maskedIban, commissionProfile, pointsOfSale, staff]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        category:
+          $ref: '#/components/schemas/MerchantCategory'
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+        address:
+          type: string
+          minLength: 1
+          maxLength: 200
+        phone:
+          $ref: '#/components/schemas/PhoneNumber'
+        maskedIban:
+          type: string
+          minLength: 1
+          maxLength: 40
+        commissionProfile:
+          $ref: '#/components/schemas/CommissionProfileSummary'
+        pointsOfSale:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/PointOfSale'
+        staff:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/StaffMember'
+    CompanyDashboard:
+      title: CompanyDashboard
+      type: object
+      additionalProperties: false
+      required: [walletBalanceMillimes, employeesCount, activeEmployeesCount, monthAllocatedMillimes, pendingOrdersCount, recentOrders]
+      properties:
+        walletBalanceMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        employeesCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100000
+        activeEmployeesCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100000
+        monthAllocatedMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        pendingOrdersCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100000
+        recentOrders:
+          type: array
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/CreditOrder'
+    EmployeeStatus:
+      title: EmployeeStatus
+      description: Employé — Invité (mot de passe temporaire), Actif, Suspendu.
+      type: string
+      enum: [INVITED, ACTIVE, SUSPENDED]
+    Employee:
+      title: Employee
+      type: object
+      additionalProperties: false
+      required: [id, employeeNumber, firstName, lastName, email, phone, status, monthAllocatedMillimes]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        employeeNumber:
+          type: string
+          minLength: 1
+          maxLength: 20
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 60
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 60
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        phone:
+          $ref: '#/components/schemas/PhoneNumber'
+        status:
+          $ref: '#/components/schemas/EmployeeStatus'
+        monthAllocatedMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+    EmployeePage:
+      title: EmployeePage
+      description: Liste paginée de Employee (§7).
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/Employee'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    EmployeeCreate:
+      title: EmployeeCreate
+      type: object
+      additionalProperties: false
+      required: [employeeNumber, firstName, lastName, email, phone]
+      properties:
+        employeeNumber:
+          type: string
+          minLength: 1
+          maxLength: 20
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 60
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 60
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        phone:
+          $ref: '#/components/schemas/PhoneNumber'
+    EmployeeImportRequest:
+      title: EmployeeImportRequest
+      type: object
+      additionalProperties: false
+      required: [csv]
+      properties:
+        csv:
+          description: Contenu du fichier CSV (UTF-8, 1 Mo maximum).
+          type: string
+          minLength: 1
+          maxLength: 1048576
+    ImportIssueCode:
+      title: ImportIssueCode
+      description: Problème d'une ligne d'import.
+      type: string
+      enum: [REQUIRED, INVALID_FORMAT, DUPLICATE_IN_FILE, ALREADY_EXISTS]
+    ImportIssue:
+      title: ImportIssue
+      type: object
+      additionalProperties: false
+      required: [field, code]
+      properties:
+        field:
+          type: string
+          enum: [employeeNumber, firstName, lastName, email, phone]
+        code:
+          $ref: '#/components/schemas/ImportIssueCode'
+    ImportRow:
+      title: ImportRow
+      type: object
+      additionalProperties: false
+      required: [line, employeeNumber, firstName, lastName, email, phone, issues]
+      properties:
+        line:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 100000
+        employeeNumber:
+          type: string
+          maxLength: 200
+        firstName:
+          type: string
+          maxLength: 200
+        lastName:
+          type: string
+          maxLength: 200
+        email:
+          type: string
+          maxLength: 254
+        phone:
+          type: string
+          maxLength: 40
+        issues:
+          type: array
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/ImportIssue'
+    EmployeeImportPreview:
+      title: EmployeeImportPreview
+      type: object
+      additionalProperties: false
+      required: [previewId, rows, validCount, errorCount, duplicateCount]
+      properties:
+        previewId:
+          $ref: '#/components/schemas/Uuid'
+        rows:
+          type: array
+          maxItems: 5000
+          items:
+            $ref: '#/components/schemas/ImportRow'
+        validCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 5000
+        errorCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 5000
+        duplicateCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 5000
+    EmployeeImportConfirm:
+      title: EmployeeImportConfirm
+      type: object
+      additionalProperties: false
+      required: [previewId]
+      properties:
+        previewId:
+          $ref: '#/components/schemas/Uuid'
+    EmployeeImportResult:
+      title: EmployeeImportResult
+      type: object
+      additionalProperties: false
+      required: [createdCount]
+      properties:
+        createdCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 5000
+    CreditOrderQuoteRequest:
+      title: CreditOrderQuoteRequest
+      type: object
+      additionalProperties: false
+      required: [amountMillimes]
+      properties:
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+    CreditOrderQuote:
+      title: CreditOrderQuote
+      description: Récapitulatif calculé par le serveur.
+      type: object
+      additionalProperties: false
+      required: [amountMillimes, feeRateBps, feesMillimes, totalMillimes]
+      properties:
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        feeRateBps:
+          $ref: '#/components/schemas/RateBps'
+        feesMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        totalMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+    CreditOrderCreate:
+      title: CreditOrderCreate
+      type: object
+      additionalProperties: false
+      required: [amountMillimes]
+      properties:
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+    CreditOrder:
+      title: CreditOrder
+      type: object
+      additionalProperties: false
+      required: [id, reference, status, amountMillimes, feesMillimes, totalMillimes, createdAt, paymentReference]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 32
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        feesMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        totalMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        paymentReference:
+          description: Référence à indiquer sur le virement.
+          type: string
+          minLength: 1
+          maxLength: 32
+    CreditOrderPage:
+      title: CreditOrderPage
+      description: Liste paginée de CreditOrder (§7).
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/CreditOrder'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    AllocationLine:
+      title: AllocationLine
+      type: object
+      additionalProperties: false
+      required: [employeeId, amountMillimes]
+      properties:
+        employeeId:
+          $ref: '#/components/schemas/Uuid'
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+    AllocationRequest:
+      title: AllocationRequest
+      type: object
+      additionalProperties: false
+      required: [allocations]
+      properties:
+        allocations:
+          type: array
+          minItems: 1
+          maxItems: 5000
+          items:
+            $ref: '#/components/schemas/AllocationLine'
+    AllocationResult:
+      title: AllocationResult
+      type: object
+      additionalProperties: false
+      required: [allocatedCount, allocatedMillimes, walletBalanceMillimes]
+      properties:
+        allocatedCount:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 5000
+        allocatedMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        walletBalanceMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+    InvoiceStatus:
+      title: InvoiceStatus
+      description: Facture — Payée, À payer.
+      type: string
+      enum: [PAID, UNPAID]
+    Invoice:
+      title: Invoice
+      type: object
+      additionalProperties: false
+      required: [id, number, orderReference, totalMillimes, issuedAt, status]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        number:
+          type: string
+          minLength: 1
+          maxLength: 32
+        orderReference:
+          type: string
+          minLength: 1
+          maxLength: 32
+        totalMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        issuedAt:
+          $ref: '#/components/schemas/Timestamp'
+        status:
+          $ref: '#/components/schemas/InvoiceStatus'
+    InvoicePage:
+      title: InvoicePage
+      description: Liste paginée de Invoice (§7).
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/Invoice'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    AdminDashboard:
+      title: AdminDashboard
+      type: object
+      additionalProperties: false
+      required: [merchantsCount, companiesCount, todayVolumeMillimes, pendingApprovalsCount, pendingKycCount, nextSettlementNetMillimes]
+      properties:
+        merchantsCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 1000000
+        companiesCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 1000000
+        todayVolumeMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        pendingApprovalsCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100000
+        pendingKycCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100000
+        nextSettlementNetMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+    MerchantAccount:
+      title: MerchantAccount
+      type: object
+      additionalProperties: false
+      required: [id, name, category, city, status, commissionProfile, createdAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        category:
+          $ref: '#/components/schemas/MerchantCategory'
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+        status:
+          $ref: '#/components/schemas/AccountStatus'
+        commissionProfile:
+          $ref: '#/components/schemas/CommissionProfileSummary'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+    MerchantAccountPage:
+      title: MerchantAccountPage
+      description: Liste paginée de MerchantAccount (§7).
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/MerchantAccount'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    MerchantCreate:
+      title: MerchantCreate
+      type: object
+      additionalProperties: false
+      required: [name, category, city, phone, email, commissionProfileId]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        category:
+          $ref: '#/components/schemas/MerchantCategory'
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+        phone:
+          $ref: '#/components/schemas/PhoneNumber'
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        commissionProfileId:
+          description: Profil de commission, obligatoire (liste déroulante).
+          $ref: '#/components/schemas/Uuid'
+    CompanyAccount:
+      title: CompanyAccount
+      type: object
+      additionalProperties: false
+      required: [id, name, city, status, employeesCount, createdAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+        status:
+          $ref: '#/components/schemas/AccountStatus'
+        employeesCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 1000000
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+    CompanyAccountPage:
+      title: CompanyAccountPage
+      description: Liste paginée de CompanyAccount (§7).
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/CompanyAccount'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    CompanyCreate:
+      title: CompanyCreate
+      type: object
+      additionalProperties: false
+      required: [name, city, phone, email]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+        phone:
+          $ref: '#/components/schemas/PhoneNumber'
+        email:
+          type: string
+          format: email
+          maxLength: 254
+    CommissionProfile:
+      title: CommissionProfile
+      type: object
+      additionalProperties: false
+      required: [id, name, rateBps, merchantsCount, updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        rateBps:
+          $ref: '#/components/schemas/RateBps'
+        merchantsCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 1000000
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+    CommissionProfileList:
+      title: CommissionProfileList
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/CommissionProfile'
+    CommissionChangeRequest:
+      title: CommissionChangeRequest
+      type: object
+      additionalProperties: false
+      required: [newRateBps, reason]
+      properties:
+        newRateBps:
+          $ref: '#/components/schemas/RateBps'
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+    ApprovalType:
+      title: ApprovalType
+      description: Opération sensible soumise à double validation (règle 12).
+      type: string
+      enum: [COMMISSION_RATE_CHANGE, SETTINGS_CHANGE]
+    Approval:
+      title: Approval
+      type: object
+      additionalProperties: false
+      required: [id, type, status, subject, initiatorName, initiatedByMe, createdAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        type:
+          $ref: '#/components/schemas/ApprovalType'
+        status:
+          $ref: '#/components/schemas/ApprovalStatus'
+        subject:
+          description: Libellé de la ressource concernée (profil, paramètre).
+          type: string
+          minLength: 1
+          maxLength: 200
+        oldRateBps:
+          $ref: '#/components/schemas/RateBps'
+        newRateBps:
+          $ref: '#/components/schemas/RateBps'
+        reason:
+          type: string
+          maxLength: 500
+        initiatorName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        initiatedByMe:
+          description: Vrai si la demande vient de l'utilisateur courant (il ne peut pas l'approuver).
+          type: boolean
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+    ApprovalPage:
+      title: ApprovalPage
+      description: Liste paginée de Approval (§7).
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/Approval'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    ApprovalRejectRequest:
+      title: ApprovalRejectRequest
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+    SettlementBatch:
+      title: SettlementBatch
+      type: object
+      additionalProperties: false
+      required: [id, reference, settlementDate, merchantsCount, grossMillimes, commissionMillimes, netMillimes, status]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 32
+        settlementDate:
+          $ref: '#/components/schemas/CalendarDate'
+        merchantsCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 1000000
+        grossMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        commissionMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        netMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        status:
+          $ref: '#/components/schemas/SettlementStatus'
+    SettlementBatchPage:
+      title: SettlementBatchPage
+      description: Liste paginée de SettlementBatch (§7).
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/SettlementBatch'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    AuditLogEntry:
+      title: AuditLogEntry
+      type: object
+      additionalProperties: false
+      required: [id, occurredAt, actorName, action, target]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        occurredAt:
+          $ref: '#/components/schemas/Timestamp'
+        actorName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        action:
+          description: Action journalisée (`module.action`).
+          type: string
+          pattern: '^[a-z][A-Za-z]*\.[a-z][A-Za-z]*$'
+          maxLength: 64
+        target:
+          description: Libellé de la ressource (aucune donnée sensible).
+          type: string
+          minLength: 1
+          maxLength: 200
+    AuditLogPage:
+      title: AuditLogPage
+      description: Liste paginée de AuditLogEntry (§7).
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/AuditLogEntry'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    PlatformSettings:
+      title: PlatformSettings
+      type: object
+      additionalProperties: false
+      required: [payoutMinimumMillimes, creditValidityMonths, maxFamilyMembers, orderFeeRateBps]
+      properties:
+        payoutMinimumMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        creditValidityMonths:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 60
+        maxFamilyMembers:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 10
+        orderFeeRateBps:
+          $ref: '#/components/schemas/RateBps'
+    PlatformSettingsChange:
+      title: PlatformSettingsChange
+      type: object
+      additionalProperties: false
+      required: [settings, reason]
+      properties:
+        settings:
+          $ref: '#/components/schemas/PlatformSettings'
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
     # ---------------------------------------------------------------- erreurs
     ProblemCode:
       title: ProblemCode
@@ -1836,6 +4471,8 @@ components:
           example:
             nextStep: NONE
             csrfToken: 3q2-7wEAAAB0ZXN0LWNzcmYtdG9rZW4tZXhhbXBsZQ
+            idleTimeoutSeconds: 900
+            absoluteExpiresAt: '2026-10-11T16:30:00.000Z'
     # Réponses d'erreur réutilisables. Chaque endpoint métier référence celles qui s'appliquent.
     BadRequest:
       description: Requête invalide (validation, ou en-tête d'idempotence absent ou mal formé).
