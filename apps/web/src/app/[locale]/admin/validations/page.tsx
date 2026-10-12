@@ -42,7 +42,7 @@ export default function ApprovalsPage() {
       }),
     [tab, refresh],
   );
-  const rows = tab === 'pending' ? list.rows : list.rows.filter((row) => row.status !== 'PENDING');
+  const rows = tab === 'pending' ? list.rows : list.rows?.filter((row) => row.status !== 'PENDING');
 
   const detail = (row: Approval) =>
     row.oldRateBps !== undefined && row.newRateBps !== undefined
