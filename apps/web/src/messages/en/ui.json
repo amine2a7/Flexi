@@ -1,0 +1,27 @@
+{
+  "amount": {
+    "credit": "{amount} credit",
+    "debit": "{amount} debit"
+  },
+  "table": {
+    "count": "{count, plural, one {# result} other {# results}}",
+    "countMore": "More than {count} results",
+    "pagination": "Pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {page}"
+  },
+  "modal": {
+    "close": "Close"
+  },
+  "countdown": {
+    "label": "Time left",
+    "left": "{seconds} s left",
+    "expired": "Time is up"
+  },
+  "filters": {
+    "apply": "Filter",
+    "reset": "Reset",
+    "allStatuses": "All statuses"
+  }
+}

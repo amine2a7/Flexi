@@ -1,0 +1,11 @@
+{
+  "SUPER_ADMIN": "Super administrateur",
+  "FINANCE": "Finance",
+  "SUPPORT": "Support",
+  "COMPLIANCE": "Conformité",
+  "OWNER": "Propriétaire",
+  "MANAGER": "Gestionnaire",
+  "ACCOUNTANT": "Comptable",
+  "READ_ONLY": "Lecture seule",
+  "CASHIER": "Caissier"
+}

@@ -1,0 +1,27 @@
+{
+  "amount": {
+    "credit": "{amount} دائن",
+    "debit": "{amount} مدين"
+  },
+  "table": {
+    "count": "{count, plural, one {# نتيجة} other {# نتائج}}",
+    "countMore": "أكثر من {count} نتيجة",
+    "pagination": "التنقل بين الصفحات",
+    "previous": "السابق",
+    "next": "التالي",
+    "page": "الصفحة {page}"
+  },
+  "modal": {
+    "close": "إغلاق"
+  },
+  "countdown": {
+    "label": "الوقت المتبقي",
+    "left": "متبقٍ {seconds} ث",
+    "expired": "انتهت المهلة"
+  },
+  "filters": {
+    "apply": "تصفية",
+    "reset": "إعادة التعيين",
+    "allStatuses": "كل الحالات"
+  }
+}

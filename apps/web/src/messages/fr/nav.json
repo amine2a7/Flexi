@@ -1,4 +1,30 @@
 {
   "skip": "Aller au contenu principal",
-  "language": "Langue"
+  "language": "Langue",
+  "merchant": {
+    "dashboard": "Tableau de bord",
+    "collect": "Encaisser",
+    "history": "Historique",
+    "receivables": "Créances",
+    "payouts": "Virements",
+    "settlements": "Règlements",
+    "shop": "Mon commerce"
+  },
+  "company": {
+    "dashboard": "Tableau de bord",
+    "employees": "Employés",
+    "orders": "Commandes",
+    "allocation": "Attribution",
+    "invoices": "Factures"
+  },
+  "admin": {
+    "dashboard": "Supervision",
+    "merchants": "Commerçants",
+    "companies": "Entreprises",
+    "commissions": "Commissions",
+    "approvals": "Validations",
+    "settlements": "Règlements",
+    "audit": "Journal d'audit",
+    "settings": "Paramétrage"
+  }
 }

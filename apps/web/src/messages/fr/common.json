@@ -1,6 +1,7 @@
 {
   "button": {
-    "retry": "Réessayer"
+    "retry": "Réessayer",
+    "cancel": "Annuler"
   },
   "state": {
     "loading": "Chargement…",
@@ -10,7 +11,7 @@
     },
     "notFound": {
       "title": "Introuvable",
-      "action": "Retour au tableau de bord"
+      "action": "Retour à l'accueil"
     }
   }
 }

@@ -1,0 +1,18 @@
+{
+  "accounts": {
+    "title": "Demo accounts (development)",
+    "hint": "MFA code for every account: {code}",
+    "admin": "Administrator",
+    "company": "Company",
+    "merchant": "Merchant",
+    "firstLogin": "First sign-in"
+  },
+  "codes": {
+    "title": "Demo customer codes",
+    "confirmed": "Confirmed by the customer after 4 s",
+    "refused": "Declined by the customer",
+    "declined": "Declined at once",
+    "serverError": "Server error",
+    "scenarios": "Add ?mock=slow, ?mock=error or ?mock=empty to the address to test slow loading, an error or an empty list."
+  }
+}

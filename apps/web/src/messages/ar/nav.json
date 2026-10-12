@@ -1,4 +1,30 @@
 {
   "skip": "الانتقال إلى المحتوى الرئيسي",
-  "language": "اللغة"
+  "language": "اللغة",
+  "merchant": {
+    "dashboard": "لوحة القيادة",
+    "collect": "تحصيل",
+    "history": "السجل",
+    "receivables": "المستحقات",
+    "payouts": "التحويلات",
+    "settlements": "التسويات",
+    "shop": "محلّي"
+  },
+  "company": {
+    "dashboard": "لوحة القيادة",
+    "employees": "الموظفون",
+    "orders": "الطلبيات",
+    "allocation": "التوزيع",
+    "invoices": "الفواتير"
+  },
+  "admin": {
+    "dashboard": "الإشراف",
+    "merchants": "التجار",
+    "companies": "المؤسسات",
+    "commissions": "العمولات",
+    "approvals": "المصادقات",
+    "settlements": "التسويات",
+    "audit": "سجل التدقيق",
+    "settings": "الإعدادات"
+  }
 }

@@ -11,12 +11,25 @@ const durations = Object.fromEntries(
   Object.entries(tokens.motion).map(([name, ms]) => [name, `${String(ms)}ms`]),
 );
 
+// Status badges read their colours from the `status` token group at runtime (StatusBadge): the
+// matching classes are generated here so that Tailwind emits them.
+const statusTokens = (tokensPreset.theme as { status?: Record<string, { bg: string; fg: string }> })
+  .status;
+const statusClasses = Object.values(statusTokens ?? {}).flatMap(({ bg, fg }) => [
+  `bg-${bg}`,
+  `text-${fg}`,
+]);
+
 const config: Config = {
   presets: [tokensPreset],
   content: ['./src/**/*.{ts,tsx}'],
+  safelist: statusClasses,
   theme: {
     extend: {
+      // The token scale starts at 1: `0` (no space) is not a design value but is needed for resets.
+      spacing: { 0: '0' },
       // h-input-height, min-h-touch-target-min, w-sidebar-width, max-w-toast-max-width...
+      size: tokens.size,
       height: tokens.size,
       minHeight: tokens.size,
       minWidth: tokens.size,

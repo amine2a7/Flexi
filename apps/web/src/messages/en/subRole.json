@@ -1,0 +1,11 @@
+{
+  "SUPER_ADMIN": "Super administrator",
+  "FINANCE": "Finance",
+  "SUPPORT": "Support",
+  "COMPLIANCE": "Compliance",
+  "OWNER": "Owner",
+  "MANAGER": "Manager",
+  "ACCOUNTANT": "Accountant",
+  "READ_ONLY": "Read only",
+  "CASHIER": "Cashier"
+}

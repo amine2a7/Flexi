@@ -1,3 +1,19 @@
 {
-  "notFound": "This page or resource could not be found."
+  "notFound": "This page or resource cannot be found.",
+  "validationFailed": "Check the highlighted fields.",
+  "unauthenticated": "Your session has ended. Please sign in again.",
+  "sessionExpired": "Your session has expired. Please sign in again.",
+  "invalidCredentials": "Incorrect identifier or password.",
+  "mfaCodeInvalid": "Incorrect code. Check the code shown in your app.",
+  "mfaChallengeExpired": "Verification has expired. Please sign in again.",
+  "forbidden": "You are not allowed to do this.",
+  "resourceStateConflict": "This item has changed in the meantime. Reload the page and try again.",
+  "insufficientFunds": "Insufficient balance for this operation.",
+  "limitExceeded": "Limit exceeded for this operation.",
+  "paymentDeclined": "Payment declined. The customer can check their app.",
+  "rateLimited": "Too many attempts. Wait a moment and try again.",
+  "internalError": "The service ran into a problem. Try again in a moment.",
+  "serviceUnavailable": "Service temporarily unavailable. Try again later.",
+  "network": "Cannot connect. Check your network and try again.",
+  "generic": "The operation did not go through. Try again."
 }

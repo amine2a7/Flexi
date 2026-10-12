@@ -1,0 +1,24 @@
+{
+  "mainNav": "Main navigation",
+  "openMenu": "Open menu",
+  "closeMenu": "Close menu",
+  "signOut": "Sign out",
+  "space": {
+    "ADMIN": "Administration",
+    "COMPANY": "Company space",
+    "MERCHANT": "Merchant space",
+    "EMPLOYEE": "Employee space",
+    "FAMILY_MEMBER": "Family space"
+  },
+  "forbidden": {
+    "title": "Access denied",
+    "message": "This space is not available with your account.",
+    "action": "Go to my space"
+  },
+  "session": {
+    "warningTitle": "Your session is about to expire",
+    "warningMessage": "Without activity, you will be signed out in 2 minutes. Do you want to stay signed in?",
+    "stay": "Stay signed in",
+    "signOut": "Sign out"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "amount": {
+    "credit": "{amount} au crédit",
+    "debit": "{amount} au débit"
+  },
+  "table": {
+    "count": "{count, plural, one {# résultat} other {# résultats}}",
+    "countMore": "Plus de {count} résultats",
+    "pagination": "Pagination",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "page": "Page {page}"
+  },
+  "modal": {
+    "close": "Fermer"
+  },
+  "countdown": {
+    "label": "Temps restant",
+    "left": "{seconds} s restantes",
+    "expired": "Délai dépassé"
+  },
+  "filters": {
+    "apply": "Filtrer",
+    "reset": "Réinitialiser",
+    "allStatuses": "Tous les statuts"
+  }
+}

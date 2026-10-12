@@ -1,0 +1,11 @@
+{
+  "SUPER_ADMIN": "مشرف عام",
+  "FINANCE": "المالية",
+  "SUPPORT": "الدعم",
+  "COMPLIANCE": "الامتثال",
+  "OWNER": "المالك",
+  "MANAGER": "المسيّر",
+  "ACCOUNTANT": "المحاسب",
+  "READ_ONLY": "قراءة فقط",
+  "CASHIER": "أمين الصندوق"
+}

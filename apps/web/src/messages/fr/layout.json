@@ -1,0 +1,24 @@
+{
+  "mainNav": "Navigation principale",
+  "openMenu": "Ouvrir le menu",
+  "closeMenu": "Fermer le menu",
+  "signOut": "Se déconnecter",
+  "space": {
+    "ADMIN": "Administration",
+    "COMPANY": "Espace entreprise",
+    "MERCHANT": "Espace commerçant",
+    "EMPLOYEE": "Espace employé",
+    "FAMILY_MEMBER": "Espace famille"
+  },
+  "forbidden": {
+    "title": "Accès refusé",
+    "message": "Cet espace n'est pas accessible avec votre compte.",
+    "action": "Aller à mon espace"
+  },
+  "session": {
+    "warningTitle": "Votre session va expirer",
+    "warningMessage": "Sans activité, vous serez déconnecté dans 2 minutes. Voulez-vous rester connecté ?",
+    "stay": "Rester connecté",
+    "signOut": "Se déconnecter"
+  }
+}

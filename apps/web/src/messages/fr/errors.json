@@ -1,3 +1,19 @@
 {
-  "notFound": "Cette page ou cette ressource est introuvable."
+  "notFound": "Cette page ou cette ressource est introuvable.",
+  "validationFailed": "Vérifiez les champs signalés.",
+  "unauthenticated": "Votre session a pris fin. Reconnectez-vous.",
+  "sessionExpired": "Votre session a expiré. Reconnectez-vous.",
+  "invalidCredentials": "Identifiant ou mot de passe incorrect.",
+  "mfaCodeInvalid": "Code incorrect. Vérifiez le code affiché par votre application.",
+  "mfaChallengeExpired": "La vérification a expiré. Reconnectez-vous.",
+  "forbidden": "Vous n'avez pas les droits pour cette action.",
+  "resourceStateConflict": "L'élément a changé entre-temps. Rechargez la page puis réessayez.",
+  "insufficientFunds": "Solde insuffisant pour cette opération.",
+  "limitExceeded": "Plafond dépassé pour cette opération.",
+  "paymentDeclined": "Paiement refusé. Le client peut vérifier son application.",
+  "rateLimited": "Trop de tentatives. Patientez quelques instants puis réessayez.",
+  "internalError": "Le service a rencontré un problème. Réessayez dans quelques instants.",
+  "serviceUnavailable": "Service momentanément indisponible. Réessayez plus tard.",
+  "network": "Connexion impossible. Vérifiez votre réseau puis réessayez.",
+  "generic": "L'opération n'a pas abouti. Réessayez."
 }

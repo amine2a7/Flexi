@@ -1,6 +1,7 @@
 {
   "button": {
-    "retry": "Try again"
+    "retry": "Try again",
+    "cancel": "Cancel"
   },
   "state": {
     "loading": "Loading…",
@@ -10,7 +11,7 @@
     },
     "notFound": {
       "title": "Not found",
-      "action": "Back to the dashboard"
+      "action": "Back to home"
     }
   }
 }

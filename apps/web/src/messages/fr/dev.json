@@ -1,0 +1,18 @@
+{
+  "accounts": {
+    "title": "Comptes de démonstration (développement)",
+    "hint": "Code MFA de tous les comptes : {code}",
+    "admin": "Administrateur",
+    "company": "Entreprise",
+    "merchant": "Commerçant",
+    "firstLogin": "Première connexion"
+  },
+  "codes": {
+    "title": "Codes clients de démonstration",
+    "confirmed": "Confirmé par le client après 4 s",
+    "refused": "Refusé par le client",
+    "declined": "Refusé immédiatement",
+    "serverError": "Erreur serveur",
+    "scenarios": "Ajoutez ?mock=slow, ?mock=error ou ?mock=empty à l'adresse pour tester un chargement lent, une erreur ou une liste vide."
+  }
+}

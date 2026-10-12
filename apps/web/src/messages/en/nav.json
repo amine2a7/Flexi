@@ -1,4 +1,30 @@
 {
   "skip": "Skip to main content",
-  "language": "Language"
+  "language": "Language",
+  "merchant": {
+    "dashboard": "Dashboard",
+    "collect": "Collect",
+    "history": "History",
+    "receivables": "Receivables",
+    "payouts": "Payouts",
+    "settlements": "Settlements",
+    "shop": "My shop"
+  },
+  "company": {
+    "dashboard": "Dashboard",
+    "employees": "Employees",
+    "orders": "Orders",
+    "allocation": "Allocation",
+    "invoices": "Invoices"
+  },
+  "admin": {
+    "dashboard": "Overview",
+    "merchants": "Merchants",
+    "companies": "Companies",
+    "commissions": "Commissions",
+    "approvals": "Approvals",
+    "settlements": "Settlements",
+    "audit": "Audit log",
+    "settings": "Settings"
+  }
 }
