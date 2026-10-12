@@ -126,13 +126,20 @@ Playwright démarre lui-même `pnpm dev` (port 3001) ; navigateurs installés da
 | Entreprise | pas encore créé (WD4) | `/entreprise/*` ⬜ | ⬜ | ⬜ | pas encore créé | Playwright commande de crédits ⬜ |
 | Administrateur | pas encore créé (WD5) | `/admin/*` ⬜ | ⬜ | ⬜ | pas encore créé | Playwright création de commerçant ⬜ |
 | Paiements, commissions, règlements (backend) | specs fonctionnelles `docs/specs/02`, `03`, `08` ✅ | — | — | — | pas encore créé (`apps/api` ⬜) | ⬜ (règles métier côté API uniquement) |
+| Employé (4ᵉ acteur, mobile) | `docs/specs/06-employe-mobile.md` ✅ | `apps/mobile-employe` ⬜ (reporté) | — | — | pas encore créé | ⬜ |
+
+Organisation détaillée par espace et par domaine : voir §7.
 
 ## 4. Architecture globale
 
 ```
-                 Navigateur (Administrateur, Entreprise, Commerçant)
-                              │  HTTPS, cookies de session + jeton CSRF
-                              ▼
+     Navigateur (Administrateur, Entreprise, Commerçant)        Téléphone de l'Employé (4ᵉ acteur)
+                  │  HTTPS, cookies + jeton CSRF                    │  HTTPS, jeton dans Keychain/Keystore
+                  ▼                                                 ▼
+   apps/web (Next.js) 🟡                                  apps/mobile-employe (Flutter) ⬜  + apps/mobile-pro ⬜ (Commerçant)
+                  │  client TS généré                               │  client Dart généré
+                  └──────────────────────┬──────────────────────────┘
+                                         ▼
    apps/web (Next.js) ── client généré ──► apps/api (NestJS) ⬜ ──► PostgreSQL 16 (données, ledger, RLS)
      │  en dev : MSW répond à la place de l'API                 └──► Redis (cache, files BullMQ)
      │
@@ -166,3 +173,76 @@ Règle d'or : **le web n'affiche que ce que l'API renvoie**. Commission, plafond
 3. `apps/web/tailwind.config.ts` puis `packages/ui-tokens/generated/tailwind-preset.cjs` : d'où viennent toutes les classes de couleur et d'espacement.
 4. `apps/web/src/messages/fr/common.json` et `apps/web/src/i18n/messages.ts` : comment les textes sont organisés et chargés.
 5. `docs/design/specs/dev-composants.md` puis `docs/handoff/contracts/openapi.yaml` (§10 authentification) : ce qui va être construit et avec quelles données.
+
+## 7. Architecture par gestion
+
+Principe : le **web est découpé par espace** (ce que voit chaque rôle), l'**API est découpée par domaine métier** (ce que fait le système). Un rôle n'a jamais « son » module d'API : il passe par les mêmes domaines, filtrés par des contrôles d'accès. Ainsi, la logique de paiement et le ledger n'existent qu'à un seul endroit.
+
+### 7.1 Web (`apps/web`) : par espace
+
+```
+apps/web/src/
+├── app/[locale]/
+│   ├── (auth)/                 ⬜ espace Commun, sans barre latérale (groupe de routes : n'apparaît pas dans l'URL)
+│   │   ├── login/page.tsx              /fr/login            (commun-connexion)
+│   │   ├── login/mfa/page.tsx          /fr/login/mfa        (commun-mfa)
+│   │   ├── premiere-connexion/page.tsx /fr/premiere-connexion
+│   │   ├── mot-de-passe-oublie/page.tsx
+│   │   └── session-expiree/page.tsx
+│   ├── commercant/             ⬜ espace Commerçant (layout.tsx : barre latérale Commerçant + contrôle du rôle)
+│   │   ├── page.tsx                    /fr/commercant       (tableau de bord)
+│   │   ├── encaissement/page.tsx       /fr/commercant/encaissement
+│   │   ├── historique/, creances/, virement/, reglements/, mon-commerce/
+│   ├── entreprise/             ⬜ espace Entreprise : tableau de bord, employes/, commandes/, attribution/, factures/, reporting/, parametres/
+│   ├── admin/                  ⬜ espace Administrateur : comptes/, commercants/, entreprises/, kyc/, commissions/, transactions/, reglements/, audit/, parametres/
+│   ├── dev/composants/page.tsx ⬜ bibliothèque de composants (absente du build de production)
+│   ├── page.tsx, not-found.tsx, error.tsx   🟡 socle
+├── components/
+│   ├── ui/                     ⬜ composants partagés par tous les espaces (bouton, champ, badge, tableau, modale, montant…)
+│   ├── layout/                 🟡 coquille : skip-link, locale-switcher ; ⬜ barre latérale, en-tête, menu mobile (F2)
+│   ├── auth/                   ⬜ formulaires de connexion, MFA, mot de passe
+│   ├── commercant/             ⬜ composants propres au Commerçant (formulaire d'encaissement, simulation de virement…)
+│   ├── entreprise/             ⬜ (import CSV, récapitulatif de commande…)
+│   └── admin/                  ⬜ (création de commerçant, double validation…)
+└── mocks/
+    ├── handlers.ts             🟡 assemble les handlers de chaque espace
+    ├── handlers/auth.ts        ⬜ un fichier de handlers MSW par espace
+    ├── handlers/commercant.ts  ⬜
+    ├── handlers/entreprise.ts  ⬜
+    ├── handlers/admin.ts       ⬜
+    └── fixtures/               ⬜ données fictives (contexte tunisien, montants en millimes), typées par @flexipay/api-client
+```
+
+Contrôle d'accès côté web : chaque `layout.tsx` d'espace lit `/v1/me` et redirige vers la page 403 si le rôle ne correspond pas. **C'est un confort d'affichage, pas une sécurité** : la vraie barrière est côté API (§7.2).
+
+### 7.2 API (`apps/api`) : par domaine ⬜
+
+```
+apps/api/src/
+├── common/          guard global (refus par défaut), @Public(), @Roles(), Idempotency-Key, filtre d'erreurs RFC 9457, logs masqués
+├── auth/            connexion, MFA, sessions, mots de passe, /v1/me
+├── entreprises/     sociétés clientes, commandes de crédits, factures
+├── employes/        employés, import CSV, membres famille, attribution
+├── commercants/     commerçants, points de vente, caissiers, KYB
+├── paiements/       QR et code manuel, initiation, confirmation, annulation
+├── ledger/          comptes, écritures en partie double, immuables (millimes, BIGINT), lots FEFO
+├── commissions/     profils de commission (bps), simulation, snapshot du taux
+├── reglements/      demandes de virement, lots J+2, rapprochement, litiges
+├── admin/           paramétrage, approbations (double validation), supervision, journal d'audit
+└── notifications/   e-mail, SMS, push (files BullMQ)
+```
+
+Comment chaque rôle ne voit que ce qui le concerne, **sans module par rôle** :
+1. **Guard global + décorateurs** : chaque route déclare les rôles et permissions autorisés (`@Roles('MERCHANT')`, permissions `module.action`). Tout ce qui n'est pas déclaré est refusé.
+2. **Tenant vérifié côté serveur** : l'identifiant de l'entreprise ou du commerçant vient de la session, jamais du corps de la requête (pas d'IDOR).
+3. **RLS PostgreSQL** : la base elle-même filtre les lignes par `company_id` / `merchant_id` ; même une requête mal écrite ne sort pas les données d'un autre tenant.
+4. **Un seul chemin pour l'argent** : un paiement, qu'il vienne du web Commerçant, de l'app Pro ou de l'app Employé, passe par `paiements/` puis `ledger/`. Commission et règlement ne sont calculés que dans `commissions/` et `reglements/`.
+
+### 7.3 Les quatre acteurs
+
+| Acteur | Interface | Statut |
+|---|---|---|
+| Administrateur | web, espace `admin/` | ⬜ |
+| Entreprise | web, espace `entreprise/` | ⬜ |
+| Commerçant | web, espace `commercant/` + app Pro | ⬜ |
+| Employé (+ membres famille) | app `apps/mobile-employe` uniquement (le web lui répond 403) | ⬜ reporté |
