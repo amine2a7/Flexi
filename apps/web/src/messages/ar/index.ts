@@ -1,3 +1,4 @@
+import admin from './admin.json';
 import auth from './auth.json';
 import merchant from './merchant.json';
 import app from './app.json';
@@ -16,6 +17,7 @@ import dev from './dev.json';
 import company from './company.json';
 
 const messages = {
+  admin: admin,
   auth: auth,
   merchant: merchant,
   app: app,
