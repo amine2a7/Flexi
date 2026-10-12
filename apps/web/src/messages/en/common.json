@@ -1,0 +1,16 @@
+{
+  "button": {
+    "retry": "Try again"
+  },
+  "state": {
+    "loading": "Loading…",
+    "error": {
+      "title": "Something went wrong",
+      "message": "We could not load this information."
+    },
+    "notFound": {
+      "title": "Not found",
+      "action": "Back to the dashboard"
+    }
+  }
+}

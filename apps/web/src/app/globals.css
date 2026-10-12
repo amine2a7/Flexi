@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply bg-bg font-sans text-body text-text antialiased;
+    font-family: var(--font-sans), theme('fontFamily.sans');
+  }
+
+  html[lang='ar'] {
+    font-family: var(--font-ar), theme('fontFamily.ar');
+  }
+
+  /* Visible keyboard focus everywhere (charte A.6): never outline: none without replacement. */
+  :focus-visible {
+    @apply focus-ring;
+  }
+
+  /* "Réduire les animations": every animation and transition is disabled (charte A.6). */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation: none !important;
+      transition: none !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "name": "@flexipay/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "FlexiPay web app (Administrateur, Entreprise, Commerçant) - Next.js App Router",
+  "type": "module",
+  "engines": {
+    "node": ">=22.14.0 <23"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "node scripts/remove-mock-worker.mjs && next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run",
+    "test:build": "vitest run --config vitest.build.config.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium"
+  },
+  "dependencies": {
+    "@flexipay/api-client": "workspace:*",
+    "clsx": "2.1.1",
+    "lucide-react": "1.48.0",
+    "next": "16.3.6",
+    "next-intl": "4.14.7",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tailwind-merge": "3.7.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@flexipay/config": "workspace:*",
+    "@flexipay/ui-tokens": "workspace:*",
+    "@playwright/test": "1.63.0",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.3",
+    "@types/node": "22.20.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "10.11.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "jsdom": "30.1.1",
+    "msw": "2.15.0",
+    "tailwindcss": "3.4.19",
+    "typescript": "6.0.3",
+    "vitest": "4.1.11"
+  }
+}

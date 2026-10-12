@@ -1,0 +1,16 @@
+{
+  "button": {
+    "retry": "Réessayer"
+  },
+  "state": {
+    "loading": "Chargement…",
+    "error": {
+      "title": "Une erreur est survenue",
+      "message": "Nous n'avons pas pu charger ces informations."
+    },
+    "notFound": {
+      "title": "Introuvable",
+      "action": "Retour au tableau de bord"
+    }
+  }
+}
