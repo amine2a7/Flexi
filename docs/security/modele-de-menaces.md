@@ -11,6 +11,7 @@
 | 6 | 2026-10-11 | securite (P0-S1) | Revérification de 594f06e : GIT-1 mis à jour (hook pre-commit natif actif, S1-01 fermé ; contournements résiduels S1-09) |
 | 7 | 2026-10-11 | securite (P0-S1) | Décisions utilisateur (4727e85) : S1-11 risque résiduel accepté jusqu'à B6 (plus d'aller-retour sur guard-bash sauf Critique ou Haute) ; protection des pushs GitHub activée ; dérogations d'âge source-map-js 1.2.2 et uuid 11.1.1 acceptées (SC-4) ; rôle applicatif Compose dev créé par la première migration d'`apps/api` en B3 (DC-5) |
 | 8 | 2026-10-12 | securite (WD1, WB2) | §1 : menaces de l'authentification web (ré-enrôlement MFA, verrouillage provoqué par un tiers, `returnTo`, rejeu TOTP, saisie conservée sur poste partagé) |
+| 9 | 2026-10-12 | securite (F1, F3) | §3.5 : ajout de DEV-12 (fichiers d'instructions pour agents écrits par une dépendance, `next dev`) ; §1 : page HTML hors du proxy CSP (F1-S01) |
 
 ## 1. Menaces applicatives (version initiale)
 
@@ -114,6 +115,7 @@ Pour la chaîne de développement : **un contrôle qui échoue en silence n'est 
 | DEV-9 | AC-5 | Secret affiché dans une sortie de commande, conservé dans les transcriptions locales des agents | I | Ne jamais afficher de variable d'environnement ; rotation si un secret apparaît dans une transcription | À faire | tous |
 | DEV-10 | AC-1, AC-7 | **Répudiation** : tous les commits portent l'identité de l'utilisateur, quel que soit l'agent auteur | R | Trailer de commit indiquant l'agent ; transcriptions conservées pendant la phase ; rapports (j) | À faire | lead |
 | DEV-11 | AC-6 | `format.sh` exécute `prettier` depuis `node_modules` à chaque écriture ; `task-completed.js` exécute les scripts `package.json` : une dépendance ou un script piégé s'exécute automatiquement sur le poste | E | Dépend de SC-1 à SC-4 ; scripts `package.json` relus comme du code | À faire | backend, securite |
+| DEV-12 | AC-6, AC-4 | **Instructions pour agents écrites par une dépendance** : `next dev` (re)crée `apps/web/AGENTS.md` et `CLAUDE.md` quand il détecte un agent IA ; gitignorés, ils échappent à toute revue mais sont chargés automatiquement par Claude Code dans ce répertoire. Une version compromise de `next` ou de `@vercel/detect-agent` injecte des instructions (exfiltration de `.env`, désactivation de contrôles) | T, E, I | Test qui échoue si ces fichiers existent ; suppression au démarrage de `dev` ; hook du lead qui signale tout CLAUDE.md/AGENTS.md non suivi hors de la racine (F1-S02) | Ouvert (F1-S02) | frontend, lead |
 
 ### 3.6 Dépôt Git et Docker Compose de dev
 | ID | Actif | Menace (scénario) | STRIDE | Mesures attendues | État | Porteur |
