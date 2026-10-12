@@ -127,6 +127,13 @@ Exigence : ASVS 2.8.4, 2.5.x, 2.3.1 (4.0.3)
 6. Révocation des autres sessions, journal d'audit et notification après le changement.
 7. Aucune autre route d'écriture n'est ouverte à cet état.
 
+Compléments acceptés avec ux le 2026-10-12 :
+- l'échéance `restrictedUntil` est exposée (avertissement WCAG 2.2.1, N.9 variante absolue) ;
+- l'expiration des 10 min n'invalide pas le mot de passe temporaire, valable jusqu'à 72 h ou
+  jusqu'au changement réussi ;
+- le message « délai dépassé » est déduit de l'état en mémoire du client, jamais d'un paramètre
+  d'URL, et le serveur répond de façon générique.
+
 ## Décision transmise à main
 
 Durées d'**inactivité** et **absolue** des sessions web (CT-X-6) : absentes des documents ; seul le
