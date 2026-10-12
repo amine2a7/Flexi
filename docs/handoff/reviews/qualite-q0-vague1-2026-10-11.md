@@ -1,21 +1,21 @@
 # Revue qualité Q0 : rétroactive de la vague 1 (B1, B2, D1, B4)
 
-- **Date** : 2026-10-11 (revérifications : D1 et Q0-03 le 2026-10-12)
+- **Date** : 2026-10-11 (revérifications : D1, Q0-03, Q0-02/04/05 le 2026-10-12)
 - **Relecteur** : qualite
 - **Branche** : `feat/web` (aucun commit, aucun push, aucun changement de branche)
-- **Base de revue** : `git show` de 98add0a (B1), 4431e45 (B2), a63412b (D1), 7606a7a (B4) ; fichiers à HEAD (12c66bf). Revue securite parallèle déjà rendue : `securite-p0-s1-vague1-2026-10-11.md`. Revérifications : arbre de travail de `packages/ui-tokens/` (`[CORRIGÉ]` de design) et de `packages/config/` (`[CORRIGÉ]` Q0-03 de backend)
+- **Base de revue** : `git show` de 98add0a (B1), 4431e45 (B2), a63412b (D1), 7606a7a (B4) ; fichiers à HEAD (12c66bf). Revue securite parallèle déjà rendue : `securite-p0-s1-vague1-2026-10-11.md`. Revérifications : arbre de travail de `packages/ui-tokens/` (`[CORRIGÉ]` de design), commits 8c6f55e (Q0-03) et c879978 (Q0-02, Q0-04, Q0-05)
 - **Propriétaires** : `backend` (B1, B2, B4), `design` (D1)
 
 ## Verdict
 
 | Tâche | Verdict | Bloquant | Important ouvert | Amélioration ouverte |
 |---|---|---|---|---|
-| P0-B1 monorepo, `packages/config`, racine (98add0a + correctif Q0-03) | **OK** | 0 | 0 (Q0-03 fermé) | 4 (Q0-10, Q0-11, Q0-13, Q0-14) |
+| P0-B1 monorepo, `packages/config`, racine (98add0a + 8c6f55e) | **OK** | 0 | 0 (Q0-03 fermé) | 4 (Q0-10, Q0-11, Q0-13, Q0-14) |
 | P0-B2 `packages/shared` (4431e45) | **OK** | 0 | 0 | 1 (Q0-12) |
 | P0-D1 `packages/ui-tokens` (a63412b + correctifs) | **OK** | 0 | 0 (Q0-01 fermé) | 2 (Q0-07, Q0-08 différés) ; Q0-06, Q0-09 fermés |
-| P0-B4 `infra/` (7606a7a) | **OK sur lecture** (intégration non exécutée, Docker arrêté) | 0 | 1 (Q0-02) | 2 (Q0-04, Q0-05) |
+| P0-B4 `infra/` (7606a7a + c879978) | **OK sur lecture** (intégration non exécutée, Docker arrêté) | 0 | 0 (Q0-02 fermé) | 0 (Q0-04, Q0-05 fermés) |
 
-**Verdict Q0 : OK** (aucun Bloquant). Ouverts au 2026-10-12 : Important 1 (Q0-02, backend), Amélioration 9 (Q0-04, Q0-05, Q0-07, Q0-08, Q0-10 à Q0-14). Fermés : Q0-01, Q0-03, Q0-06, Q0-09. Q0-14 est noté ici mais n'a pas encore été envoyé à backend : l'utilisateur a demandé l'arrêt (STOP) le 2026-10-12.
+**Verdict Q0 : OK** (aucun Bloquant, aucun Important ouvert). Ouverts au 2026-10-12 : Amélioration 7 (Q0-07, Q0-08, Q0-10 à Q0-14). Fermés : Q0-01 à Q0-06, Q0-09. Q0-14 envoyé à backend le 2026-10-12, après la reprise autorisée par main.
 
 Points forts constatés : TypeScript strict complet (`noUncheckedIndexedAccess`, `verbatimModuleSyntax`, `useUnknownInCatchVariables`), ESLint `strictTypeChecked` + `stylisticTypeChecked` + `reportUnusedDisableDirectives`, interdiction de `parseFloat` et `toFixed`, aucun `any`, aucun `@ts-ignore`, aucun `eslint-disable`, aucun `TODO`. Montants en millimes entiers bornés au contrat (0..2^53-1), bps 0..10 000, `tndToMillimes` qui refuse les fractions ; tests de comportement observables (47 tests). Générateur de tokens sans valeur en dur (vérifié par test), contrastes AA testés, sorties neutralisées (S1-08). Socle Testcontainers lisible, `releaseAll` testé.
 
@@ -23,7 +23,7 @@ Points forts constatés : TypeScript strict complet (`noUncheckedIndexedAccess`,
 
 | Point | Avis qualite |
 |---|---|
-| B4 lit `startedTestContainer.inspectResult` (non public) | Confirmé : `startedTestContainer` est `protected` et `inspectResult` est `private` dans Testcontainers 11.14.0 ; une API publique existe → **Q0-02 Important** |
+| B4 lit `startedTestContainer.inspectResult` (non public) | Confirmé : `startedTestContainer` est `protected` et `inspectResult` est `private` dans Testcontainers 11.14.0 ; une API publique existe → **Q0-02 Important** (fermé le 2026-10-12) |
 | Placement dependencies / devDependencies | Correct partout : `@flexipay/config` met en `dependencies` ce que `eslint.js` importe (`@eslint/js`, `eslint-config-prettier`, `typescript-eslint`) et `eslint` / `typescript` en peer + dev ; `shared` : `zod` seul en dépendance ; `testing-infra` : `testcontainers`, `@testcontainers/*`, `pg` en dépendances (importés par `src/`), `ioredis` et `@types/pg` en dev (tests seulement ; `dist/*.d.ts` ne référence pas `pg`) ; `ui-tokens` : aucune dépendance d'exécution. Seule amélioration : versions répétées (Q0-13) |
 | `pnpm.overrides` limités à une majeure | Sélecteurs `nom@^majeure` : l'override cesse de s'appliquer quand le parent change de majeure, c'est sain. Exception : `uuid@^10` → `11.1.1` franchit une majeure (dérogation décidée le 2026-10-11) ; dockerode 4.0.12 n'utilise que `require("uuid").v4` (`lib/session.js:4`), présent en uuid 11 : compatible. Les versions exactes figent les correctifs futurs → Q0-10 Amélioration |
 | ui-tokens relâche `restrict-template-expressions` (`allowNumber`) | Accepté : limité à `src/**` et `test/**` du paquet, justifié en commentaire, aucun montant manipulé. Pas de constat |
@@ -51,7 +51,7 @@ Référence : CLAUDE.md règle 18 (tokens = source unique) ; README du paquet «
 
 ```
 [CONSTAT] Q0-02 Lecture de champs privés de Testcontainers par double assertion
-Gravité : Important
+Gravité : Important — FERMÉ le 2026-10-12
 Fichier : infra/testing/src/containers.ts:34-46 (publishedHostIps), :68 et :76 (hostBindingIps)
 Problème : `container as unknown as { startedTestContainer: { inspectResult: … } }` contourne
   `protected startedTestContainer` (abstract-started-container.d.ts:5) et `private inspectResult`
@@ -84,7 +84,7 @@ Référence : qualite §11 ; CLAUDE.md règle 9
 
 ```
 [CONSTAT] Q0-04 startRedis ne libère pas le conteneur si une étape suivant start() échoue
-Gravité : Amélioration
+Gravité : Amélioration — FERMÉ le 2026-10-12
 Fichier : infra/testing/src/containers.ts:127-140
 Problème : `startPostgres` arrête le conteneur en cas d'échec après `start()` (try/catch,
   :105-123), pas `startRedis` : si `publishedHostIps` lève (cas de Q0-02), le conteneur reste
@@ -95,7 +95,7 @@ Référence : qualite §6 (gestion des erreurs)
 
 ```
 [CONSTAT] Q0-05 Test qui vérifie PostgreSQL plutôt que le code, avec une assertion trop large
-Gravité : Amélioration
+Gravité : Amélioration — FERMÉ le 2026-10-12
 Fichier : infra/testing/test/integration/postgres.test.ts:73-80
 Problème : « enforces a non-negative balance with a CHECK constraint » crée sa propre table et
   vérifie que PostgreSQL applique un CHECK : aucun code du projet n'est testé. `.rejects.toThrow()`
@@ -212,8 +212,8 @@ Référence : qualite §3, §10
 
 ```
 [CONSTAT] Q0-14 Dérogation no-console accordée selon le nom de fichier, dans tout le dépôt
-Gravité : Amélioration — NON ENVOYÉ (STOP de l'utilisateur, 2026-10-12)
-Fichier : packages/config/eslint.js:10 (cliFiles) et :75-78
+Gravité : Amélioration — envoyé à backend le 2026-10-12
+Fichier : packages/config/eslint.js:10 (cliFiles) et :75-78 (commit 8c6f55e)
 Problème : `'**/scripts/**/*'` et `'**/generate.{ts,…}'` désactivent `no-console` pour tout
   fichier de ce nom, dans n'importe quelle app. Un futur `apps/api/src/…/invoices/generate.ts`
   (génération de factures, code métier) ou un dossier `scripts/` côté web échapperait à la règle
@@ -237,11 +237,21 @@ Référence : qualite §11 ; CLAUDE.md règle 9
 
 Remarque : les fichiers générés diffèrent de HEAD (8 tailles ajoutées au JSON et clé `status.INCONNU`, travail de design en cours) ; le test de fraîcheur passe, ils correspondent donc au JSON courant.
 
-## Revérification Q0-03 (`[CORRIGÉ]` de backend, aller-retour 1/3, 2026-10-12)
+## Revérification Q0-03 (`[CORRIGÉ]` de backend, aller-retour 1/3, 2026-10-12, commit 8c6f55e)
 
 | Constat | État | Preuve |
 |---|---|---|
 | Q0-03 | **Fermé** | `packages/config/eslint.js:21` : `'no-console': 'error'` dans `safetyRules` ; dérogation `cliFiles` (`:10`, `:75-78`). Test `packages/config/test/eslint-config.test.mjs` (node:test, sans nouvelle dépendance), 3 cas : refus dans `src/`, autorisation dans `scripts/` et `generate`, règles argent toujours actives → 3/3. La portée de la dérogation fait l'objet de Q0-14 (Amélioration) |
+
+## Revérification B4 (`[CORRIGÉ]` de backend, aller-retour 1/3, 2026-10-12, commit c879978)
+
+| Constat | État | Preuve |
+|---|---|---|
+| Q0-02 | **Fermé** | `src/containers.ts` : `publishedHostIps` et le double `as unknown as` supprimés ; `StartedPostgres` et `StartedRedis` exposent `containerId` (`container.getId()`, `:102`, `:122`) au lieu de `hostBindingIps`. Inspection déplacée dans le test : `test/integration/docker.ts` (`getContainerRuntimeClient()` puis `client.container.inspect(client.container.getById(id))`, API publique). Recherche `inspectResult`, `startedTestContainer`, `as unknown` dans `infra/testing/src` et `test` : aucun résultat |
+| Q0-04 | **Fermé** | Cause supprimée : après `start()`, `startRedis` n'appelle plus que des accesseurs publics (`getConnectionUrl`, `getHost`, `getPort`, `getId`), qui ne lèvent pas d'erreur. C'était la seconde option du correctif proposé |
+| Q0-05 | **Fermé** | `postgres.test.ts:80` : `.rejects.toMatchObject({ code: '23514' })` (check_violation) |
+
+Remarque sans constat : `test/integration/docker.ts` fait `flatMap((bindings) => bindings)` sans repli `?? []`. Docker renvoie `null` pour un port exposé mais non publié ; ce cas n'existe pas ici (Testcontainers publie tous les ports exposés), mais l'ancienne version le traitait. À garder en tête si un conteneur expose un port non publié.
 
 ## Commandes et résultats (lancées par qualite, Node 22.14.0, pnpm 9.15.4)
 
@@ -274,9 +284,19 @@ Revérification Q0-03 (2026-10-12), `pnpm exec turbo run <tâche> --force --filt
 | test | config 3/3, shared 47/47, ui-tokens 87/87, api-client 13/13, testing-infra 12/12 |
 | build | 4/4 réussies |
 
+Revérification B4 (2026-10-12), `pnpm exec turbo run <tâche> --force --filter=@flexipay/testing-infra` :
+
+| Tâche | Résultat |
+|---|---|
+| lint | 1/1 réussie |
+| typecheck | 1/1 réussie (y compris `test/integration/docker.ts`) |
+| test | **12/12** (unitaires) |
+| build | 1/1 réussie |
+| `docker info` | ne répond pas (démon arrêté) : intégration non relancée |
+
 ## Non vérifié
 
-1. `pnpm test:integration` (Testcontainers : PostgreSQL 16, Redis, liaison 127.0.0.1, RLS, dockerode avec uuid 11) : Docker arrêté, non relancé.
+1. `pnpm test:integration` (Testcontainers : PostgreSQL 16, Redis, liaison 127.0.0.1 par l'API publique, RLS, SQLSTATE 23514, dockerode avec uuid 11) : Docker arrêté, non relancé. Les correctifs Q0-02 et Q0-05 sont donc vérifiés à la compilation et à la lecture seulement.
 2. `docker compose -f infra/docker-compose.yml up` (santé des services) : Docker arrêté.
 3. Compilation Dart et `flutter test` du paquet `dart/` : Flutter absent (décision du 2026-10-11).
 4. Couverture de code mesurée : `@vitest/coverage-v8` n'est pas installé dans le workspace ; je n'ai rien ajouté. Couverture évaluée à la lecture (toutes les fonctions exportées de shared et testing-infra ont un test ; ui-tokens couvert par les tests de génération).
