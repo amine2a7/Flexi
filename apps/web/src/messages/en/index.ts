@@ -13,6 +13,7 @@ import statusLabel from './statusLabel.json';
 import category from './category.json';
 import subRole from './subRole.json';
 import dev from './dev.json';
+import company from './company.json';
 
 const messages = {
   auth: auth,
@@ -30,6 +31,7 @@ const messages = {
   category: category,
   subRole: subRole,
   dev: dev,
+  company: company,
 };
 
 export default messages;
