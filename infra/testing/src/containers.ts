@@ -30,21 +30,6 @@ export function bindToLoopback(
   }
 }
 
-/** Host IPs actually used by Docker for the published ports (read back after start). */
-function publishedHostIps(container: StartedPostgreSqlContainer | StartedRedisContainer): string[] {
-  const ports = (
-    container as unknown as {
-      startedTestContainer: {
-        inspectResult: { NetworkSettings: { Ports: Record<string, PortBinding[] | null> } };
-      };
-    }
-  ).startedTestContainer.inspectResult.NetworkSettings.Ports;
-  const ips = Object.values(ports)
-    .flatMap((list) => list ?? [])
-    .map((b) => b.HostIp ?? '');
-  return [...new Set(ips)];
-}
-
 class LoopbackPostgreSqlContainer extends PostgreSqlContainer {
   public override async start(): Promise<StartedPostgreSqlContainer> {
     bindToLoopback(this.hostConfig.PortBindings as Record<string, PortBinding[]> | undefined);
@@ -65,7 +50,8 @@ export interface StartedPostgres {
   /** Application role (NOSUPERUSER, NOBYPASSRLS): use it for any test touching tenant data. */
   readonly appConnectionUri: string;
   readonly appRole: string;
-  readonly hostBindingIps: readonly string[];
+  /** Docker container id (e.g. to inspect its published ports in a test). */
+  readonly containerId: string;
   stop(): Promise<void>;
 }
 
@@ -73,7 +59,8 @@ export interface StartedRedis {
   readonly connectionUrl: string;
   readonly host: string;
   readonly port: number;
-  readonly hostBindingIps: readonly string[];
+  /** Docker container id (e.g. to inspect its published ports in a test). */
+  readonly containerId: string;
   stop(): Promise<void>;
 }
 
@@ -112,7 +99,7 @@ export async function startPostgres(): Promise<StartedPostgres> {
       adminConnectionUri: container.getConnectionUri(),
       appConnectionUri: appUri.toString(),
       appRole: APP_ROLE,
-      hostBindingIps: publishedHostIps(container),
+      containerId: container.getId(),
       stop: async () => {
         await container.stop();
       },
@@ -132,7 +119,7 @@ export async function startRedis(): Promise<StartedRedis> {
     connectionUrl: container.getConnectionUrl(),
     host: container.getHost(),
     port: container.getPort(),
-    hostBindingIps: publishedHostIps(container),
+    containerId: container.getId(),
     stop: async () => {
       await container.stop();
     },

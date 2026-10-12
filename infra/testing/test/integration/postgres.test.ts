@@ -6,6 +6,7 @@ import {
   type CleanupStep,
   type StartedPostgres,
 } from '../../src/index.js';
+import { publishedHostIps } from './docker.js';
 
 describe('PostgreSQL 16 (Testcontainers)', () => {
   let db: StartedPostgres;
@@ -36,8 +37,8 @@ describe('PostgreSQL 16 (Testcontainers)', () => {
     expect(version).toBeLessThan(170000);
   });
 
-  it('publishes the port on the loopback interface only', () => {
-    expect(db.hostBindingIps).toEqual(['127.0.0.1']);
+  it('publishes the port on the loopback interface only', async () => {
+    expect(await publishedHostIps(db.containerId)).toEqual(['127.0.0.1']);
   });
 
   it('connects the application with a role that is neither superuser nor BYPASSRLS', async () => {
@@ -76,6 +77,6 @@ describe('PostgreSQL 16 (Testcontainers)', () => {
     );
     await expect(
       admin.query('INSERT INTO probe_balance (balance_millimes) VALUES ($1)', [-1]),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ code: '23514' }); // check_violation
   });
 });

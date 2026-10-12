@@ -1,6 +1,7 @@
 import { Redis } from 'ioredis';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { releaseAll, startRedis, type CleanupStep, type StartedRedis } from '../../src/index.js';
+import { publishedHostIps } from './docker.js';
 
 describe('Redis (Testcontainers)', () => {
   let redis: StartedRedis;
@@ -22,8 +23,8 @@ describe('Redis (Testcontainers)', () => {
     await releaseAll(cleanup);
   });
 
-  it('publishes the port on the loopback interface only', () => {
-    expect(redis.hostBindingIps).toEqual(['127.0.0.1']);
+  it('publishes the port on the loopback interface only', async () => {
+    expect(await publishedHostIps(redis.containerId)).toEqual(['127.0.0.1']);
   });
 
   it('answers PING', async () => {
