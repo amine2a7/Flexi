@@ -2,7 +2,7 @@ import type { Schemas } from '@flexipay/api-client';
 import { http, HttpResponse } from 'msw';
 import { currentAccount, db, type MockSession } from '../db';
 import { DEMO_MFA_CODE, DEMO_RECOVERY_CODES } from '../fixtures/accounts';
-import { apiUrl, latency, problem, validationProblem } from './util';
+import { apiUrl, latency, problem, sessionCookie, validationProblem } from './util';
 
 type S = Schemas;
 
@@ -59,11 +59,11 @@ export const authHandlers = [
       return problem(403, 'FORBIDDEN');
     if (account.temporaryPassword) {
       const session = openSession(account.id, 'PASSWORD_CHANGE');
-      return HttpResponse.json<S['LoginResult']>(sessionResult(session, account.role));
+      return HttpResponse.json<S['LoginResult']>(sessionResult(session, account.role), { headers: sessionCookie(session) });
     }
     if (!account.mfaEnrolled) {
       const session = openSession(account.id, 'MFA_ENROLL');
-      return HttpResponse.json<S['LoginResult']>(sessionResult(session, account.role));
+      return HttpResponse.json<S['LoginResult']>(sessionResult(session, account.role), { headers: sessionCookie(session) });
     }
     const challengeId = crypto.randomUUID();
     const expiresAt = Date.now() + MFA_CHALLENGE_MS;
@@ -94,7 +94,7 @@ export const authHandlers = [
     if (recoveryIndex >= 0) account.recoveryCodes.splice(recoveryIndex, 1);
     db.challenges.delete(body.challengeId);
     const session = openSession(account.id, 'NONE');
-    return HttpResponse.json<S['SessionResult']>(sessionResult(session, account.role));
+    return HttpResponse.json<S['SessionResult']>(sessionResult(session, account.role), { headers: sessionCookie(session) });
   }),
 
   http.post(apiUrl('/v1/auth/password/change'), async ({ request }) => {
@@ -114,7 +114,7 @@ export const authHandlers = [
     account.password = body.newPassword;
     account.temporaryPassword = false;
     const session = openSession(account.id, account.mfaEnrolled ? 'NONE' : 'MFA_ENROLL');
-    return HttpResponse.json<S['SessionResult']>(sessionResult(session, account.role));
+    return HttpResponse.json<S['SessionResult']>(sessionResult(session, account.role), { headers: sessionCookie(session) });
   }),
 
   http.get(apiUrl('/v1/auth/password-policy'), async () => {
@@ -149,10 +149,13 @@ export const authHandlers = [
     account.mfaEnrolled = true;
     account.recoveryCodes = [...DEMO_RECOVERY_CODES];
     const session = openSession(account.id, 'NONE');
-    return HttpResponse.json<S['MfaEnrollmentConfirmResult']>({
+    return HttpResponse.json<S['MfaEnrollmentConfirmResult']>(
+      {
       ...sessionResult(session, account.role),
       recoveryCodes: [...DEMO_RECOVERY_CODES],
-    });
+    },
+      { headers: sessionCookie(session) },
+    );
   }),
 
   http.post(apiUrl('/v1/auth/refresh'), async () => {
@@ -165,7 +168,7 @@ export const authHandlers = [
   http.post(apiUrl('/v1/auth/logout'), async () => {
     await latency();
     db.session = null;
-    return new HttpResponse(null, { status: 204 });
+    return new HttpResponse(null, { status: 204, headers: sessionCookie(null) });
   }),
 
   http.post(apiUrl('/v1/auth/password/forgot'), async () => {

@@ -134,6 +134,27 @@ export async function guardWrite(
   return account;
 }
 
+// The mocked session survives page reloads (development reloads, F5) through a demo cookie set by
+// MSW on the mocked responses; the data itself restarts from the seed after a reload.
+export const MOCK_SESSION_COOKIE = 'fp_mock_session';
+
+export function sessionCookie(session: { accountId: string; step: string } | null): HeadersInit {
+  return {
+    'Set-Cookie':
+      session === null
+        ? `${MOCK_SESSION_COOKIE}=; Path=/; Max-Age=0; SameSite=Strict`
+        : `${MOCK_SESSION_COOKIE}=${session.accountId}.${session.step}; Path=/; SameSite=Strict`,
+  };
+}
+
+/** Restores the session from the demo cookie when the in-memory state was lost (page reload). */
+export function restoreSession(raw: string | undefined): void {
+  if (db.session !== null || raw === undefined || raw === '') return;
+  const [accountId, step] = raw.split('.');
+  if (accountId === undefined || !db.accounts.some((account) => account.id === accountId)) return;
+  if (step === 'NONE' || step === 'MFA_ENROLL') db.session = { accountId, step };
+}
+
 export function audit(action: string, target: string): void {
   const account = currentAccount();
   db.admin.audit.unshift({
