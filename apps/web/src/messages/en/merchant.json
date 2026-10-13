@@ -1,7 +1,7 @@
 {
   "dashboard": {
-    "title": "Hello {name}",
-    "description": "Your collections and settlements at a glance.",
+    "title": "Collect your sales without paper",
+    "description": "Collect with the customer code, follow your receivables and D+2 settlements.",
     "collect": "Collect a payment",
     "today": "Collected today",
     "todayCount": "{count, plural, one {# payment} other {# payments}}",
@@ -15,7 +15,15 @@
     "recent": "Latest collections",
     "seeHistory": "See history",
     "emptyTitle": "No collection yet",
-    "emptyMessage": "Your collections will appear here."
+    "emptyMessage": "Your collections will appear here.",
+    "flowsTitle": "Flows over the last six months",
+    "flowsDescription": "Amounts collected and settled (net of commission) each month.",
+    "seriesCollected": "Collected",
+    "seriesSettled": "Settled (net)",
+    "recentDescription": "The latest payments received in your shop.",
+    "todoPayout": "{amount} awaiting settlement: you can request a payout.",
+    "todoPayoutAction": "Request a payout",
+    "todoCollect": "Ready to collect: enter the code shown by your customer."
   },
   "payments": {
     "date": "Date",
@@ -47,7 +55,15 @@
     "refusedMessage": "Payment declined. The customer can check their app.",
     "again": "New collection",
     "howTitle": "How it works",
-    "howMessage": "1. The customer shows their code in the app. 2. You enter the code and the amount. 3. The customer confirms with their PIN. You only see “accepted” or “declined”."
+    "howMessage": "1. The customer shows their code in the app. 2. You enter the code and the amount. 3. The customer confirms with their PIN. You only see “accepted” or “declined”.",
+    "panelTitle": "FlexiPay customer code",
+    "step1": "The customer opens the app and shows an 8-digit code.",
+    "step2": "You enter this code and the amount to collect.",
+    "step3": "The customer confirms with a PIN: you see « accepted » or « refused ».",
+    "ruleNote": "The amount is settled at D+2, with a {rate} commission deducted.",
+    "acceptedMessage": "The amount is collected and will be settled at D+2.",
+    "backToDashboard": "Back to the dashboard",
+    "cancelledToast": "Request cancelled: nothing was collected."
   },
   "history": {
     "title": "Collection history",
@@ -72,8 +88,8 @@
     "emptyMessage": "All your receivables have been settled."
   },
   "payouts": {
-    "title": "Payouts",
-    "description": "Simulate, then request a payout of your receivables to your bank account.",
+    "title": "Request a payout",
+    "description": "Turn your receivables into a payout to your bank account, then follow your requests.",
     "simulate": "Simulate a payout",
     "amount": "Amount to pay out (TND)",
     "amountHint": "Gross amount, before commission. Minimum: 20.000 TND.",
@@ -99,7 +115,31 @@
     "reference": "Reference",
     "status": "Status",
     "emptyTitle": "No payout request",
-    "emptyMessage": "Your requests will appear here."
+    "emptyMessage": "Your requests will appear here.",
+    "available": "Available for payout",
+    "availableHint": "Receivables awaiting settlement",
+    "commissionHint": "Rate {rate}, guaranteed until {time}",
+    "netHint": "To account {iban}",
+    "netHintNoIban": "To your bank account",
+    "pending": "After simulation",
+    "open": "Open",
+    "openPayout": "Open request {reference}",
+    "action": "Action",
+    "filterStatus": "Status",
+    "detailTitle": "Payout {reference}",
+    "back": "Back to payouts",
+    "summaryTitle": "Request",
+    "requestedAt": "Requested on",
+    "iban": "Bank account",
+    "rate": "Commission rate",
+    "historyTitle": "History",
+    "event": {
+      "REQUESTED": "Request sent",
+      "CHECKED": "Request checked by FlexiPay",
+      "SENT": "Transfer sent to the bank",
+      "EXECUTED": "Transfer executed: funds in your account",
+      "REJECTED": "Request rejected"
+    }
   },
   "settlements": {
     "title": "Settlements and documents",
@@ -136,5 +176,8 @@
     "changeHint": "To change these details, contact the FlexiPay administrator.",
     "pointsOfSale": "Points of sale",
     "staff": "Team"
+  },
+  "payoutRejection": {
+    "ibanCheck": "The registered bank account must be checked: contact support."
   }
 }

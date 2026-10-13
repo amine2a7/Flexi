@@ -1,4 +1,5 @@
 import type { Schemas } from '@flexipay/api-client';
+import type { NavCounter } from './nav-counters';
 import {
   ArrowLeftRight,
   Building2,
@@ -23,6 +24,8 @@ export interface NavItem {
   readonly href: string;
   readonly labelKey: string;
   readonly icon: LucideIcon;
+  /** Green counter of what waits for an action (nav-counters.ts). */
+  readonly counter?: NavCounter;
 }
 
 type Role = Schemas['Role'];
@@ -42,7 +45,12 @@ export const NAVIGATION: Partial<Record<Role, readonly NavItem[]>> = {
   COMPANY: [
     { href: '/entreprise', labelKey: 'nav.company.dashboard', icon: LayoutDashboard },
     { href: '/entreprise/employes', labelKey: 'nav.company.employees', icon: Users },
-    { href: '/entreprise/commandes', labelKey: 'nav.company.orders', icon: ShoppingCart },
+    {
+      href: '/entreprise/commandes',
+      labelKey: 'nav.company.orders',
+      icon: ShoppingCart,
+      counter: 'companyOrdersToPay',
+    },
     { href: '/entreprise/attribution', labelKey: 'nav.company.allocation', icon: Wallet },
     { href: '/entreprise/factures', labelKey: 'nav.company.invoices', icon: Receipt },
   ],
@@ -50,9 +58,19 @@ export const NAVIGATION: Partial<Record<Role, readonly NavItem[]>> = {
     { href: '/admin', labelKey: 'nav.admin.dashboard', icon: LayoutDashboard },
     { href: '/admin/commercants', labelKey: 'nav.admin.merchants', icon: Store },
     { href: '/admin/entreprises', labelKey: 'nav.admin.companies', icon: Building2 },
-    { href: '/admin/commandes', labelKey: 'nav.admin.orders', icon: ShoppingCart },
+    {
+      href: '/admin/commandes',
+      labelKey: 'nav.admin.orders',
+      icon: ShoppingCart,
+      counter: 'adminOrdersToHandle',
+    },
     { href: '/admin/commissions', labelKey: 'nav.admin.commissions', icon: Percent },
-    { href: '/admin/validations', labelKey: 'nav.admin.approvals', icon: ClipboardCheck },
+    {
+      href: '/admin/validations',
+      labelKey: 'nav.admin.approvals',
+      icon: ClipboardCheck,
+      counter: 'adminApprovals',
+    },
     { href: '/admin/reglements', labelKey: 'nav.admin.settlements', icon: ArrowLeftRight },
     { href: '/admin/audit', labelKey: 'nav.admin.audit', icon: ScrollText },
     { href: '/admin/parametres', labelKey: 'nav.admin.settings', icon: Settings },

@@ -1,7 +1,7 @@
 {
   "dashboard": {
-    "title": "Bonjour {name}",
-    "description": "Vos encaissements et vos règlements en un coup d'œil.",
+    "title": "Encaissez vos ventes sans papier",
+    "description": "Encaissez par code client, suivez vos créances et vos règlements à J+2.",
     "collect": "Encaisser un paiement",
     "today": "Encaissé aujourd'hui",
     "todayCount": "{count, plural, one {# paiement} other {# paiements}}",
@@ -15,7 +15,15 @@
     "recent": "Derniers encaissements",
     "seeHistory": "Voir l'historique",
     "emptyTitle": "Aucun encaissement",
-    "emptyMessage": "Vos encaissements apparaîtront ici."
+    "emptyMessage": "Vos encaissements apparaîtront ici.",
+    "flowsTitle": "Flux des six derniers mois",
+    "flowsDescription": "Montants encaissés et réglés (nets de commission) chaque mois.",
+    "seriesCollected": "Encaissé",
+    "seriesSettled": "Réglé (net)",
+    "recentDescription": "Les derniers paiements reçus dans votre commerce.",
+    "todoPayout": "{amount} en attente de règlement : vous pouvez demander un virement.",
+    "todoPayoutAction": "Demander un virement",
+    "todoCollect": "Prêt à encaisser : saisissez le code affiché par votre client."
   },
   "payments": {
     "date": "Date",
@@ -47,7 +55,15 @@
     "refusedMessage": "Paiement refusé. Le client peut vérifier son application.",
     "again": "Nouvel encaissement",
     "howTitle": "Comment ça marche",
-    "howMessage": "1. Le client affiche son code dans son application. 2. Vous saisissez le code et le montant. 3. Le client confirme avec son PIN. Vous voyez seulement « accepté » ou « refusé »."
+    "howMessage": "1. Le client affiche son code dans son application. 2. Vous saisissez le code et le montant. 3. Le client confirme avec son PIN. Vous voyez seulement « accepté » ou « refusé ».",
+    "panelTitle": "Code client FlexiPay",
+    "step1": "Le client ouvre son application et affiche son code à 8 chiffres.",
+    "step2": "Vous saisissez ce code et le montant à encaisser.",
+    "step3": "Le client confirme avec son PIN : vous voyez « accepté » ou « refusé ».",
+    "ruleNote": "Le montant sera réglé à J+2, commission de {rate} déduite.",
+    "acceptedMessage": "Le montant est encaissé et sera réglé à J+2.",
+    "backToDashboard": "Retour au tableau de bord",
+    "cancelledToast": "Demande annulée : rien n'a été encaissé."
   },
   "history": {
     "title": "Historique des encaissements",
@@ -72,8 +88,8 @@
     "emptyMessage": "Toutes vos créances ont été réglées."
   },
   "payouts": {
-    "title": "Virements",
-    "description": "Simulez puis demandez un virement de vos créances vers votre compte bancaire.",
+    "title": "Demander un virement",
+    "description": "Convertissez vos créances en virement vers votre compte bancaire, puis suivez vos demandes.",
     "simulate": "Simuler un virement",
     "amount": "Montant à virer (TND)",
     "amountHint": "Montant brut, avant commission. Minimum : 20,000 TND.",
@@ -99,7 +115,31 @@
     "reference": "Référence",
     "status": "Statut",
     "emptyTitle": "Aucune demande de virement",
-    "emptyMessage": "Vos demandes apparaîtront ici."
+    "emptyMessage": "Vos demandes apparaîtront ici.",
+    "available": "Disponible à virer",
+    "availableHint": "Créances en attente de règlement",
+    "commissionHint": "Taux {rate}, garanti jusqu'à {time}",
+    "netHint": "Sur le compte {iban}",
+    "netHintNoIban": "Sur votre compte bancaire",
+    "pending": "Après simulation",
+    "open": "Ouvrir",
+    "openPayout": "Ouvrir la demande {reference}",
+    "action": "Action",
+    "filterStatus": "Statut",
+    "detailTitle": "Virement {reference}",
+    "back": "Retour aux virements",
+    "summaryTitle": "Demande",
+    "requestedAt": "Demandé le",
+    "iban": "Compte bancaire",
+    "rate": "Taux de commission",
+    "historyTitle": "Historique",
+    "event": {
+      "REQUESTED": "Demande envoyée",
+      "CHECKED": "Demande contrôlée par FlexiPay",
+      "SENT": "Virement envoyé à la banque",
+      "EXECUTED": "Virement exécuté : fonds sur votre compte",
+      "REJECTED": "Demande rejetée"
+    }
   },
   "settlements": {
     "title": "Règlements et documents",
@@ -136,5 +176,8 @@
     "changeHint": "Pour modifier ces informations, contactez l'administrateur FlexiPay.",
     "pointsOfSale": "Points de vente",
     "staff": "Équipe"
+  },
+  "payoutRejection": {
+    "ibanCheck": "Le compte bancaire enregistré doit être vérifié : contactez le support."
   }
 }

@@ -1,30 +1,37 @@
 'use client';
 
 import type { Schemas } from '@flexipay/api-client';
+import { ArrowDownLeft, ChevronRight, Percent, Send, Wallet } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
+import { Link } from '@/i18n/navigation';
 import { getApi, newIdempotencyKey } from '@/lib/api/client';
 import { asProblem, errorMessageKey } from '@/lib/api/problem';
+import { useApiQuery } from '@/lib/api/use-api-query';
 import { usePagedList } from '@/lib/api/use-paged-list';
 import { formatDateTime } from '@/lib/format/date';
 import { formatMillimesWithCurrency, formatRateBps } from '@/lib/format/money';
 import { parseMillimes } from '@/lib/format/money-input';
 import { Amount, AmountBreakdown } from '@/components/ui/amount';
-import { Button } from '@/components/ui/button';
-import { Card, CardTitle } from '@/components/ui/card';
+import { Button, buttonClasses } from '@/components/ui/button';
+import { Card, CardTitle, StatCard } from '@/components/ui/card';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { TextField } from '@/components/ui/field';
+import { FilterBar } from '@/components/ui/filter-bar';
 import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { ConfirmDialog } from '@/components/ui/modal';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useToast } from '@/components/ui/toast';
 
 type Quote = Schemas['PayoutQuote'];
+type Status = Schemas['PayoutRequestStatus'];
+const STATUSES: readonly Status[] = ['REQUESTED', 'CHECKED', 'SENT', 'EXECUTED', 'REJECTED'];
 
 /**
  * Payout request: simulation by the server (gross -> commission -> net, rate frozen until
- * `expiresAt`, rule 5), confirmation with a recap, then the request (Idempotency-Key).
+ * `expiresAt`, rule 5), shown as three figures, confirmation with a recap, then the request
+ * (Idempotency-Key). Each request opens its detail page with its history.
  */
 export default function PayoutsPage() {
   const t = useTranslations('merchant.payouts');
@@ -40,12 +47,18 @@ export default function PayoutsPage() {
   const [intentKey, setIntentKey] = useState(newIdempotencyKey);
   const [created, setCreated] = useState<Schemas['PayoutRequest'] | undefined>(undefined);
   const [refresh, setRefresh] = useState(0);
+  const [status, setStatus] = useState('');
+  const dashboard = useApiQuery(() => getApi().GET('/v1/merchant/dashboard'), [refresh]);
 
   const millimes = useMemo(() => parseMillimes(amountText, locale), [amountText, locale]);
   const list = usePagedList(
     (cursor, withCount) =>
-      getApi().GET('/v1/merchant/payouts', { params: { query: { cursor, withCount } } }),
-    [refresh],
+      getApi().GET('/v1/merchant/payouts', {
+        params: {
+          query: { cursor, withCount, ...(status === '' ? {} : { status: status as Status }) },
+        },
+      }),
+    [refresh, status],
   );
 
   async function onSimulate(event: SyntheticEvent) {
@@ -95,34 +108,130 @@ export default function PayoutsPage() {
   }
 
   const columns: Column<Schemas['PayoutRequest']>[] = [
-    { key: 'date', header: t('date'), cell: (row) => formatDateTime(row.requestedAt, locale) },
-    { key: 'reference', header: t('reference'), cell: (row) => row.reference },
+    {
+      key: 'date',
+      header: t('date'),
+      cell: (row) => formatDateTime(row.requestedAt, locale),
+      sortValue: (row) => row.requestedAt,
+    },
+    {
+      key: 'reference',
+      header: t('reference'),
+      cell: (row) => (
+        <Link
+          href={`/commercant/virements/${row.id}`}
+          className="font-label text-navy underline-offset-2 hover:underline"
+          dir="ltr"
+        >
+          {row.reference}
+        </Link>
+      ),
+      sortValue: (row) => row.reference,
+    },
     {
       key: 'gross',
       header: t('gross'),
       align: 'end',
       cell: (row) => <Amount millimes={row.grossMillimes} />,
+      sortValue: (row) => row.grossMillimes,
     },
     {
       key: 'net',
       header: t('net'),
       align: 'end',
       cell: (row) => <Amount millimes={row.netMillimes} />,
+      sortValue: (row) => row.netMillimes,
     },
     {
       key: 'status',
       header: t('status'),
       cell: (row) => <StatusBadge status={row.status} context="payout" />,
+      sortValue: (row) => row.status,
+    },
+    {
+      key: 'open',
+      header: t('action'),
+      align: 'end',
+      cell: (row) => (
+        <Link
+          href={`/commercant/virements/${row.id}`}
+          className={buttonClasses('ghost', 'sm')}
+          aria-label={t('openPayout', { reference: row.reference })}
+        >
+          {t('open')}
+          <ChevronRight aria-hidden="true" className="size-icon-sm rtl:rotate-180" />
+        </Link>
+      ),
     },
   ];
 
   const conflict = asProblem(error)?.code === 'RESOURCE_STATE_CONFLICT';
+  const pending = <span className="text-body text-text-muted">{t('pending')}</span>;
+  const available =
+    quote?.availableMillimes ??
+    (dashboard.status === 'success' ? dashboard.data.receivablesMillimes : undefined);
+  const breakdown =
+    quote === undefined
+      ? []
+      : [
+          { label: t('gross'), millimes: quote.grossMillimes },
+          {
+            label: t('commission'),
+            note: formatRateBps(quote.commissionRateBps, locale),
+            millimes: quote.commissionMillimes,
+            sign: 'debit' as const,
+          },
+        ];
+
   return (
     <>
       <PageHeader title={t('title')} description={t('description')} />
-      <div className="mb-6 grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardTitle>{t('simulate')}</CardTitle>
+      <div className="mb-6 grid gap-4 md:grid-cols-3">
+        <StatCard
+          label={t('available')}
+          value={
+            available === undefined ? pending : <Amount millimes={available} size="title" />
+          }
+          hint={t('availableHint')}
+          icon={<Wallet className="size-icon-md" />}
+          tone="positive"
+        />
+        <StatCard
+          label={t('commission')}
+          value={
+            quote === undefined ? (
+              pending
+            ) : (
+              <Amount millimes={quote.commissionMillimes} size="title" />
+            )
+          }
+          hint={
+            quote === undefined
+              ? undefined
+              : t('commissionHint', {
+                  rate: formatRateBps(quote.commissionRateBps, locale),
+                  time: formatDateTime(quote.expiresAt, locale),
+                })
+          }
+          icon={<Percent className="size-icon-md" />}
+        />
+        <StatCard
+          label={t('net')}
+          value={
+            quote === undefined ? (
+              pending
+            ) : (
+              <Amount millimes={quote.netMillimes} size="title" />
+            )
+          }
+          hint={t('netHintNoIban')}
+          icon={<ArrowDownLeft className="size-icon-md rtl:-scale-x-100" />}
+        />
+      </div>
+
+      <Card className="mb-6">
+        <CardTitle>{t('simulate')}</CardTitle>
+        <div className="grid gap-6 lg:grid-cols-2">
           <form
             onSubmit={(event) => void onSimulate(event)}
             className="flex flex-col gap-5"
@@ -137,6 +246,7 @@ export default function PayoutsPage() {
               }
               error={amountText !== '' && millimes === undefined ? t('amountInvalid') : undefined}
               inputMode="decimal"
+              dir="ltr"
               value={amountText}
               onChange={(event) => {
                 setAmountText(event.target.value);
@@ -152,46 +262,52 @@ export default function PayoutsPage() {
               {t('simulateSubmit')}
             </Button>
           </form>
-        </Card>
-        <Card>
-          <CardTitle>{t('summary')}</CardTitle>
-          {error !== undefined ? (
-            <Alert tone="danger">
-              {conflict ? t('conflict') : tRoot(messageKey(errorMessageKey(error)))}
-            </Alert>
-          ) : null}
-          {created !== undefined ? (
-            <Alert tone="success" title={t('createdTitle')}>
-              {t('createdMessage', { reference: created.reference })}
-            </Alert>
-          ) : null}
-          {quote === undefined && created === undefined && error === undefined ? (
-            <p className="text-body text-text-muted">{t('summaryEmpty')}</p>
-          ) : null}
-          {quote !== undefined ? (
-            <div className="flex flex-col gap-5">
-              <AmountBreakdown
-                lines={[
-                  { label: t('gross'), millimes: quote.grossMillimes },
-                  {
-                    label: t('commission'),
-                    note: formatRateBps(quote.commissionRateBps, locale),
-                    millimes: quote.commissionMillimes,
-                    sign: 'debit',
-                  },
-                ]}
-                total={{ label: t('net'), millimes: quote.netMillimes }}
-              />
-              <p className="text-caption text-text-muted">
-                {t('frozen', { time: formatDateTime(quote.expiresAt, locale) })}
-              </p>
-              <Button onClick={() => { setConfirming(true); }}>{t('request')}</Button>
-            </div>
-          ) : null}
-        </Card>
-      </div>
+          <div className="flex flex-col gap-4">
+            {error !== undefined ? (
+              <Alert tone="danger">
+                {conflict ? t('conflict') : tRoot(messageKey(errorMessageKey(error)))}
+              </Alert>
+            ) : null}
+            {created !== undefined ? (
+              <Alert tone="success" title={t('createdTitle')}>
+                {t('createdMessage', { reference: created.reference })}
+              </Alert>
+            ) : null}
+            {quote === undefined && created === undefined && error === undefined ? (
+              <p className="text-body text-text-muted">{t('summaryEmpty')}</p>
+            ) : null}
+            {quote !== undefined ? (
+              <>
+                <AmountBreakdown
+                  lines={breakdown}
+                  total={{ label: t('net'), millimes: quote.netMillimes }}
+                />
+                <Button
+                  icon={<Send aria-hidden="true" className="size-icon-sm rtl:-scale-x-100" />}
+                  onClick={() => {
+                    setConfirming(true);
+                  }}
+                >
+                  {t('request')}
+                </Button>
+              </>
+            ) : null}
+          </div>
+        </div>
+      </Card>
+
       <Card>
         <CardTitle>{t('listTitle')}</CardTitle>
+        <FilterBar
+          statusLabel={t('filterStatus')}
+          statusOptions={STATUSES.map((value) => ({
+            value,
+            label: tRoot(messageKey(`statusLabel.${value}`)),
+          }))}
+          onApply={(filters) => {
+            setStatus(filters.status);
+          }}
+        />
         <DataTable
           caption={t('listTitle')}
           columns={columns}
@@ -220,15 +336,7 @@ export default function PayoutsPage() {
           onConfirm={() => void onRequest()}
         >
           <AmountBreakdown
-            lines={[
-              { label: t('gross'), millimes: quote.grossMillimes },
-              {
-                label: t('commission'),
-                note: formatRateBps(quote.commissionRateBps, locale),
-                millimes: quote.commissionMillimes,
-                sign: 'debit',
-              },
-            ]}
+            lines={breakdown}
             total={{ label: t('net'), millimes: quote.netMillimes }}
           />
         </ConfirmDialog>

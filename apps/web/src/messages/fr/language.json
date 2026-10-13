@@ -1,5 +1,10 @@
 {
   "fr": "Français",
   "ar": "العربية",
-  "en": "English"
+  "en": "English",
+  "short": {
+    "fr": "FR",
+    "ar": "ع",
+    "en": "EN"
+  }
 }

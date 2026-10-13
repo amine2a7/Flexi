@@ -20,5 +20,24 @@
     "warningMessage": "Without activity, you will be signed out in 2 minutes. Do you want to stay signed in?",
     "stay": "Stay signed in",
     "signOut": "Sign out"
-  }
+  },
+  "tagline": "Digital platform",
+  "hello": "Hello, {name}",
+  "secure": "Secure space · {tenant}",
+  "activeAccount": "Active account",
+  "role": {
+    "ADMIN": "Administrator",
+    "COMPANY": "Company",
+    "MERCHANT": "Merchant",
+    "EMPLOYEE": "Employee",
+    "FAMILY_MEMBER": "Family member"
+  },
+  "eyebrow": {
+    "ADMIN": "Platform management",
+    "COMPANY": "Client company",
+    "MERCHANT": "Partner merchant",
+    "EMPLOYEE": "Employee",
+    "FAMILY_MEMBER": "Family"
+  },
+  "counter": "{label}: {count} pending"
 }

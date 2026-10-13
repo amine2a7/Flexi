@@ -1,27 +1,42 @@
 'use client';
 
 import { AlertTriangle, CircleCheck, Info, OctagonAlert } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 
+/** Default eyebrow of the page headers of a space (« Commerçant partenaire »), set by the shell. */
+export const PageEyebrowContext = createContext<string | undefined>(undefined);
+
+/** Page header: green eyebrow, title, help sentence and the main action at the end. */
 export function PageHeader({
   title,
   description,
   actions,
+  eyebrow,
 }: {
   title: string;
   description?: string;
   actions?: ReactNode;
+  eyebrow?: string;
 }) {
+  const spaceEyebrow = useContext(PageEyebrowContext);
+  const shown = eyebrow ?? spaceEyebrow;
   return (
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div className="flex flex-col gap-1">
+      <div className="flex min-w-0 flex-col gap-1">
+        {shown !== undefined ? (
+          <p className="text-caption font-label uppercase tracking-widest text-emerald-text">
+            {shown}
+          </p>
+        ) : null}
         <h1 className="text-headline text-text">{title}</h1>
         {description !== undefined ? (
           <p className="text-body text-text-muted">{description}</p>
         ) : null}
       </div>
-      {actions !== undefined ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
+      {actions !== undefined ? (
+        <div className="flex w-full flex-wrap gap-3 sm:w-auto">{actions}</div>
+      ) : null}
     </header>
   );
 }

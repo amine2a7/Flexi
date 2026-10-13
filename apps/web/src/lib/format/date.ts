@@ -24,6 +24,8 @@ export function formatBusinessDateTime(timestamp: string, locale: Locale): strin
   return new Intl.DateTimeFormat(INTL_LOCALE[locale], {
     dateStyle: 'medium',
     timeStyle: 'short',
+    // fr-TN defaults to a 12-hour clock: FlexiPay shows 24-hour times in every language.
+    hourCycle: 'h23',
     timeZone: BUSINESS_TIME_ZONE,
   }).format(new Date(timestamp));
 }
@@ -33,10 +35,19 @@ export function formatDateTime(timestamp: string, locale: Locale): string {
   return new Intl.DateTimeFormat(INTL_LOCALE[locale], {
     dateStyle: 'medium',
     timeStyle: 'short',
+    // fr-TN defaults to a 12-hour clock: FlexiPay shows 24-hour times in every language.
+    hourCycle: 'h23',
   }).format(new Date(timestamp));
 }
 
 /** `2026-10` -> `octobre 2026`. */
+/** Short month of a period `AAAA-MM` (chart axis): `oct.`, `Oct`. */
+export function formatShortMonth(period: string, locale: Locale): string {
+  return new Intl.DateTimeFormat(INTL_LOCALE[locale], { month: 'short', timeZone: 'UTC' }).format(
+    new Date(`${period}-01T00:00:00.000Z`),
+  );
+}
+
 export function formatMonth(period: string, locale: Locale): string {
   return new Intl.DateTimeFormat(INTL_LOCALE[locale], {
     month: 'long',

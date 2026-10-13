@@ -14,8 +14,9 @@ const VARIANTS: Record<ButtonVariant, string> = {
 };
 
 const SIZES: Record<ButtonSize, string> = {
-  md: 'min-h-button-height px-5 text-label',
-  sm: 'min-h-touch-target-min px-3 text-caption',
+  // 48 px on touch screens, 44 px from the desktop breakpoint (UX: no 28 px buttons).
+  md: 'min-h-touch-target-mobile px-5 text-label lg:min-h-button-height',
+  sm: 'min-h-touch-target-mobile px-3 text-label lg:min-h-touch-target-min',
 };
 
 /** Shared look of buttons and button-like links. */

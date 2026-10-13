@@ -1,7 +1,7 @@
 'use client';
 
 import { WEB_CHANNEL_HEADER, type Schemas } from '@flexipay/api-client';
-import { LogOut, Menu, ShieldOff, X } from 'lucide-react';
+import { LogOut, Menu, ShieldOff, X, Zap } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
@@ -14,10 +14,12 @@ import { resetAuthFlow } from '@/lib/session/auth-flow';
 import { SPACE_HOME } from '@/lib/session/return-to';
 import { SessionProvider, type Me } from '@/lib/session/session-context';
 import { buttonClasses } from '@/components/ui/button';
+import { PageEyebrowContext } from '@/components/ui/layout-blocks';
 import { LoadingBlock } from '@/components/ui/states';
 import { ToastProvider } from '@/components/ui/toast';
 import { LocaleSwitcher } from './locale-switcher';
 import { NAVIGATION, isActive } from './nav-config';
+import { useNavCounters } from './nav-counters';
 import { SessionWatch } from './session-watch';
 import { SkipLink } from './skip-link';
 
@@ -125,13 +127,15 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const items = useMemo(() => NAVIGATION[role] ?? [], [role]);
   const home = SPACE_HOME[role] ?? '/';
-  const current = items.find((item) => isActive(item, pathname, home));
+  const counts = useNavCounters(role, pathname);
 
   const navList = (
     <ul className="flex flex-col gap-1">
       {items.map((item) => {
         const active = isActive(item, pathname, home);
         const Icon = item.icon;
+        const label = t(messageKey(item.labelKey));
+        const count = item.counter === undefined ? 0 : (counts[item.counter] ?? 0);
         return (
           <li key={item.href}>
             <Link
@@ -141,14 +145,22 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
               }}
               aria-current={active ? 'page' : undefined}
               className={cn(
-                'flex min-h-touch-target-min items-center gap-3 rounded-button px-3 text-label transition-colors duration-fast focus-visible:focus-ring-on-dark',
+                'flex min-h-touch-target-mobile items-center gap-3 rounded-button px-3 text-label transition-colors duration-fast focus-visible:focus-ring-on-dark lg:min-h-touch-target-min',
                 active
                   ? 'bg-navy-deep text-on-navy'
                   : 'text-on-navy-muted hover:bg-navy-deep hover:text-on-navy',
               )}
             >
               <Icon aria-hidden="true" className="size-icon-md shrink-0" />
-              {t(messageKey(item.labelKey))}
+              <span className="flex-1">{label}</span>
+              {count > 0 ? (
+                <span
+                  className="flex min-w-icon-lg items-center justify-center rounded-badge bg-emerald px-2 text-micro font-label text-on-emerald"
+                  aria-label={t('layout.counter', { label, count })}
+                >
+                  {count}
+                </span>
+              ) : null}
             </Link>
           </li>
         );
@@ -157,38 +169,68 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
   );
 
   const brand = (
-    <div className="flex flex-col gap-1 px-3">
-      <span className="text-title text-on-navy">{t('app.name')}</span>
-      <span className="text-caption text-on-navy-muted">{t(`layout.space.${role}`)}</span>
+    <div className="flex items-center gap-3 px-2">
+      <span
+        aria-hidden="true"
+        className="flex size-avatar-md shrink-0 items-center justify-center rounded-button bg-emerald text-on-emerald"
+      >
+        <Zap className="size-icon-md" />
+      </span>
+      <span className="flex flex-col">
+        <span className="text-title-sm text-on-navy">{t('app.name')}</span>
+        <span className="text-micro uppercase tracking-widest text-on-navy-muted">
+          {t('layout.tagline')}
+        </span>
+      </span>
     </div>
+  );
+
+  const sidebar = (
+    <>
+      {brand}
+      <div className="flex flex-1 flex-col gap-3 border-t border-navy-deep pt-5">
+        <p className="px-3 text-micro uppercase tracking-widest text-on-navy-muted">
+          {t(`layout.space.${role}`)}
+        </p>
+        <nav aria-label={t('layout.mainNav')}>{navList}</nav>
+      </div>
+      <div className="border-t border-navy-deep pt-4">
+        <button
+          type="button"
+          onClick={() => void onSignOut()}
+          className="flex min-h-touch-target-mobile w-full items-center gap-3 rounded-button px-3 text-label text-on-navy-muted transition-colors duration-fast hover:bg-navy-deep hover:text-on-navy focus-visible:focus-ring-on-dark lg:min-h-touch-target-min"
+        >
+          <LogOut aria-hidden="true" className="size-icon-md shrink-0 rtl:rotate-180" />
+          {t('layout.signOut')}
+        </button>
+      </div>
+    </>
   );
 
   return (
     <div className="flex min-h-screen bg-bg">
       <SkipLink />
-      <aside className="hidden w-sidebar-width shrink-0 flex-col gap-6 bg-navy p-4 lg:flex">
-        {brand}
-        <nav aria-label={t('layout.mainNav')}>{navList}</nav>
+      <aside className="sticky top-0 hidden h-screen w-sidebar-width shrink-0 flex-col gap-6 overflow-y-auto bg-navy p-4 lg:flex">
+        {sidebar}
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-header-height items-center justify-between gap-3 border-b border-border bg-surface px-4 lg:px-8">
+        <header className="flex min-h-header-height items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <Dialog.Root open={menuOpen} onOpenChange={setMenuOpen}>
               <Dialog.Trigger
                 aria-label={t('layout.openMenu')}
-                className="flex size-touch-target-min items-center justify-center rounded-button text-navy hover:bg-bg lg:hidden"
+                className="flex size-touch-target-mobile items-center justify-center rounded-button text-navy hover:bg-bg lg:hidden"
               >
                 <Menu aria-hidden="true" className="size-icon-md" />
               </Dialog.Trigger>
               <Dialog.Portal>
-                <Dialog.Overlay className="fixed inset-0 z-40 bg-overlay lg:hidden" />
+                <Dialog.Overlay className="fixed inset-0 z-40 bg-overlay backdrop-blur-sm lg:hidden" />
                 <Dialog.Content className="fixed inset-y-0 start-0 z-50 flex w-sidebar-width max-w-full flex-col gap-6 overflow-y-auto bg-navy p-4 lg:hidden">
-                  <div className="flex items-start justify-between">
-                    {brand}
+                  <div className="flex justify-end">
                     <Dialog.Close
                       aria-label={t('layout.closeMenu')}
-                      className="flex size-touch-target-min items-center justify-center rounded-button text-on-navy focus-visible:focus-ring-on-dark"
+                      className="flex size-touch-target-mobile items-center justify-center rounded-button text-on-navy focus-visible:focus-ring-on-dark"
                     >
                       <X aria-hidden="true" className="size-icon-md" />
                     </Dialog.Close>
@@ -197,39 +239,38 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
                   <Dialog.Description className="sr-only">
                     {t(`layout.space.${role}`)}
                   </Dialog.Description>
-                  <nav aria-label={t('layout.mainNav')}>{navList}</nav>
+                  {sidebar}
                 </Dialog.Content>
               </Dialog.Portal>
             </Dialog.Root>
-            <p className="truncate text-label text-text">
-              {current !== undefined ? t(messageKey(current.labelKey)) : t(`layout.space.${role}`)}
-            </p>
+            <div className="flex min-w-0 flex-col">
+              <p className="truncate text-label text-text">
+                {t('layout.hello', { name: me.displayName })}
+              </p>
+              <p className="hidden truncate text-caption text-text-muted sm:block">
+                {t('layout.secure', { tenant: me.tenant?.label ?? t('app.name') })}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="hidden flex-col items-end sm:flex">
+          <div className="flex items-center gap-3">
+            <span className="hidden min-h-chip-height items-center rounded-badge bg-emerald-soft px-3 text-caption font-label text-emerald-text md:inline-flex">
+              {t(`layout.role.${role}`)}
+            </span>
+            <div className="hidden flex-col items-end md:flex">
               <span className="text-label text-text">{me.displayName}</span>
-              <span className="text-caption text-text-muted">
-                {me.tenant?.label ?? t(`layout.space.${role}`)}
-              </span>
+              <span className="text-caption text-text-muted">{t('layout.activeAccount')}</span>
             </div>
             <LocaleSwitcher />
-            <button
-              type="button"
-              onClick={() => void onSignOut()}
-              className={buttonClasses('ghost', 'sm')}
-            >
-              <LogOut aria-hidden="true" className="size-icon-sm rtl:rotate-180" />
-              <span className="hidden sm:inline">{t('layout.signOut')}</span>
-              <span className="sr-only sm:hidden">{t('layout.signOut')}</span>
-            </button>
           </div>
         </header>
         <main
           id="main-content"
           tabIndex={-1}
-          className="mx-auto w-full max-w-desktop-max-width flex-1 px-4 py-6 lg:px-8"
+          className="mx-auto w-full max-w-desktop-max-width flex-1 px-4 py-6 lg:px-8 lg:py-8"
         >
-          {children}
+          <PageEyebrowContext.Provider value={t(`layout.eyebrow.${role}`)}>
+            {children}
+          </PageEyebrowContext.Provider>
         </main>
       </div>
       <SessionWatch onExpire={onSignOut} />

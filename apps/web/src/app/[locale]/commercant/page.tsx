@@ -1,45 +1,67 @@
 'use client';
 
-import { CalendarClock, HandCoins, Percent, Wallet } from 'lucide-react';
+import { ArrowLeftRight, CalendarClock, HandCoins, Percent, Wallet } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
 import { useApiQuery } from '@/lib/api/use-api-query';
-import { formatCalendarDate } from '@/lib/format/date';
-import { usePaymentColumns } from '@/components/commercant/payment-columns';
+import { formatCalendarDate, formatDateTime, formatShortMonth } from '@/lib/format/date';
+import { formatMillimesWithCurrency } from '@/lib/format/money';
+import { ActivityList, TodoPanel, type TodoItem } from '@/components/ui/activity';
 import { Amount, Rate } from '@/components/ui/amount';
+import { BarChart } from '@/components/ui/bar-chart';
 import { buttonClasses } from '@/components/ui/button';
 import { Card, CardTitle, StatCard } from '@/components/ui/card';
-import { DataTable } from '@/components/ui/data-table';
 import { PageHeader } from '@/components/ui/layout-blocks';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
-import { useSession } from '@/lib/session/session-context';
+import { StatusBadge } from '@/components/ui/status-badge';
 
 export default function MerchantDashboardPage() {
   const t = useTranslations('merchant.dashboard');
   const locale = useLocale();
-  const { me } = useSession();
-  const columns = usePaymentColumns();
   const dashboard = useApiQuery(() => getApi().GET('/v1/merchant/dashboard'), []);
 
   return (
     <>
       <PageHeader
-        title={t('title', { name: me.displayName })}
+        title={t('title')}
         description={t('description')}
         actions={
-          <Link href="/commercant/encaissement" className={buttonClasses('primary')}>
-            <HandCoins aria-hidden="true" className="size-icon-sm" />
+          <Link
+            href="/commercant/encaissement"
+            className={buttonClasses('primary', 'md', 'w-full sm:w-auto')}
+          >
+            <HandCoins aria-hidden="true" className="size-icon-md" />
             {t('collect')}
           </Link>
         }
       />
-      {dashboard.status === 'loading' ? <LoadingBlock lines={4} /> : null}
+      {dashboard.status === 'loading' ? <LoadingBlock lines={6} /> : null}
       {dashboard.status === 'error' ? (
         <ErrorState error={dashboard.error} onRetry={dashboard.reload} />
       ) : null}
       {dashboard.status === 'success' ? (
         <div className="flex flex-col gap-6">
+          <TodoPanel
+            items={
+              dashboard.data.receivablesMillimes > 0
+                ? ([
+                    {
+                      key: 'payout',
+                      icon: <ArrowLeftRight className="size-icon-md" />,
+                      text: t('todoPayout', {
+                        amount: formatMillimesWithCurrency(
+                          dashboard.data.receivablesMillimes,
+                          locale,
+                        ),
+                      }),
+                      href: '/commercant/virements',
+                      actionLabel: t('todoPayoutAction'),
+                    },
+                  ] satisfies TodoItem[])
+                : []
+            }
+          />
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
               label={t('today')}
@@ -75,24 +97,60 @@ export default function MerchantDashboardPage() {
               icon={<Percent className="size-icon-md" />}
             />
           </div>
-          <Card>
-            <CardTitle
-              action={
-                <Link href="/commercant/historique" className="text-label text-navy underline">
-                  {t('seeHistory')}
-                </Link>
-              }
-            >
-              {t('recent')}
-            </CardTitle>
-            <DataTable
-              caption={t('recent')}
-              columns={columns}
-              rows={dashboard.data.recentPayments}
-              rowKey={(row) => row.id}
-              empty={{ title: t('emptyTitle'), message: t('emptyMessage') }}
-            />
-          </Card>
+          <div className="grid gap-6 lg:grid-cols-3">
+            <Card className="lg:col-span-2">
+              <CardTitle description={t('flowsDescription')}>{t('flowsTitle')}</CardTitle>
+              <BarChart
+                title={t('flowsTitle')}
+                series={[
+                  {
+                    key: 'collected',
+                    label: t('seriesCollected'),
+                    fillClass: 'fill-navy',
+                    dotClass: 'bg-navy',
+                  },
+                  {
+                    key: 'settled',
+                    label: t('seriesSettled'),
+                    fillClass: 'fill-emerald',
+                    dotClass: 'bg-emerald',
+                  },
+                ]}
+                points={dashboard.data.monthlyFlows.map((flow) => ({
+                  key: flow.month,
+                  label: formatShortMonth(flow.month, locale),
+                  values: [flow.collectedMillimes, flow.settledMillimes],
+                }))}
+                format={(value) => formatMillimesWithCurrency(value, locale)}
+              />
+            </Card>
+            <Card>
+              <CardTitle
+                description={t('recentDescription')}
+                action={
+                  <Link href="/commercant/historique" className="text-label text-navy underline">
+                    {t('seeHistory')}
+                  </Link>
+                }
+              >
+                {t('recent')}
+              </CardTitle>
+              <ActivityList
+                empty={t('emptyMessage')}
+                items={dashboard.data.recentPayments.map((payment) => ({
+                  key: payment.id,
+                  title: `${payment.customer.firstName} ${payment.customer.lastInitial}.`,
+                  subtitle: `${payment.reference} · ${formatDateTime(payment.createdAt, locale)}`,
+                  end: (
+                    <>
+                      <Amount millimes={payment.amountMillimes} />
+                      <StatusBadge status={payment.status} />
+                    </>
+                  ),
+                }))}
+              />
+            </Card>
+          </div>
         </div>
       ) : null}
     </>

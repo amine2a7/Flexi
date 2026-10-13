@@ -20,5 +20,24 @@
     "warningMessage": "Sans activité, vous serez déconnecté dans 2 minutes. Voulez-vous rester connecté ?",
     "stay": "Rester connecté",
     "signOut": "Se déconnecter"
-  }
+  },
+  "tagline": "Plateforme digitale",
+  "hello": "Bonjour, {name}",
+  "secure": "Espace sécurisé · {tenant}",
+  "activeAccount": "Compte actif",
+  "role": {
+    "ADMIN": "Administrateur",
+    "COMPANY": "Entreprise",
+    "MERCHANT": "Commerçant",
+    "EMPLOYEE": "Employé",
+    "FAMILY_MEMBER": "Membre de la famille"
+  },
+  "eyebrow": {
+    "ADMIN": "Pilotage de la plateforme",
+    "COMPANY": "Entreprise cliente",
+    "MERCHANT": "Commerçant partenaire",
+    "EMPLOYEE": "Employé",
+    "FAMILY_MEMBER": "Famille"
+  },
+  "counter": "{label} : {count} en attente"
 }

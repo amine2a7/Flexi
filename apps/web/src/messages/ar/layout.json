@@ -20,5 +20,24 @@
     "warningMessage": "في غياب أي نشاط، سيتم تسجيل خروجك خلال دقيقتين. هل تريد البقاء متصلًا؟",
     "stay": "البقاء متصلًا",
     "signOut": "تسجيل الخروج"
-  }
+  },
+  "tagline": "منصة رقمية",
+  "hello": "مرحبًا، {name}",
+  "secure": "فضاء آمن · {tenant}",
+  "activeAccount": "حساب نشِط",
+  "role": {
+    "ADMIN": "مشرف",
+    "COMPANY": "مؤسسة",
+    "MERCHANT": "تاجر",
+    "EMPLOYEE": "موظف",
+    "FAMILY_MEMBER": "فرد من العائلة"
+  },
+  "eyebrow": {
+    "ADMIN": "قيادة المنصة",
+    "COMPANY": "مؤسسة حريفة",
+    "MERCHANT": "تاجر شريك",
+    "EMPLOYEE": "موظف",
+    "FAMILY_MEMBER": "العائلة"
+  },
+  "counter": "{label}: {count} في الانتظار"
 }

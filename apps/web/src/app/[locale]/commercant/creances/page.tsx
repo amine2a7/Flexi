@@ -27,22 +27,30 @@ export default function ReceivablesPage() {
   }, []);
 
   const columns: Column<Schemas['Receivable']>[] = [
-    { key: 'reference', header: t('reference'), cell: (row) => row.reference },
+    {
+      key: 'reference',
+      header: t('reference'),
+      cell: (row) => row.reference,
+      sortValue: (row) => row.reference,
+    },
     {
       key: 'confirmedAt',
       header: t('confirmedAt'),
       cell: (row) => formatDateTime(row.confirmedAt, locale),
+      sortValue: (row) => row.confirmedAt,
     },
     {
       key: 'settlementDate',
       header: t('settlementDate'),
       cell: (row) => formatCalendarDate(row.settlementDate, locale),
+      sortValue: (row) => row.settlementDate,
     },
     {
       key: 'amount',
       header: t('amount'),
       align: 'end',
       cell: (row) => <Amount millimes={row.amountMillimes} />,
+      sortValue: (row) => row.amountMillimes,
     },
     // Merchant wording of A_REGLER (decision 2).
     {

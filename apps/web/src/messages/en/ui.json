@@ -9,7 +9,8 @@
     "pagination": "Pagination",
     "previous": "Previous",
     "next": "Next",
-    "page": "Page {page}"
+    "page": "Page {page}",
+    "sortBy": "Sort by {column}"
   },
   "modal": {
     "close": "Close"
@@ -23,5 +24,14 @@
     "apply": "Filter",
     "reset": "Reset",
     "allStatuses": "All statuses"
+  },
+  "chart": {
+    "empty": "No data for this period.",
+    "data": "Chart data: {title}",
+    "month": "Month"
+  },
+  "todo": {
+    "title": "To do",
+    "empty": "Nothing to do for now."
   }
 }

@@ -1,0 +1,65 @@
+'use client';
+
+import type { Schemas } from '@flexipay/api-client';
+import { useEffect, useState } from 'react';
+import { getApi } from '@/lib/api/client';
+
+type Role = Schemas['Role'];
+
+/** Counters shown in the sidebar next to what waits for an action of the signed-in user. */
+export type NavCounter = 'companyOrdersToPay' | 'adminOrdersToHandle' | 'adminApprovals';
+export type NavCounts = Partial<Record<NavCounter, number>>;
+
+type CountResult = Promise<{ data?: { page: Schemas['PageInfo'] } }>;
+
+async function count(load: () => CountResult): Promise<number> {
+  const { data } = await load();
+  return data?.page.count?.value ?? 0;
+}
+
+const LOADERS: Partial<Record<Role, () => Promise<NavCounts>>> = {
+  COMPANY: async () => ({
+    companyOrdersToPay: await count(() =>
+      getApi().GET('/v1/company/orders', {
+        params: { query: { status: 'AWAITING_PAYMENT', limit: 1, withCount: true } },
+      }),
+    ),
+  }),
+  ADMIN: async () => {
+    const orders = (status: Schemas['OrderStatus']) =>
+      count(() =>
+        getApi().GET('/v1/admin/credit-orders', {
+          params: { query: { status, limit: 1, withCount: true } },
+        }),
+      );
+    const [toConfirm, toValidate, approvals] = await Promise.all([
+      orders('AWAITING_CONFIRMATION'),
+      orders('AWAITING_VALIDATION'),
+      count(() =>
+        getApi().GET('/v1/admin/approvals', {
+          params: { query: { status: 'PENDING', limit: 1, withCount: true } },
+        }),
+      ),
+    ]);
+    return { adminOrdersToHandle: toConfirm + toValidate, adminApprovals: approvals };
+  },
+};
+
+/** Loads the counters of the role, again at each page change (after an action). */
+export function useNavCounters(role: Role, pathname: string): NavCounts {
+  const [counts, setCounts] = useState<NavCounts>({});
+  useEffect(() => {
+    const load = LOADERS[role];
+    if (load === undefined) return undefined;
+    let active = true;
+    load()
+      .then((next) => {
+        if (active) setCounts(next);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [role, pathname]);
+  return counts;
+}

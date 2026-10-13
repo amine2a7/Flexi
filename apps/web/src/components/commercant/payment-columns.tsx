@@ -9,29 +9,54 @@ import { StatusBadge } from '@/components/ui/status-badge';
 
 type Payment = Schemas['MerchantPayment'];
 
-/** Columns shared by the dashboard and the history (date, reference, customer, amount, status). */
+/** Columns shared by the dashboard and the history (customer, reference, amount, date, status). */
 export function usePaymentColumns(): Column<Payment>[] {
   const t = useTranslations('merchant.payments');
   const locale = useLocale();
   return [
-    { key: 'date', header: t('date'), cell: (row) => formatDateTime(row.createdAt, locale) },
-    {
-      key: 'reference',
-      header: t('reference'),
-      cell: (row) => <span className="tabular-nums">{row.reference}</span>,
-    },
     {
       key: 'customer',
       header: t('customer'),
-      cell: (row) =>
-        `${row.customer.firstName} ${row.customer.lastInitial}. · ${row.customer.maskedEmployeeNumber}`,
+      cell: (row) => (
+        <span className="flex flex-col">
+          <span className="font-label text-text">{`${row.customer.firstName} ${row.customer.lastInitial}.`}</span>
+          <span className="text-caption text-text-muted" dir="ltr">
+            {row.customer.maskedEmployeeNumber}
+          </span>
+        </span>
+      ),
+      sortValue: (row) => row.customer.firstName,
+    },
+    {
+      key: 'reference',
+      header: t('reference'),
+      cell: (row) => (
+        <span className="tabular-nums" dir="ltr">
+          {row.reference}
+        </span>
+      ),
+      sortValue: (row) => row.reference,
     },
     {
       key: 'amount',
       header: t('amount'),
       align: 'end',
       cell: (row) => <Amount millimes={row.amountMillimes} />,
+      sortValue: (row) => row.amountMillimes,
     },
-    { key: 'status', header: t('status'), cell: (row) => <StatusBadge status={row.status} /> },
+    {
+      key: 'date',
+      header: t('date'),
+      cell: (row) => (
+        <span className="text-text-muted">{formatDateTime(row.createdAt, locale)}</span>
+      ),
+      sortValue: (row) => row.createdAt,
+    },
+    {
+      key: 'status',
+      header: t('status'),
+      cell: (row) => <StatusBadge status={row.status} />,
+      sortValue: (row) => row.status,
+    },
   ];
 }

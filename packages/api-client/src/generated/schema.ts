@@ -500,6 +500,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/merchant/payouts/{payoutId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Détail d'une demande de virement, avec son historique */
+    get: operations['getPayoutRequest'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/merchant/settlements': {
     parameters: {
       query?: never;
@@ -1609,6 +1626,17 @@ export interface components {
       nextSettlementDate: components['schemas']['CalendarDate'] | null;
       commissionRateBps: components['schemas']['RateBps'];
       recentPayments: components['schemas']['MerchantPayment'][];
+      /** @description Six derniers mois, du plus ancien au mois en cours (graphique du tableau de bord). */
+      monthlyFlows: components['schemas']['MerchantMonthlyFlow'][];
+    };
+    /** MerchantMonthlyFlow */
+    MerchantMonthlyFlow: {
+      /** @description Mois (AAAA-MM), fuseau métier Africa/Tunis. */
+      month: string;
+      /** @description Paiements encaissés (confirmés) sur le mois. */
+      collectedMillimes: components['schemas']['AmountMillimes'];
+      /** @description Montant net réglé au commerçant sur le mois. */
+      settledMillimes: components['schemas']['AmountMillimes'];
     };
     /**
      * Receivable
@@ -1660,6 +1688,33 @@ export interface components {
       requestedAt: components['schemas']['Timestamp'];
       /** @description RIB masqué (4 derniers chiffres). */
       maskedIban: string;
+    };
+    /**
+     * PayoutRequestDetail
+     * @description Demande de virement avec les étapes franchies (du plus ancien au plus récent).
+     */
+    PayoutRequestDetail: {
+      id: components['schemas']['Uuid'];
+      reference: string;
+      status: components['schemas']['PayoutRequestStatus'];
+      grossMillimes: components['schemas']['PositiveAmountMillimes'];
+      commissionRateBps: components['schemas']['RateBps'];
+      commissionMillimes: components['schemas']['AmountMillimes'];
+      netMillimes: components['schemas']['AmountMillimes'];
+      requestedAt: components['schemas']['Timestamp'];
+      /** @description RIB masqué (4 derniers chiffres). */
+      maskedIban: string;
+      history: components['schemas']['PayoutEvent'][];
+    };
+    /**
+     * PayoutEvent
+     * @description Passage de la demande à un statut ; le motif accompagne un rejet.
+     */
+    PayoutEvent: {
+      status: components['schemas']['PayoutRequestStatus'];
+      occurredAt: components['schemas']['Timestamp'];
+      /** @description Clé i18n du motif de rejet (aucun texte libre venu du serveur). */
+      reasonKey?: string;
     };
     /**
      * PayoutRequestPage
@@ -3433,6 +3488,35 @@ export interface operations {
       403: components['responses']['Forbidden'];
       409: components['responses']['Conflict'];
       422: components['responses']['UnprocessableFinancial'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getPayoutRequest: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        payoutId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PayoutRequestDetail'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
       429: components['responses']['TooManyRequests'];
       500: components['responses']['InternalError'];
     };

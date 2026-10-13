@@ -49,6 +49,7 @@ function SettlementList() {
       key: 'date',
       header: t('date'),
       cell: (row) => formatCalendarDate(row.settlementDate, locale),
+      sortValue: (row) => row.settlementDate,
     },
     { key: 'reference', header: t('reference'), cell: (row) => row.reference },
     { key: 'count', header: t('count'), align: 'end', cell: (row) => row.paymentsCount },
@@ -57,6 +58,7 @@ function SettlementList() {
       header: t('gross'),
       align: 'end',
       cell: (row) => <Amount millimes={row.grossMillimes} />,
+      sortValue: (row) => row.grossMillimes,
     },
     {
       key: 'commission',
@@ -69,6 +71,7 @@ function SettlementList() {
       header: t('net'),
       align: 'end',
       cell: (row) => <Amount millimes={row.netMillimes} />,
+      sortValue: (row) => row.netMillimes,
     },
     {
       key: 'status',

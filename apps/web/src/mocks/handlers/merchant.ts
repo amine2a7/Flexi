@@ -68,6 +68,59 @@ function receivables(): S['Receivable'][] {
 const totalOf = (items: readonly { amountMillimes: number }[]) =>
   items.reduce((sum, item) => sum + item.amountMillimes, 0);
 
+/** Net of the commission, integer millimes (mock of the server rule). */
+const netOf = (gross: number) =>
+  gross - Math.floor((gross * db.merchant.rateBps + 5_000) / 10_000);
+
+/** Six last months: the current month from the real demo payments, earlier months seeded. */
+function monthlyFlows(): S['MerchantMonthlyFlow'][] {
+  const now = new Date();
+  return Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
+    const month = `${String(date.getFullYear())}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    if (index === 5) {
+      const own = db.merchant.payments
+        .map(settle)
+        .filter(
+          (payment) =>
+            payment.createdAt.startsWith(month) &&
+            (payment.status === 'CONFIRMED' || payment.status === 'SETTLED'),
+        );
+      return {
+        month,
+        collectedMillimes: totalOf(own),
+        settledMillimes: netOf(totalOf(own.filter((payment) => payment.status === 'SETTLED'))),
+      };
+    }
+    const collected = 3_850_000 + ((index * 7_919) % 11) * 412_500;
+    return { month, collectedMillimes: collected, settledMillimes: netOf(collected) };
+  });
+}
+
+const HOUR_MS = 3_600_000;
+const PAYOUT_STEPS: readonly S['PayoutRequestStatus'][] = ['REQUESTED', 'CHECKED', 'SENT', 'EXECUTED'];
+const PAYOUT_OFFSETS = [0, 6 * HOUR_MS, 26 * HOUR_MS, 50 * HOUR_MS];
+
+/** Steps reached by a payout request, consistent with its status (demo timestamps). */
+function payoutHistory(payout: S['PayoutRequest']): S['PayoutEvent'][] {
+  const start = new Date(payout.requestedAt).getTime();
+  if (payout.status === 'REJECTED') {
+    return [
+      { status: 'REQUESTED', occurredAt: payout.requestedAt },
+      {
+        status: 'REJECTED',
+        occurredAt: new Date(start + 6 * HOUR_MS).toISOString(),
+        reasonKey: 'payoutRejection.ibanCheck',
+      },
+    ];
+  }
+  const reached = PAYOUT_STEPS.indexOf(payout.status);
+  return PAYOUT_STEPS.slice(0, reached + 1).map((status, index) => ({
+    status,
+    occurredAt: new Date(start + (PAYOUT_OFFSETS[index] ?? 0)).toISOString(),
+  }));
+}
+
 export const merchantHandlers = [
   http.get(apiUrl('/v1/merchant/dashboard'), async () => {
     const account = await guardRead('MERCHANT');
@@ -88,6 +141,7 @@ export const merchantHandlers = [
         db.merchant.settlements.find((item) => item.status === 'SCHEDULED')?.settlementDate ?? null,
       commissionRateBps: db.merchant.rateBps,
       recentPayments: db.merchant.payments.slice(0, 5).map(publicPayment),
+      monthlyFlows: monthlyFlows(),
     });
   }),
 
@@ -228,6 +282,14 @@ export const merchantHandlers = [
     db.merchant.payouts.unshift(payout);
     audit('payouts.request', payout.reference);
     return HttpResponse.json<S['PayoutRequest']>(payout, { status: 201 });
+  }),
+
+  http.get(apiUrl('/v1/merchant/payouts/:payoutId'), async ({ params }) => {
+    const account = await guardRead('MERCHANT');
+    if (isResponse(account)) return account;
+    const payout = db.merchant.payouts.find((item) => item.id === params.payoutId);
+    if (payout === undefined) return problem(404, 'NOT_FOUND');
+    return HttpResponse.json<S['PayoutRequestDetail']>({ ...payout, history: payoutHistory(payout) });
   }),
 
   http.get(apiUrl('/v1/merchant/settlements'), async ({ request }) => {

@@ -9,7 +9,8 @@
     "pagination": "Pagination",
     "previous": "Précédent",
     "next": "Suivant",
-    "page": "Page {page}"
+    "page": "Page {page}",
+    "sortBy": "Trier par {column}"
   },
   "modal": {
     "close": "Fermer"
@@ -23,5 +24,14 @@
     "apply": "Filtrer",
     "reset": "Réinitialiser",
     "allStatuses": "Tous les statuts"
+  },
+  "chart": {
+    "empty": "Aucune donnée sur la période.",
+    "data": "Données du graphique : {title}",
+    "month": "Mois"
+  },
+  "todo": {
+    "title": "À faire",
+    "empty": "Rien à faire pour le moment."
   }
 }

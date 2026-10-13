@@ -1,9 +1,9 @@
 'use client';
 
 import type { Schemas } from '@flexipay/api-client';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { Button } from './button';
 import { EmptyState, ErrorState, LoadingBlock } from './states';
@@ -14,7 +14,11 @@ export interface Column<Row> {
   readonly cell: (row: Row) => ReactNode;
   /** Amounts and figures are aligned to the end of the cell. */
   readonly align?: 'start' | 'end';
+  /** Makes the column sortable (on the rows shown): ISO dates, amounts in millimes, references. */
+  readonly sortValue?: (row: Row) => string | number;
 }
+
+type Sort = { readonly key: string; readonly direction: 'ascending' | 'descending' };
 
 interface DataTableProps<Row> {
   readonly caption: string;
@@ -50,9 +54,28 @@ export function DataTable<Row>({
   onNext,
 }: DataTableProps<Row>) {
   const t = useTranslations('ui.table');
+  const [sort, setSort] = useState<Sort | undefined>(undefined);
+  const sortedRows = useMemo(() => {
+    const column = columns.find((item) => item.key === sort?.key);
+    if (rows === undefined || sort === undefined || column?.sortValue === undefined) return rows;
+    const value = column.sortValue;
+    const factor = sort.direction === 'ascending' ? 1 : -1;
+    return [...rows].sort((a, b) => {
+      const left = value(a);
+      const right = value(b);
+      return (left < right ? -1 : left > right ? 1 : 0) * factor;
+    });
+  }, [columns, rows, sort]);
+  const toggle = (key: string) => {
+    setSort((current) =>
+      current?.key === key && current.direction === 'ascending'
+        ? { key, direction: 'descending' }
+        : { key, direction: 'ascending' },
+    );
+  };
   if (loading) return <LoadingBlock lines={5} />;
   if (error !== undefined) return <ErrorState error={error} onRetry={onRetry} />;
-  if (rows === undefined || rows.length === 0) return <EmptyState {...empty} />;
+  if (sortedRows === undefined || sortedRows.length === 0) return <EmptyState {...empty} />;
 
   const count = page?.count;
   return (
@@ -74,21 +97,45 @@ export function DataTable<Row>({
                 <th
                   key={column.key}
                   scope="col"
+                  aria-sort={sort?.key === column.key ? sort.direction : undefined}
                   className={cn(
-                    'px-3 py-3 text-caption font-label text-text-muted',
+                    'px-3 py-3 text-caption font-label uppercase tracking-wide text-text-muted',
                     column.align === 'end' ? 'text-end' : 'text-start',
                   )}
                 >
-                  {column.header}
+                  {column.sortValue === undefined ? (
+                    column.header
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toggle(column.key);
+                      }}
+                      aria-label={t('sortBy', { column: column.header })}
+                      className={cn(
+                        'inline-flex min-h-touch-target-min items-center gap-1 rounded-button uppercase tracking-wide hover:text-text',
+                        column.align === 'end' ? 'flex-row-reverse' : '',
+                      )}
+                    >
+                      {column.header}
+                      {sort?.key !== column.key ? (
+                        <ArrowUpDown aria-hidden="true" className="size-icon-sm" />
+                      ) : sort.direction === 'ascending' ? (
+                        <ArrowUp aria-hidden="true" className="size-icon-sm" />
+                      ) : (
+                        <ArrowDown aria-hidden="true" className="size-icon-sm" />
+                      )}
+                    </button>
+                  )}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {sortedRows.map((row) => (
               <tr
                 key={rowKey(row)}
-                className="h-table-row-height border-b border-border last:border-b-0"
+                className="h-table-row-height border-b border-border last:border-b-0 hover:bg-bg"
               >
                 {columns.map((column) => (
                   <td
@@ -105,7 +152,7 @@ export function DataTable<Row>({
       </div>
 
       <ul className="flex flex-col gap-3 md:hidden" aria-label={caption}>
-        {rows.map((row) => (
+        {sortedRows.map((row) => (
           <li key={rowKey(row)} className="rounded-card-mobile border border-border bg-surface p-4">
             <dl className="flex flex-col gap-2">
               {columns.map((column) => (
