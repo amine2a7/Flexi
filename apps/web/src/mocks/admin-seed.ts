@@ -160,3 +160,68 @@ export function buildTransactions(
     };
   });
 }
+
+const CONTACT_SAMPLES: readonly {
+  name: string;
+  company: string | null;
+  type: S['ContactRequesterType'];
+  message: string;
+}[] = [
+  {
+    name: 'Sami Gharbi',
+    company: 'Tunis Logistique',
+    type: 'COMPANY',
+    message:
+      'Nous avons 140 salariés et souhaitons remplacer nos tickets papier. Pouvez-vous nous rappeler pour une présentation ?',
+  },
+  {
+    name: 'Rim Haddad',
+    company: 'Pâtisserie Les Délices',
+    type: 'MERCHANT',
+    message:
+      'Je tiens une pâtisserie à La Marsa. Comment accepter les paiements FlexiPay et sous quel délai suis-je réglée ?',
+  },
+  {
+    name: 'Karim Ben Salem',
+    company: null,
+    type: 'OTHER',
+    message: 'Mon employeur utilise FlexiPay : puis-je ajouter un membre de ma famille ?',
+  },
+  {
+    name: 'Leila Mansour',
+    company: 'Station Total Ariana',
+    type: 'MERCHANT',
+    message: 'Nous voulons accepter le type Carburant. Quels documents faut-il fournir ?',
+  },
+  {
+    name: 'Anis Trabelsi',
+    company: 'Clinique El Amen',
+    type: 'COMPANY',
+    message: 'Quelle est la commission pour une entreprise et peut-on offrir des cartes Cadeaux ?',
+  },
+];
+
+/** Messages received by the public "Contact us" form (admin "Messages" page). */
+export function buildContactMessages(now: number): S['ContactMessage'][] {
+  const random = createRandom(53);
+  return CONTACT_SAMPLES.map((sample, index): S['ContactMessage'] => {
+    const handled = index >= 3;
+    const receivedAt = now - (index * 2 + 1) * DAY + random.int(0, 600) * MINUTE;
+    const slug = sample.name.toLowerCase().replace(/[^a-z]+/g, '.');
+    return {
+      id: random.uuid(),
+      reference: `MSG-${String(1040 - index)}`,
+      name: sample.name,
+      email: `${slug}@exemple.tn`,
+      phone: index % 2 === 0 ? `+2162${random.digits(7)}` : null,
+      companyName: sample.company,
+      requesterType: sample.type,
+      message: sample.message,
+      status: handled ? 'HANDLED' : 'NEW',
+      receivedAt: iso(receivedAt),
+      handledAt: handled ? iso(receivedAt + DAY / 4) : null,
+      handledBy: handled ? 'Hela R.' : null,
+      note: handled ? 'Rappel effectué, documentation envoyée.' : null,
+    };
+  });
+}

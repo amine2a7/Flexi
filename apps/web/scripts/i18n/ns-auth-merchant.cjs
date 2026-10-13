@@ -15,9 +15,9 @@ module.exports = {
         "تسجيل الدخول"
       ],
       "description": [
-        "Espaces Administrateur, Entreprise et Commerçant.",
-        "Administrator, company and merchant spaces.",
-        "فضاءات الإدارة والمؤسسات والتجار."
+        "Espaces Administrateur, Entreprise, Commerçant et Bénéficiaire.",
+        "Administrator, company, merchant and beneficiary spaces.",
+        "فضاءات الإدارة والمؤسسات والتجار والمستفيدين."
       ],
       "identifier": [
         "E-mail ou téléphone",

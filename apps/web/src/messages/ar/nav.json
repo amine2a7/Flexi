@@ -29,7 +29,8 @@
     "settings": "الإعدادات",
     "kyc": "ملفات التحقق",
     "payouts": "تحويلات التجار",
-    "transactions": "المعاملات"
+    "transactions": "المعاملات",
+    "messages": "الرسائل"
   },
   "beneficiary": {
     "home": "الرئيسية",

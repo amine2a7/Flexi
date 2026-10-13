@@ -1,0 +1,62 @@
+{
+  "metaTitle": "FlexiPay — digital employee benefits",
+  "nav": {
+    "how": "How it works",
+    "benefits": "Benefits",
+    "contact": "Contact us",
+    "help": "Help",
+    "signIn": "Sign in",
+    "label": "Site navigation"
+  },
+  "hero": {
+    "eyebrow": "Digital meal vouchers and benefits",
+    "title": "Your employees’ benefits, with no paper and no card.",
+    "text": "The company credits its employees in dinars, they pay at partner merchants with a QR code, and merchants are settled at D+2.",
+    "signIn": "Sign in",
+    "contact": "Contact us"
+  },
+  "types": {
+    "title": "Four credit types, one balance each",
+    "text": "Each type has its own balance, merchants and rules. No transfer between types."
+  },
+  "benefits": {
+    "title": "A service for everyone",
+    "company": {
+      "title": "Companies",
+      "p1": "Credit orders per type, paid by bank transfer.",
+      "p2": "Allocation in a few clicks or by CSV file.",
+      "p3": "Invoices and real-time balance tracking."
+    },
+    "merchant": {
+      "title": "Merchants",
+      "p1": "Collect by code or QR, with no terminal.",
+      "p2": "Settlement at D+2, commission known in advance.",
+      "p3": "History, receivables and payouts in one place."
+    },
+    "employee": {
+      "title": "Beneficiaries",
+      "p1": "One balance per type, always up to date.",
+      "p2": "Payment confirmed with a PIN.",
+      "p3": "Receipt and history of every operation."
+    }
+  },
+  "steps": {
+    "title": "How it works",
+    "s1": {
+      "title": "The company credits",
+      "text": "It orders credits per type, pays them by transfer, then allocates them to its employees."
+    },
+    "s2": {
+      "title": "The beneficiary pays",
+      "text": "They show their QR code to the merchant or scan the merchant’s, then confirm with their PIN."
+    },
+    "s3": {
+      "title": "The merchant is settled",
+      "text": "Confirmed payments are transferred at D+2, commission deducted."
+    }
+  },
+  "footer": {
+    "rights": "© {year} FlexiPay. All rights reserved.",
+    "country": "Service operated in Tunisia, amounts in dinars (TND)."
+  }
+}

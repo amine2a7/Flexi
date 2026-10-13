@@ -29,7 +29,8 @@
     "settings": "Settings",
     "kyc": "KYC files",
     "payouts": "Merchant payouts",
-    "transactions": "Transactions"
+    "transactions": "Transactions",
+    "messages": "Messages"
   },
   "beneficiary": {
     "home": "Home",

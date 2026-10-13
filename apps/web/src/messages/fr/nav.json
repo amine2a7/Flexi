@@ -29,7 +29,8 @@
     "settings": "Paramétrage",
     "kyc": "Dossiers KYC",
     "payouts": "Virements commerçants",
-    "transactions": "Transactions"
+    "transactions": "Transactions",
+    "messages": "Messages"
   },
   "beneficiary": {
     "home": "Accueil",

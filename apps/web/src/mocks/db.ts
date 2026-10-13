@@ -5,7 +5,12 @@ import {
   typesForCategory,
   type TypeBalances,
 } from './credit-types';
-import { buildKycFiles, buildOtherPayouts, buildTransactions } from './admin-seed';
+import {
+  buildContactMessages,
+  buildKycFiles,
+  buildOtherPayouts,
+  buildTransactions,
+} from './admin-seed';
 import { buildEmployee, type MockEmployee } from './employee-seed';
 import {
   COMPANY_TENANT,
@@ -94,6 +99,8 @@ export interface MockDb {
     /** Payout lines of each settlement batch (generated on first read, then appended to). */
     batchLines: Map<string, S['AdminPayoutRequest'][]>;
     transactions: S['AdminTransaction'][];
+    /** Messages of the public "Contact us" form. */
+    contactMessages: S['ContactMessage'][];
     /** Generated demo documents (KYC pieces), by document id. */
     documents: Map<string, Blob>;
   };
@@ -801,6 +808,7 @@ function build(): MockDb {
     payoutEvents: new Map<string, S['PayoutEvent'][]>(),
     batchLines: new Map<string, S['AdminPayoutRequest'][]>(),
     transactions: buildTransactions(base.merchants, base.companies, now),
+    contactMessages: buildContactMessages(now),
     documents: new Map<string, Blob>(),
   };
   const saved = savedOrders();

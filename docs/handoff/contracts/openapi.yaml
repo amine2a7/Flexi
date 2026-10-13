@@ -453,6 +453,8 @@ tags:
     description: Espace Administrateur (spec 04)
   - name: employee
     description: Bénéficiaire (employé) — espace web /beneficiaire et application mobile, mêmes routes
+  - name: public
+    description: Pages publiques (formulaire « Nous contacter »), sans connexion
 security:
   - cookieAuth: []
     csrfToken: []
@@ -1383,6 +1385,175 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/public/contact-messages:
+    post:
+      tags: [public]
+      operationId: createContactMessage
+      summary: Envoie un message depuis la section « Nous contacter » de la page d'accueil
+      description: |
+        Route **publique** (`@Public()`). Rate limiting par IP (5 messages par heure) et par
+        adresse e-mail ; corps limité à 16 Kio. Le message est enregistré à l'état `NEW` et
+        apparaît dans la page « Messages » de l'administrateur. Aucune donnée du message dans les
+        journaux techniques (seulement la référence). Réponse `202` avec une référence à citer.
+      security: []
+      x-public: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactMessageCreate'
+      responses:
+        '202':
+          description: Message reçu.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactMessageReceipt'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/contact-messages:
+    get:
+      tags: [admin]
+      operationId: listContactMessages
+      summary: Messages reçus par le formulaire « Nous contacter », les plus récents d'abord
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - name: status
+          in: query
+          required: false
+          description: Filtre par état.
+          schema:
+            $ref: '#/components/schemas/ContactMessageStatus'
+        - name: requesterType
+          in: query
+          required: false
+          description: Filtre par type de demandeur.
+          schema:
+            $ref: '#/components/schemas/ContactRequesterType'
+        - name: q
+          in: query
+          required: false
+          description: Recherche dans le nom, la société, l'e-mail et la référence.
+          schema:
+            type: string
+            maxLength: 100
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactMessagePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/contact-messages/{messageId}:
+    get:
+      tags: [admin]
+      operationId: getContactMessage
+      summary: Détail d'un message
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactMessage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/contact-messages/{messageId}/handle:
+    post:
+      tags: [admin]
+      operationId: handleContactMessage
+      summary: Marque un message comme traité, avec une note facultative
+      description: |
+        `NEW` → `HANDLED`. Un message déjà traité : `409 RESOURCE_STATE_CONFLICT`.
+        Journal d'audit (auteur, date ; pas le contenu du message).
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactMessageHandle'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactMessage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -4669,6 +4840,125 @@ components:
       type: string
       enum: [OPEN, IN_PROGRESS, CLOSED]
     # ---------------------------------------------------------------- espaces web (0.3.0)
+    ContactRequesterType:
+      title: ContactRequesterType
+      description: Entreprise intéressée, commerçant intéressé, autre demande.
+      type: string
+      enum: [COMPANY, MERCHANT, OTHER]
+    ContactMessageStatus:
+      title: ContactMessageStatus
+      type: string
+      enum: [NEW, HANDLED]
+    ContactMessageCreate:
+      title: ContactMessageCreate
+      type: object
+      additionalProperties: false
+      required: [name, email, requesterType, message]
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        phone:
+          description: Facultatif.
+          $ref: '#/components/schemas/PhoneNumber'
+        companyName:
+          description: Facultatif.
+          type: string
+          maxLength: 200
+        requesterType:
+          $ref: '#/components/schemas/ContactRequesterType'
+        message:
+          type: string
+          minLength: 10
+          maxLength: 2000
+    ContactMessageReceipt:
+      title: ContactMessageReceipt
+      type: object
+      additionalProperties: false
+      required: [reference]
+      properties:
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 32
+    ContactMessage:
+      title: ContactMessage
+      type: object
+      additionalProperties: false
+      required: [id, reference, name, email, phone, companyName, requesterType, message, status, receivedAt, handledAt, handledBy, note]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 32
+        name:
+          type: string
+          maxLength: 120
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        phone:
+          oneOf:
+            - $ref: '#/components/schemas/PhoneNumber'
+            - type: 'null'
+        companyName:
+          oneOf:
+            - type: string
+              maxLength: 200
+            - type: 'null'
+        requesterType:
+          $ref: '#/components/schemas/ContactRequesterType'
+        message:
+          type: string
+          maxLength: 2000
+        status:
+          $ref: '#/components/schemas/ContactMessageStatus'
+        receivedAt:
+          $ref: '#/components/schemas/Timestamp'
+        handledAt:
+          oneOf:
+            - $ref: '#/components/schemas/Timestamp'
+            - type: 'null'
+        handledBy:
+          description: Nom de l'administrateur qui a traité le message.
+          oneOf:
+            - type: string
+              maxLength: 120
+            - type: 'null'
+        note:
+          oneOf:
+            - type: string
+              maxLength: 500
+            - type: 'null'
+    ContactMessagePage:
+      title: ContactMessagePage
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/ContactMessage'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    ContactMessageHandle:
+      title: ContactMessageHandle
+      type: object
+      additionalProperties: false
+      properties:
+        note:
+          type: string
+          maxLength: 500
     PhoneNumber:
       title: PhoneNumber
       description: Numéro tunisien au format E.164.

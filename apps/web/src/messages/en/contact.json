@@ -1,0 +1,28 @@
+{
+  "title": "Contact us",
+  "description": "A question, a project? Leave us a message, we answer within two business days.",
+  "name": "Full name",
+  "email": "E-mail",
+  "phone": "Phone (optional)",
+  "phoneHint": "Example: 98 123 456 or +216 98 123 456",
+  "company": "Company (optional)",
+  "type": "You are",
+  "typePlaceholder": "Choose",
+  "types": {
+    "COMPANY": "A company",
+    "MERCHANT": "A merchant",
+    "OTHER": "Other"
+  },
+  "message": "Message",
+  "messageHint": "10 to 2,000 characters.",
+  "submit": "Send the message",
+  "required": "Required field.",
+  "invalidEmail": "Invalid e-mail address.",
+  "invalidPhone": "Invalid number.",
+  "invalidName": "Between 2 and 120 characters.",
+  "invalidMessage": "Between 10 and 2,000 characters.",
+  "sentTitle": "Message sent",
+  "sentText": "Thank you. Your reference: {reference}. We will answer by e-mail.",
+  "another": "Send another message",
+  "privacy": "Your details are only used to answer you."
+}

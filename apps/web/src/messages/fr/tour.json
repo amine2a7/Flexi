@@ -1,0 +1,64 @@
+{
+  "label": "Visite guidée",
+  "progress": "Étape {current} sur {total}",
+  "skip": "Passer la visite",
+  "previous": "Précédent",
+  "next": "Suivant",
+  "finish": "C’est parti",
+  "relaunch": "Revoir la visite guidée",
+  "helpCentre": "Centre d’aide",
+  "MERCHANT": {
+    "s1": {
+      "title": "Bienvenue dans votre espace commerçant",
+      "text": "Encaissements, créances et virements : tout est ici."
+    },
+    "s2": {
+      "title": "Encaisser un paiement",
+      "text": "Dans « Encaissement », saisissez le code à 8 chiffres du client et le montant. Il confirme avec son PIN. Il peut aussi scanner votre QR."
+    },
+    "s3": {
+      "title": "Être réglé à J+2",
+      "text": "Chaque paiement confirmé est réglé à J+2, moins la commission de son type. Suivez-le dans « Créances » puis « Virements »."
+    },
+    "s4": {
+      "title": "Vos types de crédit",
+      "text": "Vous acceptez les types définis par FlexiPay ; le client ne peut payer qu’avec ceux-là. Ils figurent dans « Mon commerce »."
+    }
+  },
+  "COMPANY": {
+    "s1": {
+      "title": "Bienvenue dans votre espace entreprise",
+      "text": "Un solde par type de crédit : Restauration, Habillement, Carburant, Cadeaux."
+    },
+    "s2": {
+      "title": "Ajoutez vos salariés",
+      "text": "Dans « Employés », un par un ou par import CSV. Chacun reçoit ses accès."
+    },
+    "s3": {
+      "title": "Commandez des crédits",
+      "text": "Un montant par type, puis un virement et sa preuve. FlexiPay valide et crédite chaque type."
+    },
+    "s4": {
+      "title": "Attribuez-les",
+      "text": "Dans « Attribution », choisissez un type et les salariés : seul ce type est débité."
+    }
+  },
+  "EMPLOYEE": {
+    "s1": {
+      "title": "Bienvenue sur FlexiPay",
+      "text": "Votre entreprise vous offre des crédits : un solde par type, à utiliser chez les commerçants qui l’acceptent."
+    },
+    "s2": {
+      "title": "Payer avec votre code",
+      "text": "Dans « Payer », affichez votre code. Le commerçant le saisit, vous confirmez avec votre PIN."
+    },
+    "s3": {
+      "title": "Ou scannez le commerçant",
+      "text": "Scannez son QR ou tapez son code à 6 chiffres, choisissez le type et le montant."
+    },
+    "s4": {
+      "title": "Gardez votre PIN secret",
+      "text": "Personne chez FlexiPay ne vous le demandera. Changez-le à tout moment dans « Sécurité »."
+    }
+  }
+}

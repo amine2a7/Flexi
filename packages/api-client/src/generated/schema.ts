@@ -527,6 +527,84 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/public/contact-messages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Envoie un message depuis la section « Nous contacter » de la page d'accueil
+     * @description Route **publique** (`@Public()`). Rate limiting par IP (5 messages par heure) et par
+     *     adresse e-mail ; corps limité à 16 Kio. Le message est enregistré à l'état `NEW` et
+     *     apparaît dans la page « Messages » de l'administrateur. Aucune donnée du message dans les
+     *     journaux techniques (seulement la référence). Réponse `202` avec une référence à citer.
+     */
+    post: operations['createContactMessage'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/contact-messages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Messages reçus par le formulaire « Nous contacter », les plus récents d'abord */
+    get: operations['listContactMessages'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/contact-messages/{messageId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Détail d'un message */
+    get: operations['getContactMessage'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/contact-messages/{messageId}/handle': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Marque un message comme traité, avec une note facultative
+     * @description `NEW` → `HANDLED`. Un message déjà traité : `409 RESOURCE_STATE_CONFLICT`.
+     *     Journal d'audit (auteur, date ; pas le contenu du message).
+     */
+    post: operations['handleContactMessage'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/me': {
     parameters: {
       query?: never;
@@ -2058,6 +2136,60 @@ export interface components {
      * @enum {string}
      */
     FraudAlertStatus: 'OPEN' | 'IN_PROGRESS' | 'CLOSED';
+    /**
+     * ContactRequesterType
+     * @description Entreprise intéressée, commerçant intéressé, autre demande.
+     * @enum {string}
+     */
+    ContactRequesterType: 'COMPANY' | 'MERCHANT' | 'OTHER';
+    /**
+     * ContactMessageStatus
+     * @enum {string}
+     */
+    ContactMessageStatus: 'NEW' | 'HANDLED';
+    /** ContactMessageCreate */
+    ContactMessageCreate: {
+      name: string;
+      /** Format: email */
+      email: string;
+      /** @description Facultatif. */
+      phone?: components['schemas']['PhoneNumber'];
+      /** @description Facultatif. */
+      companyName?: string;
+      requesterType: components['schemas']['ContactRequesterType'];
+      message: string;
+    };
+    /** ContactMessageReceipt */
+    ContactMessageReceipt: {
+      reference: string;
+    };
+    /** ContactMessage */
+    ContactMessage: {
+      id: components['schemas']['Uuid'];
+      reference: string;
+      name: string;
+      /** Format: email */
+      email: string;
+      phone: components['schemas']['PhoneNumber'] | null;
+      companyName: string | null;
+      requesterType: components['schemas']['ContactRequesterType'];
+      message: string;
+      status: components['schemas']['ContactMessageStatus'];
+      receivedAt: components['schemas']['Timestamp'];
+      handledAt: components['schemas']['Timestamp'] | null;
+      /** @description Nom de l'administrateur qui a traité le message. */
+      handledBy: string | null;
+      note: string | null;
+    };
+    /** ContactMessagePage */
+    ContactMessagePage: {
+      data: components['schemas']['ContactMessage'][];
+      page: components['schemas']['PageInfo'];
+    };
+    /** ContactMessageHandle */
+    ContactMessageHandle: {
+      note?: string;
+    };
     /**
      * PhoneNumber
      * @description Numéro tunisien au format E.164.
@@ -4408,6 +4540,144 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  createContactMessage: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ContactMessageCreate'];
+      };
+    };
+    responses: {
+      /** @description Message reçu. */
+      202: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ContactMessageReceipt'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      413: components['responses']['PayloadTooLarge'];
+      415: components['responses']['UnsupportedMediaType'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  listContactMessages: {
+    parameters: {
+      query?: {
+        /** @description Nombre maximal d'éléments par page. */
+        limit?: components['parameters']['Limit'];
+        /** @description Curseur opaque renvoyé par `page.nextCursor`. Absent pour la première page. */
+        cursor?: components['parameters']['Cursor'];
+        /**
+         * @description Demande le compteur borné `page.count` (§7). À n'envoyer qu'au premier chargement et à
+         *     chaque changement de filtre.
+         */
+        withCount?: components['parameters']['WithCount'];
+        /** @description Filtre par état. */
+        status?: components['schemas']['ContactMessageStatus'];
+        /** @description Filtre par type de demandeur. */
+        requesterType?: components['schemas']['ContactRequesterType'];
+        /** @description Recherche dans le nom, la société, l'e-mail et la référence. */
+        q?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ContactMessagePage'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getContactMessage: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        messageId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ContactMessage'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  handleContactMessage: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        messageId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ContactMessageHandle'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ContactMessage'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   getMe: {
     parameters: {
       query?: never;
@@ -6740,6 +7010,12 @@ export const creditBatchStatusValues: ReadonlyArray<
 export const fraudAlertStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['FraudAlertStatus']
 > = ['OPEN', 'IN_PROGRESS', 'CLOSED'];
+export const contactRequesterTypeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['ContactRequesterType']
+> = ['COMPANY', 'MERCHANT', 'OTHER'];
+export const contactMessageStatusValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['ContactMessageStatus']
+> = ['NEW', 'HANDLED'];
 export const merchantCategoryValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['MerchantCategory']
 > = [

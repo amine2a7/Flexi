@@ -39,5 +39,8 @@
     "EMPLOYEE": "مستفيد",
     "FAMILY_MEMBER": "العائلة"
   },
-  "counter": "{label}: {count} في الانتظار"
+  "counter": "{label}: {count} في الانتظار",
+  "help": "المساعدة",
+  "helpCentre": "مركز المساعدة",
+  "replayTour": "إعادة الجولة الإرشادية"
 }

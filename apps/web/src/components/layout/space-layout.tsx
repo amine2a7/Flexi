@@ -1,7 +1,7 @@
 'use client';
 
 import { WEB_CHANNEL_HEADER, type Schemas } from '@flexipay/api-client';
-import { LogOut, Menu, ShieldOff, X, Zap } from 'lucide-react';
+import { CircleHelp, Compass, LogOut, Menu, ShieldOff, X, Zap } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
@@ -18,7 +18,9 @@ import { PageEyebrowContext } from '@/components/ui/layout-blocks';
 import { LoadingBlock } from '@/components/ui/states';
 import { ToastProvider } from '@/components/ui/toast';
 import { LocaleSwitcher } from './locale-switcher';
+import { HELP_ANCHORS } from '@/components/public/help-topics';
 import { NAVIGATION, isActive } from './nav-config';
+import { OnboardingTour, hasTour, useOnboardingTour } from './onboarding-tour';
 import { useNavCounters } from './nav-counters';
 import { SessionWatch } from './session-watch';
 import { SkipLink } from './skip-link';
@@ -128,6 +130,10 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
   const items = useMemo(() => NAVIGATION[role] ?? [], [role]);
   const home = SPACE_HOME[role] ?? '/';
   const counts = useNavCounters(role, pathname);
+  const tour = useOnboardingTour(role, me.id);
+  const helpHref = `/aide#${HELP_ANCHORS[role === 'FAMILY_MEMBER' ? 'EMPLOYEE' : role]}`;
+  const secondary =
+    'flex min-h-touch-target-mobile w-full items-center gap-3 rounded-button px-3 text-label text-on-navy-muted transition-colors duration-fast hover:bg-navy-deep hover:text-on-navy focus-visible:focus-ring-on-dark lg:min-h-touch-target-min';
 
   const navList = (
     <ul className="flex flex-col gap-1">
@@ -194,12 +200,25 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
         </p>
         <nav aria-label={t('layout.mainNav')}>{navList}</nav>
       </div>
-      <div className="border-t border-navy-deep pt-4">
-        <button
-          type="button"
-          onClick={() => void onSignOut()}
-          className="flex min-h-touch-target-mobile w-full items-center gap-3 rounded-button px-3 text-label text-on-navy-muted transition-colors duration-fast hover:bg-navy-deep hover:text-on-navy focus-visible:focus-ring-on-dark lg:min-h-touch-target-min"
-        >
+      <div className="flex flex-col gap-1 border-t border-navy-deep pt-4">
+        <Link href={helpHref} onClick={() => setMenuOpen(false)} className={secondary}>
+          <CircleHelp aria-hidden="true" className="size-icon-md shrink-0" />
+          {t('layout.helpCentre')}
+        </Link>
+        {hasTour(role) ? (
+          <button
+            type="button"
+            onClick={() => {
+              setMenuOpen(false);
+              tour.start();
+            }}
+            className={secondary}
+          >
+            <Compass aria-hidden="true" className="size-icon-md shrink-0" />
+            {t('layout.replayTour')}
+          </button>
+        ) : null}
+        <button type="button" onClick={() => void onSignOut()} className={secondary}>
           <LogOut aria-hidden="true" className="size-icon-md shrink-0 rtl:rotate-180" />
           {t('layout.signOut')}
         </button>
@@ -260,6 +279,13 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
               <span className="text-label text-text">{me.displayName}</span>
               <span className="text-caption text-text-muted">{t('layout.activeAccount')}</span>
             </div>
+            <Link
+              href={helpHref}
+              aria-label={t('layout.help')}
+              className="flex size-touch-target-mobile items-center justify-center rounded-button text-navy hover:bg-bg lg:size-touch-target-min"
+            >
+              <CircleHelp aria-hidden="true" className="size-icon-md" />
+            </Link>
             <LocaleSwitcher />
           </div>
         </header>
@@ -311,6 +337,7 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
         </nav>
       ) : null}
       <SessionWatch onExpire={onSignOut} />
+      {tour.open && hasTour(role) ? <OnboardingTour role={role} onClose={tour.close} /> : null}
     </div>
   );
 }

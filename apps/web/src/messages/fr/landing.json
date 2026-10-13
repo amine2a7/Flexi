@@ -1,0 +1,62 @@
+{
+  "metaTitle": "FlexiPay — avantages salariés dématérialisés",
+  "nav": {
+    "how": "Comment ça marche",
+    "benefits": "Avantages",
+    "contact": "Nous contacter",
+    "help": "Aide",
+    "signIn": "Se connecter",
+    "label": "Navigation du site"
+  },
+  "hero": {
+    "eyebrow": "Tickets-restaurant et avantages dématérialisés",
+    "title": "Les avantages de vos salariés, sans papier ni carte.",
+    "text": "L’entreprise crédite ses salariés en dinars, ils paient chez les commerçants partenaires avec un code QR, et les commerçants sont réglés à J+2.",
+    "signIn": "Se connecter",
+    "contact": "Nous contacter"
+  },
+  "types": {
+    "title": "Quatre types de crédit, un solde pour chacun",
+    "text": "Chaque type a son solde, ses commerçants et ses règles. Aucun transfert entre types."
+  },
+  "benefits": {
+    "title": "Un service pour chacun",
+    "company": {
+      "title": "Entreprises",
+      "p1": "Commande de crédits par type, payée par virement.",
+      "p2": "Attribution en quelques clics ou par fichier CSV.",
+      "p3": "Factures et suivi des soldes en temps réel."
+    },
+    "merchant": {
+      "title": "Commerçants",
+      "p1": "Encaissement par code ou QR, sans terminal.",
+      "p2": "Règlement à J+2, commission connue à l’avance.",
+      "p3": "Historique, créances et virements au même endroit."
+    },
+    "employee": {
+      "title": "Bénéficiaires",
+      "p1": "Un solde par type, toujours à jour.",
+      "p2": "Paiement confirmé par un code PIN.",
+      "p3": "Reçu et historique de chaque opération."
+    }
+  },
+  "steps": {
+    "title": "Comment ça marche",
+    "s1": {
+      "title": "L’entreprise crédite",
+      "text": "Elle commande des crédits par type, les paie par virement, puis les attribue à ses salariés."
+    },
+    "s2": {
+      "title": "Le bénéficiaire paie",
+      "text": "Il montre son code QR au commerçant ou scanne celui du commerçant, puis confirme avec son PIN."
+    },
+    "s3": {
+      "title": "Le commerçant est réglé",
+      "text": "Les paiements confirmés lui sont virés à J+2, commission déduite."
+    }
+  },
+  "footer": {
+    "rights": "© {year} FlexiPay. Tous droits réservés.",
+    "country": "Service opéré en Tunisie, montants en dinars (TND)."
+  }
+}

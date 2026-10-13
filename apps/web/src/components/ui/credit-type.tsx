@@ -1,6 +1,5 @@
 'use client';
 
-import type { Schemas } from '@flexipay/api-client';
 import tokensPreset from '@flexipay/ui-tokens/tailwind-preset';
 import { CircleHelp, Fuel, Gift, Shirt, UtensilsCrossed, type LucideIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -10,15 +9,9 @@ import { formatMillimesWithCurrency } from '@/lib/format/money';
 import { Amount } from './amount';
 import { SelectField } from './field';
 
-export type CreditType = Schemas['CreditType'];
+import { CREDIT_TYPES, type CreditType } from '@/lib/credit-types';
 
-/** The 4 credit types, in display order (decision of 2026-10-13). */
-export const CREDIT_TYPES: readonly CreditType[] = [
-  'RESTAURATION',
-  'HABILLEMENT',
-  'CARBURANT',
-  'CADEAUX',
-];
+export { CREDIT_TYPES, type CreditType };
 
 interface CreditTypeToken {
   readonly labelKey: string;

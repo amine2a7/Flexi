@@ -18,6 +18,11 @@ import creditType from './creditType.json';
 import beneficiary from './beneficiary.json';
 import company from './company.json';
 import orders from './orders.json';
+import landing from './landing.json';
+import contact from './contact.json';
+import help from './help.json';
+import tour from './tour.json';
+import adminMessages from './adminMessages.json';
 
 const messages = {
   admin: admin,
@@ -40,6 +45,11 @@ const messages = {
   beneficiary: beneficiary,
   company: company,
   orders: orders,
+  landing: landing,
+  contact: contact,
+  help: help,
+  tour: tour,
+  adminMessages: adminMessages,
 };
 
 export default messages;

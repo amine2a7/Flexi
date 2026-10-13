@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   UserRound,
   LayoutDashboard,
+  Mail,
   Percent,
   Receipt,
   ScrollText,
@@ -99,6 +100,12 @@ export const NAVIGATION: Partial<Record<Role, readonly NavItem[]>> = {
     { href: '/admin/reglements', labelKey: 'nav.admin.settlements', icon: CalendarCheck },
     { href: '/admin/transactions', labelKey: 'nav.admin.transactions', icon: CreditCard },
     { href: '/admin/audit', labelKey: 'nav.admin.audit', icon: ScrollText },
+    {
+      href: '/admin/messages',
+      labelKey: 'nav.admin.messages',
+      icon: Mail,
+      counter: 'adminMessages',
+    },
     { href: '/admin/parametres', labelKey: 'nav.admin.settings', icon: Settings },
   ],
 };

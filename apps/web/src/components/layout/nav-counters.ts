@@ -13,6 +13,7 @@ export type NavCounter =
   | 'adminApprovals'
   | 'adminKyc'
   | 'adminPayouts'
+  | 'adminMessages'
   | 'employeeRequests';
 export type NavCounts = Partial<Record<NavCounter, number>>;
 
@@ -42,7 +43,7 @@ const LOADERS: Partial<Record<Role, () => Promise<NavCounts>>> = {
           params: { query: { status, limit: 1, withCount: true } },
         }),
       );
-    const [toConfirm, toValidate, approvals, kyc, payouts] = await Promise.all([
+    const [toConfirm, toValidate, approvals, kyc, payouts, messages] = await Promise.all([
       orders('AWAITING_CONFIRMATION'),
       orders('AWAITING_VALIDATION'),
       count(() =>
@@ -60,12 +61,18 @@ const LOADERS: Partial<Record<Role, () => Promise<NavCounts>>> = {
           params: { query: { status: 'REQUESTED', limit: 1, withCount: true } },
         }),
       ),
+      count(() =>
+        getApi().GET('/v1/admin/contact-messages', {
+          params: { query: { status: 'NEW', limit: 1, withCount: true } },
+        }),
+      ),
     ]);
     return {
       adminOrdersToHandle: toConfirm + toValidate,
       adminApprovals: approvals,
       adminKyc: kyc,
       adminPayouts: payouts,
+      adminMessages: messages,
     };
   },
 };

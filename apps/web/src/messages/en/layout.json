@@ -39,5 +39,8 @@
     "EMPLOYEE": "Beneficiary",
     "FAMILY_MEMBER": "Family"
   },
-  "counter": "{label}: {count} pending"
+  "counter": "{label}: {count} pending",
+  "help": "Help",
+  "helpCentre": "Help centre",
+  "replayTour": "Replay the guided tour"
 }

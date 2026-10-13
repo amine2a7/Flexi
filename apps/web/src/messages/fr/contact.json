@@ -1,0 +1,28 @@
+{
+  "title": "Nous contacter",
+  "description": "Une question, un projet ? Laissez-nous un message, nous vous répondons sous deux jours ouvrés.",
+  "name": "Nom et prénom",
+  "email": "E-mail",
+  "phone": "Téléphone (facultatif)",
+  "phoneHint": "Exemple : 98 123 456 ou +216 98 123 456",
+  "company": "Société (facultatif)",
+  "type": "Vous êtes",
+  "typePlaceholder": "Choisissez",
+  "types": {
+    "COMPANY": "Une entreprise",
+    "MERCHANT": "Un commerçant",
+    "OTHER": "Autre"
+  },
+  "message": "Message",
+  "messageHint": "10 à 2 000 caractères.",
+  "submit": "Envoyer le message",
+  "required": "Champ obligatoire.",
+  "invalidEmail": "Adresse e-mail invalide.",
+  "invalidPhone": "Numéro invalide.",
+  "invalidName": "Entre 2 et 120 caractères.",
+  "invalidMessage": "Entre 10 et 2 000 caractères.",
+  "sentTitle": "Message envoyé",
+  "sentText": "Merci. Votre référence : {reference}. Nous vous répondons par e-mail.",
+  "another": "Envoyer un autre message",
+  "privacy": "Vos coordonnées servent uniquement à vous répondre."
+}

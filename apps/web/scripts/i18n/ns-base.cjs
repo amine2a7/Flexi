@@ -554,6 +554,21 @@ module.exports = {
       "{label} : {count} en attente",
       "{label}: {count} pending",
       "{label}: {count} في الانتظار"
+    ],
+    "help": [
+      "Aide",
+      "Help",
+      "المساعدة"
+    ],
+    "helpCentre": [
+      "Centre d’aide",
+      "Help centre",
+      "مركز المساعدة"
+    ],
+    "replayTour": [
+      "Revoir la visite guidée",
+      "Replay the guided tour",
+      "إعادة الجولة الإرشادية"
     ]
   },
   "nav": {
@@ -691,6 +706,11 @@ module.exports = {
         "Transactions",
         "Transactions",
         "المعاملات"
+      ],
+      "messages": [
+        "Messages",
+        "Messages",
+        "الرسائل"
       ]
     },
     "beneficiary": {

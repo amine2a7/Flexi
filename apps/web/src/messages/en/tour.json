@@ -1,0 +1,64 @@
+{
+  "label": "Guided tour",
+  "progress": "Step {current} of {total}",
+  "skip": "Skip the tour",
+  "previous": "Previous",
+  "next": "Next",
+  "finish": "Let’s go",
+  "relaunch": "Replay the guided tour",
+  "helpCentre": "Help centre",
+  "MERCHANT": {
+    "s1": {
+      "title": "Welcome to your merchant space",
+      "text": "Collections, receivables and payouts: everything is here."
+    },
+    "s2": {
+      "title": "Collect a payment",
+      "text": "In “Collect”, enter the customer’s 8-digit code and the amount. They confirm with their PIN. They can also scan your QR."
+    },
+    "s3": {
+      "title": "Get settled at D+2",
+      "text": "Each confirmed payment is settled at D+2, minus the commission of its type. Follow it in “Receivables” then “Payouts”."
+    },
+    "s4": {
+      "title": "Your credit types",
+      "text": "You accept the types set by FlexiPay; customers can only pay with those. They are listed in “My shop”."
+    }
+  },
+  "COMPANY": {
+    "s1": {
+      "title": "Welcome to your company space",
+      "text": "One balance per credit type: Meals, Clothing, Fuel, Gifts."
+    },
+    "s2": {
+      "title": "Add your employees",
+      "text": "In “Employees”, one by one or by CSV import. Each receives their access."
+    },
+    "s3": {
+      "title": "Order credits",
+      "text": "An amount per type, then a transfer and its proof. FlexiPay validates and credits each type."
+    },
+    "s4": {
+      "title": "Allocate them",
+      "text": "In “Allocation”, choose a type and the employees: only that type is debited."
+    }
+  },
+  "EMPLOYEE": {
+    "s1": {
+      "title": "Welcome to FlexiPay",
+      "text": "Your company gives you credits: one balance per type, to use at merchants that accept it."
+    },
+    "s2": {
+      "title": "Pay with your code",
+      "text": "In “Pay”, show your code. The merchant types it, you confirm with your PIN."
+    },
+    "s3": {
+      "title": "Or scan the merchant",
+      "text": "Scan their QR or type their 6-digit code, choose the type and amount."
+    },
+    "s4": {
+      "title": "Keep your PIN secret",
+      "text": "No one at FlexiPay will ever ask for it. Change it any time in “Security”."
+    }
+  }
+}

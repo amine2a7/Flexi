@@ -4,6 +4,7 @@ import {
   type ReactNode,
   type Ref,
   type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
 } from 'react';
 import { cn } from '@/lib/cn';
 
@@ -111,6 +112,44 @@ export function SelectField({
           </option>
         ))}
       </select>
+    </FieldFrame>
+  );
+}
+
+export interface TextAreaFieldProps extends Omit<
+  TextareaHTMLAttributes<HTMLTextAreaElement>,
+  'id'
+> {
+  readonly label: string;
+  readonly hint?: string;
+  readonly error?: string;
+}
+
+/** Labelled multi-line input (messages, notes), same frame as the other fields. */
+export function TextAreaField({
+  label,
+  hint,
+  error,
+  className,
+  rows = 5,
+  ...rest
+}: TextAreaFieldProps) {
+  const id = useId();
+  return (
+    <FieldFrame id={id} label={label} hint={hint} error={error}>
+      <textarea
+        id={id}
+        rows={rows}
+        aria-invalid={error !== undefined || undefined}
+        aria-describedby={describedBy(id, hint, error)}
+        className={cn(
+          CONTROL,
+          'h-auto py-3',
+          error === undefined ? 'border-border-strong' : 'border-danger',
+          className,
+        )}
+        {...rest}
+      />
     </FieldFrame>
   );
 }

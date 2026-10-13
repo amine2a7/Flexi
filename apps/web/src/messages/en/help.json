@@ -1,0 +1,140 @@
+{
+  "metaTitle": "Help — FlexiPay",
+  "title": "Help centre",
+  "description": "Signing in, securing your account and using each space, screen by screen.",
+  "toc": "Contents",
+  "back": "Back",
+  "capture": "Screenshot: {title}",
+  "captureNote": "Screenshots show the interface in French with demo data.",
+  "stillStuck": "Still stuck?",
+  "stillStuckText": "Write to us from the home page, “Contact us” section.",
+  "sections": {
+    "account": "Account and sign-in",
+    "COMPANY": "Company space",
+    "MERCHANT": "Merchant space",
+    "EMPLOYEE": "Beneficiary space",
+    "ADMIN": "Administrator space"
+  },
+  "topics": {
+    "login": {
+      "title": "Sign in",
+      "text": "Enter your e-mail (or phone) and password, then “Sign in”. You land directly in the space of your role."
+    },
+    "mfa": {
+      "title": "Two-step verification (MFA)",
+      "text": "After the password, enter the 6-digit code of your authenticator app. Without your phone, use a recovery code: each works only once."
+    },
+    "firstLogin": {
+      "title": "First sign-in",
+      "text": "Sign in with the temporary password you received (valid 72 h), choose a new password within 10 minutes, then turn on two-step verification by scanning the QR shown. Write down your recovery codes."
+    },
+    "forgotPassword": {
+      "title": "Forgotten password",
+      "text": "On the sign-in page, choose “Forgot password”. With an e-mail you get a link valid 15 minutes; with a phone, an SMS code valid 10 minutes."
+    },
+    "sessionExpired": {
+      "title": "Session expired",
+      "text": "After a period of inactivity, the session closes to protect your account. A warning appears first; sign in again to continue where you were."
+    },
+    "accountLocked": {
+      "title": "Account locked",
+      "text": "After several wrong attempts, the account is locked for a while. Wait for the delay shown or reset your password. If it stays locked, contact your administrator."
+    },
+    "companyDashboard": {
+      "title": "Dashboard",
+      "text": "One card per credit type shows the company’s available balance, with orders to pay and recent activity."
+    },
+    "companyEmployees": {
+      "title": "Employees",
+      "text": "Add employees one by one or by CSV import; each receives beneficiary access. You can suspend an account."
+    },
+    "companyOrders": {
+      "title": "Credit orders",
+      "text": "Enter an amount per type, submit, then transfer the sum to the account shown and upload the transfer proof. FlexiPay validates and credits each type."
+    },
+    "companyAllocation": {
+      "title": "Allocation",
+      "text": "Choose a credit type and the employees, with an amount each: only that type is debited. For many people, import a CSV with one column per type."
+    },
+    "companyInvoices": {
+      "title": "Invoices",
+      "text": "Each validated order produces an invoice you can download as PDF."
+    },
+    "merchantDashboard": {
+      "title": "Dashboard",
+      "text": "Today’s takings, amounts to receive and the split per credit type."
+    },
+    "merchantCollect": {
+      "title": "Collect",
+      "text": "Enter the 8-digit code shown by the customer and the amount; they confirm with their PIN. The customer can also scan your FlexiPay QR shown on this screen."
+    },
+    "merchantHistory": {
+      "title": "History",
+      "text": "All payments, filterable by status and type; open one to see the commission and settlement date."
+    },
+    "merchantReceivables": {
+      "title": "Receivables",
+      "text": "Confirmed amounts to be settled at D+2, day by day."
+    },
+    "merchantPayouts": {
+      "title": "Payouts",
+      "text": "Request the payout of your available funds: gross, commission and net are shown before sending. FlexiPay checks then transfers to your IBAN."
+    },
+    "merchantSettlements": {
+      "title": "Settlements",
+      "text": "Settlement statements, with the detail of included payments."
+    },
+    "merchantShop": {
+      "title": "My shop",
+      "text": "Your details, masked IBAN, accepted credit types and commission rates."
+    },
+    "employeeHome": {
+      "title": "My balance",
+      "text": "One balance per type, with what you spent today against the daily limit and credits about to expire."
+    },
+    "employeePay": {
+      "title": "Pay",
+      "text": "“My code” shows a QR and 8 digits valid 60 seconds: the merchant types them, you confirm with your PIN. “Pay a merchant”: scan their QR or type their 6-digit code."
+    },
+    "employeeHistory": {
+      "title": "History and receipts",
+      "text": "Payments, credits received and expiries, filterable by type; each line opens a printable receipt."
+    },
+    "employeeSecurity": {
+      "title": "Profile and security",
+      "text": "See your details, change your password and payment PIN, and regenerate your recovery codes."
+    },
+    "adminDashboard": {
+      "title": "Overview",
+      "text": "Monthly volumes per type, pending tasks (orders, KYC, payouts, approvals) and recent activity."
+    },
+    "adminAccounts": {
+      "title": "Merchants and companies",
+      "text": "Create and follow accounts; in a merchant’s record, set the credit types it accepts."
+    },
+    "adminKyc": {
+      "title": "KYC files",
+      "text": "Open a file, view the documents, approve or reject with a reason. The account stays inactive until KYC is approved."
+    },
+    "adminOrders": {
+      "title": "Orders",
+      "text": "Confirm orders, check the transfer proof and validate: each type is then credited. Above 10,000.000 TND, a second administrator must validate."
+    },
+    "adminPayouts": {
+      "title": "Merchant payouts and settlements",
+      "text": "Check each request (gross, commission, net, IBAN), approve or reject with a reason. Approved payouts form a settlement batch."
+    },
+    "adminSettings": {
+      "title": "Commissions, approvals and settings",
+      "text": "Per type: commission, validity, daily limit, activation. Every sensitive change is approved by another administrator and logged in the audit log."
+    },
+    "adminTransactions": {
+      "title": "Transactions and audit log",
+      "text": "All platform operations, filterable by credit type, and the history of sensitive actions."
+    },
+    "adminMessages": {
+      "title": "Messages",
+      "text": "Messages sent from “Contact us” on the home page. Open one, answer by e-mail or phone, then mark it as handled."
+    }
+  }
+}

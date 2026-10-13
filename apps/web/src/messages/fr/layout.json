@@ -39,5 +39,8 @@
     "EMPLOYEE": "Bénéficiaire",
     "FAMILY_MEMBER": "Famille"
   },
-  "counter": "{label} : {count} en attente"
+  "counter": "{label} : {count} en attente",
+  "help": "Aide",
+  "helpCentre": "Centre d’aide",
+  "replayTour": "Revoir la visite guidée"
 }

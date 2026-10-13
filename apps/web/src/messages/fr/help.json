@@ -1,0 +1,140 @@
+{
+  "metaTitle": "Aide — FlexiPay",
+  "title": "Centre d’aide",
+  "description": "Se connecter, sécuriser son compte et utiliser chaque espace, écran par écran.",
+  "toc": "Sommaire",
+  "back": "Retour",
+  "capture": "Capture : {title}",
+  "captureNote": "Les captures montrent l’interface en français avec des données de démonstration.",
+  "stillStuck": "Toujours bloqué ?",
+  "stillStuckText": "Écrivez-nous depuis la page d’accueil, section « Nous contacter ».",
+  "sections": {
+    "account": "Compte et connexion",
+    "COMPANY": "Espace Entreprise",
+    "MERCHANT": "Espace Commerçant",
+    "EMPLOYEE": "Espace Bénéficiaire",
+    "ADMIN": "Espace Administrateur"
+  },
+  "topics": {
+    "login": {
+      "title": "Se connecter",
+      "text": "Saisissez votre e-mail (ou téléphone) et votre mot de passe, puis « Se connecter ». Vous arrivez directement dans l’espace de votre rôle."
+    },
+    "mfa": {
+      "title": "Double authentification (MFA)",
+      "text": "Après le mot de passe, saisissez le code à 6 chiffres de votre application d’authentification. Sans téléphone, utilisez un code de secours : chacun ne sert qu’une fois."
+    },
+    "firstLogin": {
+      "title": "Première connexion",
+      "text": "Connectez-vous avec le mot de passe temporaire reçu (valable 72 h), choisissez un nouveau mot de passe dans les 10 minutes, puis activez la double authentification en scannant le QR affiché. Notez vos codes de secours."
+    },
+    "forgotPassword": {
+      "title": "Mot de passe oublié",
+      "text": "Sur la page de connexion, choisissez « Mot de passe oublié ». Avec un e-mail, vous recevez un lien valable 15 minutes ; avec un téléphone, un code SMS valable 10 minutes."
+    },
+    "sessionExpired": {
+      "title": "Session expirée",
+      "text": "Après une période d’inactivité, la session se ferme pour protéger votre compte. Un avertissement apparaît avant ; reconnectez-vous pour reprendre là où vous étiez."
+    },
+    "accountLocked": {
+      "title": "Compte bloqué",
+      "text": "Après plusieurs essais erronés, le compte est bloqué temporairement. Attendez la fin du délai indiqué ou réinitialisez votre mot de passe. Si le blocage persiste, contactez votre administrateur."
+    },
+    "companyDashboard": {
+      "title": "Tableau de bord",
+      "text": "Une carte par type de crédit montre le solde disponible de l’entreprise, avec les commandes à payer et l’activité récente."
+    },
+    "companyEmployees": {
+      "title": "Employés",
+      "text": "Ajoutez vos salariés un par un ou par import CSV ; chacun reçoit ses accès au bénéficiaire. Vous pouvez suspendre un compte."
+    },
+    "companyOrders": {
+      "title": "Commandes de crédits",
+      "text": "Saisissez un montant par type, validez, puis virez la somme sur le compte indiqué et déposez la preuve de virement. FlexiPay valide et crédite chaque type."
+    },
+    "companyAllocation": {
+      "title": "Attribution",
+      "text": "Choisissez un type de crédit et les salariés, avec un montant chacun : seul ce type est débité. Pour un grand nombre, importez un CSV avec une colonne par type."
+    },
+    "companyInvoices": {
+      "title": "Factures",
+      "text": "Chaque commande validée produit une facture téléchargeable en PDF."
+    },
+    "merchantDashboard": {
+      "title": "Tableau de bord",
+      "text": "Le chiffre du jour, les montants à recevoir et la répartition par type de crédit."
+    },
+    "merchantCollect": {
+      "title": "Encaisser",
+      "text": "Saisissez le code à 8 chiffres affiché par le client et le montant ; il confirme avec son PIN. Le client peut aussi scanner votre QR FlexiPay affiché sur cet écran."
+    },
+    "merchantHistory": {
+      "title": "Historique",
+      "text": "Tous les paiements, filtrables par statut et par type ; ouvrez-en un pour voir la commission et la date de règlement."
+    },
+    "merchantReceivables": {
+      "title": "Créances",
+      "text": "Les montants confirmés qui seront réglés à J+2, jour par jour."
+    },
+    "merchantPayouts": {
+      "title": "Virements",
+      "text": "Demandez le virement de vos fonds disponibles : brut, commission et net sont affichés avant d’envoyer. FlexiPay contrôle puis vire sur votre IBAN."
+    },
+    "merchantSettlements": {
+      "title": "Règlements",
+      "text": "Les relevés de règlement, avec le détail des paiements inclus."
+    },
+    "merchantShop": {
+      "title": "Mon commerce",
+      "text": "Vos coordonnées, IBAN masqué, types de crédit acceptés et taux de commission."
+    },
+    "employeeHome": {
+      "title": "Mon solde",
+      "text": "Un solde par type, avec ce que vous avez dépensé aujourd’hui sur le plafond journalier et les crédits qui vont expirer."
+    },
+    "employeePay": {
+      "title": "Payer",
+      "text": "« Mon code » affiche un QR et 8 chiffres valables 60 secondes : le commerçant les saisit, vous confirmez avec votre PIN. « Payer un commerçant » : scannez son QR ou saisissez son code à 6 chiffres."
+    },
+    "employeeHistory": {
+      "title": "Historique et reçus",
+      "text": "Paiements, crédits reçus et expirations, filtrables par type ; chaque ligne ouvre un reçu imprimable."
+    },
+    "employeeSecurity": {
+      "title": "Profil et sécurité",
+      "text": "Consultez vos informations, changez votre mot de passe, votre PIN de paiement et régénérez vos codes de secours."
+    },
+    "adminDashboard": {
+      "title": "Supervision",
+      "text": "Les volumes du mois par type, les tâches en attente (commandes, KYC, virements, validations) et l’activité récente."
+    },
+    "adminAccounts": {
+      "title": "Commerçants et entreprises",
+      "text": "Créez et suivez les comptes ; dans la fiche d’un commerçant, définissez les types de crédit qu’il accepte."
+    },
+    "adminKyc": {
+      "title": "Dossiers KYC",
+      "text": "Ouvrez un dossier, consultez les pièces, validez ou refusez avec un motif. Le compte reste inactif tant que le KYC n’est pas validé."
+    },
+    "adminOrders": {
+      "title": "Commandes",
+      "text": "Confirmez les commandes, vérifiez la preuve de virement et validez : chaque type est alors crédité. Au-delà de 10 000,000 TND, un second administrateur doit valider."
+    },
+    "adminPayouts": {
+      "title": "Virements commerçants et règlements",
+      "text": "Contrôlez chaque demande (brut, commission, net, IBAN), validez ou refusez avec un motif. Les virements validés forment un lot de règlement."
+    },
+    "adminSettings": {
+      "title": "Commissions, validations et paramètres",
+      "text": "Par type : commission, validité, plafond journalier, activation. Toute modification sensible est validée par un autre administrateur et tracée dans le journal d’audit."
+    },
+    "adminTransactions": {
+      "title": "Transactions et journal d’audit",
+      "text": "Toutes les opérations de la plateforme, filtrables par type de crédit, et l’historique des actions sensibles."
+    },
+    "adminMessages": {
+      "title": "Messages",
+      "text": "Les messages envoyés depuis « Nous contacter » sur la page d’accueil. Ouvrez-en un, répondez par e-mail ou téléphone, puis marquez-le comme traité."
+    }
+  }
+}

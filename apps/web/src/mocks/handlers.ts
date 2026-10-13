@@ -3,6 +3,7 @@ import { MOCK_FIXTURE_SENTINEL } from './fixtures/sentinel';
 import { adminHandlers } from './handlers/admin';
 import { adminOpsHandlers } from './handlers/admin-ops';
 import { authHandlers } from './handlers/auth';
+import { contactHandlers } from './handlers/contact';
 import { companyHandlers } from './handlers/company';
 import { employeeHandlers } from './handlers/employee';
 import { merchantHandlers } from './handlers/merchant';
@@ -28,6 +29,7 @@ export const handlers: RequestHandler[] = [
   ...orderHandlers,
   ...adminHandlers,
   ...adminOpsHandlers,
+  ...contactHandlers,
 ];
 
 export const MOCK_HANDLERS_MARKER = MOCK_FIXTURE_SENTINEL;
