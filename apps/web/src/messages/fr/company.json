@@ -22,7 +22,9 @@
     "recentDescription": "Vos dernières commandes de crédits et leur statut.",
     "todoPay": "Commande {reference} : virez {amount} puis déclarez votre virement.",
     "todoRejected": "Commande {reference} : justificatif rejeté, déclarez à nouveau votre virement.",
-    "todoAction": "Ouvrir la commande"
+    "todoAction": "Ouvrir la commande",
+    "balancesTitle": "Soldes par type de crédit",
+    "balancesDescription": "Un solde par type : une attribution débite le solde du type choisi."
   },
   "orders": {
     "title": "Commandes de crédits",
@@ -60,7 +62,11 @@
     "backToOrders": "Voir mes commandes",
     "another": "Nouvelle commande",
     "category": "Catégorie de crédits",
-    "categoryHint": "Une seule catégorie pour le moment : Restauration."
+    "categoryHint": "Une seule catégorie pour le moment : Restauration.",
+    "linesTitle": "Montants par type",
+    "linesHint": "Saisissez un montant pour chaque type à commander (laissez vide les autres).",
+    "lineAmount": "Montant {type} (TND)",
+    "noLine": "Saisissez au moins un montant."
   },
   "employees": {
     "title": "Employés",
@@ -134,7 +140,26 @@
     "emptyTitle": "Aucun employé actif",
     "name": "Nom",
     "number": "Matricule",
-    "allocated": "Déjà attribué ce mois"
+    "allocated": "Déjà attribué ce mois",
+    "typeLabel": "Type de crédit à attribuer",
+    "typeHint": "Seul le solde de ce type est débité.",
+    "importTitle": "Importer un fichier CSV",
+    "importHint": "Colonnes : matricule;restauration;habillement;carburant;cadeaux (montants en TND, vide = 0).",
+    "importFile": "Fichier CSV",
+    "importAnalyse": "Analyser le fichier",
+    "importRows": "{valid} lignes valides, {errors} en erreur",
+    "importTotals": "À attribuer par type",
+    "importConfirm": "Attribuer les lignes valides",
+    "importLine": "Ligne",
+    "importEmployee": "Employé",
+    "importIssues": "Erreurs",
+    "issues": {
+      "UNKNOWN_EMPLOYEE": "Matricule inconnu",
+      "INVALID_AMOUNT": "Montant invalide",
+      "NO_AMOUNT": "Aucun montant",
+      "TYPE_DISABLED": "Type désactivé"
+    },
+    "importDone": "{count} attributions enregistrées."
   },
   "invoices": {
     "title": "Factures",

@@ -46,6 +46,9 @@ export function buildTailwindPreset(t: Tokens): TailwindPreset {
       motion: { ...t.motion },
       focus: { ...t.focus },
       status: Object.fromEntries(Object.entries(t.status).map(([k, v]) => [k, { ...v }])),
+      creditType: Object.fromEntries(
+        Object.entries(t['credit-type']).map(([k, v]) => [k, { ...v }]),
+      ),
     },
   };
 }

@@ -9,11 +9,13 @@ import { Amount } from '@/components/ui/amount';
 import { buttonClasses } from '@/components/ui/button';
 import type { Column } from '@/components/ui/data-table';
 import { OrderStatusBadge } from '@/components/orders/order-parts';
+import { CreditTypeBadges } from '@/components/ui/credit-type';
 
 /** Columns of a credit order list (dashboard and orders page); each order opens its detail. */
 export function useOrderColumns(): Column<Schemas['CreditOrder']>[] {
   const t = useTranslations('company.orders');
   const tOrders = useTranslations('orders');
+  const tTypes = useTranslations('ui.creditTypes');
   const locale = useLocale();
   return [
     {
@@ -35,6 +37,11 @@ export function useOrderColumns(): Column<Schemas['CreditOrder']>[] {
         </Link>
       ),
       sortValue: (row) => row.reference,
+    },
+    {
+      key: 'types',
+      header: tTypes('column'),
+      cell: (row) => <CreditTypeBadges types={row.lines.map((line) => line.creditType)} />,
     },
     {
       key: 'credits',

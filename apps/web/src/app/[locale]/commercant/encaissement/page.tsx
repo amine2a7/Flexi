@@ -16,6 +16,7 @@ import { Amount } from '@/components/ui/amount';
 import { Button, buttonClasses } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Countdown } from '@/components/ui/countdown';
+import { CreditTypeBadge, CreditTypeSelect, type CreditType } from '@/components/ui/credit-type';
 import { TextField } from '@/components/ui/field';
 import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { ConfirmDialog } from '@/components/ui/modal';
@@ -51,6 +52,12 @@ export default function CollectPage() {
   const [cancelling, setCancelling] = useState(false);
   const [intentKey, setIntentKey] = useState(newIdempotencyKey);
   const dashboard = useApiQuery(() => getApi().GET('/v1/merchant/dashboard'), []);
+  const profile = useApiQuery(() => getApi().GET('/v1/merchant/profile'), []);
+  const accepted = profile.status === 'success' ? profile.data.acceptedCreditTypes : [];
+  const [chosenType, setChosenType] = useState<CreditType | ''>('');
+  // A shop accepting a single type collects it without asking.
+  const creditType =
+    chosenType !== '' ? chosenType : accepted.length === 1 ? accepted[0] : undefined;
 
   const millimes = useMemo(() => parseMillimes(amountText, locale), [amountText, locale]);
   const codeValid = /^[0-9]{8}$/.test(code);
@@ -80,13 +87,13 @@ export default function CollectPage() {
 
   async function onSubmit(event: SyntheticEvent) {
     event.preventDefault();
-    if (millimes === undefined || !codeValid) return;
+    if (millimes === undefined || !codeValid || creditType === undefined) return;
     setSubmitting(true);
     setError(undefined);
     try {
       const { data, error: problem } = await getApi().POST('/v1/merchant/payments', {
         params: { header: { 'Idempotency-Key': intentKey } },
-        body: { customerCode: code, amountMillimes: millimes },
+        body: { customerCode: code, creditType, amountMillimes: millimes },
       });
       if (data !== undefined) setPayment(data);
       else if (asProblem(problem)?.code === 'PAYMENT_DECLINED') setDeclined(true);
@@ -211,6 +218,18 @@ export default function CollectPage() {
                   setCode(event.target.value.replace(/\D/g, ''));
                 }}
               />
+              {accepted.length > 1 ? (
+                <CreditTypeSelect
+                  label={t('creditType')}
+                  hint={t('creditTypeHint')}
+                  types={accepted}
+                  placeholder={t('creditType')}
+                  value={chosenType}
+                  onChange={setChosenType}
+                />
+              ) : creditType !== undefined ? (
+                <CreditTypeBadge type={creditType} />
+              ) : null}
               <TextField
                 label={t('amount')}
                 hint={
@@ -230,7 +249,9 @@ export default function CollectPage() {
               <Button
                 type="submit"
                 loading={submitting}
-                disabled={!codeValid || millimes === undefined || millimes === 0}
+                disabled={
+                  !codeValid || millimes === undefined || millimes === 0 || creditType === undefined
+                }
                 icon={<HandCoins aria-hidden="true" className="size-icon-md" />}
               >
                 {t('submit')}

@@ -271,8 +271,45 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
           <PageEyebrowContext.Provider value={t(`layout.eyebrow.${role}`)}>
             {children}
           </PageEyebrowContext.Provider>
+          {role === 'EMPLOYEE' ? (
+            <div aria-hidden="true" className="h-bottom-nav-height lg:hidden" />
+          ) : null}
         </main>
       </div>
+      {role === 'EMPLOYEE' ? (
+        <nav
+          aria-label={t('layout.mainNav')}
+          className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface lg:hidden"
+        >
+          <ul className="flex h-bottom-nav-height items-stretch">
+            {items.slice(0, 4).map((item) => {
+              const active = isActive(item, pathname, home);
+              const Icon = item.icon;
+              const count = item.counter === undefined ? 0 : (counts[item.counter] ?? 0);
+              return (
+                <li key={item.href} className="flex flex-1">
+                  <Link
+                    href={item.href}
+                    aria-current={active ? 'page' : undefined}
+                    className={cn(
+                      'relative flex flex-1 flex-col items-center justify-center gap-1 text-micro',
+                      active ? 'text-navy' : 'text-text-muted',
+                    )}
+                  >
+                    <Icon aria-hidden="true" className="size-icon-md" />
+                    {t(messageKey(item.labelKey))}
+                    {count > 0 ? (
+                      <span className="absolute end-1/4 top-2 flex min-w-icon-sm items-center justify-center rounded-badge bg-emerald px-1 text-micro text-on-emerald">
+                        {count}
+                      </span>
+                    ) : null}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      ) : null}
       <SessionWatch onExpire={onSignOut} />
     </div>
   );

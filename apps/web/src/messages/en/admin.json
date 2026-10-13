@@ -27,7 +27,8 @@
     "merchantsHint": "Merchant accounts",
     "volumeHint": "Payments confirmed today",
     "nextSettlementHint": "D+2 settlement batch",
-    "todoPayouts": "{count, plural, one {# merchant payout request to check} other {# merchant payout requests to check}}"
+    "todoPayouts": "{count, plural, one {# merchant payout request to check} other {# merchant payout requests to check}}",
+    "breakdownDescription": "Payments of the month on the platform, by credit type."
   },
   "merchants": {
     "title": "Merchants",
@@ -59,7 +60,16 @@
     },
     "submit": "Create the merchant",
     "createdToast": "{name} has been created (pending KYC).",
-    "duplicate": "A merchant already has this name."
+    "duplicate": "A merchant already has this name.",
+    "types": "Accepted types",
+    "open": "Open",
+    "openMerchant": "Open {name}'s record",
+    "detailBack": "Back to merchants",
+    "detailInfo": "Details",
+    "typesTitle": "Accepted credit types",
+    "typesHint": "The merchant only collects these types; a beneficiary pays with the balance of the chosen type.",
+    "typesSave": "Save the types",
+    "typesSaved": "Credit types saved."
   },
   "companies": {
     "title": "Companies",
@@ -187,7 +197,19 @@
     "submit": "Send for approval",
     "createdToast": "Request sent. Another administrator must approve it.",
     "pending": "A change is already waiting for approval.",
-    "invalid": "Check the values entered."
+    "invalid": "Check the values entered.",
+    "typesTitle": "Settings by credit type",
+    "typeEnabled": "Enabled",
+    "typeCommission": "Commission",
+    "typeValidity": "Validity",
+    "typeDailyLimit": "Daily limit",
+    "typeStatus": "State",
+    "typeOn": "On",
+    "typeOff": "Off",
+    "typeCommissionLabel": "{type} commission (%)",
+    "typeValidityLabel": "{type} validity (months)",
+    "typeLimitLabel": "{type} daily limit (TND)",
+    "typeEnabledLabel": "{type} enabled"
   },
   "kyc": {
     "open": "Open",

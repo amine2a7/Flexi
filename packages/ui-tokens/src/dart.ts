@@ -91,6 +91,15 @@ export function assertSafeTokens(t: Tokens): void {
       `status.${k} colour reference`,
     );
   }
+  for (const [k, v] of Object.entries(t['credit-type'])) {
+    check(STATUS_KEY.test(k), `credit-type.${k}`);
+    check(ICON.test(v.icon), `credit-type.${k}.icon`);
+    check(I18N_KEY.test(v.labelKey), `credit-type.${k}.labelKey`);
+    check(
+      Object.hasOwn(t.color, v.bg) && Object.hasOwn(t.color, v.fg) && Object.hasOwn(t.color, v.solid),
+      `credit-type.${k} colour reference`,
+    );
+  }
   check(FAMILY.test(t.font.family.value), 'font.family');
   check(FAMILY.test(t.font['family-ar'].value), 'font.family-ar');
 }
@@ -275,6 +284,33 @@ export function renderDart(t: Tokens): string {
     w(`      icon: ${quote(s.icon)},`);
     w(`      bg: FlexiColors.${camel(s.bg)},`);
     w(`      fg: FlexiColors.${camel(s.fg)},`);
+    w('    ),');
+  }
+  w('  };');
+  w('}');
+  w();
+
+  w('/// Credit type style (`credit-type.*`): icon is a Lucide name, label an i18n key, solid for charts.');
+  w('class FlexiCreditTypeStyle {');
+  w(
+    '  const FlexiCreditTypeStyle({required this.labelKey, required this.icon, required this.bg, required this.fg, required this.solid});',
+  );
+  w('  final String labelKey;');
+  w('  final String icon;');
+  w('  final Color bg;');
+  w('  final Color fg;');
+  w('  final Color solid;');
+  w('}');
+  w();
+  w('abstract final class FlexiCreditType {');
+  w('  static const Map<String, FlexiCreditTypeStyle> all = {');
+  for (const [k, s] of Object.entries(t['credit-type'])) {
+    w(`    ${quote(k)}: FlexiCreditTypeStyle(`);
+    w(`      labelKey: ${quote(s.labelKey)},`);
+    w(`      icon: ${quote(s.icon)},`);
+    w(`      bg: FlexiColors.${camel(s.bg)},`);
+    w(`      fg: FlexiColors.${camel(s.fg)},`);
+    w(`      solid: FlexiColors.${camel(s.solid)},`);
     w('    ),');
   }
   w('  };');

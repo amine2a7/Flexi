@@ -11,6 +11,7 @@ import { OrderStatusBadge } from '@/components/orders/order-parts';
 import { ActivityList, TodoPanel } from '@/components/ui/activity';
 import { Amount } from '@/components/ui/amount';
 import { BarChart } from '@/components/ui/bar-chart';
+import { CreditTypeBalanceCards } from '@/components/ui/credit-type';
 import { buttonClasses } from '@/components/ui/button';
 import { Card, CardTitle, StatCard } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/layout-blocks';
@@ -18,6 +19,7 @@ import { ErrorState, LoadingBlock } from '@/components/ui/states';
 
 export default function CompanyDashboardPage() {
   const t = useTranslations('company.dashboard');
+  const tTypes = useTranslations('ui.creditTypes');
   const locale = useLocale();
   const dashboard = useApiQuery(() => getApi().GET('/v1/company/dashboard'), []);
   // « À faire »: the orders waiting for the company's transfer (status from the server).
@@ -69,9 +71,21 @@ export default function CompanyDashboardPage() {
                 : []
             }
           />
+          <section className="flex flex-col gap-4" aria-labelledby="balances-title">
+            <div className="flex flex-col gap-1">
+              <h2 id="balances-title" className="text-title-sm text-text">
+                {t('balancesTitle')}
+              </h2>
+              <p className="text-body text-text-muted">{t('balancesDescription')}</p>
+            </div>
+            <CreditTypeBalanceCards
+              balances={dashboard.data.balances.map((item) => ({ ...item }))}
+              progress="share"
+            />
+          </section>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
-              label={t('wallet')}
+              label={tTypes('total')}
               value={<Amount millimes={dashboard.data.walletBalanceMillimes} size="title" />}
               hint={t('walletHint')}
               icon={<Wallet className="size-icon-md" />}

@@ -15,5 +15,7 @@
   "internalError": "Le service a rencontré un problème. Réessayez dans quelques instants.",
   "serviceUnavailable": "Service momentanément indisponible. Réessayez plus tard.",
   "network": "Connexion impossible. Vérifiez votre réseau puis réessayez.",
-  "generic": "L'opération n'a pas abouti. Réessayez."
+  "generic": "L'opération n'a pas abouti. Réessayez.",
+  "pinInvalid": "PIN incorrect.",
+  "pinLocked": "PIN bloqué après 3 essais : réessayez dans 15 minutes."
 }

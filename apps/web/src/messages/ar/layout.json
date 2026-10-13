@@ -7,7 +7,7 @@
     "ADMIN": "الإدارة",
     "COMPANY": "فضاء المؤسسة",
     "MERCHANT": "فضاء التاجر",
-    "EMPLOYEE": "فضاء الموظف",
+    "EMPLOYEE": "فضاء المستفيد",
     "FAMILY_MEMBER": "فضاء العائلة"
   },
   "forbidden": {
@@ -29,14 +29,14 @@
     "ADMIN": "مشرف",
     "COMPANY": "مؤسسة",
     "MERCHANT": "تاجر",
-    "EMPLOYEE": "موظف",
+    "EMPLOYEE": "مستفيد",
     "FAMILY_MEMBER": "فرد من العائلة"
   },
   "eyebrow": {
     "ADMIN": "قيادة المنصة",
     "COMPANY": "مؤسسة حريفة",
     "MERCHANT": "تاجر شريك",
-    "EMPLOYEE": "موظف",
+    "EMPLOYEE": "مستفيد",
     "FAMILY_MEMBER": "العائلة"
   },
   "counter": "{label}: {count} في الانتظار"

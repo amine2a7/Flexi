@@ -30,5 +30,12 @@
     "kyc": "ملفات التحقق",
     "payouts": "تحويلات التجار",
     "transactions": "المعاملات"
+  },
+  "beneficiary": {
+    "home": "الرئيسية",
+    "pay": "دفع",
+    "history": "السجل",
+    "profile": "الملف",
+    "security": "الأمان"
   }
 }

@@ -3,5 +3,8 @@
   "CAFE": "Café",
   "GROCERY": "Supérette",
   "BAKERY": "Boulangerie-pâtisserie",
-  "FAST_FOOD": "Restauration rapide"
+  "FAST_FOOD": "Restauration rapide",
+  "CLOTHING": "Habillement",
+  "FUEL_STATION": "Station-service",
+  "GIFT_SHOP": "Cadeaux et librairie"
 }

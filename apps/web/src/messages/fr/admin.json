@@ -27,7 +27,8 @@
     "merchantsHint": "Comptes commerçant",
     "volumeHint": "Paiements confirmés aujourd'hui",
     "nextSettlementHint": "Lot de règlement J+2",
-    "todoPayouts": "{count, plural, one {# demande de virement commerçant à contrôler} other {# demandes de virement commerçant à contrôler}}"
+    "todoPayouts": "{count, plural, one {# demande de virement commerçant à contrôler} other {# demandes de virement commerçant à contrôler}}",
+    "breakdownDescription": "Paiements du mois sur la plateforme, par type de crédit."
   },
   "merchants": {
     "title": "Commerçants",
@@ -59,7 +60,16 @@
     },
     "submit": "Créer le commerçant",
     "createdToast": "{name} a été créé (en attente KYC).",
-    "duplicate": "Un commerçant porte déjà ce nom."
+    "duplicate": "Un commerçant porte déjà ce nom.",
+    "types": "Types acceptés",
+    "open": "Ouvrir",
+    "openMerchant": "Ouvrir la fiche de {name}",
+    "detailBack": "Retour aux commerçants",
+    "detailInfo": "Informations",
+    "typesTitle": "Types de crédit acceptés",
+    "typesHint": "Le commerçant n’encaisse que ces types ; un bénéficiaire paie avec le solde du type choisi.",
+    "typesSave": "Enregistrer les types",
+    "typesSaved": "Types de crédit enregistrés."
   },
   "companies": {
     "title": "Entreprises",
@@ -187,7 +197,19 @@
     "submit": "Envoyer pour validation",
     "createdToast": "Demande envoyée. Un autre administrateur doit la valider.",
     "pending": "Une modification est déjà en attente de validation.",
-    "invalid": "Vérifiez les valeurs saisies."
+    "invalid": "Vérifiez les valeurs saisies.",
+    "typesTitle": "Paramétrage par type de crédit",
+    "typeEnabled": "Actif",
+    "typeCommission": "Commission",
+    "typeValidity": "Validité",
+    "typeDailyLimit": "Plafond journalier",
+    "typeStatus": "État",
+    "typeOn": "Activé",
+    "typeOff": "Désactivé",
+    "typeCommissionLabel": "Commission {type} (%)",
+    "typeValidityLabel": "Validité {type} (mois)",
+    "typeLimitLabel": "Plafond journalier {type} (TND)",
+    "typeEnabledLabel": "Type {type} activé"
   },
   "kyc": {
     "open": "Ouvrir",

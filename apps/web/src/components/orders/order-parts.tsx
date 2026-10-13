@@ -19,6 +19,7 @@ import { Modal } from '@/components/ui/modal';
 import { LoadingBlock } from '@/components/ui/states';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Timeline } from '@/components/ui/timeline';
+import { CreditTypeBadge } from '@/components/ui/credit-type';
 import { FileViewer, type FileLoader } from '@/components/ui/file-viewer';
 import { useToast } from '@/components/ui/toast';
 
@@ -50,7 +51,7 @@ export function isStateConflict(error: unknown): boolean {
 
 export function OrderSummaryCard({ order, showCompany }: { order: Order; showCompany: boolean }) {
   const t = useTranslations('orders.fields');
-  const tRoot = useTranslations();
+  const tTypes = useTranslations('ui.creditTypes');
   const tOrders = useTranslations('orders');
   const locale = useLocale();
   return (
@@ -63,7 +64,19 @@ export function OrderSummaryCard({ order, showCompany }: { order: Order; showCom
           { label: t('reference'), value: <span dir="ltr">{order.reference}</span> },
           ...(showCompany ? [{ label: t('company'), value: order.companyName }] : []),
           { label: t('createdAt'), value: formatDateTime(order.createdAt, locale) },
-          { label: t('category'), value: tRoot(messageKey(`creditCategory.${order.category}`)) },
+          {
+            label: tTypes('column'),
+            value: (
+              <ul className="flex flex-col gap-2">
+                {order.lines.map((line) => (
+                  <li key={line.creditType} className="flex items-center justify-between gap-3">
+                    <CreditTypeBadge type={line.creditType} />
+                    <Amount millimes={line.amountMillimes} />
+                  </li>
+                ))}
+              </ul>
+            ),
+          },
           { label: t('credits'), value: <Amount millimes={order.amountMillimes} /> },
           { label: t('fees'), value: <Amount millimes={order.feesMillimes} /> },
           {

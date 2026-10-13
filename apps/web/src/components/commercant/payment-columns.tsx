@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { formatDateTime } from '@/lib/format/date';
 import { Amount } from '@/components/ui/amount';
+import { CreditTypeBadge } from '@/components/ui/credit-type';
 import type { Column } from '@/components/ui/data-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 
@@ -14,6 +15,7 @@ type Payment = Schemas['MerchantPayment'];
 export function usePaymentColumns(): Column<Payment>[] {
   const t = useTranslations('merchant.payments');
   const tDetail = useTranslations('merchant.paymentDetail');
+  const tTypes = useTranslations('ui.creditTypes');
   const locale = useLocale();
   return [
     {
@@ -43,6 +45,12 @@ export function usePaymentColumns(): Column<Payment>[] {
         </Link>
       ),
       sortValue: (row) => row.reference,
+    },
+    {
+      key: 'creditType',
+      header: tTypes('column'),
+      cell: (row) => <CreditTypeBadge type={row.creditType} />,
+      sortValue: (row) => row.creditType,
     },
     {
       key: 'amount',

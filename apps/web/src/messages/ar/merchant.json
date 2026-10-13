@@ -23,7 +23,8 @@
     "recentDescription": "آخر الدفعات المستلمة في محلّك.",
     "todoPayout": "{amount} في انتظار التسوية: يمكنك طلب تحويل.",
     "todoPayoutAction": "طلب تحويل",
-    "todoCollect": "جاهز للتحصيل: أدخل الرمز الذي يعرضه حريفك."
+    "todoCollect": "جاهز للتحصيل: أدخل الرمز الذي يعرضه حريفك.",
+    "breakdownDescription": "المحصّل هذا الشهر حسب النوع."
   },
   "payments": {
     "date": "التاريخ",
@@ -63,7 +64,13 @@
     "ruleNote": "يُسوّى المبلغ بعد يومين مع خصم عمولة بنسبة {rate}.",
     "acceptedMessage": "تم تحصيل المبلغ وسيُسوّى بعد يومين.",
     "backToDashboard": "العودة إلى لوحة القيادة",
-    "cancelledToast": "أُلغي الطلب: لم يتم تحصيل أي مبلغ."
+    "cancelledToast": "أُلغي الطلب: لم يتم تحصيل أي مبلغ.",
+    "myQr": "رمز FlexiPay الخاص بي",
+    "myQrHint": "يمكن للحريف أيضًا مسح هذا الرمز والدفع من تطبيقه.",
+    "myCode": "رمز التاجر: {code}",
+    "qrLabel": "رمز التاجر {code}",
+    "creditType": "نوع الرصيد",
+    "creditTypeHint": "يدفع الحريف برصيد هذا النوع فقط."
   },
   "history": {
     "title": "سجل التحصيلات",
@@ -139,7 +146,9 @@
       "SENT": "إرسال التحويل إلى البنك",
       "EXECUTED": "تنفيذ التحويل: الأموال في حسابك",
       "REJECTED": "رفض الطلب"
-    }
+    },
+    "creditType": "نوع الرصيد",
+    "creditTypeHint": "يشمل التحويل مستحقات نوع واحد (عمولة هذا النوع)."
   },
   "settlements": {
     "title": "التسويات والوثائق",
@@ -175,7 +184,9 @@
     "commission": "ملف العمولة",
     "changeHint": "لتغيير هذه المعلومات، اتصل بمسؤول FlexiPay.",
     "pointsOfSale": "نقاط البيع",
-    "staff": "الفريق"
+    "staff": "الفريق",
+    "acceptedTypes": "أنواع الأرصدة المقبولة",
+    "acceptedTypesHint": "تحددها FlexiPay."
   },
   "payoutRejection": {
     "ibanCheck": "يجب التحقق من الحساب البنكي المسجّل: اتصل بالدعم."

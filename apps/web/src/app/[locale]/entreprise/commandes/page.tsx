@@ -15,7 +15,7 @@ import { useApiQuery } from '@/lib/api/use-api-query';
 import { buttonClasses } from '@/components/ui/button';
 import { Card, StatCard } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
-import { FilterBar } from '@/components/ui/filter-bar';
+import { FilterBar, type Filters } from '@/components/ui/filter-bar';
 import { PageHeader } from '@/components/ui/layout-blocks';
 import { Skeleton } from '@/components/ui/states';
 
@@ -23,12 +23,13 @@ export default function OrdersPage() {
   const t = useTranslations('company.orders');
   const tOrders = useTranslations('orders');
   const columns = useOrderColumns();
-  const [filters, setFilters] = useState({ q: '', status: '' });
+  const [filters, setFilters] = useState<Filters>({ q: '', status: '', creditType: '' });
   const dashboard = useApiQuery(() => getApi().GET('/v1/company/dashboard'), []);
   const toConfirm = useOrderCount('company', 'AWAITING_CONFIRMATION');
   const toPay = useOrderCount('company', 'AWAITING_PAYMENT');
   const toValidate = useOrderCount('company', 'AWAITING_VALIDATION');
-  const count = (value: number | undefined) => value ?? <Skeleton className="h-input-height w-full" />;
+  const count = (value: number | undefined) =>
+    value ?? <Skeleton className="h-input-height w-full" />;
   const list = usePagedList(
     (cursor, withCount) =>
       getApi().GET('/v1/company/orders', {
@@ -37,6 +38,7 @@ export default function OrdersPage() {
             cursor,
             withCount,
             ...(filters.status === '' ? {} : { status: filters.status as Schemas['OrderStatus'] }),
+            ...(filters.creditType === '' ? {} : { creditType: filters.creditType }),
           },
         },
       }),
@@ -96,6 +98,7 @@ export default function OrdersPage() {
             value,
             label: tOrders(`status.${value}`),
           }))}
+          withCreditType
           onApply={setFilters}
         />
         <DataTable

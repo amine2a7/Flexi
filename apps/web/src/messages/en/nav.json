@@ -30,5 +30,12 @@
     "kyc": "KYC files",
     "payouts": "Merchant payouts",
     "transactions": "Transactions"
+  },
+  "beneficiary": {
+    "home": "Home",
+    "pay": "Pay",
+    "history": "History",
+    "profile": "Profile",
+    "security": "Security"
   }
 }

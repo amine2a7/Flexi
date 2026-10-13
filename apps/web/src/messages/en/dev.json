@@ -6,7 +6,8 @@
     "company": "Company",
     "merchant": "Merchant",
     "firstLogin": "First sign-in",
-    "admin2": "Administrator (second approval)"
+    "admin2": "Administrator (second approval)",
+    "beneficiary": "Beneficiary (employee)"
   },
   "codes": {
     "title": "Demo customer codes",

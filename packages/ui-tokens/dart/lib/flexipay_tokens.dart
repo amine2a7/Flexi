@@ -27,6 +27,18 @@ abstract final class FlexiColors {
   static const Color infoText = Color(0xFF1D4ED8);
   static const Color infoSoft = Color(0xFFDBEAFE);
   static const Color neutralText = Color(0xFF475569);
+  static const Color typeFood = Color(0xFFEA580C);
+  static const Color typeFoodSoft = Color(0xFFFFEDD5);
+  static const Color typeFoodText = Color(0xFF9A3412);
+  static const Color typeClothing = Color(0xFF7C3AED);
+  static const Color typeClothingSoft = Color(0xFFEDE9FE);
+  static const Color typeClothingText = Color(0xFF5B21B6);
+  static const Color typeFuel = Color(0xFF0891B2);
+  static const Color typeFuelSoft = Color(0xFFCFFAFE);
+  static const Color typeFuelText = Color(0xFF155E75);
+  static const Color typeGift = Color(0xFFDB2777);
+  static const Color typeGiftSoft = Color(0xFFFCE7F3);
+  static const Color typeGiftText = Color(0xFF9D174D);
   static const Color onEmerald = Color(0xFF0B1D33);
   static const Color onNavy = Color(0xFFFFFFFF);
   static const Color onNavyMuted = Color(0xFFCBD5E1);
@@ -391,6 +403,49 @@ abstract final class FlexiStatus {
       icon: 'CircleX',
       bg: FlexiColors.dangerSoft,
       fg: FlexiColors.dangerText,
+    ),
+  };
+}
+
+/// Credit type style (`credit-type.*`): icon is a Lucide name, label an i18n key, solid for charts.
+class FlexiCreditTypeStyle {
+  const FlexiCreditTypeStyle({required this.labelKey, required this.icon, required this.bg, required this.fg, required this.solid});
+  final String labelKey;
+  final String icon;
+  final Color bg;
+  final Color fg;
+  final Color solid;
+}
+
+abstract final class FlexiCreditType {
+  static const Map<String, FlexiCreditTypeStyle> all = {
+    'RESTAURATION': FlexiCreditTypeStyle(
+      labelKey: 'creditType.RESTAURATION',
+      icon: 'UtensilsCrossed',
+      bg: FlexiColors.typeFoodSoft,
+      fg: FlexiColors.typeFoodText,
+      solid: FlexiColors.typeFood,
+    ),
+    'HABILLEMENT': FlexiCreditTypeStyle(
+      labelKey: 'creditType.HABILLEMENT',
+      icon: 'Shirt',
+      bg: FlexiColors.typeClothingSoft,
+      fg: FlexiColors.typeClothingText,
+      solid: FlexiColors.typeClothing,
+    ),
+    'CARBURANT': FlexiCreditTypeStyle(
+      labelKey: 'creditType.CARBURANT',
+      icon: 'Fuel',
+      bg: FlexiColors.typeFuelSoft,
+      fg: FlexiColors.typeFuelText,
+      solid: FlexiColors.typeFuel,
+    ),
+    'CADEAUX': FlexiCreditTypeStyle(
+      labelKey: 'creditType.CADEAUX',
+      icon: 'Gift',
+      bg: FlexiColors.typeGiftSoft,
+      fg: FlexiColors.typeGiftText,
+      solid: FlexiColors.typeGift,
     ),
   };
 }

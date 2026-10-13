@@ -3,7 +3,6 @@
 import { ArrowLeft } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { messageKey } from '@/i18n/keys';
 import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
 import { useApiQuery } from '@/lib/api/use-api-query';
@@ -12,6 +11,7 @@ import { formatRateBps } from '@/lib/format/money';
 import { Amount, AmountBreakdown } from '@/components/ui/amount';
 import { buttonClasses } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
+import { CreditTypeBadge } from '@/components/ui/credit-type';
 import { Alert, DescriptionList, PageHeader } from '@/components/ui/layout-blocks';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -21,7 +21,6 @@ import { Timeline } from '@/components/ui/timeline';
 export default function PaymentDetailPage() {
   const { paymentId } = useParams<{ paymentId: string }>();
   const t = useTranslations('merchant.paymentDetail');
-  const tRoot = useTranslations();
   const locale = useLocale();
   const payment = useApiQuery(
     () => getApi().GET('/v1/merchant/payments/{paymentId}', { params: { path: { paymentId } } }),
@@ -60,7 +59,7 @@ export default function PaymentDetailPage() {
                     },
                     {
                       label: t('category'),
-                      value: tRoot(messageKey(`creditCategory.${payment.data.category}`)),
+                      value: <CreditTypeBadge type={payment.data.creditType} />,
                     },
                     {
                       label: t('amount'),

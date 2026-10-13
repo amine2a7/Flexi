@@ -463,6 +463,11 @@ module.exports = {
         "Prêt à encaisser : saisissez le code affiché par votre client.",
         "Ready to collect: enter the code shown by your customer.",
         "جاهز للتحصيل: أدخل الرمز الذي يعرضه حريفك."
+      ],
+      "breakdownDescription": [
+        "Encaissé ce mois, par type de crédit.",
+        "Collected this month, by credit type.",
+        "المحصّل هذا الشهر حسب النوع."
       ]
     },
     "payments": {
@@ -647,6 +652,36 @@ module.exports = {
         "Demande annulée : rien n'a été encaissé.",
         "Request cancelled: nothing was collected.",
         "أُلغي الطلب: لم يتم تحصيل أي مبلغ."
+      ],
+      "myQr": [
+        "Mon QR FlexiPay",
+        "My FlexiPay QR",
+        "رمز FlexiPay الخاص بي"
+      ],
+      "myQrHint": [
+        "Le client peut aussi scanner ce QR et payer depuis son application.",
+        "The customer can also scan this QR and pay from the app.",
+        "يمكن للحريف أيضًا مسح هذا الرمز والدفع من تطبيقه."
+      ],
+      "myCode": [
+        "Code commerçant : {code}",
+        "Merchant code: {code}",
+        "رمز التاجر: {code}"
+      ],
+      "qrLabel": [
+        "QR commerçant {code}",
+        "Merchant QR {code}",
+        "رمز التاجر {code}"
+      ],
+      "creditType": [
+        "Type de crédit",
+        "Credit type",
+        "نوع الرصيد"
+      ],
+      "creditTypeHint": [
+        "Le client paie avec son solde de ce type uniquement.",
+        "The customer pays with the balance of this type only.",
+        "يدفع الحريف برصيد هذا النوع فقط."
       ]
     },
     "history": {
@@ -995,7 +1030,17 @@ module.exports = {
           "Request rejected",
           "رفض الطلب"
         ]
-      }
+      },
+      "creditType": [
+        "Type de crédit",
+        "Credit type",
+        "نوع الرصيد"
+      ],
+      "creditTypeHint": [
+        "Un virement porte sur les créances d’un seul type (commission du type).",
+        "A payout covers the receivables of a single type (that type's commission).",
+        "يشمل التحويل مستحقات نوع واحد (عمولة هذا النوع)."
+      ]
     },
     "settlements": {
       "title": [
@@ -1151,6 +1196,16 @@ module.exports = {
         "Équipe",
         "Team",
         "الفريق"
+      ],
+      "acceptedTypes": [
+        "Types de crédit acceptés",
+        "Accepted credit types",
+        "أنواع الأرصدة المقبولة"
+      ],
+      "acceptedTypesHint": [
+        "Définis par FlexiPay.",
+        "Set by FlexiPay.",
+        "تحددها FlexiPay."
       ]
     },
     "payoutRejection": {

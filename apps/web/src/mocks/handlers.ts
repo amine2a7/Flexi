@@ -4,6 +4,7 @@ import { adminHandlers } from './handlers/admin';
 import { adminOpsHandlers } from './handlers/admin-ops';
 import { authHandlers } from './handlers/auth';
 import { companyHandlers } from './handlers/company';
+import { employeeHandlers } from './handlers/employee';
 import { merchantHandlers } from './handlers/merchant';
 import { orderHandlers } from './handlers/orders';
 import { apiUrl, MOCK_SESSION_COOKIE, restoreSession } from './handlers/util';
@@ -23,6 +24,7 @@ export const handlers: RequestHandler[] = [
   ...authHandlers,
   ...merchantHandlers,
   ...companyHandlers,
+  ...employeeHandlers,
   ...orderHandlers,
   ...adminHandlers,
   ...adminOpsHandlers,

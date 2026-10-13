@@ -7,6 +7,8 @@ import { MOCK_FIXTURE_SENTINEL } from './sentinel';
 export const DEMO_MFA_CODE = '123456';
 export const DEMO_PASSWORD = 'Test1234!';
 export const DEMO_FIRST_LOGIN_PASSWORD = 'Temp1234!';
+/** Payment PIN of the demo beneficiary (mobile and web beneficiary space). */
+export const DEMO_PIN = '1234';
 export const DEMO_RECOVERY_CODES = [
   'ABCD2345EF',
   'GHJK6789LM',
@@ -25,7 +27,7 @@ export interface DemoAccount {
   readonly identifier: string;
   password: string;
   readonly role: Schemas['Role'];
-  readonly subRole: Schemas['SubRole'];
+  readonly subRole: Schemas['SubRole'] | null;
   readonly displayName: string;
   readonly tenant: Schemas['TenantSummary'] | null;
   temporaryPassword: boolean;
@@ -112,6 +114,19 @@ export function createDemoAccounts(): DemoAccount[] {
       permissions: ['payments.collect', 'sales.read', 'payouts.request', 'settlements.read'],
     },
     {
+      id: '01930a1c-0005-7a00-8000-000000000005',
+      identifier: 'beneficiaire@flexipay.test',
+      password: DEMO_PASSWORD,
+      role: 'EMPLOYEE',
+      subRole: null,
+      displayName: 'Yasmine J.',
+      tenant: COMPANY_TENANT,
+      temporaryPassword: false,
+      mfaEnrolled: true,
+      recoveryCodes: [...DEMO_RECOVERY_CODES],
+      permissions: ['wallet.read', 'payments.pay'],
+    },
+    {
       id: '01930a1c-0004-7a00-8000-000000000004',
       identifier: 'premiere@flexipay.test',
       password: DEMO_FIRST_LOGIN_PASSWORD,
@@ -133,6 +148,7 @@ export const DEMO_ACCOUNT_HINTS = [
   { role: 'admin2', identifier: 'admin2@flexipay.test', password: DEMO_PASSWORD },
   { role: 'company', identifier: 'entreprise@flexipay.test', password: DEMO_PASSWORD },
   { role: 'merchant', identifier: 'commercant@flexipay.test', password: DEMO_PASSWORD },
+  { role: 'beneficiary', identifier: 'beneficiaire@flexipay.test', password: DEMO_PASSWORD },
   { role: 'firstLogin', identifier: 'premiere@flexipay.test', password: DEMO_FIRST_LOGIN_PASSWORD },
 ] as const;
 

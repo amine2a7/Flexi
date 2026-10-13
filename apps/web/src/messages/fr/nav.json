@@ -30,5 +30,12 @@
     "kyc": "Dossiers KYC",
     "payouts": "Virements commerçants",
     "transactions": "Transactions"
+  },
+  "beneficiary": {
+    "home": "Accueil",
+    "pay": "Payer",
+    "history": "Historique",
+    "profile": "Profil",
+    "security": "Sécurité"
   }
 }

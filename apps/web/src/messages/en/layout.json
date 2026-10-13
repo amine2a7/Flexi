@@ -7,7 +7,7 @@
     "ADMIN": "Administration",
     "COMPANY": "Company space",
     "MERCHANT": "Merchant space",
-    "EMPLOYEE": "Employee space",
+    "EMPLOYEE": "Beneficiary space",
     "FAMILY_MEMBER": "Family space"
   },
   "forbidden": {
@@ -29,14 +29,14 @@
     "ADMIN": "Administrator",
     "COMPANY": "Company",
     "MERCHANT": "Merchant",
-    "EMPLOYEE": "Employee",
+    "EMPLOYEE": "Beneficiary",
     "FAMILY_MEMBER": "Family member"
   },
   "eyebrow": {
     "ADMIN": "Platform management",
     "COMPANY": "Client company",
     "MERCHANT": "Partner merchant",
-    "EMPLOYEE": "Employee",
+    "EMPLOYEE": "Beneficiary",
     "FAMILY_MEMBER": "Family"
   },
   "counter": "{label}: {count} pending"

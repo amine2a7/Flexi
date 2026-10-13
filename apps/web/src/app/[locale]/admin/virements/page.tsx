@@ -14,7 +14,8 @@ import { Amount } from '@/components/ui/amount';
 import { buttonClasses } from '@/components/ui/button';
 import { Card, StatCard } from '@/components/ui/card';
 import { DataTable, type Column } from '@/components/ui/data-table';
-import { FilterBar } from '@/components/ui/filter-bar';
+import { CreditTypeBadge } from '@/components/ui/credit-type';
+import { FilterBar, type Filters } from '@/components/ui/filter-bar';
 import { PageHeader } from '@/components/ui/layout-blocks';
 import { Skeleton } from '@/components/ui/states';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -26,8 +27,9 @@ const STATUSES: readonly Status[] = ['REQUESTED', 'CHECKED', 'SENT', 'EXECUTED',
 export default function AdminPayoutsPage() {
   const t = useTranslations('admin.payouts');
   const tRoot = useTranslations();
+  const tTypes = useTranslations('ui.creditTypes');
   const locale = useLocale();
-  const [filters, setFilters] = useState({ q: '', status: '' });
+  const [filters, setFilters] = useState<Filters>({ q: '', status: '', creditType: '' });
   const pending = useApiQuery(
     () =>
       getApi().GET('/v1/admin/payout-requests', {
@@ -44,6 +46,7 @@ export default function AdminPayoutsPage() {
             withCount,
             ...(filters.q === '' ? {} : { q: filters.q }),
             ...(filters.status === '' ? {} : { status: filters.status as Status }),
+            ...(filters.creditType === '' ? {} : { creditType: filters.creditType }),
           },
         },
       }),
@@ -70,6 +73,12 @@ export default function AdminPayoutsPage() {
       header: t('merchant'),
       cell: (row) => row.merchantName,
       sortValue: (row) => row.merchantName,
+    },
+    {
+      key: 'creditType',
+      header: tTypes('column'),
+      cell: (row) => <CreditTypeBadge type={row.creditType} />,
+      sortValue: (row) => row.creditType,
     },
     {
       key: 'date',
@@ -135,6 +144,7 @@ export default function AdminPayoutsPage() {
             value,
             label: tRoot(messageKey(`statusLabel.${value}`)),
           }))}
+          withCreditType
           onApply={setFilters}
         />
         <DataTable

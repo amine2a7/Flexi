@@ -1,6 +1,8 @@
 import type { Schemas } from '@flexipay/api-client';
 import { http, HttpResponse } from 'msw';
+import { CREDIT_TYPES } from '../credit-types';
 import { db, type MockApproval } from '../db';
+import { MERCHANT_TENANT } from '../fixtures/accounts';
 import {
   apiUrl,
   audit,
@@ -51,6 +53,14 @@ function adminFlows(): S['AdminMonthlyFlow'][] {
   });
 }
 
+function validTypes(types: readonly string[] | undefined): boolean {
+  return (
+    Array.isArray(types) &&
+    types.length > 0 &&
+    types.every((type) => (CREDIT_TYPES as readonly string[]).includes(type))
+  );
+}
+
 export const adminHandlers = [
   http.get(apiUrl('/v1/admin/dashboard'), async () => {
     const account = await guardRead('ADMIN');
@@ -71,6 +81,17 @@ export const adminHandlers = [
       nextSettlementNetMillimes:
         batches.find((batch) => batch.status === 'SCHEDULED')?.netMillimes ?? 0,
       monthlyFlows: adminFlows(),
+      monthByCreditType: CREDIT_TYPES.map((creditType) => ({
+        creditType,
+        amountMillimes: db.admin.transactions
+          .filter(
+            (item) =>
+              item.creditType === creditType &&
+              item.status !== 'REFUSED' &&
+              item.createdAt.startsWith(new Date().toISOString().slice(0, 7)),
+          )
+          .reduce((sum, item) => sum + item.amountMillimes, 0),
+      })),
     });
   }),
 
@@ -101,6 +122,9 @@ export const adminHandlers = [
       errors.push({ pointer: '/email', code: 'INVALID_FORMAT' as never });
     if (body.phone !== '' && !PHONE.test(body.phone))
       errors.push({ pointer: '/phone', code: 'INVALID_FORMAT' as never });
+    if (!validTypes(body.acceptedCreditTypes)) {
+      errors.push({ pointer: '/acceptedCreditTypes', code: 'REQUIRED' });
+    }
     if (errors.length > 0) return validationProblem(errors);
     const profile = db.admin.profiles.find((item) => item.id === body.commissionProfileId);
     if (profile === undefined)
@@ -116,6 +140,7 @@ export const adminHandlers = [
       id: crypto.randomUUID(),
       name: body.name.trim(),
       category: body.category,
+      acceptedCreditTypes: [...new Set(body.acceptedCreditTypes)],
       city: body.city.trim(),
       status: 'PENDING_KYC',
       commissionProfile: { id: profile.id, name: profile.name, rateBps: profile.rateBps },
@@ -125,6 +150,32 @@ export const adminHandlers = [
     profile.merchantsCount += 1;
     audit('merchants.create', merchant.name);
     return HttpResponse.json<S['MerchantAccount']>(merchant, { status: 201 });
+  }),
+
+  http.get(apiUrl('/v1/admin/merchants/:merchantId'), async ({ params }) => {
+    const account = await guardRead('ADMIN');
+    if (isResponse(account)) return account;
+    const merchant = db.admin.merchants.find((item) => item.id === params.merchantId);
+    if (merchant === undefined) return problem(404, 'NOT_FOUND');
+    return HttpResponse.json<S['MerchantAccount']>(merchant);
+  }),
+
+  http.put(apiUrl('/v1/admin/merchants/:merchantId/credit-types'), async ({ request, params }) => {
+    const account = await guardWrite(request, 'ADMIN');
+    if (isResponse(account)) return account;
+    const merchant = db.admin.merchants.find((item) => item.id === params.merchantId);
+    if (merchant === undefined) return problem(404, 'NOT_FOUND');
+    const body = (await request.json()) as S['MerchantCreditTypes'];
+    if (!validTypes(body.acceptedCreditTypes)) {
+      return validationProblem([{ pointer: '/acceptedCreditTypes', code: 'REQUIRED' }]);
+    }
+    merchant.acceptedCreditTypes = [...new Set(body.acceptedCreditTypes)];
+    // The demo shop profile follows its account (what the merchant space shows).
+    if (merchant.id === MERCHANT_TENANT.id) {
+      db.merchant.profile.acceptedCreditTypes = merchant.acceptedCreditTypes;
+    }
+    audit('merchants.credit-types', merchant.name);
+    return HttpResponse.json<S['MerchantAccount']>(merchant);
   }),
 
   http.get(apiUrl('/v1/admin/companies'), async ({ request }) => {

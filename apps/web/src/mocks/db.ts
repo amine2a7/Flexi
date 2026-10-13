@@ -1,5 +1,12 @@
 import type { Schemas } from '@flexipay/api-client';
+import {
+  DEFAULT_TYPE_SETTINGS,
+  splitOverTypes,
+  typesForCategory,
+  type TypeBalances,
+} from './credit-types';
 import { buildKycFiles, buildOtherPayouts, buildTransactions } from './admin-seed';
+import { buildEmployee, type MockEmployee } from './employee-seed';
 import {
   COMPANY_TENANT,
   MERCHANT_TENANT,
@@ -65,7 +72,8 @@ export interface MockDb {
     profile: S['MerchantProfile'];
   };
   company: {
-    walletMillimes: number;
+    /** One balance per credit type (never a single global balance). */
+    balances: TypeBalances;
     employees: S['Employee'][];
     invoices: S['Invoice'][];
     previews: Map<string, S['EmployeeImportPreview']>;
@@ -91,6 +99,8 @@ export interface MockDb {
   };
   /** Credit orders of every company (company space: own orders only; admin space: all). */
   orders: MockOrder[];
+  /** Demo beneficiary (employee) of the demo company. */
+  employee: MockEmployee;
 }
 
 const SHOP_PREFIXES = [
@@ -100,6 +110,9 @@ const SHOP_PREFIXES = [
   'Boulangerie',
   'Snack',
   'Pâtisserie',
+  'Boutique',
+  'Station',
+  'Librairie',
 ] as const;
 const SHOP_NAMES = [
   'El Medina',
@@ -130,6 +143,9 @@ const CATEGORY_BY_PREFIX: Record<(typeof SHOP_PREFIXES)[number], S['MerchantCate
   Boulangerie: 'BAKERY',
   Snack: 'FAST_FOOD',
   Pâtisserie: 'BAKERY',
+  Boutique: 'CLOTHING',
+  Station: 'FUEL_STATION',
+  Librairie: 'GIFT_SHOP',
 };
 const COMPANY_NAMES = [
   'Groupe Carthage Services',
@@ -196,6 +212,7 @@ function buildMerchant(now: number) {
       id: random.uuid(),
       reference: `PAY-${String(sequence)}`,
       status,
+      creditType: random.next() < 0.8 ? 'RESTAURATION' : 'CADEAUX',
       amountMillimes: amount(random, 4_500, 62_000),
       customer: {
         firstName,
@@ -236,6 +253,7 @@ function buildMerchant(now: number) {
       id: random.uuid(),
       reference: `VIR-2026-${String(9300 - index)}`,
       status: index < 2 ? 'REQUESTED' : random.pick(statuses),
+      creditType: index % 5 === 3 ? 'CADEAUX' : 'RESTAURATION',
       grossMillimes: gross,
       commissionRateBps: rateBps,
       commissionMillimes: commission,
@@ -279,10 +297,12 @@ function buildMerchant(now: number) {
   const profile: S['MerchantProfile'] = {
     name: MERCHANT_TENANT.label,
     category: 'CAFE',
+    acceptedCreditTypes: ['RESTAURATION', 'CADEAUX'],
     city: 'Tunis',
     address: '14, rue de Marseille, 1000 Tunis',
     phone: '+21698421337',
     maskedIban: '•••• •••• •••• 4821',
+    paymentCode: '482915',
     commissionProfile: { id: '01930a1d-0001-7b00-8000-000000000001', name: 'Standard', rateBps },
     pointsOfSale: [
       { id: random.uuid(), name: 'Café El Medina — Centre-ville', city: 'Tunis' },
@@ -334,7 +354,13 @@ function buildCompany() {
   });
 
   const invoices: S['Invoice'][] = [];
-  return { walletMillimes: 48_250_000, employees, invoices, previews: new Map() };
+  const balances: TypeBalances = {
+    RESTAURATION: 28_400_000,
+    HABILLEMENT: 9_850_000,
+    CARBURANT: 6_200_000,
+    CADEAUX: 3_800_000,
+  };
+  return { balances, employees, invoices, previews: new Map() };
 }
 
 function buildAdmin(now: number, merchantRate: number) {
@@ -381,6 +407,7 @@ function buildAdmin(now: number, merchantRate: number) {
     id: MERCHANT_TENANT.id,
     name: MERCHANT_TENANT.label,
     category: 'CAFE',
+    acceptedCreditTypes: ['RESTAURATION', 'CADEAUX'],
     city: 'Tunis',
     status: 'APPROVED',
     commissionProfile: summary(profiles[0]!),
@@ -396,6 +423,7 @@ function buildAdmin(now: number, merchantRate: number) {
       id: random.uuid(),
       name,
       category: CATEGORY_BY_PREFIX[prefix],
+      acceptedCreditTypes: typesForCategory(CATEGORY_BY_PREFIX[prefix]),
       city: random.pick(CITIES),
       status:
         roll < 0.78
@@ -525,6 +553,7 @@ function buildAdmin(now: number, merchantRate: number) {
       creditValidityMonths: 12,
       maxFamilyMembers: 4,
       orderFeeRateBps: 150,
+      creditTypes: DEFAULT_TYPE_SETTINGS.map((item) => ({ ...item })),
     },
   };
 }
@@ -586,7 +615,7 @@ function buildOrder(
     id: random.uuid(),
     reference,
     status: 'AWAITING_CONFIRMATION',
-    category: 'RESTAURATION',
+    lines: splitOverTypes(random, value),
     requiresSecondValidation: value > SECOND_VALIDATION_THRESHOLD_MILLIMES,
     companyId: company.id,
     companyName: company.name,
@@ -739,26 +768,23 @@ export function invoicesOf(orders: readonly MockOrder[]): S['Invoice'][] {
 // The order circuit spans two accounts (company, then admin) and page reloads: orders and the
 // company balance are kept in this tab's sessionStorage (demo data only; uploaded files are not
 // kept, a demo transfer notice replaces them after a reload).
-const ORDERS_KEY = 'fp_mock_orders_v2';
+const ORDERS_KEY = 'fp_mock_orders_v3';
 
 export function saveOrders(): void {
   try {
     const orders = db.orders.map(({ proof: _proof, ...order }) => order);
-    sessionStorage.setItem(
-      ORDERS_KEY,
-      JSON.stringify({ orders, walletMillimes: db.company.walletMillimes }),
-    );
+    sessionStorage.setItem(ORDERS_KEY, JSON.stringify({ orders, balances: db.company.balances }));
   } catch {
     // Storage unavailable (tests, private mode): the data simply restarts from the seed.
   }
 }
 
-function savedOrders(): { orders: MockOrder[]; walletMillimes: number } | undefined {
+function savedOrders(): { orders: MockOrder[]; balances: TypeBalances } | undefined {
   try {
     const raw = sessionStorage.getItem(ORDERS_KEY);
     return raw === null
       ? undefined
-      : (JSON.parse(raw) as { orders: MockOrder[]; walletMillimes: number });
+      : (JSON.parse(raw) as { orders: MockOrder[]; balances: TypeBalances });
   } catch {
     return undefined;
   }
@@ -780,7 +806,7 @@ function build(): MockDb {
   const saved = savedOrders();
   const orders = saved?.orders ?? buildOrders(now, admin.companies);
   const company = buildCompany();
-  if (saved !== undefined) company.walletMillimes = saved.walletMillimes;
+  if (saved !== undefined) company.balances = saved.balances;
   company.invoices = invoicesOf(orders);
   return {
     accounts: createDemoAccounts(),
@@ -790,6 +816,7 @@ function build(): MockDb {
     company,
     admin,
     orders,
+    employee: buildEmployee(now),
   };
 }
 

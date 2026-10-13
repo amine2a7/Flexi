@@ -4,24 +4,40 @@ import { Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { Button } from './button';
+import { CreditTypeSelect, type CreditType } from './credit-type';
 import { SelectField, TextField } from './field';
+
+export interface Filters {
+  q: string;
+  status: string;
+  creditType: CreditType | '';
+}
 
 interface FilterBarProps {
   readonly searchLabel?: string;
   readonly statusLabel?: string;
   readonly statusOptions?: readonly { value: string; label: string }[];
-  readonly onApply: (filters: { q: string; status: string }) => void;
+  /** Adds the credit type filter (every list with amounts of credit). */
+  readonly withCreditType?: boolean;
+  readonly onApply: (filters: Filters) => void;
 }
 
-/** Search and status filter, applied explicitly (no request at every keystroke). */
-export function FilterBar({ searchLabel, statusLabel, statusOptions, onApply }: FilterBarProps) {
+/** Search, status and credit type filters, applied explicitly (no request at every keystroke). */
+export function FilterBar({
+  searchLabel,
+  statusLabel,
+  statusOptions,
+  withCreditType = false,
+  onApply,
+}: FilterBarProps) {
   const t = useTranslations('ui.filters');
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
+  const [creditType, setCreditType] = useState<CreditType | ''>('');
 
   function onSubmit(event: SyntheticEvent) {
     event.preventDefault();
-    onApply({ q: q.trim(), status });
+    onApply({ q: q.trim(), status, creditType });
   }
 
   return (
@@ -35,7 +51,9 @@ export function FilterBar({ searchLabel, statusLabel, statusOptions, onApply }: 
           label={searchLabel}
           type="search"
           value={q}
-          onChange={(event) => { setQ(event.target.value); }}
+          onChange={(event) => {
+            setQ(event.target.value);
+          }}
         />
       ) : null}
       {statusOptions !== undefined && statusLabel !== undefined ? (
@@ -44,7 +62,17 @@ export function FilterBar({ searchLabel, statusLabel, statusOptions, onApply }: 
           options={statusOptions}
           placeholder={t('allStatuses')}
           value={status}
-          onChange={(event) => { setStatus(event.target.value); }}
+          onChange={(event) => {
+            setStatus(event.target.value);
+          }}
+        />
+      ) : null}
+      {withCreditType ? (
+        <CreditTypeSelect
+          label={t('creditType')}
+          placeholder={t('allTypes')}
+          value={creditType}
+          onChange={setCreditType}
         />
       ) : null}
       <div className="flex gap-2">
@@ -60,7 +88,8 @@ export function FilterBar({ searchLabel, statusLabel, statusOptions, onApply }: 
           onClick={() => {
             setQ('');
             setStatus('');
-            onApply({ q: '', status: '' });
+            setCreditType('');
+            onApply({ q: '', status: '', creditType: '' });
           }}
         >
           {t('reset')}

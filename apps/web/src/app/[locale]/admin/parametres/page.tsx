@@ -13,7 +13,10 @@ import { formatMillimes } from '@/lib/format/money';
 import { parseBps, parseMillimes } from '@/lib/format/money-input';
 import { Amount, Rate } from '@/components/ui/amount';
 import { Button } from '@/components/ui/button';
-import { StatCard } from '@/components/ui/card';
+import { Card, CardTitle, StatCard } from '@/components/ui/card';
+import { CreditTypeBadge, useCreditTypeLabel } from '@/components/ui/credit-type';
+import { DataTable, type Column } from '@/components/ui/data-table';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { TextField } from '@/components/ui/field';
 import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { Modal } from '@/components/ui/modal';
@@ -37,9 +40,45 @@ function integerIn(text: string, min: number, max: number): number | undefined {
 
 export default function SettingsPage() {
   const t = useTranslations('admin.settings');
+  const tTypes = useTranslations('ui.creditTypes');
   const locale = useLocale();
   const settings = useApiQuery(() => getApi().GET('/v1/admin/settings'), []);
   const [editing, setEditing] = useState(false);
+  const typeColumns: Column<Schemas['CreditTypeSettings']>[] = [
+    {
+      key: 'type',
+      header: tTypes('column'),
+      cell: (row) => <CreditTypeBadge type={row.creditType} />,
+    },
+    {
+      key: 'enabled',
+      header: t('typeStatus'),
+      cell: (row) => (
+        <StatusBadge
+          status={row.enabled ? 'ACTIVE' : 'SUSPENDED'}
+          labelKey={row.enabled ? 'admin.settings.typeOn' : 'admin.settings.typeOff'}
+        />
+      ),
+    },
+    {
+      key: 'commission',
+      header: t('typeCommission'),
+      align: 'end',
+      cell: (row) => <Rate bps={row.commissionRateBps} />,
+    },
+    {
+      key: 'validity',
+      header: t('typeValidity'),
+      align: 'end',
+      cell: (row) => t('creditValidityValue', { months: row.validityMonths }),
+    },
+    {
+      key: 'limit',
+      header: t('typeDailyLimit'),
+      align: 'end',
+      cell: (row) => <Amount millimes={row.dailyLimitMillimes} />,
+    },
+  ];
 
   return (
     <>
@@ -86,6 +125,16 @@ export default function SettingsPage() {
               icon={<Users className="size-icon-md" />}
             />
           </div>
+          <Card className="mt-6">
+            <CardTitle>{t('typesTitle')}</CardTitle>
+            <DataTable
+              caption={t('typesTitle')}
+              columns={typeColumns}
+              rows={settings.data.creditTypes}
+              rowKey={(row) => row.creditType}
+              empty={{ title: t('typesTitle') }}
+            />
+          </Card>
           {editing ? (
             <ChangeSettings
               current={settings.data}
@@ -110,6 +159,7 @@ function ChangeSettings({
 }) {
   const t = useTranslations('admin.settings');
   const tRoot = useTranslations();
+  const typeLabel = useCreditTypeLabel();
   const toast = useToast();
   const [draft, setDraft] = useState({
     payoutMinimum: formatMillimes(current.payoutMinimumMillimes, locale),
@@ -118,6 +168,16 @@ function ChangeSettings({
     orderFee: bpsToText(current.orderFeeRateBps, locale),
     reason: '',
   });
+  const [types, setTypes] = useState(() =>
+    current.creditTypes.map((item) => ({
+      creditType: item.creditType,
+      enabled: item.enabled,
+      commission: bpsToText(item.commissionRateBps, locale),
+      validity: String(item.validityMonths),
+      limit: formatMillimes(item.dailyLimitMillimes, locale),
+    })),
+  );
+  const [typeErrors, setTypeErrors] = useState<Record<string, string>>({});
   const [invalid, setInvalid] = useState<Partial<Record<keyof typeof draft, string>>>({});
   const [error, setError] = useState<unknown>(undefined);
   const [saving, setSaving] = useState(false);
@@ -141,7 +201,41 @@ function ChangeSettings({
       ...(settings.orderFeeRateBps === undefined ? { orderFee: message } : {}),
       ...(draft.reason.trim() === '' ? { reason: tRoot('admin.merchants.form.required') } : {}),
     };
+    const parsedTypes = types.map((item) => ({
+      creditType: item.creditType,
+      enabled: item.enabled,
+      commissionRateBps: parseBps(item.commission, locale),
+      validityMonths: integerIn(item.validity, 1, 60),
+      dailyLimitMillimes: parseMillimes(item.limit, locale),
+    }));
+    const nextTypeErrors: Record<string, string> = {};
+    for (const item of parsedTypes) {
+      if (item.commissionRateBps === undefined)
+        nextTypeErrors[`${item.creditType}.commission`] = message;
+      if (item.validityMonths === undefined)
+        nextTypeErrors[`${item.creditType}.validity`] = message;
+      if (item.dailyLimitMillimes === undefined || item.dailyLimitMillimes === 0) {
+        nextTypeErrors[`${item.creditType}.limit`] = message;
+      }
+    }
+    setTypeErrors(nextTypeErrors);
     setInvalid(errors);
+    const validTypes = parsedTypes.flatMap((item) =>
+      item.commissionRateBps === undefined ||
+      item.validityMonths === undefined ||
+      item.dailyLimitMillimes === undefined
+        ? []
+        : [
+            {
+              creditType: item.creditType,
+              enabled: item.enabled,
+              commissionRateBps: item.commissionRateBps,
+              validityMonths: item.validityMonths,
+              dailyLimitMillimes: item.dailyLimitMillimes,
+            },
+          ],
+    );
+    if (Object.keys(nextTypeErrors).length > 0 || validTypes.length !== types.length) return;
     if (
       Object.keys(errors).length > 0 ||
       settings.payoutMinimumMillimes === undefined ||
@@ -161,6 +255,7 @@ function ChangeSettings({
             creditValidityMonths: settings.creditValidityMonths,
             maxFamilyMembers: settings.maxFamilyMembers,
             orderFeeRateBps: settings.orderFeeRateBps,
+            creditTypes: validTypes,
           },
           reason: draft.reason.trim(),
         },
@@ -228,6 +323,63 @@ function ChangeSettings({
             onChange={(event) => set('orderFee')(event.target.value)}
           />
         </div>
+        <fieldset className="flex flex-col gap-4">
+          <legend className="mb-2 text-title-sm text-text">{t('typesTitle')}</legend>
+          {types.map((item, index) => {
+            const label = typeLabel(item.creditType);
+            const update = (patch: Partial<(typeof types)[number]>) =>
+              setTypes((previous) =>
+                previous.map((entry, position) =>
+                  position === index ? { ...entry, ...patch } : entry,
+                ),
+              );
+            return (
+              <div
+                key={item.creditType}
+                className="flex flex-col gap-3 rounded-card-desktop border border-border p-4"
+              >
+                <label className="flex min-h-touch-target-min items-center gap-3">
+                  <input
+                    type="checkbox"
+                    className="size-icon-sm accent-navy"
+                    checked={item.enabled}
+                    onChange={(event) => update({ enabled: event.target.checked })}
+                  />
+                  <CreditTypeBadge type={item.creditType} />
+                  <span className="text-caption text-text-muted">
+                    {t('typeEnabledLabel', { type: label })}
+                  </span>
+                </label>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <TextField
+                    label={t('typeCommissionLabel', { type: label })}
+                    error={typeErrors[`${item.creditType}.commission`]}
+                    inputMode="decimal"
+                    dir="ltr"
+                    value={item.commission}
+                    onChange={(event) => update({ commission: event.target.value })}
+                  />
+                  <TextField
+                    label={t('typeValidityLabel', { type: label })}
+                    error={typeErrors[`${item.creditType}.validity`]}
+                    inputMode="numeric"
+                    dir="ltr"
+                    value={item.validity}
+                    onChange={(event) => update({ validity: event.target.value })}
+                  />
+                  <TextField
+                    label={t('typeLimitLabel', { type: label })}
+                    error={typeErrors[`${item.creditType}.limit`]}
+                    inputMode="decimal"
+                    dir="ltr"
+                    value={item.limit}
+                    onChange={(event) => update({ limit: event.target.value })}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </fieldset>
         <TextField
           label={t('reason')}
           error={invalid.reason}

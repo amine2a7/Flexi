@@ -141,6 +141,11 @@ module.exports = {
         "{count, plural, one {# demande de virement commerçant à contrôler} other {# demandes de virement commerçant à contrôler}}",
         "{count, plural, one {# merchant payout request to check} other {# merchant payout requests to check}}",
         "{count, plural, one {# طلب تحويل تاجر للمراجعة} other {# طلبات تحويل تجار للمراجعة}}"
+      ],
+      "breakdownDescription": [
+        "Paiements du mois sur la plateforme, par type de crédit.",
+        "Payments of the month on the platform, by credit type.",
+        "دفعات الشهر على المنصة حسب النوع."
       ]
     },
     "merchants": {
@@ -285,6 +290,51 @@ module.exports = {
         "Un commerçant porte déjà ce nom.",
         "A merchant already has this name.",
         "يوجد تاجر بهذا الاسم."
+      ],
+      "types": [
+        "Types acceptés",
+        "Accepted types",
+        "الأنواع المقبولة"
+      ],
+      "open": [
+        "Ouvrir",
+        "Open",
+        "فتح"
+      ],
+      "openMerchant": [
+        "Ouvrir la fiche de {name}",
+        "Open {name}'s record",
+        "فتح ملف {name}"
+      ],
+      "detailBack": [
+        "Retour aux commerçants",
+        "Back to merchants",
+        "العودة إلى التجار"
+      ],
+      "detailInfo": [
+        "Informations",
+        "Details",
+        "المعلومات"
+      ],
+      "typesTitle": [
+        "Types de crédit acceptés",
+        "Accepted credit types",
+        "أنواع الأرصدة المقبولة"
+      ],
+      "typesHint": [
+        "Le commerçant n’encaisse que ces types ; un bénéficiaire paie avec le solde du type choisi.",
+        "The merchant only collects these types; a beneficiary pays with the balance of the chosen type.",
+        "لا يحصّل التاجر إلا هذه الأنواع؛ ويدفع المستفيد من رصيد النوع المختار."
+      ],
+      "typesSave": [
+        "Enregistrer les types",
+        "Save the types",
+        "حفظ الأنواع"
+      ],
+      "typesSaved": [
+        "Types de crédit enregistrés.",
+        "Credit types saved.",
+        "تم حفظ الأنواع."
       ]
     },
     "companies": {
@@ -861,6 +911,66 @@ module.exports = {
         "Vérifiez les valeurs saisies.",
         "Check the values entered.",
         "تحقّق من القيم المدخلة."
+      ],
+      "typesTitle": [
+        "Paramétrage par type de crédit",
+        "Settings by credit type",
+        "الإعدادات حسب النوع"
+      ],
+      "typeEnabled": [
+        "Actif",
+        "Enabled",
+        "مفعّل"
+      ],
+      "typeCommission": [
+        "Commission",
+        "Commission",
+        "العمولة"
+      ],
+      "typeValidity": [
+        "Validité",
+        "Validity",
+        "الصلاحية"
+      ],
+      "typeDailyLimit": [
+        "Plafond journalier",
+        "Daily limit",
+        "السقف اليومي"
+      ],
+      "typeStatus": [
+        "État",
+        "State",
+        "الحالة"
+      ],
+      "typeOn": [
+        "Activé",
+        "On",
+        "مفعّل"
+      ],
+      "typeOff": [
+        "Désactivé",
+        "Off",
+        "معطّل"
+      ],
+      "typeCommissionLabel": [
+        "Commission {type} (%)",
+        "{type} commission (%)",
+        "عمولة {type} (%)"
+      ],
+      "typeValidityLabel": [
+        "Validité {type} (mois)",
+        "{type} validity (months)",
+        "صلاحية {type} (أشهر)"
+      ],
+      "typeLimitLabel": [
+        "Plafond journalier {type} (TND)",
+        "{type} daily limit (TND)",
+        "السقف اليومي {type} (د.ت)"
+      ],
+      "typeEnabledLabel": [
+        "Type {type} activé",
+        "{type} enabled",
+        "النوع {type} مفعّل"
       ]
     },
     "kyc": {

@@ -10,6 +10,7 @@ import {
   type MockOrder,
 } from '../db';
 import { COMPANY_TENANT } from '../fixtures/accounts';
+import { checkOrderLines } from './company';
 import { FUNDING_ACCOUNT } from '../fixtures/funding-account';
 import {
   apiUrl,
@@ -178,9 +179,14 @@ export const orderHandlers = [
     const account = await guardRead('COMPANY');
     if (isResponse(account)) return account;
     const status = listParams(request).query.get('status');
+    const creditType = listParams(request).query.get('creditType');
     const items = db.orders
       .filter((order) => order.companyId === COMPANY_TENANT.id)
       .filter((order) => status === null || order.status === status)
+      .filter(
+        (order) =>
+          creditType === null || order.lines.some((line) => line.creditType === creditType),
+      )
       .map(orderSummary);
     return HttpResponse.json<S['CreditOrderPage']>(paginate(items, request));
   }),
@@ -189,22 +195,22 @@ export const orderHandlers = [
     const account = await guardWrite(request, 'COMPANY', true);
     if (isResponse(account)) return account;
     const body = (await request.json()) as S['CreditOrderCreate'];
-    if (!Number.isInteger(body.amountMillimes) || body.amountMillimes < 100_000) {
-      return validationProblem([{ pointer: '/amountMillimes', code: 'TOO_SMALL' }]);
-    }
-    const fees = commissionOf(body.amountMillimes, db.admin.settings.orderFeeRateBps);
+    const invalid = checkOrderLines(body.lines);
+    if (invalid !== undefined) return invalid;
+    const amount = body.lines.reduce((sum, line) => sum + line.amountMillimes, 0);
+    const fees = commissionOf(amount, db.admin.settings.orderFeeRateBps);
     const own = db.admin.companies.find((company) => company.id === COMPANY_TENANT.id);
     const order: MockOrder = {
       id: crypto.randomUUID(),
       reference: `CMD-2026-${String(7300 + db.orders.length)}`,
       status: 'AWAITING_CONFIRMATION',
-      category: body.category ?? 'RESTAURATION',
-      requiresSecondValidation: body.amountMillimes > SECOND_VALIDATION_THRESHOLD_MILLIMES,
+      lines: body.lines,
+      requiresSecondValidation: amount > SECOND_VALIDATION_THRESHOLD_MILLIMES,
       companyId: COMPANY_TENANT.id,
       companyName: own?.name ?? COMPANY_TENANT.label,
-      amountMillimes: body.amountMillimes,
+      amountMillimes: amount,
       feesMillimes: fees,
-      totalMillimes: body.amountMillimes + fees,
+      totalMillimes: amount + fees,
       createdAt: new Date().toISOString(),
       paymentReference: `FXP-${String(Date.now()).slice(-8)}`,
       history: [],
@@ -315,10 +321,15 @@ export const orderHandlers = [
     if (isResponse(account)) return account;
     const { query } = listParams(request);
     const status = query.get('status');
+    const creditType = query.get('creditType');
     const companyId = query.get('companyId');
     const rank = (order: MockOrder) => (NEEDS_ADMIN.includes(order.status) ? 0 : 1);
     const items = db.orders
       .filter((order) => status === null || order.status === status)
+      .filter(
+        (order) =>
+          creditType === null || order.lines.some((line) => line.creditType === creditType),
+      )
       .filter((order) => companyId === null || order.companyId === companyId)
       .sort((a, b) => rank(a) - rank(b) || b.createdAt.localeCompare(a.createdAt))
       .map(orderSummary);
@@ -386,7 +397,10 @@ export const orderHandlers = [
     }
     order.status = 'VALIDATED';
     record(order, 'VALIDATED');
-    if (order.companyId === COMPANY_TENANT.id) db.company.walletMillimes += order.amountMillimes;
+    // Each line credits the balance of its own type.
+    if (order.companyId === COMPANY_TENANT.id) {
+      for (const line of order.lines) db.company.balances[line.creditType] += line.amountMillimes;
+    }
     audit('orders.validate', order.reference);
     saveOrders();
     refreshInvoices();

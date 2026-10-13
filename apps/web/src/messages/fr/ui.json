@@ -23,7 +23,9 @@
   "filters": {
     "apply": "Filtrer",
     "reset": "Réinitialiser",
-    "allStatuses": "Tous les statuts"
+    "allStatuses": "Tous les statuts",
+    "creditType": "Type de crédit",
+    "allTypes": "Tous les types"
   },
   "chart": {
     "empty": "Aucune donnée sur la période.",
@@ -40,5 +42,19 @@
     "download": "Télécharger",
     "pdf": "Document PDF : téléchargez-le pour le consulter.",
     "size": "{name} · {size} Ko"
+  },
+  "creditTypes": {
+    "column": "Type",
+    "balanceOf": "Solde {type}",
+    "total": "Total, à titre indicatif",
+    "share": "{percent} %",
+    "breakdownTitle": "Répartition par type",
+    "breakdownEmpty": "Aucun montant sur la période.",
+    "disabled": "Désactivé",
+    "accepted": "Types acceptés",
+    "pickOne": "Choisissez au moins un type.",
+    "limitUsed": "{spent} dépensés aujourd'hui sur {limit}",
+    "noTransfer": "Chaque type a son propre solde : aucun transfert ni paiement entre types.",
+    "insufficient": "Solde {type} insuffisant : il manque {missing}."
   }
 }

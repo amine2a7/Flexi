@@ -6,11 +6,13 @@ import { getApi } from '@/lib/api/client';
 import { useApiQuery } from '@/lib/api/use-api-query';
 import { Rate } from '@/components/ui/amount';
 import { Card, CardTitle } from '@/components/ui/card';
+import { CreditTypeBadges } from '@/components/ui/credit-type';
 import { DescriptionList, PageHeader } from '@/components/ui/layout-blocks';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 
 export default function ShopPage() {
   const t = useTranslations('merchant.shop');
+  const tShop = useTranslations('merchant.shop');
   const tCategory = useTranslations('category');
   const tSubRole = useTranslations('subRole');
   const profile = useApiQuery(() => getApi().GET('/v1/merchant/profile'), []);
@@ -29,6 +31,10 @@ export default function ShopPage() {
             <DescriptionList
               items={[
                 { label: t('category'), value: tCategory(profile.data.category) },
+                {
+                  label: tShop('acceptedTypes'),
+                  value: <CreditTypeBadges types={profile.data.acceptedCreditTypes} />,
+                },
                 { label: t('city'), value: profile.data.city },
                 { label: t('address'), value: profile.data.address },
                 { label: t('phone'), value: <span dir="ltr">{profile.data.phone}</span> },

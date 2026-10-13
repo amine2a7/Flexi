@@ -27,6 +27,18 @@ module.exports = {
       "info-text": "#1D4ED8",
       "info-soft": "#DBEAFE",
       "neutral-text": "#475569",
+      "type-food": "#EA580C",
+      "type-food-soft": "#FFEDD5",
+      "type-food-text": "#9A3412",
+      "type-clothing": "#7C3AED",
+      "type-clothing-soft": "#EDE9FE",
+      "type-clothing-text": "#5B21B6",
+      "type-fuel": "#0891B2",
+      "type-fuel-soft": "#CFFAFE",
+      "type-fuel-text": "#155E75",
+      "type-gift": "#DB2777",
+      "type-gift-soft": "#FCE7F3",
+      "type-gift-text": "#9D174D",
       "on-emerald": "#0B1D33",
       "on-navy": "#FFFFFF",
       "on-navy-muted": "#CBD5E1",
@@ -394,6 +406,40 @@ module.exports = {
         "icon": "CircleX",
         "bg": "danger-soft",
         "fg": "danger-text"
+      }
+    },
+    "creditType": {
+      "RESTAURATION": {
+        "label": "Restauration",
+        "labelKey": "creditType.RESTAURATION",
+        "icon": "UtensilsCrossed",
+        "bg": "type-food-soft",
+        "fg": "type-food-text",
+        "solid": "type-food"
+      },
+      "HABILLEMENT": {
+        "label": "Habillement",
+        "labelKey": "creditType.HABILLEMENT",
+        "icon": "Shirt",
+        "bg": "type-clothing-soft",
+        "fg": "type-clothing-text",
+        "solid": "type-clothing"
+      },
+      "CARBURANT": {
+        "label": "Carburant",
+        "labelKey": "creditType.CARBURANT",
+        "icon": "Fuel",
+        "bg": "type-fuel-soft",
+        "fg": "type-fuel-text",
+        "solid": "type-fuel"
+      },
+      "CADEAUX": {
+        "label": "Cadeaux",
+        "labelKey": "creditType.CADEAUX",
+        "icon": "Gift",
+        "bg": "type-gift-soft",
+        "fg": "type-gift-text",
+        "solid": "type-gift"
       }
     }
   }

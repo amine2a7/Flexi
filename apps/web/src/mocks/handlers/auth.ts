@@ -55,15 +55,19 @@ export const authHandlers = [
         candidate.password === body.password,
     );
     if (account === undefined) return problem(401, 'INVALID_CREDENTIALS');
-    if (account.role === 'EMPLOYEE' || account.role === 'FAMILY_MEMBER')
-      return problem(403, 'FORBIDDEN');
+    // Decision of 2026-10-13: employees have a web space; family members stay mobile only.
+    if (account.role === 'FAMILY_MEMBER') return problem(403, 'FORBIDDEN');
     if (account.temporaryPassword) {
       const session = openSession(account.id, 'PASSWORD_CHANGE');
-      return HttpResponse.json<S['LoginResult']>(sessionResult(session, account.role), { headers: sessionCookie(session) });
+      return HttpResponse.json<S['LoginResult']>(sessionResult(session, account.role), {
+        headers: sessionCookie(session),
+      });
     }
     if (!account.mfaEnrolled) {
       const session = openSession(account.id, 'MFA_ENROLL');
-      return HttpResponse.json<S['LoginResult']>(sessionResult(session, account.role), { headers: sessionCookie(session) });
+      return HttpResponse.json<S['LoginResult']>(sessionResult(session, account.role), {
+        headers: sessionCookie(session),
+      });
     }
     const challengeId = crypto.randomUUID();
     const expiresAt = Date.now() + MFA_CHALLENGE_MS;
@@ -94,7 +98,9 @@ export const authHandlers = [
     if (recoveryIndex >= 0) account.recoveryCodes.splice(recoveryIndex, 1);
     db.challenges.delete(body.challengeId);
     const session = openSession(account.id, 'NONE');
-    return HttpResponse.json<S['SessionResult']>(sessionResult(session, account.role), { headers: sessionCookie(session) });
+    return HttpResponse.json<S['SessionResult']>(sessionResult(session, account.role), {
+      headers: sessionCookie(session),
+    });
   }),
 
   http.post(apiUrl('/v1/auth/password/change'), async ({ request }) => {
@@ -114,7 +120,9 @@ export const authHandlers = [
     account.password = body.newPassword;
     account.temporaryPassword = false;
     const session = openSession(account.id, account.mfaEnrolled ? 'NONE' : 'MFA_ENROLL');
-    return HttpResponse.json<S['SessionResult']>(sessionResult(session, account.role), { headers: sessionCookie(session) });
+    return HttpResponse.json<S['SessionResult']>(sessionResult(session, account.role), {
+      headers: sessionCookie(session),
+    });
   }),
 
   http.get(apiUrl('/v1/auth/password-policy'), async () => {
@@ -151,11 +159,32 @@ export const authHandlers = [
     const session = openSession(account.id, 'NONE');
     return HttpResponse.json<S['MfaEnrollmentConfirmResult']>(
       {
-      ...sessionResult(session, account.role),
-      recoveryCodes: [...DEMO_RECOVERY_CODES],
-    },
+        ...sessionResult(session, account.role),
+        recoveryCodes: [...DEMO_RECOVERY_CODES],
+      },
       { headers: sessionCookie(session) },
     );
+  }),
+
+  http.post(apiUrl('/v1/auth/mfa/recovery-codes'), async ({ request }) => {
+    await latency();
+    const account = currentAccount();
+    if (account === undefined || db.session?.step !== 'NONE')
+      return problem(401, 'UNAUTHENTICATED');
+    const body = (await request.json()) as S['MfaProofRequest'];
+    if (body.currentPassword !== account.password) {
+      return validationProblem([{ pointer: '/currentPassword', code: 'CURRENT_PASSWORD_INVALID' }]);
+    }
+    if (body.currentCode !== DEMO_MFA_CODE && !account.recoveryCodes.includes(body.currentCode)) {
+      return problem(401, 'MFA_CODE_INVALID');
+    }
+    const codes = Array.from({ length: 10 }, () =>
+      Array.from(crypto.getRandomValues(new Uint8Array(10)), (byte) =>
+        'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'.charAt(byte % 32),
+      ).join(''),
+    );
+    account.recoveryCodes = codes;
+    return HttpResponse.json<S['RecoveryCodes']>({ recoveryCodes: codes });
   }),
 
   http.post(apiUrl('/v1/auth/refresh'), async () => {

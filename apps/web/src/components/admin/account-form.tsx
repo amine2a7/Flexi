@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { SelectField, TextField } from '@/components/ui/field';
 import { Alert } from '@/components/ui/layout-blocks';
 import { Modal } from '@/components/ui/modal';
+import { CreditTypeCheckboxes, type CreditType } from '@/components/ui/credit-type';
 import { useToast } from '@/components/ui/toast';
 
 export type AccountKind = 'merchant' | 'company';
@@ -22,6 +23,9 @@ const CATEGORIES: Schemas['MerchantCategory'][] = [
   'GROCERY',
   'BAKERY',
   'FAST_FOOD',
+  'CLOTHING',
+  'FUEL_STATION',
+  'GIFT_SHOP',
 ];
 
 interface Draft {
@@ -31,6 +35,8 @@ interface Draft {
   phone: string;
   email: string;
   commissionProfileId: string;
+  /** Field errors only (the value lives in its own state). */
+  acceptedCreditTypes?: never;
 }
 
 const EMPTY: Draft = {
@@ -62,6 +68,7 @@ export function AccountForm({
   const locale = useLocale();
   const toast = useToast();
   const [draft, setDraft] = useState<Draft>(EMPTY);
+  const [types, setTypes] = useState<CreditType[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof Draft, string>>>({});
   const [error, setError] = useState<unknown>(undefined);
   const [saving, setSaving] = useState(false);
@@ -73,6 +80,7 @@ export function AccountForm({
     [kind],
   );
 
+  const typesError = fieldErrors.acceptedCreditTypes;
   const set = (field: keyof Draft) => (value: string) =>
     setDraft((current) => ({ ...current, [field]: value }));
 
@@ -94,6 +102,7 @@ export function AccountForm({
               body: {
                 ...common,
                 category: draft.category as Schemas['MerchantCategory'],
+                acceptedCreditTypes: types,
                 commissionProfileId: draft.commissionProfileId,
               },
             })
@@ -101,6 +110,7 @@ export function AccountForm({
       if (result.data !== undefined) {
         toast.notify('success', t('createdToast', { name: result.data.name }));
         setDraft(EMPTY);
+        setTypes([]);
         onOpenChange(false);
         onCreated();
         return;
@@ -194,6 +204,17 @@ export function AccountForm({
             value={draft.email}
             onChange={(event) => set('email')(event.target.value)}
           />
+          {kind === 'merchant' ? (
+            <div className="sm:col-span-2">
+              <CreditTypeCheckboxes
+                legend={t('typesTitle')}
+                hint={t('typesHint')}
+                error={typesError}
+                value={types}
+                onChange={setTypes}
+              />
+            </div>
+          ) : null}
           {kind === 'merchant' ? (
             <SelectField
               label={t('profile')}

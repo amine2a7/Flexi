@@ -8,7 +8,7 @@ import { usePagedList } from '@/lib/api/use-paged-list';
 import { usePaymentColumns } from '@/components/commercant/payment-columns';
 import { Card } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
-import { FilterBar } from '@/components/ui/filter-bar';
+import { FilterBar, type Filters } from '@/components/ui/filter-bar';
 import { PageHeader } from '@/components/ui/layout-blocks';
 
 const STATUSES: Schemas['PaymentStatus'][] = [
@@ -23,7 +23,7 @@ export default function MerchantHistoryPage() {
   const t = useTranslations('merchant.history');
   const tStatus = useTranslations('statusLabel');
   const columns = usePaymentColumns();
-  const [filters, setFilters] = useState({ q: '', status: '' });
+  const [filters, setFilters] = useState<Filters>({ q: '', status: '', creditType: '' });
   const list = usePagedList(
     (cursor, withCount) =>
       getApi().GET('/v1/merchant/payments', {
@@ -35,6 +35,7 @@ export default function MerchantHistoryPage() {
             ...(filters.status === ''
               ? {}
               : { status: filters.status as Schemas['PaymentStatus'] }),
+            ...(filters.creditType === '' ? {} : { creditType: filters.creditType }),
           },
         },
       }),
@@ -49,6 +50,7 @@ export default function MerchantHistoryPage() {
           searchLabel={t('search')}
           statusLabel={t('status')}
           statusOptions={STATUSES.map((value) => ({ value, label: tStatus(value) }))}
+          withCreditType
           onApply={setFilters}
         />
         <DataTable

@@ -17,6 +17,7 @@ import {
 import { Amount } from '@/components/ui/amount';
 import { Button, buttonClasses } from '@/components/ui/button';
 import { Card, StatCard } from '@/components/ui/card';
+import { CreditTypeBadges, CreditTypeSelect, type CreditType } from '@/components/ui/credit-type';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { SelectField } from '@/components/ui/field';
 import { PageHeader } from '@/components/ui/layout-blocks';
@@ -26,8 +27,9 @@ type Status = Schemas['OrderStatus'];
 interface Filters {
   status: Status | '';
   companyId: string;
+  creditType: CreditType | '';
 }
-const NO_FILTER: Filters = { status: '', companyId: '' };
+const NO_FILTER: Filters = { status: '', companyId: '', creditType: '' };
 
 /** Number of orders in a status (bounded counter of the contract), for the action tiles. */
 function useStatusCount(status: Status) {
@@ -44,6 +46,7 @@ function useStatusCount(status: Status) {
 export default function AdminOrdersPage() {
   const t = useTranslations('orders');
   const tFilters = useTranslations('ui.filters');
+  const tTypes = useTranslations('ui.creditTypes');
   const locale = useLocale();
   const [filters, setFilters] = useState<Filters>(NO_FILTER);
   const [draft, setDraft] = useState<Filters>(NO_FILTER);
@@ -62,6 +65,7 @@ export default function AdminOrdersPage() {
             withCount,
             ...(filters.status === '' ? {} : { status: filters.status }),
             ...(filters.companyId === '' ? {} : { companyId: filters.companyId }),
+            ...(filters.creditType === '' ? {} : { creditType: filters.creditType }),
           },
         },
       }),
@@ -102,6 +106,11 @@ export default function AdminOrdersPage() {
         </Link>
       ),
       sortValue: (row) => row.reference,
+    },
+    {
+      key: 'types',
+      header: tTypes('column'),
+      cell: (row) => <CreditTypeBadges types={row.lines.map((line) => line.creditType)} />,
     },
     {
       key: 'company',
@@ -183,7 +192,7 @@ export default function AdminOrdersPage() {
         <form
           onSubmit={onSubmit}
           role="search"
-          className="mb-4 grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          className="mb-4 grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-4"
         >
           <SelectField
             label={t('fields.status')}
@@ -202,6 +211,12 @@ export default function AdminOrdersPage() {
             onChange={(event) =>
               setDraft((previous) => ({ ...previous, companyId: event.target.value }))
             }
+          />
+          <CreditTypeSelect
+            label={tFilters('creditType')}
+            placeholder={tFilters('allTypes')}
+            value={draft.creditType}
+            onChange={(value) => setDraft((previous) => ({ ...previous, creditType: value }))}
           />
           <div className="flex gap-2">
             <Button

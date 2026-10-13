@@ -23,7 +23,9 @@
   "filters": {
     "apply": "تصفية",
     "reset": "إعادة التعيين",
-    "allStatuses": "كل الحالات"
+    "allStatuses": "كل الحالات",
+    "creditType": "نوع الرصيد",
+    "allTypes": "كل الأنواع"
   },
   "chart": {
     "empty": "لا توجد بيانات لهذه الفترة.",
@@ -40,5 +42,19 @@
     "download": "تنزيل",
     "pdf": "مستند PDF: نزّله للاطلاع عليه.",
     "size": "{name} · {size} ك.ب"
+  },
+  "creditTypes": {
+    "column": "النوع",
+    "balanceOf": "رصيد {type}",
+    "total": "المجموع، للعلم فقط",
+    "share": "{percent} %",
+    "breakdownTitle": "التوزيع حسب النوع",
+    "breakdownEmpty": "لا مبالغ لهذه الفترة.",
+    "disabled": "معطّل",
+    "accepted": "الأنواع المقبولة",
+    "pickOne": "اختر نوعًا واحدًا على الأقل.",
+    "limitUsed": "صُرف {spent} اليوم من أصل {limit}",
+    "noTransfer": "لكل نوع رصيده الخاص: لا تحويل ولا دفع بين الأنواع.",
+    "insufficient": "رصيد {type} غير كافٍ: ينقص {missing}."
   }
 }

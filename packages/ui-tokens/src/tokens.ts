@@ -19,6 +19,12 @@ export interface StatusToken {
   fg: string;
 }
 
+/** Credit type (Restauration, Habillement, Carburant, Cadeaux): one colour and one icon each. */
+export interface CreditTypeToken extends StatusToken {
+  /** Solid colour for bars and charts (>= 3:1 on white). */
+  solid: string;
+}
+
 export interface Tokens {
   color: Record<string, ColorToken>;
   'color-dark'?: Record<string, ColorToken | string>;
@@ -37,6 +43,7 @@ export interface Tokens {
   shadow: Record<string, string>;
   motion: Record<string, number>;
   status: Record<string, StatusToken>;
+  'credit-type': Record<string, CreditTypeToken>;
 }
 
 const here = dirname(fileURLToPath(import.meta.url));

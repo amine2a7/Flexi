@@ -10,7 +10,8 @@ import { formatDateTime } from '@/lib/format/date';
 import { Amount } from '@/components/ui/amount';
 import { Card } from '@/components/ui/card';
 import { DataTable, type Column } from '@/components/ui/data-table';
-import { FilterBar } from '@/components/ui/filter-bar';
+import { CreditTypeBadge } from '@/components/ui/credit-type';
+import { FilterBar, type Filters } from '@/components/ui/filter-bar';
 import { PageHeader } from '@/components/ui/layout-blocks';
 import { StatusBadge } from '@/components/ui/status-badge';
 
@@ -22,7 +23,7 @@ export default function AdminTransactionsPage() {
   const t = useTranslations('admin.transactions');
   const tRoot = useTranslations();
   const locale = useLocale();
-  const [filters, setFilters] = useState({ q: '', status: '' });
+  const [filters, setFilters] = useState<Filters>({ q: '', status: '', creditType: '' });
   const list = usePagedList(
     (cursor, withCount) =>
       getApi().GET('/v1/admin/transactions', {
@@ -32,6 +33,7 @@ export default function AdminTransactionsPage() {
             withCount,
             ...(filters.q === '' ? {} : { q: filters.q }),
             ...(filters.status === '' ? {} : { status: filters.status as Status }),
+            ...(filters.creditType === '' ? {} : { creditType: filters.creditType }),
           },
         },
       }),
@@ -54,11 +56,8 @@ export default function AdminTransactionsPage() {
     {
       key: 'category',
       header: t('category'),
-      cell: (row) => (
-        <span className="inline-flex min-h-chip-height items-center rounded-badge bg-bg px-3 text-caption text-neutral-text">
-          {tRoot(messageKey(`creditCategory.${row.category}`))}
-        </span>
-      ),
+      cell: (row) => <CreditTypeBadge type={row.creditType} />,
+      sortValue: (row) => row.creditType,
     },
     {
       key: 'amount',
@@ -100,6 +99,7 @@ export default function AdminTransactionsPage() {
             value,
             label: tRoot(messageKey(`statusLabel.${value}`)),
           }))}
+          withCreditType
           onApply={setFilters}
         />
         <DataTable

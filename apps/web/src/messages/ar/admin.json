@@ -27,7 +27,8 @@
     "merchantsHint": "حسابات التجار",
     "volumeHint": "الدفعات المؤكدة اليوم",
     "nextSettlementHint": "دفعة التسوية بعد يومين",
-    "todoPayouts": "{count, plural, one {# طلب تحويل تاجر للمراجعة} other {# طلبات تحويل تجار للمراجعة}}"
+    "todoPayouts": "{count, plural, one {# طلب تحويل تاجر للمراجعة} other {# طلبات تحويل تجار للمراجعة}}",
+    "breakdownDescription": "دفعات الشهر على المنصة حسب النوع."
   },
   "merchants": {
     "title": "التجار",
@@ -59,7 +60,16 @@
     },
     "submit": "إنشاء التاجر",
     "createdToast": "تمّ إنشاء {name} (في انتظار التحقق).",
-    "duplicate": "يوجد تاجر بهذا الاسم."
+    "duplicate": "يوجد تاجر بهذا الاسم.",
+    "types": "الأنواع المقبولة",
+    "open": "فتح",
+    "openMerchant": "فتح ملف {name}",
+    "detailBack": "العودة إلى التجار",
+    "detailInfo": "المعلومات",
+    "typesTitle": "أنواع الأرصدة المقبولة",
+    "typesHint": "لا يحصّل التاجر إلا هذه الأنواع؛ ويدفع المستفيد من رصيد النوع المختار.",
+    "typesSave": "حفظ الأنواع",
+    "typesSaved": "تم حفظ الأنواع."
   },
   "companies": {
     "title": "المؤسسات",
@@ -187,7 +197,19 @@
     "submit": "إرسال للمصادقة",
     "createdToast": "أُرسل الطلب. يجب أن يصادق عليه مشرف آخر.",
     "pending": "يوجد تغيير في انتظار المصادقة.",
-    "invalid": "تحقّق من القيم المدخلة."
+    "invalid": "تحقّق من القيم المدخلة.",
+    "typesTitle": "الإعدادات حسب النوع",
+    "typeEnabled": "مفعّل",
+    "typeCommission": "العمولة",
+    "typeValidity": "الصلاحية",
+    "typeDailyLimit": "السقف اليومي",
+    "typeStatus": "الحالة",
+    "typeOn": "مفعّل",
+    "typeOff": "معطّل",
+    "typeCommissionLabel": "عمولة {type} (%)",
+    "typeValidityLabel": "صلاحية {type} (أشهر)",
+    "typeLimitLabel": "السقف اليومي {type} (د.ت)",
+    "typeEnabledLabel": "النوع {type} مفعّل"
   },
   "kyc": {
     "open": "فتح",

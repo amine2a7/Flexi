@@ -22,7 +22,9 @@
     "recentDescription": "Your latest credit orders and their status.",
     "todoPay": "Order {reference}: transfer {amount}, then declare your transfer.",
     "todoRejected": "Order {reference}: proof rejected, declare your transfer again.",
-    "todoAction": "Open the order"
+    "todoAction": "Open the order",
+    "balancesTitle": "Balances by credit type",
+    "balancesDescription": "One balance per type: an allocation debits the balance of the chosen type."
   },
   "orders": {
     "title": "Credit orders",
@@ -60,7 +62,11 @@
     "backToOrders": "See my orders",
     "another": "New order",
     "category": "Credit category",
-    "categoryHint": "A single category for now: Food."
+    "categoryHint": "A single category for now: Food.",
+    "linesTitle": "Amounts by type",
+    "linesHint": "Enter an amount for each type to order (leave the others empty).",
+    "lineAmount": "{type} amount (TND)",
+    "noLine": "Enter at least one amount."
   },
   "employees": {
     "title": "Employees",
@@ -134,7 +140,26 @@
     "emptyTitle": "No active employee",
     "name": "Name",
     "number": "Employee number",
-    "allocated": "Already allocated this month"
+    "allocated": "Already allocated this month",
+    "typeLabel": "Credit type to allocate",
+    "typeHint": "Only the balance of this type is debited.",
+    "importTitle": "Import a CSV file",
+    "importHint": "Columns: matricule;restauration;habillement;carburant;cadeaux (amounts in TND, empty = 0).",
+    "importFile": "CSV file",
+    "importAnalyse": "Analyse the file",
+    "importRows": "{valid} valid rows, {errors} with errors",
+    "importTotals": "To allocate by type",
+    "importConfirm": "Allocate the valid rows",
+    "importLine": "Line",
+    "importEmployee": "Employee",
+    "importIssues": "Errors",
+    "issues": {
+      "UNKNOWN_EMPLOYEE": "Unknown employee number",
+      "INVALID_AMOUNT": "Invalid amount",
+      "NO_AMOUNT": "No amount",
+      "TYPE_DISABLED": "Type disabled"
+    },
+    "importDone": "{count} allocations recorded."
   },
   "invoices": {
     "title": "Invoices",

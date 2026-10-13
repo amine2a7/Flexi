@@ -336,6 +336,197 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/employee/wallet': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Solde du bénéficiaire, par catégorie, avec les plafonds et les expirations */
+    get: operations['getEmployeeWallet'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/payment-codes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Génère mon code de paiement (QR dynamique et code à 8 chiffres, 60 s, usage unique)
+     * @description Un nouveau code annule le précédent. Le commerçant le scanne ou le saisit ; la demande de
+     *     paiement arrive ensuite dans `GET /v1/employee/payment-requests`, à confirmer par PIN.
+     */
+    post: operations['createPaymentCode'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/payment-requests': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Demandes de paiement en attente de ma confirmation */
+    get: operations['listPaymentRequests'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/payment-requests/{requestId}/confirm': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Confirmer une demande de paiement avec mon PIN */
+    post: operations['confirmPaymentRequest'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/payment-requests/{requestId}/refuse': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Refuser une demande de paiement */
+    post: operations['refusePaymentRequest'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/merchants/{merchantCode}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Commerçant correspondant à un code (QR scanné ou saisi), avant le paiement */
+    get: operations['lookupMerchant'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/payments': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Payer un commerçant (code ou QR commerçant, montant, PIN) */
+    post: operations['payMerchant'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/operations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Historique de mes opérations (paiements, crédits reçus, expirations) */
+    get: operations['listEmployeeOperations'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/operations/{operationId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Détail d'une opération (reçu) */
+    get: operations['getEmployeeOperation'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/profile': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Mon profil de bénéficiaire */
+    get: operations['getEmployeeProfile'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/pin': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Changer mon code PIN de paiement */
+    post: operations['changePin'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/me': {
     parameters: {
       query?: never;
@@ -776,6 +967,28 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/company/allocation-imports/previews': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Analyse un fichier CSV d'attribution (matricule ; une colonne par type de crédit)
+     * @description Colonnes : `matricule;restauration;habillement;carburant;cadeaux` (montants en TND, 3
+     *     décimales au plus, vide = 0). Rien n'est attribué : la réponse donne les lignes prêtes à
+     *     envoyer à `POST /v1/company/allocations`, les erreurs par ligne et les totaux par type.
+     */
+    post: operations['previewAllocationImport'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/company/allocations': {
     parameters: {
       query?: never;
@@ -842,6 +1055,40 @@ export interface paths {
     put?: never;
     /** Créer un commerçant (profil de commission obligatoire) */
     post: operations['createMerchantAccount'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/merchants/{merchantId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Fiche d'un commerçant */
+    get: operations['getMerchantAccount'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/merchants/{merchantId}/credit-types': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Définir les types de crédit acceptés par un commerçant */
+    put: operations['setMerchantCreditTypes'];
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -1038,7 +1285,8 @@ export interface paths {
     /**
      * Valider le virement reçu et créditer le solde de l'entreprise (AWAITING_VALIDATION → VALIDATED)
      * @description L'administrateur a vérifié l'arrivée des fonds sur le compte de FlexiPay. Les crédits
-     *     (`amountMillimes`) sont ajoutés au solde de l'entreprise dans la même transaction.
+     *     de chaque ligne sont ajoutés au **solde du type correspondant** de l'entreprise, dans la même
+     *     transaction.
      *     Double validation (règle 12) : si `requiresSecondValidation`, le premier appel enregistre
      *     `firstValidation` (statut inchangé) ; le second appel, par un **autre** administrateur, valide.
      *     Le même administrateur une seconde fois : `403 FORBIDDEN`.
@@ -1658,7 +1906,9 @@ export interface components {
         };
     /**
      * Role
-     * @description Rôle de l'utilisateur (spec 01 §2). Le web ne sert que ADMIN, COMPANY et MERCHANT.
+     * @description Rôle de l'utilisateur (spec 01 §2). Le web sert ADMIN, COMPANY, MERCHANT et, depuis la
+     *     décision du 2026-10-13, EMPLOYEE (espace Bénéficiaire, banc d'essai de l'app mobile, mêmes
+     *     routes `/v1/employee/*`). FAMILY_MEMBER reste réservé à l'application mobile.
      * @enum {string}
      */
     Role: 'ADMIN' | 'COMPANY' | 'MERCHANT' | 'EMPLOYEE' | 'FAMILY_MEMBER';
@@ -1717,12 +1967,45 @@ export interface components {
       label: string;
     };
     /**
-     * CreditCategory
-     * @description Catégorie de crédits. V1 : une seule catégorie, `RESTAURATION` ; le modèle (soldes, commandes,
-     *     paiements) porte déjà la catégorie pour en ajouter d'autres sans changement cassant.
+     * CreditType
+     * @description Type de crédit (décision du 2026-10-13) : Restauration, Habillement, Carburant, Cadeaux.
+     *     Chaque compte (entreprise, bénéficiaire) a un **solde séparé par type** ; un total n'est
+     *     donné qu'à titre d'information. **Aucun transfert ni paiement entre types** : un paiement
+     *     débite le solde du type accepté par le commerçant, sinon `422 INSUFFICIENT_FUNDS`.
      * @enum {string}
      */
-    CreditCategory: 'RESTAURATION';
+    CreditType: 'RESTAURATION' | 'HABILLEMENT' | 'CARBURANT' | 'CADEAUX';
+    /**
+     * CreditTypeAmount
+     * @description Montant d'un type de crédit (répartition par type, lignes de commande).
+     */
+    CreditTypeAmount: {
+      creditType: components['schemas']['CreditType'];
+      amountMillimes: components['schemas']['AmountMillimes'];
+    };
+    /** CreditOrderLine */
+    CreditOrderLine: {
+      creditType: components['schemas']['CreditType'];
+      amountMillimes: components['schemas']['PositiveAmountMillimes'];
+    };
+    /**
+     * CreditTypeSettings
+     * @description Paramétrage d'un type de crédit (règle 6 de la décision du 2026-10-13).
+     */
+    CreditTypeSettings: {
+      creditType: components['schemas']['CreditType'];
+      /** @description Un type désactivé ne peut plus être commandé, attribué ni payé. */
+      enabled: boolean;
+      /** @description Taux de commission prélevé sur les paiements de ce type. */
+      commissionRateBps: components['schemas']['RateBps'];
+      /**
+       * Format: int32
+       * @description Durée de validité des crédits de ce type.
+       */
+      validityMonths: number;
+      /** @description Plafond de dépense journalier d'un bénéficiaire pour ce type. */
+      dailyLimitMillimes: components['schemas']['PositiveAmountMillimes'];
+    };
     /**
      * AccountStatus
      * @description Compte (cahier §8) — En attente KYC, Validé, Rejeté, Suspendu. Un compte reste **inactif**
@@ -1783,10 +2066,18 @@ export interface components {
     PhoneNumber: string;
     /**
      * MerchantCategory
-     * @description Catégorie du commerce (MVP : Restauration).
+     * @description Activité du commerce (distincte des types de crédit acceptés, voir acceptedCreditTypes).
      * @enum {string}
      */
-    MerchantCategory: 'RESTAURANT' | 'CAFE' | 'GROCERY' | 'BAKERY' | 'FAST_FOOD';
+    MerchantCategory:
+      | 'RESTAURANT'
+      | 'CAFE'
+      | 'GROCERY'
+      | 'BAKERY'
+      | 'FAST_FOOD'
+      | 'CLOTHING'
+      | 'FUEL_STATION'
+      | 'GIFT_SHOP';
     /**
      * CustomerSummary
      * @description Client vu par le commerçant : prénom, initiale, matricule masqué (COM-04). Jamais de solde.
@@ -1802,6 +2093,7 @@ export interface components {
      * @description Encaissement vu par le commerçant.
      */
     MerchantPayment: {
+      creditType: components['schemas']['CreditType'];
       id: components['schemas']['Uuid'];
       reference: string;
       status: components['schemas']['PaymentStatus'];
@@ -1810,6 +2102,136 @@ export interface components {
       createdAt: components['schemas']['Timestamp'];
       /** @description Fin de validité tant que `INITIATED` ; `null` ensuite. */
       expiresAt: components['schemas']['Timestamp'] | null;
+    };
+    /**
+     * EmployeeWallet
+     * @description Soldes du bénéficiaire, un par type de crédit ; le total n'est qu'informatif.
+     */
+    EmployeeWallet: {
+      companyName: string;
+      /** @description Somme des soldes par type, à titre d'information uniquement. */
+      totalBalanceMillimes: components['schemas']['AmountMillimes'];
+      balances: components['schemas']['CategoryBalance'][];
+    };
+    /** CategoryBalance */
+    CategoryBalance: {
+      creditType: components['schemas']['CreditType'];
+      balanceMillimes: components['schemas']['AmountMillimes'];
+      /** @description Part du solde qui expire à `nextExpiryDate`. */
+      expiringMillimes: components['schemas']['AmountMillimes'];
+      dailyLimitMillimes: components['schemas']['AmountMillimes'];
+      todaySpentMillimes: components['schemas']['AmountMillimes'];
+      enabled: boolean;
+      nextExpiryDate: components['schemas']['CalendarDate'] | null;
+    };
+    /** PaymentCode */
+    PaymentCode: {
+      /** @description Code à 8 chiffres, à usage unique. */
+      code: string;
+      /** @description Contenu du QR (`flexipay:pay:<code>`). */
+      qrPayload: string;
+      expiresAt: components['schemas']['Timestamp'];
+      /** Format: int32 */
+      validitySeconds: number;
+    };
+    /** EmployeePaymentRequest */
+    EmployeePaymentRequest: {
+      id: components['schemas']['Uuid'];
+      reference: string;
+      merchantName: string;
+      amountMillimes: components['schemas']['PositiveAmountMillimes'];
+      creditType: components['schemas']['CreditType'];
+      createdAt: components['schemas']['Timestamp'];
+      expiresAt: components['schemas']['Timestamp'];
+    };
+    /** EmployeePaymentRequestList */
+    EmployeePaymentRequestList: {
+      data: components['schemas']['EmployeePaymentRequest'][];
+    };
+    /** PinConfirmation */
+    PinConfirmation: {
+      /** @description PIN à 4 chiffres. Jamais journalisé, jamais renvoyé. */
+      pin: string;
+    };
+    /** PinChange */
+    PinChange: {
+      currentPin: string;
+      newPin: string;
+    };
+    /** MerchantLookup */
+    MerchantLookup: {
+      merchantCode: string;
+      merchantName: string;
+      city: string;
+      /** @description Types acceptés : le bénéficiaire paie avec le solde de l'un d'eux. */
+      acceptedCreditTypes: components['schemas']['CreditType'][];
+      category: components['schemas']['MerchantCategory'];
+    };
+    /** EmployeePaymentCreate */
+    EmployeePaymentCreate: {
+      merchantCode: string;
+      /** @description Type payé, accepté par le commerçant ; seul le solde de ce type est débité. */
+      creditType: components['schemas']['CreditType'];
+      amountMillimes: components['schemas']['PositiveAmountMillimes'];
+      pin: string;
+    };
+    /**
+     * EmployeeOperationType
+     * @description Paiement chez un commerçant, crédits reçus de l'entreprise, crédits expirés.
+     * @enum {string}
+     */
+    EmployeeOperationType: 'PAYMENT' | 'ALLOCATION' | 'EXPIRY';
+    /**
+     * EmployeeOperationStatus
+     * @enum {string}
+     */
+    EmployeeOperationStatus: 'COMPLETED' | 'PENDING' | 'REFUSED';
+    /** EmployeeOperation */
+    EmployeeOperation: {
+      id: components['schemas']['Uuid'];
+      reference: string;
+      type: components['schemas']['EmployeeOperationType'];
+      direction: components['schemas']['Direction'];
+      amountMillimes: components['schemas']['PositiveAmountMillimes'];
+      creditType: components['schemas']['CreditType'];
+      /** @description Commerçant (paiement) ou entreprise (crédits reçus, expiration). */
+      counterpartyName: string;
+      status: components['schemas']['EmployeeOperationStatus'];
+      occurredAt: components['schemas']['Timestamp'];
+    };
+    /**
+     * EmployeeOperationDetail
+     * @description Opération avec les éléments du reçu.
+     */
+    EmployeeOperationDetail: {
+      id: components['schemas']['Uuid'];
+      reference: string;
+      type: components['schemas']['EmployeeOperationType'];
+      direction: components['schemas']['Direction'];
+      amountMillimes: components['schemas']['PositiveAmountMillimes'];
+      creditType: components['schemas']['CreditType'];
+      counterpartyName: string;
+      counterpartyCity: string | null;
+      status: components['schemas']['EmployeeOperationStatus'];
+      occurredAt: components['schemas']['Timestamp'];
+      /** @description Solde de la catégorie après l'opération (visible du seul titulaire). */
+      balanceAfterMillimes: components['schemas']['AmountMillimes'];
+    };
+    /** EmployeeOperationPage */
+    EmployeeOperationPage: {
+      data: components['schemas']['EmployeeOperation'][];
+      page: components['schemas']['PageInfo'];
+    };
+    /** EmployeeProfile */
+    EmployeeProfile: {
+      firstName: string;
+      lastName: string;
+      employeeNumber: string;
+      /** Format: email */
+      email: string;
+      phone: components['schemas']['PhoneNumber'];
+      companyName: string;
+      pinSet: boolean;
     };
     /**
      * MerchantPaymentDetail
@@ -1824,7 +2246,7 @@ export interface components {
       createdAt: components['schemas']['Timestamp'];
       /** @description Fin de validité tant que `INITIATED` ; `null` ensuite. */
       expiresAt: components['schemas']['Timestamp'] | null;
-      category: components['schemas']['CreditCategory'];
+      creditType: components['schemas']['CreditType'];
       /** @description Taux figé au moment de l'encaissement. */
       commissionRateBps: components['schemas']['RateBps'];
       commissionMillimes: components['schemas']['AmountMillimes'];
@@ -1850,6 +2272,8 @@ export interface components {
     PaymentInitiateRequest: {
       /** @description Code à 8 chiffres affiché par le client (60 s). Jamais journalisé. */
       customerCode: string;
+      /** @description Type encaissé, parmi ceux acceptés par le commerçant (`422` sinon). */
+      creditType: components['schemas']['CreditType'];
       amountMillimes: components['schemas']['PositiveAmountMillimes'];
     };
     /** MerchantDashboard */
@@ -1861,6 +2285,8 @@ export interface components {
       nextSettlementDate: components['schemas']['CalendarDate'] | null;
       commissionRateBps: components['schemas']['RateBps'];
       recentPayments: components['schemas']['MerchantPayment'][];
+      /** @description Encaissé ce mois, par type de crédit (répartition). */
+      monthByCreditType: components['schemas']['CreditTypeAmount'][];
       /** @description Six derniers mois, du plus ancien au mois en cours (graphique du tableau de bord). */
       monthlyFlows: components['schemas']['MerchantMonthlyFlow'][];
     };
@@ -1878,6 +2304,7 @@ export interface components {
      * @description Paiement confirmé non encore réglé (statut affiché « En attente de règlement », DP n° 2).
      */
     Receivable: {
+      creditType: components['schemas']['CreditType'];
       paymentId: components['schemas']['Uuid'];
       reference: string;
       amountMillimes: components['schemas']['PositiveAmountMillimes'];
@@ -1892,6 +2319,8 @@ export interface components {
     };
     /** PayoutQuoteRequest */
     PayoutQuoteRequest: {
+      /** @description Un virement porte sur les créances d'un seul type (commission du type). */
+      creditType: components['schemas']['CreditType'];
       grossMillimes: components['schemas']['PositiveAmountMillimes'];
     };
     /**
@@ -1899,6 +2328,7 @@ export interface components {
      * @description Simulation calculée par le serveur ; taux figé jusqu'à `expiresAt`.
      */
     PayoutQuote: {
+      creditType: components['schemas']['CreditType'];
       quoteId: components['schemas']['Uuid'];
       grossMillimes: components['schemas']['PositiveAmountMillimes'];
       commissionRateBps: components['schemas']['RateBps'];
@@ -1913,6 +2343,7 @@ export interface components {
     };
     /** PayoutRequest */
     PayoutRequest: {
+      creditType: components['schemas']['CreditType'];
       id: components['schemas']['Uuid'];
       reference: string;
       status: components['schemas']['PayoutRequestStatus'];
@@ -1929,6 +2360,7 @@ export interface components {
      * @description Demande de virement avec les étapes franchies (du plus ancien au plus récent).
      */
     PayoutRequestDetail: {
+      creditType: components['schemas']['CreditType'];
       id: components['schemas']['Uuid'];
       reference: string;
       status: components['schemas']['PayoutRequestStatus'];
@@ -2035,12 +2467,22 @@ export interface components {
       address: string;
       phone: components['schemas']['PhoneNumber'];
       maskedIban: string;
+      /**
+       * @description Code commerçant à 6 chiffres, affiché en QR (`flexipay:merchant:<code>`) dans le commerce :
+       *     le bénéficiaire le scanne ou le saisit pour payer.
+       */
+      paymentCode: string;
+      /** @description Types de crédit que le commerce accepte (définis par FlexiPay). */
+      acceptedCreditTypes: components['schemas']['CreditType'][];
       commissionProfile: components['schemas']['CommissionProfileSummary'];
       pointsOfSale: components['schemas']['PointOfSale'][];
       staff: components['schemas']['StaffMember'][];
     };
     /** CompanyDashboard */
     CompanyDashboard: {
+      /** @description Solde de l'entreprise par type de crédit (un compte par type). */
+      balances: components['schemas']['CreditTypeAmount'][];
+      /** @description Total des soldes par type, à titre d'information uniquement. */
       walletBalanceMillimes: components['schemas']['AmountMillimes'];
       /** Format: int32 */
       employeesCount: number;
@@ -2147,13 +2589,14 @@ export interface components {
     };
     /** CreditOrderQuoteRequest */
     CreditOrderQuoteRequest: {
-      amountMillimes: components['schemas']['PositiveAmountMillimes'];
+      lines: components['schemas']['CreditOrderLine'][];
     };
     /**
      * CreditOrderQuote
      * @description Récapitulatif calculé par le serveur.
      */
     CreditOrderQuote: {
+      lines: components['schemas']['CreditOrderLine'][];
       amountMillimes: components['schemas']['PositiveAmountMillimes'];
       feeRateBps: components['schemas']['RateBps'];
       feesMillimes: components['schemas']['AmountMillimes'];
@@ -2161,16 +2604,16 @@ export interface components {
     };
     /** CreditOrderCreate */
     CreditOrderCreate: {
-      amountMillimes: components['schemas']['PositiveAmountMillimes'];
-      /** @description Catégorie commandée (défaut `RESTAURATION`). */
-      category?: components['schemas']['CreditCategory'];
+      /** @description Un montant par type de crédit commandé (types distincts). */
+      lines: components['schemas']['CreditOrderLine'][];
     };
     /** CreditOrder */
     CreditOrder: {
       id: components['schemas']['Uuid'];
       reference: string;
       status: components['schemas']['OrderStatus'];
-      category: components['schemas']['CreditCategory'];
+      /** @description Montant commandé par type ; `amountMillimes` en est la somme. */
+      lines: components['schemas']['CreditOrderLine'][];
       companyId: components['schemas']['Uuid'];
       companyName: string;
       amountMillimes: components['schemas']['PositiveAmountMillimes'];
@@ -2190,7 +2633,8 @@ export interface components {
       id: components['schemas']['Uuid'];
       reference: string;
       status: components['schemas']['OrderStatus'];
-      category: components['schemas']['CreditCategory'];
+      /** @description Montant commandé par type ; `amountMillimes` en est la somme. */
+      lines: components['schemas']['CreditOrderLine'][];
       companyId: components['schemas']['Uuid'];
       companyName: string;
       amountMillimes: components['schemas']['PositiveAmountMillimes'];
@@ -2308,14 +2752,45 @@ export interface components {
     /** AllocationLine */
     AllocationLine: {
       employeeId: components['schemas']['Uuid'];
+      /** @description Type attribué : le solde de ce type de l'entreprise est débité. */
+      creditType: components['schemas']['CreditType'];
       amountMillimes: components['schemas']['PositiveAmountMillimes'];
     };
     /** AllocationRequest */
     AllocationRequest: {
       allocations: components['schemas']['AllocationLine'][];
     };
+    /** AllocationImportRequest */
+    AllocationImportRequest: {
+      /** @description Contenu du fichier CSV (UTF-8), 500 lignes au plus. */
+      csv: string;
+    };
+    /** AllocationImportRow */
+    AllocationImportRow: {
+      /** Format: int32 */
+      line: number;
+      employeeNumber: string;
+      employeeName?: string;
+      amounts: components['schemas']['CreditTypeAmount'][];
+      /** @description Erreurs de la ligne (vide si elle est valide). */
+      issues: ('UNKNOWN_EMPLOYEE' | 'INVALID_AMOUNT' | 'NO_AMOUNT' | 'TYPE_DISABLED')[];
+    };
+    /** AllocationImportPreview */
+    AllocationImportPreview: {
+      rows: components['schemas']['AllocationImportRow'][];
+      /** @description Lignes valides, prêtes pour `POST /v1/company/allocations`. */
+      lines: components['schemas']['AllocationLine'][];
+      /** @description Total à attribuer par type (à comparer aux soldes par type). */
+      totals: components['schemas']['CreditTypeAmount'][];
+      /** Format: int32 */
+      validCount: number;
+      /** Format: int32 */
+      errorCount: number;
+    };
     /** AllocationResult */
     AllocationResult: {
+      /** @description Soldes par type de l'entreprise après l'attribution. */
+      balances: components['schemas']['CreditTypeAmount'][];
       /** Format: int32 */
       allocatedCount: number;
       allocatedMillimes: components['schemas']['PositiveAmountMillimes'];
@@ -2356,6 +2831,8 @@ export interface components {
       /** Format: int32 */
       pendingKycCount: number;
       nextSettlementNetMillimes: components['schemas']['AmountMillimes'];
+      /** @description Paiements du mois sur la plateforme, par type de crédit (répartition). */
+      monthByCreditType: components['schemas']['CreditTypeAmount'][];
       /** @description Six derniers mois, du plus ancien au mois en cours (graphique du tableau de bord). */
       monthlyFlows: components['schemas']['AdminMonthlyFlow'][];
     };
@@ -2373,10 +2850,17 @@ export interface components {
       id: components['schemas']['Uuid'];
       name: string;
       category: components['schemas']['MerchantCategory'];
+      /** @description Types de crédit acceptés (un restaurant : Restauration ; une station : Carburant…). */
+      acceptedCreditTypes: components['schemas']['CreditType'][];
       city: string;
       status: components['schemas']['AccountStatus'];
       commissionProfile: components['schemas']['CommissionProfileSummary'];
       createdAt: components['schemas']['Timestamp'];
+    };
+    /** MerchantCreditTypes */
+    MerchantCreditTypes: {
+      /** @description Types de crédit acceptés. */
+      acceptedCreditTypes: components['schemas']['CreditType'][];
     };
     /**
      * MerchantAccountPage
@@ -2388,6 +2872,8 @@ export interface components {
     };
     /** MerchantCreate */
     MerchantCreate: {
+      /** @description Types de crédit acceptés par le commerçant. */
+      acceptedCreditTypes: components['schemas']['CreditType'][];
       name: string;
       category: components['schemas']['MerchantCategory'];
       city: string;
@@ -2579,6 +3065,7 @@ export interface components {
      * @description Demande de virement vue par l'administrateur (IBAN complet pour le contrôle).
      */
     AdminPayoutRequest: {
+      creditType: components['schemas']['CreditType'];
       id: components['schemas']['Uuid'];
       reference: string;
       status: components['schemas']['PayoutRequestStatus'];
@@ -2596,6 +3083,7 @@ export interface components {
     };
     /** AdminPayoutRequestDetail */
     AdminPayoutRequestDetail: {
+      creditType: components['schemas']['CreditType'];
       id: components['schemas']['Uuid'];
       reference: string;
       status: components['schemas']['PayoutRequestStatus'];
@@ -2623,7 +3111,7 @@ export interface components {
       merchantName: string;
       /** @description Entreprise de l'employé qui a payé. */
       companyName: string;
-      category: components['schemas']['CreditCategory'];
+      creditType: components['schemas']['CreditType'];
       amountMillimes: components['schemas']['PositiveAmountMillimes'];
       status: components['schemas']['PaymentStatus'];
       createdAt: components['schemas']['Timestamp'];
@@ -2667,6 +3155,8 @@ export interface components {
       /** Format: int32 */
       maxFamilyMembers: number;
       orderFeeRateBps: components['schemas']['RateBps'];
+      /** @description Paramétrage par type (un élément par type, les 4 types). */
+      creditTypes: components['schemas']['CreditTypeSettings'][];
     };
     /** PlatformSettingsChange */
     PlatformSettingsChange: {
@@ -2702,7 +3192,9 @@ export interface components {
       | 'PAYMENT_DECLINED'
       | 'RATE_LIMITED'
       | 'INTERNAL_ERROR'
-      | 'SERVICE_UNAVAILABLE';
+      | 'SERVICE_UNAVAILABLE'
+      | 'PIN_INVALID'
+      | 'PIN_LOCKED';
     /**
      * ProblemBase
      * @description Membres communs de toute erreur RFC 9457 (`application/problem+json`). Schéma de base
@@ -3543,6 +4035,379 @@ export interface operations {
       503: components['responses']['ServiceUnavailable'];
     };
   };
+  getEmployeeWallet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EmployeeWallet'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  createPaymentCode: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PaymentCode'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  listPaymentRequests: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EmployeePaymentRequestList'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  confirmPaymentRequest: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        requestId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PinConfirmation'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EmployeeOperationDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      /** @description `PIN_INVALID` (PIN faux, compté : 3 échecs → `PIN_LOCKED` 15 min) ou `PIN_LOCKED`. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      422: components['responses']['UnprocessableFinancial'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  refusePaymentRequest: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        requestId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès, sans contenu. */
+      204: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  lookupMerchant: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        merchantCode: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MerchantLookup'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  payMerchant: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EmployeePaymentCreate'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EmployeeOperationDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      /** @description `PIN_INVALID` (PIN faux, compté : 3 échecs → `PIN_LOCKED` 15 min) ou `PIN_LOCKED`. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      422: components['responses']['UnprocessableFinancial'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  listEmployeeOperations: {
+    parameters: {
+      query?: {
+        /** @description Nombre maximal d'éléments par page. */
+        limit?: components['parameters']['Limit'];
+        /** @description Curseur opaque renvoyé par `page.nextCursor`. Absent pour la première page. */
+        cursor?: components['parameters']['Cursor'];
+        /**
+         * @description Demande le compteur borné `page.count` (§7). À n'envoyer qu'au premier chargement et à
+         *     chaque changement de filtre.
+         */
+        withCount?: components['parameters']['WithCount'];
+        /** @description Borne basse incluse de la période (UTC). */
+        createdFrom?: components['parameters']['CreatedFrom'];
+        /** @description Borne haute exclue de la période (UTC). */
+        createdTo?: components['parameters']['CreatedTo'];
+        /** @description Filtre par type. */
+        type?: components['schemas']['EmployeeOperationType'];
+        /** @description Filtre par type de crédit. */
+        creditType?: components['schemas']['CreditType'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EmployeeOperationPage'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getEmployeeOperation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        operationId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EmployeeOperationDetail'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getEmployeeProfile: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EmployeeProfile'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  changePin: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PinChange'];
+      };
+    };
+    responses: {
+      /** @description Succès, sans contenu. */
+      204: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      /** @description `PIN_INVALID` (PIN faux, compté : 3 échecs → `PIN_LOCKED` 15 min) ou `PIN_LOCKED`. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json': components['schemas']['Problem'];
+        };
+      };
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   getMe: {
     parameters: {
       query?: never;
@@ -3636,6 +4501,8 @@ export interface operations {
         status?: components['schemas']['PaymentStatus'];
         /** @description Recherche par nom, référence ou ville (insensible à la casse). Jamais journalisée. */
         q?: string;
+        /** @description Filtre par type de crédit. */
+        creditType?: components['schemas']['CreditType'];
       };
       header?: never;
       path?: never;
@@ -3777,6 +4644,8 @@ export interface operations {
         createdFrom?: components['parameters']['CreatedFrom'];
         /** @description Borne haute exclue de la période (UTC). */
         createdTo?: components['parameters']['CreatedTo'];
+        /** @description Filtre par type de crédit. */
+        creditType?: components['schemas']['CreditType'];
       };
       header?: never;
       path?: never;
@@ -3852,6 +4721,8 @@ export interface operations {
         createdTo?: components['parameters']['CreatedTo'];
         /** @description Filtre par statut. */
         status?: components['schemas']['PayoutRequestStatus'];
+        /** @description Filtre par type de crédit. */
+        creditType?: components['schemas']['CreditType'];
       };
       header?: never;
       path?: never;
@@ -4270,6 +5141,8 @@ export interface operations {
         createdTo?: components['parameters']['CreatedTo'];
         /** @description Filtre par statut. */
         status?: components['schemas']['OrderStatus'];
+        /** @description Filtre par type de crédit. */
+        creditType?: components['schemas']['CreditType'];
       };
       header?: never;
       path?: never;
@@ -4497,6 +5370,38 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  previewAllocationImport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AllocationImportRequest'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AllocationImportPreview'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      413: components['responses']['PayloadTooLarge'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   allocateCredits: {
     parameters: {
       query?: never;
@@ -4678,6 +5583,69 @@ export interface operations {
       401: components['responses']['Unauthorized'];
       403: components['responses']['Forbidden'];
       409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getMerchantAccount: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        merchantId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MerchantAccount'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  setMerchantCreditTypes: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        merchantId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MerchantCreditTypes'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MerchantAccount'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
       429: components['responses']['TooManyRequests'];
       500: components['responses']['InternalError'];
     };
@@ -4942,6 +5910,8 @@ export interface operations {
         withCount?: components['parameters']['WithCount'];
         /** @description Filtre par statut. */
         status?: components['schemas']['OrderStatus'];
+        /** @description Filtre par type de crédit. */
+        creditType?: components['schemas']['CreditType'];
         /** @description Filtre par entreprise. */
         companyId?: components['schemas']['Uuid'];
       };
@@ -5351,6 +6321,8 @@ export interface operations {
         status?: components['schemas']['PayoutRequestStatus'];
         /** @description Recherche par commerçant ou référence (insensible à la casse). Jamais journalisée. */
         q?: string;
+        /** @description Filtre par type de crédit. */
+        creditType?: components['schemas']['CreditType'];
       };
       header?: never;
       path?: never;
@@ -5569,6 +6541,8 @@ export interface operations {
         status?: components['schemas']['PaymentStatus'];
         /** @description Recherche par commerçant, entreprise ou référence (insensible à la casse). Jamais journalisée. */
         q?: string;
+        /** @description Filtre par type de crédit. */
+        creditType?: components['schemas']['CreditType'];
       };
       header?: never;
       path?: never;
@@ -5735,9 +6709,9 @@ export const subRoleValues: ReadonlyArray<FlattenedDeepRequired<components>['sch
     'READ_ONLY',
     'CASHIER',
   ];
-export const creditCategoryValues: ReadonlyArray<
-  FlattenedDeepRequired<components>['schemas']['CreditCategory']
-> = ['RESTAURATION'];
+export const creditTypeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['CreditType']
+> = ['RESTAURATION', 'HABILLEMENT', 'CARBURANT', 'CADEAUX'];
 export const accountStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['AccountStatus']
 > = ['PENDING_KYC', 'APPROVED', 'REJECTED', 'SUSPENDED'];
@@ -5768,7 +6742,22 @@ export const fraudAlertStatusValues: ReadonlyArray<
 > = ['OPEN', 'IN_PROGRESS', 'CLOSED'];
 export const merchantCategoryValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['MerchantCategory']
-> = ['RESTAURANT', 'CAFE', 'GROCERY', 'BAKERY', 'FAST_FOOD'];
+> = [
+  'RESTAURANT',
+  'CAFE',
+  'GROCERY',
+  'BAKERY',
+  'FAST_FOOD',
+  'CLOTHING',
+  'FUEL_STATION',
+  'GIFT_SHOP',
+];
+export const employeeOperationTypeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['EmployeeOperationType']
+> = ['PAYMENT', 'ALLOCATION', 'EXPIRY'];
+export const employeeOperationStatusValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['EmployeeOperationStatus']
+> = ['COMPLETED', 'PENDING', 'REFUSED'];
 export const settlementStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['SettlementStatus']
 > = ['SCHEDULED', 'PAID'];
@@ -5799,6 +6788,9 @@ export const creditOrderEventActionValues: ReadonlyArray<
 export const transferProofContentTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['TransferProof']['contentType']
 > = ['image/jpeg', 'image/png', 'application/pdf'];
+export const allocationImportRowIssuesValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['AllocationImportRow']['issues']
+> = ['UNKNOWN_EMPLOYEE', 'INVALID_AMOUNT', 'NO_AMOUNT', 'TYPE_DISABLED'];
 export const invoiceStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['InvoiceStatus']
 > = ['PAID', 'UNPAID'];
@@ -5847,6 +6839,8 @@ export const problemCodeValues: ReadonlyArray<
   'RATE_LIMITED',
   'INTERNAL_ERROR',
   'SERVICE_UNAVAILABLE',
+  'PIN_INVALID',
+  'PIN_LOCKED',
 ];
 export const fieldErrorCodeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['FieldErrorCode']

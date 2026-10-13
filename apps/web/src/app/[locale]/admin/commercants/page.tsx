@@ -4,6 +4,7 @@ import type { Schemas } from '@flexipay/api-client';
 import { Store } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
 import { usePagedList } from '@/lib/api/use-paged-list';
 import { formatDateTime } from '@/lib/format/date';
@@ -11,6 +12,7 @@ import { AccountForm } from '@/components/admin/account-form';
 import { Rate } from '@/components/ui/amount';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { CreditTypeBadges } from '@/components/ui/credit-type';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { PageHeader } from '@/components/ui/layout-blocks';
@@ -44,8 +46,26 @@ export default function AdminMerchantsPage() {
   );
 
   const columns: Column<Schemas['MerchantAccount']>[] = [
-    { key: 'name', header: t('name'), cell: (row) => row.name, sortValue: (row) => row.name },
+    {
+      key: 'name',
+      header: t('name'),
+      cell: (row) => (
+        <Link
+          href={`/admin/commercants/${row.id}`}
+          className="font-label text-navy underline-offset-2 hover:underline"
+          aria-label={t('openMerchant', { name: row.name })}
+        >
+          {row.name}
+        </Link>
+      ),
+      sortValue: (row) => row.name,
+    },
     { key: 'category', header: t('category'), cell: (row) => tCategory(row.category) },
+    {
+      key: 'types',
+      header: t('types'),
+      cell: (row) => <CreditTypeBadges types={row.acceptedCreditTypes} />,
+    },
     { key: 'city', header: t('city'), cell: (row) => row.city, sortValue: (row) => row.city },
     {
       key: 'profile',

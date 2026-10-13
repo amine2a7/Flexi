@@ -10,6 +10,7 @@ import { formatMillimesWithCurrency } from '@/lib/format/money';
 import { ActivityList, TodoPanel, type TodoItem } from '@/components/ui/activity';
 import { Amount, Rate } from '@/components/ui/amount';
 import { BarChart } from '@/components/ui/bar-chart';
+import { CreditTypeBreakdown } from '@/components/ui/credit-type';
 import { buttonClasses } from '@/components/ui/button';
 import { Card, CardTitle, StatCard } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/layout-blocks';
@@ -18,6 +19,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 
 export default function MerchantDashboardPage() {
   const t = useTranslations('merchant.dashboard');
+  const tTypes = useTranslations('ui.creditTypes');
   const locale = useLocale();
   const dashboard = useApiQuery(() => getApi().GET('/v1/merchant/dashboard'), []);
 
@@ -97,6 +99,12 @@ export default function MerchantDashboardPage() {
               icon={<Percent className="size-icon-md" />}
             />
           </div>
+          <Card>
+            <CardTitle description={t('breakdownDescription')}>
+              {tTypes('breakdownTitle')}
+            </CardTitle>
+            <CreditTypeBreakdown items={dashboard.data.monthByCreditType} />
+          </Card>
           <div className="grid gap-6 lg:grid-cols-3">
             <Card className="lg:col-span-2">
               <CardTitle description={t('flowsDescription')}>{t('flowsTitle')}</CardTitle>

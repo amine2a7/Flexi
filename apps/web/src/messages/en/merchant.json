@@ -23,7 +23,8 @@
     "recentDescription": "The latest payments received in your shop.",
     "todoPayout": "{amount} awaiting settlement: you can request a payout.",
     "todoPayoutAction": "Request a payout",
-    "todoCollect": "Ready to collect: enter the code shown by your customer."
+    "todoCollect": "Ready to collect: enter the code shown by your customer.",
+    "breakdownDescription": "Collected this month, by credit type."
   },
   "payments": {
     "date": "Date",
@@ -63,7 +64,13 @@
     "ruleNote": "The amount is settled at D+2, with a {rate} commission deducted.",
     "acceptedMessage": "The amount is collected and will be settled at D+2.",
     "backToDashboard": "Back to the dashboard",
-    "cancelledToast": "Request cancelled: nothing was collected."
+    "cancelledToast": "Request cancelled: nothing was collected.",
+    "myQr": "My FlexiPay QR",
+    "myQrHint": "The customer can also scan this QR and pay from the app.",
+    "myCode": "Merchant code: {code}",
+    "qrLabel": "Merchant QR {code}",
+    "creditType": "Credit type",
+    "creditTypeHint": "The customer pays with the balance of this type only."
   },
   "history": {
     "title": "Collection history",
@@ -139,7 +146,9 @@
       "SENT": "Transfer sent to the bank",
       "EXECUTED": "Transfer executed: funds in your account",
       "REJECTED": "Request rejected"
-    }
+    },
+    "creditType": "Credit type",
+    "creditTypeHint": "A payout covers the receivables of a single type (that type's commission)."
   },
   "settlements": {
     "title": "Settlements and documents",
@@ -175,7 +184,9 @@
     "commission": "Commission profile",
     "changeHint": "To change these details, contact the FlexiPay administrator.",
     "pointsOfSale": "Points of sale",
-    "staff": "Team"
+    "staff": "Team",
+    "acceptedTypes": "Accepted credit types",
+    "acceptedTypesHint": "Set by FlexiPay."
   },
   "payoutRejection": {
     "ibanCheck": "The registered bank account must be checked: contact support."

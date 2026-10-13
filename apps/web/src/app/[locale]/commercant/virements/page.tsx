@@ -16,6 +16,7 @@ import { parseMillimes } from '@/lib/format/money-input';
 import { Amount, AmountBreakdown } from '@/components/ui/amount';
 import { Button, buttonClasses } from '@/components/ui/button';
 import { Card, CardTitle, StatCard } from '@/components/ui/card';
+import { CreditTypeBadge, CreditTypeSelect, type CreditType } from '@/components/ui/credit-type';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { TextField } from '@/components/ui/field';
 import { FilterBar } from '@/components/ui/filter-bar';
@@ -36,6 +37,7 @@ const STATUSES: readonly Status[] = ['REQUESTED', 'CHECKED', 'SENT', 'EXECUTED',
 export default function PayoutsPage() {
   const t = useTranslations('merchant.payouts');
   const tRoot = useTranslations();
+  const tTypes = useTranslations('ui.creditTypes');
   const locale = useLocale();
   const toast = useToast();
   const [amountText, setAmountText] = useState('');
@@ -48,17 +50,32 @@ export default function PayoutsPage() {
   const [created, setCreated] = useState<Schemas['PayoutRequest'] | undefined>(undefined);
   const [refresh, setRefresh] = useState(0);
   const [status, setStatus] = useState('');
-  const dashboard = useApiQuery(() => getApi().GET('/v1/merchant/dashboard'), [refresh]);
+  const [typeFilter, setTypeFilter] = useState<CreditType | ''>('');
+  const [creditType, setCreditType] = useState<CreditType>('RESTAURATION');
+  const profile = useApiQuery(() => getApi().GET('/v1/merchant/profile'), []);
+  const accepted = profile.status === 'success' ? profile.data.acceptedCreditTypes : [];
+  const receivables = useApiQuery(
+    () =>
+      getApi().GET('/v1/merchant/receivables', {
+        params: { query: { creditType, limit: 1 } },
+      }),
+    [creditType, refresh],
+  );
 
   const millimes = useMemo(() => parseMillimes(amountText, locale), [amountText, locale]);
   const list = usePagedList(
     (cursor, withCount) =>
       getApi().GET('/v1/merchant/payouts', {
         params: {
-          query: { cursor, withCount, ...(status === '' ? {} : { status: status as Status }) },
+          query: {
+            cursor,
+            withCount,
+            ...(status === '' ? {} : { status: status as Status }),
+            ...(typeFilter === '' ? {} : { creditType: typeFilter }),
+          },
         },
       }),
-    [refresh, status],
+    [refresh, status, typeFilter],
   );
 
   async function onSimulate(event: SyntheticEvent) {
@@ -70,7 +87,7 @@ export default function PayoutsPage() {
     setCreated(undefined);
     try {
       const { data, error: problem } = await getApi().POST('/v1/merchant/payout-quotes', {
-        body: { grossMillimes: millimes },
+        body: { creditType, grossMillimes: millimes },
       });
       if (data !== undefined) {
         setQuote(data);
@@ -129,6 +146,12 @@ export default function PayoutsPage() {
       sortValue: (row) => row.reference,
     },
     {
+      key: 'creditType',
+      header: tTypes('column'),
+      cell: (row) => <CreditTypeBadge type={row.creditType} />,
+      sortValue: (row) => row.creditType,
+    },
+    {
       key: 'gross',
       header: t('gross'),
       align: 'end',
@@ -169,7 +192,7 @@ export default function PayoutsPage() {
   const pending = <span className="text-body text-text-muted">{t('pending')}</span>;
   const available =
     quote?.availableMillimes ??
-    (dashboard.status === 'success' ? dashboard.data.receivablesMillimes : undefined);
+    (receivables.status === 'success' ? receivables.data.totalMillimes : undefined);
   const breakdown =
     quote === undefined
       ? []
@@ -189,9 +212,7 @@ export default function PayoutsPage() {
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <StatCard
           label={t('available')}
-          value={
-            available === undefined ? pending : <Amount millimes={available} size="title" />
-          }
+          value={available === undefined ? pending : <Amount millimes={available} size="title" />}
           hint={t('availableHint')}
           icon={<Wallet className="size-icon-md" />}
           tone="positive"
@@ -218,11 +239,7 @@ export default function PayoutsPage() {
         <StatCard
           label={t('net')}
           value={
-            quote === undefined ? (
-              pending
-            ) : (
-              <Amount millimes={quote.netMillimes} size="title" />
-            )
+            quote === undefined ? pending : <Amount millimes={quote.netMillimes} size="title" />
           }
           hint={t('netHintNoIban')}
           icon={<ArrowDownLeft className="size-icon-md rtl:-scale-x-100" />}
@@ -237,6 +254,16 @@ export default function PayoutsPage() {
             className="flex flex-col gap-5"
             noValidate
           >
+            <CreditTypeSelect
+              label={t('creditType')}
+              hint={t('creditTypeHint')}
+              types={accepted.length === 0 ? undefined : accepted}
+              value={creditType}
+              onChange={(value) => {
+                if (value !== '') setCreditType(value);
+                setQuote(undefined);
+              }}
+            />
             <TextField
               label={t('amount')}
               hint={
@@ -304,8 +331,10 @@ export default function PayoutsPage() {
             value,
             label: tRoot(messageKey(`statusLabel.${value}`)),
           }))}
+          withCreditType
           onApply={(filters) => {
             setStatus(filters.status);
+            setTypeFilter(filters.creditType);
           }}
         />
         <DataTable

@@ -8,7 +8,12 @@ type Role = Schemas['Role'];
 
 /** Counters shown in the sidebar next to what waits for an action of the signed-in user. */
 export type NavCounter =
-  'companyOrdersToPay' | 'adminOrdersToHandle' | 'adminApprovals' | 'adminKyc' | 'adminPayouts';
+  | 'companyOrdersToPay'
+  | 'adminOrdersToHandle'
+  | 'adminApprovals'
+  | 'adminKyc'
+  | 'adminPayouts'
+  | 'employeeRequests';
 export type NavCounts = Partial<Record<NavCounter, number>>;
 
 type CountResult = Promise<{ data?: { page: Schemas['PageInfo'] } }>;
@@ -19,6 +24,10 @@ async function count(load: () => CountResult): Promise<number> {
 }
 
 const LOADERS: Partial<Record<Role, () => Promise<NavCounts>>> = {
+  EMPLOYEE: async () => {
+    const { data } = await getApi().GET('/v1/employee/payment-requests');
+    return { employeeRequests: data?.data.length ?? 0 };
+  },
   COMPANY: async () => ({
     companyOrdersToPay: await count(() =>
       getApi().GET('/v1/company/orders', {

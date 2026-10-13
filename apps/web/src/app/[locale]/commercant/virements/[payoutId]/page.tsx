@@ -11,6 +11,7 @@ import { formatDateTime } from '@/lib/format/date';
 import { AmountBreakdown, Rate } from '@/components/ui/amount';
 import { buttonClasses } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
+import { CreditTypeBadge } from '@/components/ui/credit-type';
 import { DescriptionList, PageHeader } from '@/components/ui/layout-blocks';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -49,6 +50,10 @@ export default function PayoutDetailPage() {
               <div className="flex flex-col gap-5">
                 <DescriptionList
                   items={[
+                    {
+                      label: t('creditType'),
+                      value: <CreditTypeBadge type={payout.data.creditType} />,
+                    },
                     {
                       label: t('requestedAt'),
                       value: formatDateTime(payout.data.requestedAt, locale),

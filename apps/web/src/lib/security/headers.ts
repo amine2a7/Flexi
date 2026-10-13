@@ -59,7 +59,8 @@ export function buildStaticSecurityHeaders(isProduction: boolean): HeaderEntry[]
     { key: 'X-Frame-Options', value: 'DENY' },
     {
       key: 'Permissions-Policy',
-      value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()',
+      // camera=(self): the beneficiary scans the merchant QR (web space, same origin only).
+      value: 'camera=(self), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()',
     },
     { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
     { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },

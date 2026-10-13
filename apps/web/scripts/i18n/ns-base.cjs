@@ -157,6 +157,16 @@ module.exports = {
       "L'opération n'a pas abouti. Réessayez.",
       "The operation did not go through. Try again.",
       "لم تكتمل العملية. حاول مجددًا."
+    ],
+    "pinInvalid": [
+      "PIN incorrect.",
+      "Wrong PIN.",
+      "الرمز السري غير صحيح."
+    ],
+    "pinLocked": [
+      "PIN bloqué après 3 essais : réessayez dans 15 minutes.",
+      "PIN locked after 3 attempts: try again in 15 minutes.",
+      "الرمز السري مقفل بعد 3 محاولات: أعد المحاولة بعد 15 دقيقة."
     ]
   },
   "ui": {
@@ -248,6 +258,16 @@ module.exports = {
         "Tous les statuts",
         "All statuses",
         "كل الحالات"
+      ],
+      "creditType": [
+        "Type de crédit",
+        "Credit type",
+        "نوع الرصيد"
+      ],
+      "allTypes": [
+        "Tous les types",
+        "All types",
+        "كل الأنواع"
       ]
     },
     "chart": {
@@ -305,6 +325,68 @@ module.exports = {
         "{name} · {size} KB",
         "{name} · {size} ك.ب"
       ]
+    },
+    "creditTypes": {
+      "column": [
+        "Type",
+        "Type",
+        "النوع"
+      ],
+      "balanceOf": [
+        "Solde {type}",
+        "{type} balance",
+        "رصيد {type}"
+      ],
+      "total": [
+        "Total, à titre indicatif",
+        "Total, for information",
+        "المجموع، للعلم فقط"
+      ],
+      "share": [
+        "{percent} %",
+        "{percent}%",
+        "{percent} %"
+      ],
+      "breakdownTitle": [
+        "Répartition par type",
+        "Breakdown by type",
+        "التوزيع حسب النوع"
+      ],
+      "breakdownEmpty": [
+        "Aucun montant sur la période.",
+        "No amount for this period.",
+        "لا مبالغ لهذه الفترة."
+      ],
+      "disabled": [
+        "Désactivé",
+        "Disabled",
+        "معطّل"
+      ],
+      "accepted": [
+        "Types acceptés",
+        "Accepted types",
+        "الأنواع المقبولة"
+      ],
+      "pickOne": [
+        "Choisissez au moins un type.",
+        "Choose at least one type.",
+        "اختر نوعًا واحدًا على الأقل."
+      ],
+      "limitUsed": [
+        "{spent} dépensés aujourd'hui sur {limit}",
+        "{spent} spent today out of {limit}",
+        "صُرف {spent} اليوم من أصل {limit}"
+      ],
+      "noTransfer": [
+        "Chaque type a son propre solde : aucun transfert ni paiement entre types.",
+        "Each type has its own balance: no transfer or payment between types.",
+        "لكل نوع رصيده الخاص: لا تحويل ولا دفع بين الأنواع."
+      ],
+      "insufficient": [
+        "Solde {type} insuffisant : il manque {missing}.",
+        "Not enough {type} balance: {missing} missing.",
+        "رصيد {type} غير كافٍ: ينقص {missing}."
+      ]
     }
   },
   "layout": {
@@ -345,9 +427,9 @@ module.exports = {
         "فضاء التاجر"
       ],
       "EMPLOYEE": [
-        "Espace employé",
-        "Employee space",
-        "فضاء الموظف"
+        "Espace bénéficiaire",
+        "Beneficiary space",
+        "فضاء المستفيد"
       ],
       "FAMILY_MEMBER": [
         "Espace famille",
@@ -431,9 +513,9 @@ module.exports = {
         "تاجر"
       ],
       "EMPLOYEE": [
-        "Employé",
-        "Employee",
-        "موظف"
+        "Bénéficiaire",
+        "Beneficiary",
+        "مستفيد"
       ],
       "FAMILY_MEMBER": [
         "Membre de la famille",
@@ -458,9 +540,9 @@ module.exports = {
         "تاجر شريك"
       ],
       "EMPLOYEE": [
-        "Employé",
-        "Employee",
-        "موظف"
+        "Bénéficiaire",
+        "Beneficiary",
+        "مستفيد"
       ],
       "FAMILY_MEMBER": [
         "Famille",
@@ -609,6 +691,33 @@ module.exports = {
         "Transactions",
         "Transactions",
         "المعاملات"
+      ]
+    },
+    "beneficiary": {
+      "home": [
+        "Accueil",
+        "Home",
+        "الرئيسية"
+      ],
+      "pay": [
+        "Payer",
+        "Pay",
+        "دفع"
+      ],
+      "history": [
+        "Historique",
+        "History",
+        "السجل"
+      ],
+      "profile": [
+        "Profil",
+        "Profile",
+        "الملف"
+      ],
+      "security": [
+        "Sécurité",
+        "Security",
+        "الأمان"
       ]
     }
   },
@@ -881,6 +990,21 @@ module.exports = {
       "Restauration rapide",
       "Fast food",
       "أكلة سريعة"
+    ],
+    "CLOTHING": [
+      "Habillement",
+      "Clothing",
+      "ملابس"
+    ],
+    "FUEL_STATION": [
+      "Station-service",
+      "Fuel station",
+      "محطة وقود"
+    ],
+    "GIFT_SHOP": [
+      "Cadeaux et librairie",
+      "Gifts and books",
+      "هدايا ومكتبة"
     ]
   },
   "subRole": {
@@ -966,6 +1090,11 @@ module.exports = {
         "Administrateur (2e validation)",
         "Administrator (second approval)",
         "مشرف (المصادقة الثانية)"
+      ],
+      "beneficiary": [
+        "Bénéficiaire (employé)",
+        "Beneficiary (employee)",
+        "مستفيد (موظف)"
       ]
     },
     "codes": {
@@ -1001,11 +1130,26 @@ module.exports = {
       ]
     }
   },
-  "creditCategory": {
+  "creditType": {
     "RESTAURATION": [
       "Restauration",
       "Food",
       "المطاعم"
+    ],
+    "HABILLEMENT": [
+      "Habillement",
+      "Clothing",
+      "الملابس"
+    ],
+    "CARBURANT": [
+      "Carburant",
+      "Fuel",
+      "المحروقات"
+    ],
+    "CADEAUX": [
+      "Cadeaux",
+      "Gifts",
+      "الهدايا"
     ]
   }
 };

@@ -22,7 +22,9 @@
     "recentDescription": "آخر طلبيات الأرصدة وحالتها.",
     "todoPay": "الطلبية {reference}: حوّل {amount} ثم صرّح بتحويلك.",
     "todoRejected": "الطلبية {reference}: رُفض الإثبات، صرّح بتحويلك من جديد.",
-    "todoAction": "فتح الطلبية"
+    "todoAction": "فتح الطلبية",
+    "balancesTitle": "الأرصدة حسب النوع",
+    "balancesDescription": "رصيد لكل نوع: يُخصم التوزيع من رصيد النوع المختار."
   },
   "orders": {
     "title": "طلبيات الأرصدة",
@@ -60,7 +62,11 @@
     "backToOrders": "عرض طلبياتي",
     "another": "طلبية جديدة",
     "category": "صنف الأرصدة",
-    "categoryHint": "صنف واحد حاليًا: المطاعم."
+    "categoryHint": "صنف واحد حاليًا: المطاعم.",
+    "linesTitle": "المبالغ حسب النوع",
+    "linesHint": "أدخل مبلغًا لكل نوع تريد طلبه (اترك الأنواع الأخرى فارغة).",
+    "lineAmount": "مبلغ {type} (د.ت)",
+    "noLine": "أدخل مبلغًا واحدًا على الأقل."
   },
   "employees": {
     "title": "الموظفون",
@@ -134,7 +140,26 @@
     "emptyTitle": "لا يوجد موظف نشِط",
     "name": "الاسم",
     "number": "رقم التسجيل",
-    "allocated": "موزَّع هذا الشهر"
+    "allocated": "موزَّع هذا الشهر",
+    "typeLabel": "نوع الرصيد المراد توزيعه",
+    "typeHint": "يُخصم رصيد هذا النوع فقط.",
+    "importTitle": "استيراد ملف CSV",
+    "importHint": "الأعمدة: matricule;restauration;habillement;carburant;cadeaux (المبالغ بالدينار، فارغ = 0).",
+    "importFile": "ملف CSV",
+    "importAnalyse": "تحليل الملف",
+    "importRows": "{valid} سطر صالح، {errors} بها أخطاء",
+    "importTotals": "المراد توزيعه حسب النوع",
+    "importConfirm": "توزيع الأسطر الصالحة",
+    "importLine": "السطر",
+    "importEmployee": "الموظف",
+    "importIssues": "الأخطاء",
+    "issues": {
+      "UNKNOWN_EMPLOYEE": "معرّف غير معروف",
+      "INVALID_AMOUNT": "مبلغ غير صالح",
+      "NO_AMOUNT": "لا مبلغ",
+      "TYPE_DISABLED": "نوع معطّل"
+    },
+    "importDone": "تم تسجيل {count} توزيع."
   },
   "invoices": {
     "title": "الفواتير",

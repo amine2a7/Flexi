@@ -23,7 +23,9 @@
   "filters": {
     "apply": "Filter",
     "reset": "Reset",
-    "allStatuses": "All statuses"
+    "allStatuses": "All statuses",
+    "creditType": "Credit type",
+    "allTypes": "All types"
   },
   "chart": {
     "empty": "No data for this period.",
@@ -40,5 +42,19 @@
     "download": "Download",
     "pdf": "PDF document: download it to view it.",
     "size": "{name} · {size} KB"
+  },
+  "creditTypes": {
+    "column": "Type",
+    "balanceOf": "{type} balance",
+    "total": "Total, for information",
+    "share": "{percent}%",
+    "breakdownTitle": "Breakdown by type",
+    "breakdownEmpty": "No amount for this period.",
+    "disabled": "Disabled",
+    "accepted": "Accepted types",
+    "pickOne": "Choose at least one type.",
+    "limitUsed": "{spent} spent today out of {limit}",
+    "noTransfer": "Each type has its own balance: no transfer or payment between types.",
+    "insufficient": "Not enough {type} balance: {missing} missing."
   }
 }

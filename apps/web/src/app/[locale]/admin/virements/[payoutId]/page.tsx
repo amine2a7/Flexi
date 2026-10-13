@@ -16,6 +16,7 @@ import { isStateConflict, ReasonDialog } from '@/components/orders/order-parts';
 import { AmountBreakdown } from '@/components/ui/amount';
 import { Button, buttonClasses } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
+import { CreditTypeBadge } from '@/components/ui/credit-type';
 import { Alert, DescriptionList, PageHeader } from '@/components/ui/layout-blocks';
 import { ConfirmDialog } from '@/components/ui/modal';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
@@ -68,6 +69,7 @@ function PayoutView({
   onConflict: () => void;
 }) {
   const t = useTranslations('admin.payouts');
+  const tTypes = useTranslations('ui.creditTypes');
   const tRoot = useTranslations();
   const locale = useLocale();
   const toast = useToast();
@@ -180,6 +182,7 @@ function PayoutView({
               <DescriptionList
                 items={[
                   { label: t('merchant'), value: payout.merchantName },
+                  { label: tTypes('column'), value: <CreditTypeBadge type={payout.creditType} /> },
                   { label: t('requestedAt'), value: formatDateTime(payout.requestedAt, locale) },
                   {
                     label: t('iban'),

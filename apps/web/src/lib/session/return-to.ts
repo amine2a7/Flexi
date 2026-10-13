@@ -2,14 +2,15 @@ import type { Schemas } from '@flexipay/api-client';
 
 type Role = Schemas['Role'];
 
-/** Home of each web space. Employees and family members have no web space (cahier §1.2). */
+/** Home of each web space. Family members have no web space (mobile only). */
 export const SPACE_HOME: Partial<Record<Role, string>> = {
   ADMIN: '/admin',
   COMPANY: '/entreprise',
   MERCHANT: '/commercant',
+  EMPLOYEE: '/beneficiaire',
 };
 
-const SPACE_PREFIX = /^\/(admin|entreprise|commercant)(\/[a-z0-9-]+)*$/;
+const SPACE_PREFIX = /^\/(admin|entreprise|commercant|beneficiaire)(\/[a-z0-9-]+)*$/;
 
 /**
  * Validates a `returnTo` value (commun-session-expiree §3.1): decoded once, then rejected if it

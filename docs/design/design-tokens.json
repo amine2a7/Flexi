@@ -1,6 +1,7 @@
 {
   "$description": "Source unique des tokens FlexiPay. Génère Tailwind (web) et ThemeData (Flutter). Ne jamais coder de valeur en dur.",
   "$changelog": [
+    "2026-10-13 (décision) : 4 types de crédit (Restauration, Habillement, Carburant, Cadeaux). Couleurs type-* (plein pour barres et graphiques, -soft fond de pastille, -text texte AA sur -soft : 6,4 / 7,6 / 6,5 / 6,7:1 ; plein sur blanc ≥ 3:1) et groupe credit-type (icône Lucide, clé i18n, couleurs).",
     "2026-10-11 (design, WD2) : ajout des tailles table-row-height (56), chip-height (32, zone tactile étendue à 44), modal-max-width (480), modal-max-width-lg (720), auth-card-max-width (440), form-max-width (640), qr-code (192), viewport-min (360, largeur minimale supportée) pour les composants tableau, filtre actif, modale, écrans d'authentification, formulaires et QR d'enrôlement MFA. Aucune couleur modifiée.",
     "2026-10-09 (design, P0-D2/D3) : ajout des couleurs danger-text, info-text, neutral-text, on-danger, on-navy-muted, border-strong, overlay ; des groupes focus, breakpoint, opacity ; des tailles (touch-target-mobile, icônes, avatars, en-tête, barre basse, toast, illustration, border-width) ; des durées motion (toast-duration, skeleton) ; de icon + labelKey sur chaque statut ; des statuts du glossaire (EN_ATTENTE_KYC, REJETE, CREEE, PAYEE, RAPPROCHEE, CREDITEE, ANNULEE, INITIE, CONFIRME, DEMANDEE, CONTROLEE, ENVOYEE, EXECUTEE, REJETEE, APPROUVEE, REFUSEE) et du repli INCONNU (valeur d'enum API inconnue).",
     "2026-10-09 (design) : correction AA des badges existants (danger sur danger-soft 3,95:1 ; info sur info-soft 4,24:1 ; text-muted sur border 3,86:1) : fg passe à danger-text / info-text / neutral-text. Les anciennes valeurs de couleur sont inchangées."
@@ -28,6 +29,18 @@
     "info-text":   { "value": "#1D4ED8", "usage": "Texte d'information sur info-soft (5,49:1)" },
     "info-soft":   { "value": "#DBEAFE", "usage": "Fond de badge info" },
     "neutral-text":{ "value": "#475569", "usage": "Texte de badge neutre sur border (6,15:1) : Expiré, Annulé" },
+    "type-food":          { "value": "#EA580C", "usage": "Crédit Restauration : barres, graphiques (3,6:1 sur blanc)" },
+    "type-food-soft":     { "value": "#FFEDD5", "usage": "Crédit Restauration : fond de pastille et de carte" },
+    "type-food-text":     { "value": "#9A3412", "usage": "Crédit Restauration : texte sur type-food-soft (AA)" },
+    "type-clothing":      { "value": "#7C3AED", "usage": "Crédit Habillement : barres, graphiques (5,7:1 sur blanc)" },
+    "type-clothing-soft": { "value": "#EDE9FE", "usage": "Crédit Habillement : fond de pastille et de carte" },
+    "type-clothing-text": { "value": "#5B21B6", "usage": "Crédit Habillement : texte sur type-clothing-soft (AA)" },
+    "type-fuel":          { "value": "#0891B2", "usage": "Crédit Carburant : barres, graphiques (3,7:1 sur blanc)" },
+    "type-fuel-soft":     { "value": "#CFFAFE", "usage": "Crédit Carburant : fond de pastille et de carte" },
+    "type-fuel-text":     { "value": "#155E75", "usage": "Crédit Carburant : texte sur type-fuel-soft (AA)" },
+    "type-gift":          { "value": "#DB2777", "usage": "Crédit Cadeaux : barres, graphiques (4,6:1 sur blanc)" },
+    "type-gift-soft":     { "value": "#FCE7F3", "usage": "Crédit Cadeaux : fond de pastille et de carte" },
+    "type-gift-text":     { "value": "#9D174D", "usage": "Crédit Cadeaux : texte sur type-gift-soft (AA)" },
     "on-emerald":  { "value": "#0B1D33", "usage": "Texte sur fond emerald" },
     "on-navy":     { "value": "#FFFFFF", "usage": "Texte sur fond navy" },
     "on-navy-muted":{ "value": "#CBD5E1", "usage": "Texte secondaire sur navy (11,43:1) et navy-deep (8,32:1). Remplace text-muted/text-faint sur fond sombre" },
@@ -136,5 +149,11 @@
     "APPROUVEE":      { "label": "Approuvée",      "labelKey": "status.APPROUVEE",      "icon": "CircleCheck",   "bg": "emerald-soft", "fg": "emerald-text" },
     "INCONNU":        { "label": "Statut inconnu", "labelKey": "status.INCONNU", "icon": "CircleHelp", "bg": "border", "fg": "neutral-text" },
     "REFUSEE":        { "label": "Refusée",        "labelKey": "status.REFUSEE",        "icon": "CircleX",       "bg": "danger-soft",  "fg": "danger-text" }
+  },
+  "credit-type": {
+    "RESTAURATION": { "label": "Restauration", "labelKey": "creditType.RESTAURATION", "icon": "UtensilsCrossed", "bg": "type-food-soft",     "fg": "type-food-text",     "solid": "type-food" },
+    "HABILLEMENT":  { "label": "Habillement",  "labelKey": "creditType.HABILLEMENT",  "icon": "Shirt",           "bg": "type-clothing-soft", "fg": "type-clothing-text", "solid": "type-clothing" },
+    "CARBURANT":    { "label": "Carburant",    "labelKey": "creditType.CARBURANT",    "icon": "Fuel",            "bg": "type-fuel-soft",     "fg": "type-fuel-text",     "solid": "type-fuel" },
+    "CADEAUX":      { "label": "Cadeaux",      "labelKey": "creditType.CADEAUX",      "icon": "Gift",            "bg": "type-gift-soft",     "fg": "type-gift-text",     "solid": "type-gift" }
   }
 }

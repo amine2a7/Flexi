@@ -23,7 +23,8 @@
     "recentDescription": "Les derniers paiements reçus dans votre commerce.",
     "todoPayout": "{amount} en attente de règlement : vous pouvez demander un virement.",
     "todoPayoutAction": "Demander un virement",
-    "todoCollect": "Prêt à encaisser : saisissez le code affiché par votre client."
+    "todoCollect": "Prêt à encaisser : saisissez le code affiché par votre client.",
+    "breakdownDescription": "Encaissé ce mois, par type de crédit."
   },
   "payments": {
     "date": "Date",
@@ -63,7 +64,13 @@
     "ruleNote": "Le montant sera réglé à J+2, commission de {rate} déduite.",
     "acceptedMessage": "Le montant est encaissé et sera réglé à J+2.",
     "backToDashboard": "Retour au tableau de bord",
-    "cancelledToast": "Demande annulée : rien n'a été encaissé."
+    "cancelledToast": "Demande annulée : rien n'a été encaissé.",
+    "myQr": "Mon QR FlexiPay",
+    "myQrHint": "Le client peut aussi scanner ce QR et payer depuis son application.",
+    "myCode": "Code commerçant : {code}",
+    "qrLabel": "QR commerçant {code}",
+    "creditType": "Type de crédit",
+    "creditTypeHint": "Le client paie avec son solde de ce type uniquement."
   },
   "history": {
     "title": "Historique des encaissements",
@@ -139,7 +146,9 @@
       "SENT": "Virement envoyé à la banque",
       "EXECUTED": "Virement exécuté : fonds sur votre compte",
       "REJECTED": "Demande rejetée"
-    }
+    },
+    "creditType": "Type de crédit",
+    "creditTypeHint": "Un virement porte sur les créances d’un seul type (commission du type)."
   },
   "settlements": {
     "title": "Règlements et documents",
@@ -175,7 +184,9 @@
     "commission": "Profil de commission",
     "changeHint": "Pour modifier ces informations, contactez l'administrateur FlexiPay.",
     "pointsOfSale": "Points de vente",
-    "staff": "Équipe"
+    "staff": "Équipe",
+    "acceptedTypes": "Types de crédit acceptés",
+    "acceptedTypesHint": "Définis par FlexiPay."
   },
   "payoutRejection": {
     "ibanCheck": "Le compte bancaire enregistré doit être vérifié : contactez le support."

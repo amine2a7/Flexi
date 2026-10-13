@@ -11,22 +11,35 @@ import { Amount } from '@/components/ui/amount';
 import { buttonClasses } from '@/components/ui/button';
 import { Card, StatCard } from '@/components/ui/card';
 import { DataTable, type Column } from '@/components/ui/data-table';
+import { CreditTypeBadge, type CreditType } from '@/components/ui/credit-type';
+import { FilterBar } from '@/components/ui/filter-bar';
 import { PageHeader } from '@/components/ui/layout-blocks';
 import { StatusBadge } from '@/components/ui/status-badge';
 
 export default function ReceivablesPage() {
   const t = useTranslations('merchant.receivables');
   const locale = useLocale();
+  const tTypes = useTranslations('ui.creditTypes');
   const [total, setTotal] = useState<number | undefined>(undefined);
-  const list = usePagedList(async (cursor, withCount) => {
-    const result = await getApi().GET('/v1/merchant/receivables', {
-      params: { query: { cursor, withCount } },
-    });
-    if (result.data !== undefined) setTotal(result.data.totalMillimes);
-    return result;
-  }, []);
+  const [creditType, setCreditType] = useState<CreditType | ''>('');
+  const list = usePagedList(
+    async (cursor, withCount) => {
+      const result = await getApi().GET('/v1/merchant/receivables', {
+        params: { query: { cursor, withCount, ...(creditType === '' ? {} : { creditType }) } },
+      });
+      if (result.data !== undefined) setTotal(result.data.totalMillimes);
+      return result;
+    },
+    [creditType],
+  );
 
   const columns: Column<Schemas['Receivable']>[] = [
+    {
+      key: 'creditType',
+      header: tTypes('column'),
+      cell: (row) => <CreditTypeBadge type={row.creditType} />,
+      sortValue: (row) => row.creditType,
+    },
     {
       key: 'reference',
       header: t('reference'),
@@ -79,6 +92,7 @@ export default function ReceivablesPage() {
         />
       </div>
       <Card>
+        <FilterBar withCreditType onApply={(filters) => setCreditType(filters.creditType)} />
         <DataTable
           caption={t('title')}
           columns={columns}

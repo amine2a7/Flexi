@@ -381,8 +381,8 @@ info:
          hachage, de sorte que tous les cas `INVALID_CREDENTIALS` ont un coût comparable.
        - **Verrouillage vérifié avant le mot de passe** : un compte verrouillé reçoit
          `INVALID_CREDENTIALS` même avec le bon mot de passe.
-       - Mot de passe correct d'un `EMPLOYEE` ou `FAMILY_MEMBER` (compte non verrouillé) :
-         `403 FORBIDDEN` (DP n° 23), sans cookie ni session, journalisé (ces rôles utilisent
+       - Mot de passe correct d'un `FAMILY_MEMBER` (compte non verrouillé) :
+         `403 FORBIDDEN` (DP n° 23 ; l'`EMPLOYEE` est admis sur le web depuis le 2026-10-13), sans cookie ni session, journalisé (ces rôles utilisent
          l'application mobile). Le contrôle n'a lieu qu'après vérification du mot de passe : il ne
          révèle rien sans le bon mot de passe.
        - **Portée du verrouillage** (spec 01 §3, DP n° 24) : 5 échecs par couple (compte, IP ou
@@ -451,6 +451,8 @@ tags:
     description: Espace Entreprise (spec 05)
   - name: admin
     description: Espace Administrateur (spec 04)
+  - name: employee
+    description: Bénéficiaire (employé) — espace web /beneficiaire et application mobile, mêmes routes
 security:
   - cookieAuth: []
     csrfToken: []
@@ -1008,6 +1010,383 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
   # ================================================================== profil
+  /v1/employee/wallet:
+    get:
+      tags: [employee]
+      operationId: getEmployeeWallet
+      summary: Solde du bénéficiaire, par catégorie, avec les plafonds et les expirations
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeWallet'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/payment-codes:
+    post:
+      tags: [employee]
+      operationId: createPaymentCode
+      summary: Génère mon code de paiement (QR dynamique et code à 8 chiffres, 60 s, usage unique)
+      description: |
+        Un nouveau code annule le précédent. Le commerçant le scanne ou le saisit ; la demande de
+        paiement arrive ensuite dans `GET /v1/employee/payment-requests`, à confirmer par PIN.
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentCode'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/payment-requests:
+    get:
+      tags: [employee]
+      operationId: listPaymentRequests
+      summary: Demandes de paiement en attente de ma confirmation
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeePaymentRequestList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/payment-requests/{requestId}/confirm:
+    post:
+      tags: [employee]
+      operationId: confirmPaymentRequest
+      summary: Confirmer une demande de paiement avec mon PIN
+      x-financial: true
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinConfirmation'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeOperationDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            `PIN_INVALID` (PIN faux, compté : 3 échecs → `PIN_LOCKED` 15 min) ou `PIN_LOCKED`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableFinancial'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/payment-requests/{requestId}/refuse:
+    post:
+      tags: [employee]
+      operationId: refusePaymentRequest
+      summary: Refuser une demande de paiement
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '204':
+          description: Succès, sans contenu.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/merchants/{merchantCode}:
+    get:
+      tags: [employee]
+      operationId: lookupMerchant
+      summary: Commerçant correspondant à un code (QR scanné ou saisi), avant le paiement
+      parameters:
+        - name: merchantCode
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{6}$'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MerchantLookup'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/payments:
+    post:
+      tags: [employee]
+      operationId: payMerchant
+      summary: Payer un commerçant (code ou QR commerçant, montant, PIN)
+      x-financial: true
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeePaymentCreate'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeOperationDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            `PIN_INVALID` (PIN faux, compté : 3 échecs → `PIN_LOCKED` 15 min) ou `PIN_LOCKED`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableFinancial'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/operations:
+    get:
+      tags: [employee]
+      operationId: listEmployeeOperations
+      summary: Historique de mes opérations (paiements, crédits reçus, expirations)
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - $ref: '#/components/parameters/CreatedFrom'
+        - $ref: '#/components/parameters/CreatedTo'
+        - name: type
+          in: query
+          required: false
+          description: Filtre par type.
+          schema:
+            $ref: '#/components/schemas/EmployeeOperationType'
+        - name: creditType
+          in: query
+          required: false
+          description: Filtre par type de crédit.
+          schema:
+            $ref: '#/components/schemas/CreditType'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeOperationPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/operations/{operationId}:
+    get:
+      tags: [employee]
+      operationId: getEmployeeOperation
+      summary: Détail d'une opération (reçu)
+      parameters:
+        - name: operationId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeOperationDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/profile:
+    get:
+      tags: [employee]
+      operationId: getEmployeeProfile
+      summary: Mon profil de bénéficiaire
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/pin:
+    post:
+      tags: [employee]
+      operationId: changePin
+      summary: Changer mon code PIN de paiement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinChange'
+      responses:
+        '204':
+          description: Succès, sans contenu.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            `PIN_INVALID` (PIN faux, compté : 3 échecs → `PIN_LOCKED` 15 min) ou `PIN_LOCKED`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/me:
     get:
       tags: [me]
@@ -1104,6 +1483,12 @@ paths:
             type: string
             minLength: 1
             maxLength: 100
+        - name: creditType
+          in: query
+          required: false
+          description: Filtre par type de crédit.
+          schema:
+            $ref: '#/components/schemas/CreditType'
       responses:
         '200':
           description: Succès.
@@ -1252,6 +1637,12 @@ paths:
         - $ref: '#/components/parameters/WithCount'
         - $ref: '#/components/parameters/CreatedFrom'
         - $ref: '#/components/parameters/CreatedTo'
+        - name: creditType
+          in: query
+          required: false
+          description: Filtre par type de crédit.
+          schema:
+            $ref: '#/components/schemas/CreditType'
       responses:
         '200':
           description: Succès.
@@ -1328,6 +1719,12 @@ paths:
           description: Filtre par statut.
           schema:
             $ref: '#/components/schemas/PayoutRequestStatus'
+        - name: creditType
+          in: query
+          required: false
+          description: Filtre par type de crédit.
+          schema:
+            $ref: '#/components/schemas/CreditType'
       responses:
         '200':
           description: Succès.
@@ -1741,6 +2138,12 @@ paths:
           description: Filtre par statut.
           schema:
             $ref: '#/components/schemas/OrderStatus'
+        - name: creditType
+          in: query
+          required: false
+          description: Filtre par type de crédit.
+          schema:
+            $ref: '#/components/schemas/CreditType'
       responses:
         '200':
           description: Succès.
@@ -1999,6 +2402,45 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/company/allocation-imports/previews:
+    post:
+      tags: [company]
+      operationId: previewAllocationImport
+      summary: Analyse un fichier CSV d'attribution (matricule ; une colonne par type de crédit)
+      description: |
+        Colonnes : `matricule;restauration;habillement;carburant;cadeaux` (montants en TND, 3
+        décimales au plus, vide = 0). Rien n'est attribué : la réponse donne les lignes prêtes à
+        envoyer à `POST /v1/company/allocations`, les erreurs par ligne et les totaux par type.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllocationImportRequest'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllocationImportPreview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/company/allocations:
     post:
       tags: [company]
@@ -2176,6 +2618,80 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '409':
           $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/merchants/{merchantId}:
+    get:
+      tags: [admin]
+      operationId: getMerchantAccount
+      summary: Fiche d'un commerçant
+      parameters:
+        - name: merchantId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MerchantAccount'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/merchants/{merchantId}/credit-types:
+    put:
+      tags: [admin]
+      operationId: setMerchantCreditTypes
+      summary: Définir les types de crédit acceptés par un commerçant
+      parameters:
+        - name: merchantId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MerchantCreditTypes'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MerchantAccount'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -2466,6 +2982,12 @@ paths:
           description: Filtre par statut.
           schema:
             $ref: '#/components/schemas/OrderStatus'
+        - name: creditType
+          in: query
+          required: false
+          description: Filtre par type de crédit.
+          schema:
+            $ref: '#/components/schemas/CreditType'
         - name: companyId
           in: query
           required: false
@@ -2612,7 +3134,8 @@ paths:
       summary: Valider le virement reçu et créditer le solde de l'entreprise (AWAITING_VALIDATION → VALIDATED)
       description: |
         L'administrateur a vérifié l'arrivée des fonds sur le compte de FlexiPay. Les crédits
-        (`amountMillimes`) sont ajoutés au solde de l'entreprise dans la même transaction.
+        de chaque ligne sont ajoutés au **solde du type correspondant** de l'entreprise, dans la même
+        transaction.
         Double validation (règle 12) : si `requiresSecondValidation`, le premier appel enregistre
         `firstValidation` (statut inchangé) ; le second appel, par un **autre** administrateur, valide.
         Le même administrateur une seconde fois : `403 FORBIDDEN`.
@@ -2967,6 +3490,12 @@ paths:
           schema:
             type: string
             maxLength: 100
+        - name: creditType
+          in: query
+          required: false
+          description: Filtre par type de crédit.
+          schema:
+            $ref: '#/components/schemas/CreditType'
       responses:
         '200':
           description: Succès.
@@ -3194,6 +3723,12 @@ paths:
           schema:
             type: string
             maxLength: 100
+        - name: creditType
+          in: query
+          required: false
+          description: Filtre par type de crédit.
+          schema:
+            $ref: '#/components/schemas/CreditType'
       responses:
         '200':
           description: Succès.
@@ -3952,7 +4487,10 @@ components:
     # ---------------------------------------------------------------- profil
     Role:
       title: Role
-      description: Rôle de l'utilisateur (spec 01 §2). Le web ne sert que ADMIN, COMPANY et MERCHANT.
+      description: |
+        Rôle de l'utilisateur (spec 01 §2). Le web sert ADMIN, COMPANY, MERCHANT et, depuis la
+        décision du 2026-10-13, EMPLOYEE (espace Bénéficiaire, banc d'essai de l'app mobile, mêmes
+        routes `/v1/employee/*`). FAMILY_MEMBER reste réservé à l'application mobile.
       type: string
       enum: [ADMIN, COMPANY, MERCHANT, EMPLOYEE, FAMILY_MEMBER]
     SubRole:
@@ -4034,13 +4572,60 @@ components:
           type: string
           maxLength: 200
     # ---------------------------------------------------------------- statuts métier (provisoires)
-    CreditCategory:
-      title: CreditCategory
+    CreditType:
+      title: CreditType
       description: |
-        Catégorie de crédits. V1 : une seule catégorie, `RESTAURATION` ; le modèle (soldes, commandes,
-        paiements) porte déjà la catégorie pour en ajouter d'autres sans changement cassant.
+        Type de crédit (décision du 2026-10-13) : Restauration, Habillement, Carburant, Cadeaux.
+        Chaque compte (entreprise, bénéficiaire) a un **solde séparé par type** ; un total n'est
+        donné qu'à titre d'information. **Aucun transfert ni paiement entre types** : un paiement
+        débite le solde du type accepté par le commerçant, sinon `422 INSUFFICIENT_FUNDS`.
       type: string
-      enum: [RESTAURATION]
+      enum: [RESTAURATION, HABILLEMENT, CARBURANT, CADEAUX]
+    CreditTypeAmount:
+      title: CreditTypeAmount
+      description: Montant d'un type de crédit (répartition par type, lignes de commande).
+      type: object
+      additionalProperties: false
+      required: [creditType, amountMillimes]
+      properties:
+        creditType:
+          $ref: '#/components/schemas/CreditType'
+        amountMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+    CreditOrderLine:
+      title: CreditOrderLine
+      type: object
+      additionalProperties: false
+      required: [creditType, amountMillimes]
+      properties:
+        creditType:
+          $ref: '#/components/schemas/CreditType'
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+    CreditTypeSettings:
+      title: CreditTypeSettings
+      description: Paramétrage d'un type de crédit (règle 6 de la décision du 2026-10-13).
+      type: object
+      additionalProperties: false
+      required: [creditType, enabled, commissionRateBps, validityMonths, dailyLimitMillimes]
+      properties:
+        creditType:
+          $ref: '#/components/schemas/CreditType'
+        enabled:
+          description: Un type désactivé ne peut plus être commandé, attribué ni payé.
+          type: boolean
+        commissionRateBps:
+          description: Taux de commission prélevé sur les paiements de ce type.
+          $ref: '#/components/schemas/RateBps'
+        validityMonths:
+          description: Durée de validité des crédits de ce type.
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 60
+        dailyLimitMillimes:
+          description: Plafond de dépense journalier d'un bénéficiaire pour ce type.
+          $ref: '#/components/schemas/PositiveAmountMillimes'
     AccountStatus:
       title: AccountStatus
       description: |
@@ -4092,9 +4677,9 @@ components:
       examples: ['+21698123456']
     MerchantCategory:
       title: MerchantCategory
-      description: "Catégorie du commerce (MVP : Restauration)."
+      description: "Activité du commerce (distincte des types de crédit acceptés, voir acceptedCreditTypes)."
       type: string
-      enum: [RESTAURANT, CAFE, GROCERY, BAKERY, FAST_FOOD]
+      enum: [RESTAURANT, CAFE, GROCERY, BAKERY, FAST_FOOD, CLOTHING, FUEL_STATION, GIFT_SHOP]
     CustomerSummary:
       title: CustomerSummary
       description: "Client vu par le commerçant : prénom, initiale, matricule masqué (COM-04). Jamais de solde."
@@ -4120,8 +4705,10 @@ components:
       description: Encaissement vu par le commerçant.
       type: object
       additionalProperties: false
-      required: [id, reference, status, amountMillimes, customer, createdAt, expiresAt]
+      required: [id, creditType, reference, status, amountMillimes, customer, createdAt, expiresAt]
       properties:
+        creditType:
+          $ref: '#/components/schemas/CreditType'
         id:
           $ref: '#/components/schemas/Uuid'
         reference:
@@ -4141,12 +4728,284 @@ components:
           oneOf:
             - $ref: '#/components/schemas/Timestamp'
             - type: 'null'
+    EmployeeWallet:
+      title: EmployeeWallet
+      description: Soldes du bénéficiaire, un par type de crédit ; le total n'est qu'informatif.
+      type: object
+      additionalProperties: false
+      required: [companyName, totalBalanceMillimes, balances]
+      properties:
+        companyName:
+          type: string
+          maxLength: 200
+        totalBalanceMillimes:
+          description: Somme des soldes par type, à titre d'information uniquement.
+          $ref: '#/components/schemas/AmountMillimes'
+        balances:
+          type: array
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/CategoryBalance'
+    CategoryBalance:
+      title: CategoryBalance
+      type: object
+      additionalProperties: false
+      required: [creditType, balanceMillimes, expiringMillimes, nextExpiryDate, dailyLimitMillimes, todaySpentMillimes, enabled]
+      properties:
+        creditType:
+          $ref: '#/components/schemas/CreditType'
+        balanceMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        expiringMillimes:
+          description: Part du solde qui expire à `nextExpiryDate`.
+          $ref: '#/components/schemas/AmountMillimes'
+        dailyLimitMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        todaySpentMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        enabled:
+          type: boolean
+        nextExpiryDate:
+          oneOf:
+            - $ref: '#/components/schemas/CalendarDate'
+            - type: 'null'
+    PaymentCode:
+      title: PaymentCode
+      type: object
+      additionalProperties: false
+      required: [code, qrPayload, expiresAt, validitySeconds]
+      properties:
+        code:
+          description: Code à 8 chiffres, à usage unique.
+          type: string
+          pattern: '^[0-9]{8}$'
+        qrPayload:
+          description: Contenu du QR (`flexipay:pay:<code>`).
+          type: string
+          maxLength: 64
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
+        validitySeconds:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 300
+    EmployeePaymentRequest:
+      title: EmployeePaymentRequest
+      type: object
+      additionalProperties: false
+      required: [id, reference, merchantName, amountMillimes, creditType, createdAt, expiresAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 32
+        merchantName:
+          type: string
+          maxLength: 200
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        creditType:
+          $ref: '#/components/schemas/CreditType'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
+    EmployeePaymentRequestList:
+      title: EmployeePaymentRequestList
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/EmployeePaymentRequest'
+    PinConfirmation:
+      title: PinConfirmation
+      type: object
+      additionalProperties: false
+      required: [pin]
+      properties:
+        pin:
+          description: PIN à 4 chiffres. Jamais journalisé, jamais renvoyé.
+          type: string
+          pattern: '^[0-9]{4}$'
+    PinChange:
+      title: PinChange
+      type: object
+      additionalProperties: false
+      required: [currentPin, newPin]
+      properties:
+        currentPin:
+          type: string
+          pattern: '^[0-9]{4}$'
+        newPin:
+          type: string
+          pattern: '^[0-9]{4}$'
+    MerchantLookup:
+      title: MerchantLookup
+      type: object
+      additionalProperties: false
+      required: [merchantCode, merchantName, city, category, acceptedCreditTypes]
+      properties:
+        merchantCode:
+          type: string
+          pattern: '^[0-9]{6}$'
+        merchantName:
+          type: string
+          maxLength: 200
+        city:
+          type: string
+          maxLength: 80
+        acceptedCreditTypes:
+          description: 'Types acceptés : le bénéficiaire paie avec le solde de l''un d''eux.'
+          type: array
+          minItems: 1
+          maxItems: 4
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/CreditType'
+        category:
+          $ref: '#/components/schemas/MerchantCategory'
+    EmployeePaymentCreate:
+      title: EmployeePaymentCreate
+      type: object
+      additionalProperties: false
+      required: [merchantCode, creditType, amountMillimes, pin]
+      properties:
+        merchantCode:
+          type: string
+          pattern: '^[0-9]{6}$'
+        creditType:
+          description: Type payé, accepté par le commerçant ; seul le solde de ce type est débité.
+          $ref: '#/components/schemas/CreditType'
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        pin:
+          type: string
+          pattern: '^[0-9]{4}$'
+    EmployeeOperationType:
+      title: EmployeeOperationType
+      description: Paiement chez un commerçant, crédits reçus de l'entreprise, crédits expirés.
+      type: string
+      enum: [PAYMENT, ALLOCATION, EXPIRY]
+    EmployeeOperationStatus:
+      title: EmployeeOperationStatus
+      type: string
+      enum: [COMPLETED, PENDING, REFUSED]
+    EmployeeOperation:
+      title: EmployeeOperation
+      type: object
+      additionalProperties: false
+      required: [id, reference, type, direction, amountMillimes, creditType, counterpartyName, status, occurredAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 32
+        type:
+          $ref: '#/components/schemas/EmployeeOperationType'
+        direction:
+          $ref: '#/components/schemas/Direction'
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        creditType:
+          $ref: '#/components/schemas/CreditType'
+        counterpartyName:
+          description: Commerçant (paiement) ou entreprise (crédits reçus, expiration).
+          type: string
+          maxLength: 200
+        status:
+          $ref: '#/components/schemas/EmployeeOperationStatus'
+        occurredAt:
+          $ref: '#/components/schemas/Timestamp'
+    EmployeeOperationDetail:
+      title: EmployeeOperationDetail
+      description: Opération avec les éléments du reçu.
+      type: object
+      additionalProperties: false
+      required: [id, reference, type, direction, amountMillimes, creditType, counterpartyName, status, occurredAt, counterpartyCity, balanceAfterMillimes]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 32
+        type:
+          $ref: '#/components/schemas/EmployeeOperationType'
+        direction:
+          $ref: '#/components/schemas/Direction'
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        creditType:
+          $ref: '#/components/schemas/CreditType'
+        counterpartyName:
+          type: string
+          maxLength: 200
+        counterpartyCity:
+          oneOf:
+            - type: string
+              maxLength: 80
+            - type: 'null'
+        status:
+          $ref: '#/components/schemas/EmployeeOperationStatus'
+        occurredAt:
+          $ref: '#/components/schemas/Timestamp'
+        balanceAfterMillimes:
+          description: Solde de la catégorie après l'opération (visible du seul titulaire).
+          $ref: '#/components/schemas/AmountMillimes'
+    EmployeeOperationPage:
+      title: EmployeeOperationPage
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/EmployeeOperation'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    EmployeeProfile:
+      title: EmployeeProfile
+      type: object
+      additionalProperties: false
+      required: [firstName, lastName, employeeNumber, email, phone, companyName, pinSet]
+      properties:
+        firstName:
+          type: string
+          maxLength: 80
+        lastName:
+          type: string
+          maxLength: 80
+        employeeNumber:
+          type: string
+          maxLength: 32
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        phone:
+          $ref: '#/components/schemas/PhoneNumber'
+        companyName:
+          type: string
+          maxLength: 200
+        pinSet:
+          type: boolean
     MerchantPaymentDetail:
       title: MerchantPaymentDetail
       description: Encaissement avec sa commission, sa date de règlement et ses étapes.
       type: object
       additionalProperties: false
-      required: [id, reference, status, amountMillimes, customer, createdAt, expiresAt, category, commissionRateBps, commissionMillimes, netMillimes, settlementDate, history]
+      required: [id, reference, status, amountMillimes, customer, createdAt, expiresAt, creditType, commissionRateBps, commissionMillimes, netMillimes, settlementDate, history]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -4167,8 +5026,8 @@ components:
           oneOf:
             - $ref: '#/components/schemas/Timestamp'
             - type: 'null'
-        category:
-          $ref: '#/components/schemas/CreditCategory'
+        creditType:
+          $ref: '#/components/schemas/CreditType'
         commissionRateBps:
           description: Taux figé au moment de l'encaissement.
           $ref: '#/components/schemas/RateBps'
@@ -4214,19 +5073,22 @@ components:
       title: PaymentInitiateRequest
       type: object
       additionalProperties: false
-      required: [customerCode, amountMillimes]
+      required: [customerCode, creditType, amountMillimes]
       properties:
         customerCode:
           description: Code à 8 chiffres affiché par le client (60 s). Jamais journalisé.
           type: string
           pattern: '^[0-9]{8}$'
+        creditType:
+          description: Type encaissé, parmi ceux acceptés par le commerçant (`422` sinon).
+          $ref: '#/components/schemas/CreditType'
         amountMillimes:
           $ref: '#/components/schemas/PositiveAmountMillimes'
     MerchantDashboard:
       title: MerchantDashboard
       type: object
       additionalProperties: false
-      required: [todayCollectedMillimes, todayPaymentsCount, receivablesMillimes, nextSettlementDate, commissionRateBps, recentPayments, monthlyFlows]
+      required: [todayCollectedMillimes, todayPaymentsCount, receivablesMillimes, nextSettlementDate, commissionRateBps, recentPayments, monthlyFlows, monthByCreditType]
       properties:
         todayCollectedMillimes:
           $ref: '#/components/schemas/AmountMillimes'
@@ -4248,6 +5110,12 @@ components:
           maxItems: 5
           items:
             $ref: '#/components/schemas/MerchantPayment'
+        monthByCreditType:
+          description: Encaissé ce mois, par type de crédit (répartition).
+          type: array
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/CreditTypeAmount'
         monthlyFlows:
           description: Six derniers mois, du plus ancien au mois en cours (graphique du tableau de bord).
           type: array
@@ -4275,8 +5143,10 @@ components:
       description: Paiement confirmé non encore réglé (statut affiché « En attente de règlement », DP n° 2).
       type: object
       additionalProperties: false
-      required: [paymentId, reference, amountMillimes, confirmedAt, settlementDate]
+      required: [paymentId, creditType, reference, amountMillimes, confirmedAt, settlementDate]
       properties:
+        creditType:
+          $ref: '#/components/schemas/CreditType'
         paymentId:
           $ref: '#/components/schemas/Uuid'
         reference:
@@ -4308,8 +5178,11 @@ components:
       title: PayoutQuoteRequest
       type: object
       additionalProperties: false
-      required: [grossMillimes]
+      required: [creditType, grossMillimes]
       properties:
+        creditType:
+          description: Un virement porte sur les créances d'un seul type (commission du type).
+          $ref: '#/components/schemas/CreditType'
         grossMillimes:
           $ref: '#/components/schemas/PositiveAmountMillimes'
     PayoutQuote:
@@ -4317,8 +5190,10 @@ components:
       description: Simulation calculée par le serveur ; taux figé jusqu'à `expiresAt`.
       type: object
       additionalProperties: false
-      required: [quoteId, grossMillimes, commissionRateBps, commissionMillimes, netMillimes, availableMillimes, expiresAt]
+      required: [quoteId, creditType, grossMillimes, commissionRateBps, commissionMillimes, netMillimes, availableMillimes, expiresAt]
       properties:
+        creditType:
+          $ref: '#/components/schemas/CreditType'
         quoteId:
           $ref: '#/components/schemas/Uuid'
         grossMillimes:
@@ -4345,8 +5220,10 @@ components:
       title: PayoutRequest
       type: object
       additionalProperties: false
-      required: [id, reference, status, grossMillimes, commissionRateBps, commissionMillimes, netMillimes, requestedAt, maskedIban]
+      required: [id, creditType, reference, status, grossMillimes, commissionRateBps, commissionMillimes, netMillimes, requestedAt, maskedIban]
       properties:
+        creditType:
+          $ref: '#/components/schemas/CreditType'
         id:
           $ref: '#/components/schemas/Uuid'
         reference:
@@ -4375,8 +5252,10 @@ components:
       description: Demande de virement avec les étapes franchies (du plus ancien au plus récent).
       type: object
       additionalProperties: false
-      required: [id, reference, status, grossMillimes, commissionRateBps, commissionMillimes, netMillimes, requestedAt, maskedIban, history]
+      required: [id, creditType, reference, status, grossMillimes, commissionRateBps, commissionMillimes, netMillimes, requestedAt, maskedIban, history]
       properties:
+        creditType:
+          $ref: '#/components/schemas/CreditType'
         id:
           $ref: '#/components/schemas/Uuid'
         reference:
@@ -4567,7 +5446,7 @@ components:
       title: MerchantProfile
       type: object
       additionalProperties: false
-      required: [name, category, city, address, phone, maskedIban, commissionProfile, pointsOfSale, staff]
+      required: [name, category, city, address, phone, maskedIban, paymentCode, acceptedCreditTypes, commissionProfile, pointsOfSale, staff]
       properties:
         name:
           type: string
@@ -4589,6 +5468,20 @@ components:
           type: string
           minLength: 1
           maxLength: 40
+        paymentCode:
+          description: |
+            Code commerçant à 6 chiffres, affiché en QR (`flexipay:merchant:<code>`) dans le commerce :
+            le bénéficiaire le scanne ou le saisit pour payer.
+          type: string
+          pattern: '^[0-9]{6}$'
+        acceptedCreditTypes:
+          description: Types de crédit que le commerce accepte (définis par FlexiPay).
+          type: array
+          minItems: 1
+          maxItems: 4
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/CreditType'
         commissionProfile:
           $ref: '#/components/schemas/CommissionProfileSummary'
         pointsOfSale:
@@ -4605,9 +5498,16 @@ components:
       title: CompanyDashboard
       type: object
       additionalProperties: false
-      required: [walletBalanceMillimes, employeesCount, activeEmployeesCount, monthAllocatedMillimes, pendingOrdersCount, recentOrders, monthlyFlows]
+      required: [balances, walletBalanceMillimes, employeesCount, activeEmployeesCount, monthAllocatedMillimes, pendingOrdersCount, recentOrders, monthlyFlows]
       properties:
+        balances:
+          description: Solde de l'entreprise par type de crédit (un compte par type).
+          type: array
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/CreditTypeAmount'
         walletBalanceMillimes:
+          description: Total des soldes par type, à titre d'information uniquement.
           $ref: '#/components/schemas/AmountMillimes'
         employeesCount:
           type: integer
@@ -4835,17 +5735,27 @@ components:
       title: CreditOrderQuoteRequest
       type: object
       additionalProperties: false
-      required: [amountMillimes]
+      required: [lines]
       properties:
-        amountMillimes:
-          $ref: '#/components/schemas/PositiveAmountMillimes'
+        lines:
+          type: array
+          minItems: 1
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/CreditOrderLine'
     CreditOrderQuote:
       title: CreditOrderQuote
       description: Récapitulatif calculé par le serveur.
       type: object
       additionalProperties: false
-      required: [amountMillimes, feeRateBps, feesMillimes, totalMillimes]
+      required: [lines, amountMillimes, feeRateBps, feesMillimes, totalMillimes]
       properties:
+        lines:
+          type: array
+          minItems: 1
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/CreditOrderLine'
         amountMillimes:
           $ref: '#/components/schemas/PositiveAmountMillimes'
         feeRateBps:
@@ -4858,18 +5768,20 @@ components:
       title: CreditOrderCreate
       type: object
       additionalProperties: false
-      required: [amountMillimes]
+      required: [lines]
       properties:
-        amountMillimes:
-          $ref: '#/components/schemas/PositiveAmountMillimes'
-        category:
-          description: Catégorie commandée (défaut `RESTAURATION`).
-          $ref: '#/components/schemas/CreditCategory'
+        lines:
+          description: Un montant par type de crédit commandé (types distincts).
+          type: array
+          minItems: 1
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/CreditOrderLine'
     CreditOrder:
       title: CreditOrder
       type: object
       additionalProperties: false
-      required: [id, reference, status, category, companyId, companyName, amountMillimes, feesMillimes, totalMillimes, createdAt, paymentReference]
+      required: [id, reference, status, lines, companyId, companyName, amountMillimes, feesMillimes, totalMillimes, createdAt, paymentReference]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -4879,8 +5791,13 @@ components:
           maxLength: 32
         status:
           $ref: '#/components/schemas/OrderStatus'
-        category:
-          $ref: '#/components/schemas/CreditCategory'
+        lines:
+          description: Montant commandé par type ; `amountMillimes` en est la somme.
+          type: array
+          minItems: 1
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/CreditOrderLine'
         companyId:
           $ref: '#/components/schemas/Uuid'
         companyName:
@@ -4908,7 +5825,7 @@ components:
       description: Commande avec sa déclaration de virement, son dernier motif et son historique.
       type: object
       additionalProperties: false
-      required: [id, reference, status, category, companyId, companyName, amountMillimes, feesMillimes, totalMillimes, createdAt, paymentReference, history, requiresSecondValidation]
+      required: [id, reference, status, lines, companyId, companyName, amountMillimes, feesMillimes, totalMillimes, createdAt, paymentReference, history, requiresSecondValidation]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -4918,8 +5835,13 @@ components:
           maxLength: 32
         status:
           $ref: '#/components/schemas/OrderStatus'
-        category:
-          $ref: '#/components/schemas/CreditCategory'
+        lines:
+          description: Montant commandé par type ; `amountMillimes` en est la somme.
+          type: array
+          minItems: 1
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/CreditOrderLine'
         companyId:
           $ref: '#/components/schemas/Uuid'
         companyName:
@@ -5111,10 +6033,13 @@ components:
       title: AllocationLine
       type: object
       additionalProperties: false
-      required: [employeeId, amountMillimes]
+      required: [employeeId, creditType, amountMillimes]
       properties:
         employeeId:
           $ref: '#/components/schemas/Uuid'
+        creditType:
+          description: 'Type attribué : le solde de ce type de l''entreprise est débité.'
+          $ref: '#/components/schemas/CreditType'
         amountMillimes:
           $ref: '#/components/schemas/PositiveAmountMillimes'
     AllocationRequest:
@@ -5129,12 +6054,91 @@ components:
           maxItems: 5000
           items:
             $ref: '#/components/schemas/AllocationLine'
+    AllocationImportRequest:
+      title: AllocationImportRequest
+      type: object
+      additionalProperties: false
+      required: [csv]
+      properties:
+        csv:
+          description: Contenu du fichier CSV (UTF-8), 500 lignes au plus.
+          type: string
+          minLength: 1
+          maxLength: 200000
+    AllocationImportRow:
+      title: AllocationImportRow
+      type: object
+      additionalProperties: false
+      required: [line, employeeNumber, amounts, issues]
+      properties:
+        line:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 100000
+        employeeNumber:
+          type: string
+          maxLength: 32
+        employeeName:
+          type: string
+          maxLength: 200
+        amounts:
+          type: array
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/CreditTypeAmount'
+        issues:
+          description: Erreurs de la ligne (vide si elle est valide).
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            enum: [UNKNOWN_EMPLOYEE, INVALID_AMOUNT, NO_AMOUNT, TYPE_DISABLED]
+    AllocationImportPreview:
+      title: AllocationImportPreview
+      type: object
+      additionalProperties: false
+      required: [rows, lines, totals, validCount, errorCount]
+      properties:
+        rows:
+          type: array
+          maxItems: 500
+          items:
+            $ref: '#/components/schemas/AllocationImportRow'
+        lines:
+          description: Lignes valides, prêtes pour `POST /v1/company/allocations`.
+          type: array
+          maxItems: 2000
+          items:
+            $ref: '#/components/schemas/AllocationLine'
+        totals:
+          description: Total à attribuer par type (à comparer aux soldes par type).
+          type: array
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/CreditTypeAmount'
+        validCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 500
+        errorCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 500
     AllocationResult:
       title: AllocationResult
       type: object
       additionalProperties: false
-      required: [allocatedCount, allocatedMillimes, walletBalanceMillimes]
+      required: [balances, allocatedCount, allocatedMillimes, walletBalanceMillimes]
       properties:
+        balances:
+          description: Soldes par type de l'entreprise après l'attribution.
+          type: array
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/CreditTypeAmount'
         allocatedCount:
           type: integer
           format: int32
@@ -5189,7 +6193,7 @@ components:
       title: AdminDashboard
       type: object
       additionalProperties: false
-      required: [merchantsCount, companiesCount, todayVolumeMillimes, pendingApprovalsCount, pendingKycCount, nextSettlementNetMillimes, monthlyFlows]
+      required: [merchantsCount, companiesCount, todayVolumeMillimes, pendingApprovalsCount, pendingKycCount, nextSettlementNetMillimes, monthlyFlows, monthByCreditType]
       properties:
         merchantsCount:
           type: integer
@@ -5215,6 +6219,12 @@ components:
           maximum: 100000
         nextSettlementNetMillimes:
           $ref: '#/components/schemas/AmountMillimes'
+        monthByCreditType:
+          description: Paiements du mois sur la plateforme, par type de crédit (répartition).
+          type: array
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/CreditTypeAmount'
         monthlyFlows:
           description: Six derniers mois, du plus ancien au mois en cours (graphique du tableau de bord).
           type: array
@@ -5241,7 +6251,7 @@ components:
       title: MerchantAccount
       type: object
       additionalProperties: false
-      required: [id, name, category, city, status, commissionProfile, createdAt]
+      required: [id, name, category, acceptedCreditTypes, city, status, commissionProfile, createdAt]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -5251,6 +6261,14 @@ components:
           maxLength: 200
         category:
           $ref: '#/components/schemas/MerchantCategory'
+        acceptedCreditTypes:
+          description: 'Types de crédit acceptés (un restaurant : Restauration ; une station : Carburant…).'
+          type: array
+          minItems: 1
+          maxItems: 4
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/CreditType'
         city:
           type: string
           minLength: 1
@@ -5261,6 +6279,20 @@ components:
           $ref: '#/components/schemas/CommissionProfileSummary'
         createdAt:
           $ref: '#/components/schemas/Timestamp'
+    MerchantCreditTypes:
+      title: MerchantCreditTypes
+      type: object
+      additionalProperties: false
+      required: [acceptedCreditTypes]
+      properties:
+        acceptedCreditTypes:
+          description: Types de crédit acceptés.
+          type: array
+          minItems: 1
+          maxItems: 4
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/CreditType'
     MerchantAccountPage:
       title: MerchantAccountPage
       description: Liste paginée de MerchantAccount (§7).
@@ -5279,8 +6311,16 @@ components:
       title: MerchantCreate
       type: object
       additionalProperties: false
-      required: [name, category, city, phone, email, commissionProfileId]
+      required: [name, category, acceptedCreditTypes, city, phone, email, commissionProfileId]
       properties:
+        acceptedCreditTypes:
+          description: Types de crédit acceptés par le commerçant.
+          type: array
+          minItems: 1
+          maxItems: 4
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/CreditType'
         name:
           type: string
           minLength: 1
@@ -5678,8 +6718,10 @@ components:
       description: Demande de virement vue par l'administrateur (IBAN complet pour le contrôle).
       type: object
       additionalProperties: false
-      required: [id, reference, status, merchantId, merchantName, grossMillimes, commissionRateBps, commissionMillimes, netMillimes, requestedAt, iban]
+      required: [id, creditType, reference, status, merchantId, merchantName, grossMillimes, commissionRateBps, commissionMillimes, netMillimes, requestedAt, iban]
       properties:
+        creditType:
+          $ref: '#/components/schemas/CreditType'
         id:
           $ref: '#/components/schemas/Uuid'
         reference:
@@ -5717,8 +6759,10 @@ components:
       title: AdminPayoutRequestDetail
       type: object
       additionalProperties: false
-      required: [id, reference, status, merchantId, merchantName, grossMillimes, commissionRateBps, commissionMillimes, netMillimes, requestedAt, iban, history]
+      required: [id, creditType, reference, status, merchantId, merchantName, grossMillimes, commissionRateBps, commissionMillimes, netMillimes, requestedAt, iban, history]
       properties:
+        creditType:
+          $ref: '#/components/schemas/CreditType'
         id:
           $ref: '#/components/schemas/Uuid'
         reference:
@@ -5773,7 +6817,7 @@ components:
       title: AdminTransaction
       type: object
       additionalProperties: false
-      required: [id, reference, merchantName, companyName, category, amountMillimes, status, createdAt]
+      required: [id, reference, merchantName, companyName, creditType, amountMillimes, status, createdAt]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -5788,8 +6832,8 @@ components:
           description: Entreprise de l'employé qui a payé.
           type: string
           maxLength: 200
-        category:
-          $ref: '#/components/schemas/CreditCategory'
+        creditType:
+          $ref: '#/components/schemas/CreditType'
         amountMillimes:
           $ref: '#/components/schemas/PositiveAmountMillimes'
         status:
@@ -5865,7 +6909,7 @@ components:
       title: PlatformSettings
       type: object
       additionalProperties: false
-      required: [payoutMinimumMillimes, creditValidityMonths, maxFamilyMembers, orderFeeRateBps]
+      required: [payoutMinimumMillimes, creditValidityMonths, maxFamilyMembers, orderFeeRateBps, creditTypes]
       properties:
         payoutMinimumMillimes:
           $ref: '#/components/schemas/AmountMillimes'
@@ -5881,6 +6925,13 @@ components:
           maximum: 10
         orderFeeRateBps:
           $ref: '#/components/schemas/RateBps'
+        creditTypes:
+          description: Paramétrage par type (un élément par type, les 4 types).
+          type: array
+          minItems: 4
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/CreditTypeSettings'
     PlatformSettingsChange:
       title: PlatformSettingsChange
       type: object
@@ -5923,6 +6974,8 @@ components:
         - RATE_LIMITED
         - INTERNAL_ERROR
         - SERVICE_UNAVAILABLE
+        - PIN_INVALID
+        - PIN_LOCKED
     ProblemBase:
       title: ProblemBase
       description: |

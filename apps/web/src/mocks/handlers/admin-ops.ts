@@ -72,6 +72,7 @@ function demoShopPayouts(): AdminPayout[] {
     id: payout.id,
     reference: payout.reference,
     status: payout.status,
+    creditType: payout.creditType,
     merchantId: MERCHANT_TENANT.id,
     merchantName: MERCHANT_TENANT.label,
     grossMillimes: payout.grossMillimes,
@@ -129,6 +130,7 @@ function ensureLines(batch: S['SettlementBatch']): AdminPayout[] {
       id: random.uuid(),
       reference: `VIR-${batch.reference.slice(4)}-${String(index + 1).padStart(2, '0')}`,
       status: batch.status === 'PAID' ? 'EXECUTED' : 'CHECKED',
+      creditType: merchant.acceptedCreditTypes[0] ?? 'RESTAURATION',
       merchantId: merchant.id,
       merchantName: merchant.name,
       grossMillimes: gross,
@@ -250,9 +252,11 @@ export const adminOpsHandlers = [
     if (isResponse(account)) return account;
     const { query } = listParams(request);
     const status = query.get('status');
+    const creditType = query.get('creditType');
     const q = query.get('q');
     const items = allPayouts()
       .filter((payout) => status === null || payout.status === status)
+      .filter((payout) => creditType === null || payout.creditType === creditType)
       .filter((payout) => matches(q, payout.merchantName, payout.reference))
       .sort(
         (a, b) =>
@@ -323,8 +327,10 @@ export const adminOpsHandlers = [
     const q = query.get('q');
     const from = query.get('createdFrom');
     const to = query.get('createdTo');
+    const creditType = query.get('creditType');
     const items = db.admin.transactions
       .filter((item) => status === null || item.status === status)
+      .filter((item) => creditType === null || item.creditType === creditType)
       .filter((item) => matches(q, item.merchantName, item.companyName, item.reference))
       .filter((item) => from === null || item.createdAt >= from)
       .filter((item) => to === null || item.createdAt <= to);

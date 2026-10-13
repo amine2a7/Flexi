@@ -1,7 +1,9 @@
 import type { Schemas } from '@flexipay/api-client';
 import { http, HttpResponse } from 'msw';
+import { CREDIT_TYPES } from '../credit-types';
 import { commissionOf, db, type MockPayment } from '../db';
 import { FIRST_NAMES, LAST_NAMES, calendarDate, createRandom } from '../fixtures/random';
+import { linkEmployeePayment } from './employee';
 import {
   apiUrl,
   audit,
@@ -57,7 +59,8 @@ function paymentDetail(payment: MockPayment): S['MerchantPaymentDetail'] {
   const base = publicPayment(payment);
   const start = new Date(base.createdAt).getTime();
   const collected = base.status === 'CONFIRMED' || base.status === 'SETTLED';
-  const commission = collected ? commissionOf(base.amountMillimes, db.merchant.rateBps) : 0;
+  const rate = typeRate(base.creditType);
+  const commission = collected ? commissionOf(base.amountMillimes, rate) : 0;
   const settlementDate = collected ? calendarDate(start + 2 * 86_400_000) : null;
   const history: S['PaymentEvent'][] = [{ status: 'INITIATED', occurredAt: base.createdAt }];
   if (base.status !== 'INITIATED') {
@@ -69,8 +72,7 @@ function paymentDetail(payment: MockPayment): S['MerchantPaymentDetail'] {
   }
   return {
     ...base,
-    category: 'RESTAURATION',
-    commissionRateBps: db.merchant.rateBps,
+    commissionRateBps: rate,
     commissionMillimes: commission,
     netMillimes: collected ? base.amountMillimes - commission : 0,
     settlementDate,
@@ -85,10 +87,19 @@ function receivables(): S['Receivable'][] {
     .map((payment) => ({
       paymentId: payment.id,
       reference: payment.reference,
+      creditType: payment.creditType,
       amountMillimes: payment.amountMillimes,
       confirmedAt: payment.createdAt,
       settlementDate: calendarDate(new Date(payment.createdAt).getTime() + 2 * 86_400_000),
     }));
+}
+
+/** Commission rate of a credit type (platform settings, rule 6). */
+export function typeRate(type: S['CreditType']): number {
+  return (
+    db.admin.settings.creditTypes.find((item) => item.creditType === type)?.commissionRateBps ??
+    db.merchant.rateBps
+  );
 }
 
 const totalOf = (items: readonly { amountMillimes: number }[]) =>
@@ -176,6 +187,19 @@ export const merchantHandlers = [
       commissionRateBps: db.merchant.rateBps,
       recentPayments: db.merchant.payments.slice(0, 5).map(publicPayment),
       monthlyFlows: monthlyFlows(),
+      monthByCreditType: CREDIT_TYPES.map((creditType) => ({
+        creditType,
+        amountMillimes: totalOf(
+          db.merchant.payments
+            .map(settle)
+            .filter(
+              (payment) =>
+                payment.creditType === creditType &&
+                payment.createdAt.startsWith(new Date().toISOString().slice(0, 7)) &&
+                (payment.status === 'CONFIRMED' || payment.status === 'SETTLED'),
+            ),
+        ),
+      })),
     });
   }),
 
@@ -184,9 +208,11 @@ export const merchantHandlers = [
     if (isResponse(account)) return account;
     const { query } = listParams(request);
     const status = query.get('status');
+    const creditType = query.get('creditType');
     const items = db.merchant.payments
       .map(publicPayment)
       .filter((payment) => status === null || payment.status === status)
+      .filter((payment) => creditType === null || payment.creditType === creditType)
       .filter((payment) => matches(query.get('q'), payment.reference, payment.customer.firstName));
     return HttpResponse.json<S['MerchantPaymentPage']>(paginate(items, request));
   }),
@@ -209,12 +235,16 @@ export const merchantHandlers = [
     if (!Number.isInteger(body.amountMillimes) || body.amountMillimes < 1) {
       return validationProblem([{ pointer: '/amountMillimes', code: 'TOO_SMALL' }]);
     }
+    if (!db.merchant.profile.acceptedCreditTypes.includes(body.creditType)) {
+      return validationProblem([{ pointer: '/creditType', code: 'INVALID_ENUM' }]);
+    }
     if (body.customerCode === '99999999') return problem(500, 'INTERNAL_ERROR');
     if (body.customerCode === '00000000') return problem(422, 'PAYMENT_DECLINED');
     const payment: MockPayment = {
       id: crypto.randomUUID(),
       reference: `PAY-${String(5000 + db.merchant.payments.length)}`,
       status: 'INITIATED',
+      creditType: body.creditType,
       amountMillimes: body.amountMillimes,
       customer: customerFor(body.customerCode),
       createdAt: new Date(now).toISOString(),
@@ -222,6 +252,8 @@ export const merchantHandlers = [
       confirmAt: now + CONFIRMATION_DELAY_MS,
       willRefuse: body.customerCode.endsWith('0000'),
     };
+    // The beneficiary's active code: the request waits for the PIN in the beneficiary space.
+    if (linkEmployeePayment(body.customerCode, payment)) delete payment.willRefuse;
     db.merchant.payments.unshift(payment);
     return HttpResponse.json<S['MerchantPayment']>(publicPayment(payment), { status: 201 });
   }),
@@ -248,7 +280,10 @@ export const merchantHandlers = [
   http.get(apiUrl('/v1/merchant/receivables'), async ({ request }) => {
     const account = await guardRead('MERCHANT');
     if (isResponse(account)) return account;
-    const items = receivables();
+    const creditType = listParams(request).query.get('creditType');
+    const items = receivables().filter(
+      (item) => creditType === null || item.creditType === creditType,
+    );
     return HttpResponse.json<S['ReceivablePage']>({
       ...paginate(items, request),
       totalMillimes: totalOf(items),
@@ -259,7 +294,7 @@ export const merchantHandlers = [
     const account = await guardWrite(request, 'MERCHANT');
     if (isResponse(account)) return account;
     const body = (await request.json()) as S['PayoutQuoteRequest'];
-    const available = totalOf(receivables());
+    const available = totalOf(receivables().filter((item) => item.creditType === body.creditType));
     if (
       !Number.isInteger(body.grossMillimes) ||
       body.grossMillimes < db.admin.settings.payoutMinimumMillimes
@@ -267,11 +302,13 @@ export const merchantHandlers = [
       return validationProblem([{ pointer: '/grossMillimes', code: 'TOO_SMALL' }]);
     }
     if (body.grossMillimes > available) return problem(422, 'INSUFFICIENT_FUNDS');
-    const commission = commissionOf(body.grossMillimes, db.merchant.rateBps);
+    const rate = typeRate(body.creditType);
+    const commission = commissionOf(body.grossMillimes, rate);
     const quote: S['PayoutQuote'] = {
       quoteId: crypto.randomUUID(),
+      creditType: body.creditType,
       grossMillimes: body.grossMillimes,
-      commissionRateBps: db.merchant.rateBps,
+      commissionRateBps: rate,
       commissionMillimes: commission,
       netMillimes: body.grossMillimes - commission,
       availableMillimes: available,
@@ -285,7 +322,10 @@ export const merchantHandlers = [
     const account = await guardRead('MERCHANT');
     if (isResponse(account)) return account;
     const status = listParams(request).query.get('status');
-    const items = db.merchant.payouts.filter((item) => status === null || item.status === status);
+    const creditType = listParams(request).query.get('creditType');
+    const items = db.merchant.payouts
+      .filter((item) => status === null || item.status === status)
+      .filter((item) => creditType === null || item.creditType === creditType);
     return HttpResponse.json<S['PayoutRequestPage']>(paginate(items, request));
   }),
 
@@ -297,7 +337,7 @@ export const merchantHandlers = [
     if (
       quote === undefined ||
       new Date(quote.expiresAt).getTime() < Date.now() ||
-      quote.commissionRateBps !== db.merchant.rateBps
+      quote.commissionRateBps !== typeRate(quote.creditType)
     ) {
       return problem(409, 'RESOURCE_STATE_CONFLICT');
     }
@@ -306,6 +346,7 @@ export const merchantHandlers = [
       id: crypto.randomUUID(),
       reference: `VIR-2026-${String(9400 + db.merchant.payouts.length)}`,
       status: 'REQUESTED',
+      creditType: quote.creditType,
       grossMillimes: quote.grossMillimes,
       commissionRateBps: quote.commissionRateBps,
       commissionMillimes: quote.commissionMillimes,

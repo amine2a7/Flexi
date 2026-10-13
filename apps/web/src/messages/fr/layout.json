@@ -7,7 +7,7 @@
     "ADMIN": "Administration",
     "COMPANY": "Espace entreprise",
     "MERCHANT": "Espace commerçant",
-    "EMPLOYEE": "Espace employé",
+    "EMPLOYEE": "Espace bénéficiaire",
     "FAMILY_MEMBER": "Espace famille"
   },
   "forbidden": {
@@ -29,14 +29,14 @@
     "ADMIN": "Administrateur",
     "COMPANY": "Entreprise",
     "MERCHANT": "Commerçant",
-    "EMPLOYEE": "Employé",
+    "EMPLOYEE": "Bénéficiaire",
     "FAMILY_MEMBER": "Membre de la famille"
   },
   "eyebrow": {
     "ADMIN": "Pilotage de la plateforme",
     "COMPANY": "Entreprise cliente",
     "MERCHANT": "Commerçant partenaire",
-    "EMPLOYEE": "Employé",
+    "EMPLOYEE": "Bénéficiaire",
     "FAMILY_MEMBER": "Famille"
   },
   "counter": "{label} : {count} en attente"

@@ -1,6 +1,7 @@
 import type { Schemas } from '@flexipay/api-client';
 import { http, HttpResponse } from 'msw';
-import { commissionOf, db } from '../db';
+import { CREDIT_TYPES, balancesList, emptyBalances, type TypeBalances } from '../credit-types';
+import { commissionOf, db, saveOrders } from '../db';
 import { COMPANY_TENANT } from '../fixtures/accounts';
 import { OPEN_ORDER_STATUSES, orderSummary } from './orders';
 import {
@@ -95,14 +96,103 @@ function companyFlows(
   });
 }
 
+const totalOf = (balances: TypeBalances) =>
+  CREDIT_TYPES.reduce((sum, type) => sum + balances[type], 0);
+
+const typeEnabled = (type: S['CreditType']) =>
+  db.admin.settings.creditTypes.find((item) => item.creditType === type)?.enabled ?? false;
+
+/** Order lines: distinct enabled types, at least 100 TND in all. */
+function checkOrderLines(lines: readonly S['CreditOrderLine'][] | undefined): Response | undefined {
+  if (lines === undefined || lines.length === 0) {
+    return validationProblem([{ pointer: '/lines', code: 'REQUIRED' }]);
+  }
+  if (new Set(lines.map((line) => line.creditType)).size !== lines.length) {
+    return validationProblem([{ pointer: '/lines', code: 'INVALID_FORMAT' }]);
+  }
+  if (lines.some((line) => !typeEnabled(line.creditType))) {
+    return validationProblem([{ pointer: '/lines', code: 'INVALID_ENUM' }]);
+  }
+  if (lines.some((line) => !Number.isInteger(line.amountMillimes) || line.amountMillimes < 1)) {
+    return validationProblem([{ pointer: '/lines', code: 'TOO_SMALL' }]);
+  }
+  const amount = lines.reduce((sum, line) => sum + line.amountMillimes, 0);
+  if (amount < 100_000) return validationProblem([{ pointer: '/lines', code: 'TOO_SMALL' }]);
+  return undefined;
+}
+export { checkOrderLines };
+
+/** Amount typed in TND in a CSV cell (`45,500`, `45.5`, empty = 0), in millimes; NaN if invalid. */
+function csvMillimes(cell: string): number {
+  const value = cell.trim().replace(/\s/g, '');
+  if (value === '') return 0;
+  const match = /^(\d{1,9})(?:[.,](\d{1,3}))?$/.exec(value);
+  if (match === null) return Number.NaN;
+  return Number(match[1]) * 1000 + Number((match[2] ?? '').padEnd(3, '0'));
+}
+
+/** Allocation CSV: `matricule;restauration;habillement;carburant;cadeaux` (one column per type). */
+function previewAllocations(csv: string): S['AllocationImportPreview'] {
+  const rows: S['AllocationImportRow'][] = [];
+  const lines: S['AllocationLine'][] = [];
+  const totals = emptyBalances();
+  csv.split(/\r?\n/).forEach((raw, index) => {
+    const line = raw.trim();
+    if (line === '' || (index === 0 && /matricule|employeeNumber/i.test(line))) return;
+    const [employeeNumber = '', ...cells] = line.split(/[;,\t]/).map((cell) => cell.trim());
+    const employee = db.company.employees.find((item) => item.employeeNumber === employeeNumber);
+    const issues: S['AllocationImportRow']['issues'] = [];
+    if (employee === undefined) issues.push('UNKNOWN_EMPLOYEE');
+    const amounts = CREDIT_TYPES.map((creditType, position) => ({
+      creditType,
+      amountMillimes: csvMillimes(cells[position] ?? ''),
+    }));
+    if (amounts.some((item) => Number.isNaN(item.amountMillimes))) issues.push('INVALID_AMOUNT');
+    const positive = amounts.filter((item) => item.amountMillimes > 0);
+    if (positive.length === 0 && !issues.includes('INVALID_AMOUNT')) issues.push('NO_AMOUNT');
+    if (positive.some((item) => !typeEnabled(item.creditType))) issues.push('TYPE_DISABLED');
+    rows.push({
+      line: index + 1,
+      employeeNumber,
+      ...(employee === undefined
+        ? {}
+        : { employeeName: `${employee.firstName} ${employee.lastName}` }),
+      amounts: amounts.map((item) => ({
+        creditType: item.creditType,
+        amountMillimes: Number.isNaN(item.amountMillimes) ? 0 : item.amountMillimes,
+      })),
+      issues,
+    });
+    if (issues.length === 0 && employee !== undefined) {
+      for (const item of positive) {
+        lines.push({
+          employeeId: employee.id,
+          creditType: item.creditType,
+          amountMillimes: item.amountMillimes,
+        });
+        totals[item.creditType] += item.amountMillimes;
+      }
+    }
+  });
+  const errorCount = rows.filter((row) => row.issues.length > 0).length;
+  return {
+    rows: rows.slice(0, 500),
+    lines,
+    totals: balancesList(totals),
+    validCount: rows.length - errorCount,
+    errorCount,
+  };
+}
+
 export const companyHandlers = [
   http.get(apiUrl('/v1/company/dashboard'), async () => {
     const account = await guardRead('COMPANY');
     if (isResponse(account)) return account;
-    const { employees, walletMillimes } = db.company;
+    const { employees, balances } = db.company;
     const orders = db.orders.filter((order) => order.companyId === COMPANY_TENANT.id);
     return HttpResponse.json<S['CompanyDashboard']>({
-      walletBalanceMillimes: walletMillimes,
+      balances: balancesList(balances),
+      walletBalanceMillimes: totalOf(balances),
       employeesCount: employees.length,
       activeEmployeesCount: employees.filter((employee) => employee.status === 'ACTIVE').length,
       monthAllocatedMillimes: employees.reduce(
@@ -206,16 +296,17 @@ export const companyHandlers = [
     const account = await guardWrite(request, 'COMPANY');
     if (isResponse(account)) return account;
     const body = (await request.json()) as S['CreditOrderQuoteRequest'];
-    if (!Number.isInteger(body.amountMillimes) || body.amountMillimes < 100_000) {
-      return validationProblem([{ pointer: '/amountMillimes', code: 'TOO_SMALL' }]);
-    }
+    const invalid = checkOrderLines(body.lines);
+    if (invalid !== undefined) return invalid;
+    const amount = body.lines.reduce((sum, line) => sum + line.amountMillimes, 0);
     const rate = db.admin.settings.orderFeeRateBps;
-    const fees = commissionOf(body.amountMillimes, rate);
+    const fees = commissionOf(amount, rate);
     return HttpResponse.json<S['CreditOrderQuote']>({
-      amountMillimes: body.amountMillimes,
+      lines: body.lines,
+      amountMillimes: amount,
       feeRateBps: rate,
       feesMillimes: fees,
-      totalMillimes: body.amountMillimes + fees,
+      totalMillimes: amount + fees,
     });
   }),
 
@@ -231,10 +322,18 @@ export const companyHandlers = [
     ) {
       return validationProblem([{ pointer: '/allocations', code: 'TOO_SMALL' }]);
     }
-    if (total > db.company.walletMillimes) {
-      return problem(422, 'INSUFFICIENT_FUNDS', {
-        missingMillimes: total - db.company.walletMillimes,
-      });
+    // Each line debits the balance of ITS type: never another type (no transfer between types).
+    const needed = emptyBalances();
+    for (const line of body.allocations) needed[line.creditType] += line.amountMillimes;
+    for (const type of CREDIT_TYPES) {
+      if (needed[type] > 0 && !typeEnabled(type)) {
+        return validationProblem([{ pointer: '/allocations', code: 'INVALID_ENUM' }]);
+      }
+      if (needed[type] > db.company.balances[type]) {
+        return problem(422, 'INSUFFICIENT_FUNDS', {
+          missingMillimes: needed[type] - db.company.balances[type],
+        });
+      }
     }
     for (const line of body.allocations) {
       const employee = db.company.employees.find((item) => item.id === line.employeeId);
@@ -245,13 +344,22 @@ export const companyHandlers = [
       const employee = db.company.employees.find((item) => item.id === line.employeeId);
       if (employee !== undefined) employee.monthAllocatedMillimes += line.amountMillimes;
     }
-    db.company.walletMillimes -= total;
-    audit('credits.allocate', `${String(body.allocations.length)} employés`);
+    for (const type of CREDIT_TYPES) db.company.balances[type] -= needed[type];
+    saveOrders();
+    audit('credits.allocate', `${String(body.allocations.length)} lignes`);
     return HttpResponse.json<S['AllocationResult']>({
+      balances: balancesList(db.company.balances),
       allocatedCount: body.allocations.length,
       allocatedMillimes: total,
-      walletBalanceMillimes: db.company.walletMillimes,
+      walletBalanceMillimes: totalOf(db.company.balances),
     });
+  }),
+
+  http.post(apiUrl('/v1/company/allocation-imports/previews'), async ({ request }) => {
+    const account = await guardWrite(request, 'COMPANY');
+    if (isResponse(account)) return account;
+    const body = (await request.json()) as S['AllocationImportRequest'];
+    return HttpResponse.json<S['AllocationImportPreview']>(previewAllocations(body.csv));
   }),
 
   http.get(apiUrl('/v1/company/invoices'), async ({ request }) => {

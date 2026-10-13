@@ -23,6 +23,7 @@ import { useOrderCount } from '@/components/orders/use-order-count';
 import { ActivityList, TodoPanel, type TodoItem } from '@/components/ui/activity';
 import { Amount } from '@/components/ui/amount';
 import { BarChart } from '@/components/ui/bar-chart';
+import { CreditTypeBreakdown } from '@/components/ui/credit-type';
 import { buttonClasses } from '@/components/ui/button';
 import { Card, CardTitle, StatCard } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/layout-blocks';
@@ -30,6 +31,7 @@ import { ErrorState, LoadingBlock } from '@/components/ui/states';
 
 export default function AdminDashboardPage() {
   const t = useTranslations('admin.dashboard');
+  const tTypes = useTranslations('ui.creditTypes');
   const locale = useLocale();
   const dashboard = useApiQuery(() => getApi().GET('/v1/admin/dashboard'), []);
   const toConfirm = useOrderCount('admin', 'AWAITING_CONFIRMATION');
@@ -155,6 +157,12 @@ export default function AdminDashboardPage() {
               icon={<Building2 className="size-icon-md" />}
             />
           </div>
+          <Card>
+            <CardTitle description={t('breakdownDescription')}>
+              {tTypes('breakdownTitle')}
+            </CardTitle>
+            <CreditTypeBreakdown items={dashboard.data.monthByCreditType} />
+          </Card>
           <div className="grid gap-6 lg:grid-cols-3">
             <Card className="lg:col-span-2">
               <CardTitle description={t('flowsDescription')}>{t('flowsTitle')}</CardTitle>

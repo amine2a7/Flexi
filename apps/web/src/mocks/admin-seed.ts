@@ -1,4 +1,5 @@
 import type { Schemas } from '@flexipay/api-client';
+import { DEFAULT_TYPE_SETTINGS } from './credit-types';
 import { COMPANY_TENANT, MERCHANT_TENANT } from './fixtures/accounts';
 import { DAY, FIRST_NAMES, LAST_NAMES, MINUTE, createRandom, iso } from './fixtures/random';
 
@@ -110,12 +111,17 @@ export function buildOtherPayouts(
   return Array.from({ length: 26 }, (_, index) => {
     const merchant = random.pick(others);
     const gross = random.int(150, 3_800) * 1_000;
-    const rate = merchant.commissionProfile.rateBps;
+    const creditType = random.pick(merchant.acceptedCreditTypes);
+    // Commission of the credit type (platform settings per type).
+    const rate =
+      DEFAULT_TYPE_SETTINGS.find((item) => item.creditType === creditType)?.commissionRateBps ??
+      merchant.commissionProfile.rateBps;
     const commission = Math.floor((gross * rate + 5_000) / 10_000);
     return {
       id: random.uuid(),
       reference: `VIR-2026-${String(8800 - index)}`,
       status: index < 5 ? 'REQUESTED' : random.pick(statuses),
+      creditType,
       merchantId: merchant.id,
       merchantName: merchant.name,
       grossMillimes: gross,
@@ -141,12 +147,13 @@ export function buildTransactions(
     const createdAt = now - index * 95 * MINUTE - random.int(0, 80) * MINUTE;
     const recent = now - createdAt < 2 * DAY;
     const status = random.pick(statuses);
+    const merchant = random.pick(activeMerchants);
     return {
       id: random.uuid(),
       reference: `PAY-${String(9900 - index)}`,
-      merchantName: random.pick(activeMerchants).name,
+      merchantName: merchant.name,
       companyName: random.pick(activeCompanies).name,
-      category: 'RESTAURATION' as const,
+      creditType: random.pick(merchant.acceptedCreditTypes),
       amountMillimes: random.int(16, 240) * 500,
       status: recent && status === 'SETTLED' ? 'CONFIRMED' : status,
       createdAt: iso(createdAt),

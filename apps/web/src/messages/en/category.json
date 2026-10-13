@@ -3,5 +3,8 @@
   "CAFE": "Café",
   "GROCERY": "Grocery",
   "BAKERY": "Bakery",
-  "FAST_FOOD": "Fast food"
+  "FAST_FOOD": "Fast food",
+  "CLOTHING": "Clothing",
+  "FUEL_STATION": "Fuel station",
+  "GIFT_SHOP": "Gifts and books"
 }

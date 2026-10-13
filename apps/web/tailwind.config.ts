@@ -20,10 +20,24 @@ const statusClasses = Object.values(statusTokens ?? {}).flatMap(({ bg, fg }) => 
   `text-${fg}`,
 ]);
 
+// Credit types (Restauration, Habillement, Carburant, Cadeaux): badges, cards, bars and charts.
+const creditTypeTokens = (
+  tokensPreset.theme as {
+    creditType?: Record<string, { bg: string; fg: string; solid: string }>;
+  }
+).creditType;
+const creditTypeClasses = Object.values(creditTypeTokens ?? {}).flatMap(({ bg, fg, solid }) => [
+  `bg-${bg}`,
+  `text-${fg}`,
+  `bg-${solid}`,
+  `fill-${solid}`,
+  `text-${solid}`,
+]);
+
 const config: Config = {
   presets: [tokensPreset],
   content: ['./src/**/*.{ts,tsx}'],
-  safelist: statusClasses,
+  safelist: [...statusClasses, ...creditTypeClasses],
   theme: {
     extend: {
       // The token scale starts at 1: `0` (no space) is not a design value but is needed for resets.

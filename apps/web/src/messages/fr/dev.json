@@ -6,7 +6,8 @@
     "company": "Entreprise",
     "merchant": "Commerçant",
     "firstLogin": "Première connexion",
-    "admin2": "Administrateur (2e validation)"
+    "admin2": "Administrateur (2e validation)",
+    "beneficiary": "Bénéficiaire (employé)"
   },
   "codes": {
     "title": "Codes clients de démonstration",

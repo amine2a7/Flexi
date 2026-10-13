@@ -116,6 +116,16 @@ module.exports = {
         "Ouvrir la commande",
         "Open the order",
         "فتح الطلبية"
+      ],
+      "balancesTitle": [
+        "Soldes par type de crédit",
+        "Balances by credit type",
+        "الأرصدة حسب النوع"
+      ],
+      "balancesDescription": [
+        "Un solde par type : une attribution débite le solde du type choisi.",
+        "One balance per type: an allocation debits the balance of the chosen type.",
+        "رصيد لكل نوع: يُخصم التوزيع من رصيد النوع المختار."
       ]
     },
     "orders": {
@@ -290,6 +300,26 @@ module.exports = {
         "Une seule catégorie pour le moment : Restauration.",
         "A single category for now: Food.",
         "صنف واحد حاليًا: المطاعم."
+      ],
+      "linesTitle": [
+        "Montants par type",
+        "Amounts by type",
+        "المبالغ حسب النوع"
+      ],
+      "linesHint": [
+        "Saisissez un montant pour chaque type à commander (laissez vide les autres).",
+        "Enter an amount for each type to order (leave the others empty).",
+        "أدخل مبلغًا لكل نوع تريد طلبه (اترك الأنواع الأخرى فارغة)."
+      ],
+      "lineAmount": [
+        "Montant {type} (TND)",
+        "{type} amount (TND)",
+        "مبلغ {type} (د.ت)"
+      ],
+      "noLine": [
+        "Saisissez au moins un montant.",
+        "Enter at least one amount.",
+        "أدخل مبلغًا واحدًا على الأقل."
       ]
     },
     "employees": {
@@ -620,6 +650,93 @@ module.exports = {
         "Déjà attribué ce mois",
         "Already allocated this month",
         "موزَّع هذا الشهر"
+      ],
+      "typeLabel": [
+        "Type de crédit à attribuer",
+        "Credit type to allocate",
+        "نوع الرصيد المراد توزيعه"
+      ],
+      "typeHint": [
+        "Seul le solde de ce type est débité.",
+        "Only the balance of this type is debited.",
+        "يُخصم رصيد هذا النوع فقط."
+      ],
+      "importTitle": [
+        "Importer un fichier CSV",
+        "Import a CSV file",
+        "استيراد ملف CSV"
+      ],
+      "importHint": [
+        "Colonnes : matricule;restauration;habillement;carburant;cadeaux (montants en TND, vide = 0).",
+        "Columns: matricule;restauration;habillement;carburant;cadeaux (amounts in TND, empty = 0).",
+        "الأعمدة: matricule;restauration;habillement;carburant;cadeaux (المبالغ بالدينار، فارغ = 0)."
+      ],
+      "importFile": [
+        "Fichier CSV",
+        "CSV file",
+        "ملف CSV"
+      ],
+      "importAnalyse": [
+        "Analyser le fichier",
+        "Analyse the file",
+        "تحليل الملف"
+      ],
+      "importRows": [
+        "{valid} lignes valides, {errors} en erreur",
+        "{valid} valid rows, {errors} with errors",
+        "{valid} سطر صالح، {errors} بها أخطاء"
+      ],
+      "importTotals": [
+        "À attribuer par type",
+        "To allocate by type",
+        "المراد توزيعه حسب النوع"
+      ],
+      "importConfirm": [
+        "Attribuer les lignes valides",
+        "Allocate the valid rows",
+        "توزيع الأسطر الصالحة"
+      ],
+      "importLine": [
+        "Ligne",
+        "Line",
+        "السطر"
+      ],
+      "importEmployee": [
+        "Employé",
+        "Employee",
+        "الموظف"
+      ],
+      "importIssues": [
+        "Erreurs",
+        "Errors",
+        "الأخطاء"
+      ],
+      "issues": {
+        "UNKNOWN_EMPLOYEE": [
+          "Matricule inconnu",
+          "Unknown employee number",
+          "معرّف غير معروف"
+        ],
+        "INVALID_AMOUNT": [
+          "Montant invalide",
+          "Invalid amount",
+          "مبلغ غير صالح"
+        ],
+        "NO_AMOUNT": [
+          "Aucun montant",
+          "No amount",
+          "لا مبلغ"
+        ],
+        "TYPE_DISABLED": [
+          "Type désactivé",
+          "Type disabled",
+          "نوع معطّل"
+        ]
+      },
+      "importDone": [
+        "{count} attributions enregistrées.",
+        "{count} allocations recorded.",
+        "تم تسجيل {count} توزيع."
       ]
     },
     "invoices": {
