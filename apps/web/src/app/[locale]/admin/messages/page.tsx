@@ -127,28 +127,30 @@ export default function ContactMessagesPage() {
             label={t('search')}
             type="search"
             value={draft.q}
-            onChange={(event) => setDraft((previous) => ({ ...previous, q: event.target.value }))}
+            onChange={(event) => {
+              setDraft((previous) => ({ ...previous, q: event.target.value }));
+            }}
           />
           <SelectField
             label={t('statusLabel')}
             options={STATUSES.map((value) => ({ value, label: t(`status.${value}`) }))}
             placeholder={tFilters('allStatuses')}
             value={draft.status}
-            onChange={(event) =>
-              setDraft((previous) => ({ ...previous, status: event.target.value as Status | '' }))
-            }
+            onChange={(event) => {
+              setDraft((previous) => ({ ...previous, status: event.target.value as Status | '' }));
+            }}
           />
           <SelectField
             label={t('type')}
             options={REQUESTERS.map((value) => ({ value, label: tContact(`types.${value}`) }))}
             placeholder={tFilters('allTypes')}
             value={draft.requesterType}
-            onChange={(event) =>
+            onChange={(event) => {
               setDraft((previous) => ({
                 ...previous,
                 requesterType: event.target.value as Requester | '',
-              }))
-            }
+              }));
+            }}
           />
           <div className="flex gap-2">
             <Button

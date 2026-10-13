@@ -130,7 +130,7 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
   const items = useMemo(() => NAVIGATION[role] ?? [], [role]);
   const home = SPACE_HOME[role] ?? '/';
   const counts = useNavCounters(role, pathname);
-  const tour = useOnboardingTour(role, me.id);
+  const tour = useOnboardingTour(role, me);
   const helpHref = `/aide#${HELP_ANCHORS[role === 'FAMILY_MEMBER' ? 'EMPLOYEE' : role]}`;
   const secondary =
     'flex min-h-touch-target-mobile w-full items-center gap-3 rounded-button px-3 text-label text-on-navy-muted transition-colors duration-fast hover:bg-navy-deep hover:text-on-navy focus-visible:focus-ring-on-dark lg:min-h-touch-target-min';
@@ -201,7 +201,13 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
         <nav aria-label={t('layout.mainNav')}>{navList}</nav>
       </div>
       <div className="flex flex-col gap-1 border-t border-navy-deep pt-4">
-        <Link href={helpHref} onClick={() => setMenuOpen(false)} className={secondary}>
+        <Link
+          href={helpHref}
+          onClick={() => {
+            setMenuOpen(false);
+          }}
+          className={secondary}
+        >
           <CircleHelp aria-hidden="true" className="size-icon-md shrink-0" />
           {t('layout.helpCentre')}
         </Link>

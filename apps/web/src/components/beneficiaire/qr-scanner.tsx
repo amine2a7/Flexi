@@ -95,7 +95,9 @@ export function QrScanner({ onCode }: { onCode: (value: string) => void }) {
           <Button
             variant="secondary"
             icon={<CameraOff aria-hidden="true" className="size-icon-md" />}
-            onClick={() => setActive(false)}
+            onClick={() => {
+              setActive(false);
+            }}
           >
             {t('scanStop')}
           </Button>

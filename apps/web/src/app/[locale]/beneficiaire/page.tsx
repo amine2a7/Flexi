@@ -105,8 +105,9 @@ export default function BeneficiaryHomePage() {
               <Amount millimes={wallet.data.totalBalanceMillimes} size="title" />
             </div>
             <p className="mt-2 text-caption text-text-muted">
-              {t('offeredBy', { company: wallet.data.companyName })} · {tTypes('noTransfer')}
+              {t('offeredBy', { company: wallet.data.companyName })}
             </p>
+            <p className="text-caption text-text-muted">{tTypes('noTransfer')}</p>
           </Card>
           <Card>
             <CardTitle

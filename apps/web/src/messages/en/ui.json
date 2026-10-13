@@ -56,5 +56,10 @@
     "limitUsed": "{spent} spent today out of {limit}",
     "noTransfer": "Each type has its own balance: no transfer or payment between types.",
     "insufficient": "Not enough {type} balance: {missing} missing."
+  },
+  "amountField": {
+    "hint": "Example: 18.500",
+    "preview": "Amount read: {amount}",
+    "invalid": "Invalid amount: digits and decimal separator, 3 decimals at most."
   }
 }

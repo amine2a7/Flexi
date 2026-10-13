@@ -79,7 +79,9 @@ export function PinDialog({
           maxLength={4}
           dir="ltr"
           value={pin}
-          onChange={(event) => setPin(event.target.value.replace(/\D/g, ''))}
+          onChange={(event) => {
+            setPin(event.target.value.replace(/\D/g, ''));
+          }}
         />
         <Button
           type="submit"

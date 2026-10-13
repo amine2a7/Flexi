@@ -18,7 +18,10 @@ export interface Column<Row> {
   readonly sortValue?: (row: Row) => string | number;
 }
 
-type Sort = { readonly key: string; readonly direction: 'ascending' | 'descending' };
+interface Sort {
+  readonly key: string;
+  readonly direction: 'ascending' | 'descending';
+}
 
 interface DataTableProps<Row> {
   readonly caption: string;

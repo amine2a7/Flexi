@@ -16,8 +16,9 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { messageKey } from '@/i18n/keys';
+import { getApi } from '@/lib/api/client';
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
@@ -35,38 +36,24 @@ export function hasTour(role: Role): role is TourRole {
   return role in STEPS;
 }
 
-/** Per user and per browser: a convenience flag only, losing it just shows the tour again. */
-const doneKey = (userId: string) => `fp_tour_done_v1:${userId}`;
-
-function readDone(userId: string): boolean {
-  try {
-    return window.localStorage.getItem(doneKey(userId)) !== null;
-  } catch {
-    return true;
-  }
-}
-
-function writeDone(userId: string): void {
-  try {
-    window.localStorage.setItem(doneKey(userId), '1');
-  } catch {
-    // Storage blocked: the tour will simply show again next time.
-  }
-}
-
-/** Opens the tour at the first sign-in of the user; `start` replays it from the Help menu. */
-export function useOnboardingTour(role: Role, userId: string) {
-  const [open, setOpen] = useState(false);
-  useEffect(() => {
-    // First visit of this user in this browser (state read from storage after mount).
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (hasTour(role) && !readDone(userId)) setOpen(true);
-  }, [role, userId]);
+/**
+ * Opens the tour while the server says it was never seen (Me.onboardingTourDone); closing it
+ * (finished or skipped) records that once. `start` replays it from the Help menu.
+ */
+export function useOnboardingTour(role: Role, me: Schemas['Me']) {
+  const [open, setOpen] = useState(() => hasTour(role) && !me.onboardingTourDone);
+  const [recorded, setRecorded] = useState(me.onboardingTourDone);
   const close = useCallback(() => {
-    writeDone(userId);
     setOpen(false);
-  }, [userId]);
-  const start = useCallback(() => setOpen(true), []);
+    if (recorded) return;
+    setRecorded(true);
+    getApi()
+      .POST('/v1/me/onboarding-tour')
+      .catch(() => undefined);
+  }, [recorded]);
+  const start = useCallback(() => {
+    setOpen(true);
+  }, []);
   return { open, close, start };
 }
 
@@ -78,7 +65,7 @@ export function OnboardingTour({ role, onClose }: { role: TourRole; onClose: () 
   const [index, setIndex] = useState(0);
   const Icon = icons[index] ?? Wallet;
   const last = index === icons.length - 1;
-  const step = `tour.${role}.s${index + 1}`;
+  const step = `tour.${role}.s${String(index + 1)}`;
 
   return (
     <Modal
@@ -115,11 +102,21 @@ export function OnboardingTour({ role, onClose }: { role: TourRole; onClose: () 
         </Button>
         <div className="flex gap-2">
           {index > 0 ? (
-            <Button variant="secondary" onClick={() => setIndex(index - 1)}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setIndex(index - 1);
+              }}
+            >
               {t('previous')}
             </Button>
           ) : null}
-          <Button onClick={() => (last ? onClose() : setIndex(index + 1))}>
+          <Button
+            onClick={() => {
+              if (last) onClose();
+              else setIndex(index + 1);
+            }}
+          >
             {last ? t('finish') : t('next')}
           </Button>
         </div>

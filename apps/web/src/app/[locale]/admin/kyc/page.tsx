@@ -144,21 +144,21 @@ export default function KycFilesPage() {
             options={STATUSES.map((value) => ({ value, label: t(`statuses.${value}`) }))}
             placeholder={tFilters('allStatuses')}
             value={draft.status}
-            onChange={(event) =>
-              setDraft((previous) => ({ ...previous, status: event.target.value as Status | '' }))
-            }
+            onChange={(event) => {
+              setDraft((previous) => ({ ...previous, status: event.target.value as Status | '' }));
+            }}
           />
           <SelectField
             label={t('filterType')}
             options={TYPES.map((value) => ({ value, label: t(`types.${value}`) }))}
             placeholder={t('allTypes')}
             value={draft.accountType}
-            onChange={(event) =>
+            onChange={(event) => {
               setDraft((previous) => ({
                 ...previous,
                 accountType: event.target.value as AccountType | '',
-              }))
-            }
+              }));
+            }}
           />
           <div className="flex gap-2">
             <Button
@@ -168,7 +168,12 @@ export default function KycFilesPage() {
             >
               {tFilters('apply')}
             </Button>
-            <Button variant="ghost" onClick={() => apply(NO_FILTER)}>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                apply(NO_FILTER);
+              }}
+            >
               {tFilters('reset')}
             </Button>
           </div>

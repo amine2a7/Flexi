@@ -1594,6 +1594,29 @@ paths:
                   required: true
                   enrolled: true
                   recoveryCodesRemaining: 10
+                onboardingTourDone: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/me/onboarding-tour:
+    post:
+      tags: [me]
+      operationId: completeOnboardingTour
+      summary: Marque la visite guidée comme vue ou passée
+      description: |
+        Session complète. Idempotent : un nouvel appel ne change rien. Relancer la visite depuis
+        le menu Aide ne remet pas l'état à `false`.
+      responses:
+        '204':
+          description: Succès, sans contenu.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -4689,7 +4712,7 @@ components:
       title: Me
       type: object
       additionalProperties: false
-      required: [id, displayName, role, subRole, permissions, tenant, mfa]
+      required: [id, displayName, role, subRole, permissions, tenant, mfa, onboardingTourDone]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -4730,6 +4753,11 @@ components:
               type: integer
               minimum: 0
               maximum: 10
+        onboardingTourDone:
+          description: |
+            Visite guidée de première connexion déjà vue ou passée (Commerçant, Entreprise,
+            Bénéficiaire). `false` : le client l'affiche à l'arrivée dans l'espace.
+          type: boolean
     TenantSummary:
       title: TenantSummary
       type: object

@@ -92,7 +92,12 @@ export default function ReceivablesPage() {
         />
       </div>
       <Card>
-        <FilterBar withCreditType onApply={(filters) => setCreditType(filters.creditType)} />
+        <FilterBar
+          withCreditType
+          onApply={(filters) => {
+            setCreditType(filters.creditType);
+          }}
+        />
         <DataTable
           caption={t('title')}
           columns={columns}

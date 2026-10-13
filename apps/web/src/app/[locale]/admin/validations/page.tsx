@@ -21,7 +21,10 @@ import { useToast } from '@/components/ui/toast';
 
 type Approval = Schemas['Approval'];
 type Tab = 'pending' | 'history';
-type Decision = { approval: Approval; kind: 'approve' | 'reject' };
+interface Decision {
+  approval: Approval;
+  kind: 'approve' | 'reject';
+}
 
 export default function ApprovalsPage() {
   const t = useTranslations('admin.approvals');
@@ -87,14 +90,18 @@ export default function ApprovalsPage() {
                   size="sm"
                   variant="secondary"
                   icon={<X aria-hidden="true" className="size-icon-sm" />}
-                  onClick={() => setDecision({ approval: row, kind: 'reject' })}
+                  onClick={() => {
+                    setDecision({ approval: row, kind: 'reject' });
+                  }}
                 >
                   {t('reject')}
                 </Button>
                 <Button
                   size="sm"
                   icon={<Check aria-hidden="true" className="size-icon-sm" />}
-                  onClick={() => setDecision({ approval: row, kind: 'approve' })}
+                  onClick={() => {
+                    setDecision({ approval: row, kind: 'approve' });
+                  }}
                 >
                   {t('approve')}
                 </Button>
@@ -146,7 +153,9 @@ export default function ApprovalsPage() {
           key={decision.approval.id}
           approval={decision.approval}
           detail={detail(decision.approval)}
-          onClose={() => setDecision(undefined)}
+          onClose={() => {
+            setDecision(undefined);
+          }}
           onDone={done}
         />
       ) : null}
@@ -154,7 +163,9 @@ export default function ApprovalsPage() {
         <RejectDialog
           key={decision.approval.id}
           approval={decision.approval}
-          onClose={() => setDecision(undefined)}
+          onClose={() => {
+            setDecision(undefined);
+          }}
           onDone={done}
         />
       ) : null}
@@ -285,7 +296,9 @@ function RejectDialog({
           error={reasonError}
           value={reason}
           maxLength={500}
-          onChange={(event) => setReason(event.target.value)}
+          onChange={(event) => {
+            setReason(event.target.value);
+          }}
         />
         <div className="flex justify-end">
           <Button type="submit" variant="danger" loading={saving}>

@@ -185,7 +185,13 @@ export default function NewOrderPage() {
                 lines={breakdown}
                 total={{ label: t('total'), millimes: quote.totalMillimes }}
               />
-              <Button onClick={() => setConfirming(true)}>{t('confirm')}</Button>
+              <Button
+                onClick={() => {
+                  setConfirming(true);
+                }}
+              >
+                {t('confirm')}
+              </Button>
             </div>
           )}
         </Card>

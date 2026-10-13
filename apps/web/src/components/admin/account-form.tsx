@@ -81,8 +81,9 @@ export function AccountForm({
   );
 
   const typesError = fieldErrors.acceptedCreditTypes;
-  const set = (field: keyof Draft) => (value: string) =>
+  const set = (field: keyof Draft) => (value: string) => {
     setDraft((current) => ({ ...current, [field]: value }));
+  };
 
   async function onSubmit(event: SyntheticEvent) {
     event.preventDefault();
@@ -168,7 +169,9 @@ export function AccountForm({
             label={kind === 'merchant' ? t('fieldName') : t('name')}
             error={fieldErrors.name}
             value={draft.name}
-            onChange={(event) => set('name')(event.target.value)}
+            onChange={(event) => {
+              set('name')(event.target.value);
+            }}
             autoComplete="organization"
           />
           {kind === 'merchant' ? (
@@ -178,14 +181,18 @@ export function AccountForm({
               error={fieldErrors.category}
               options={CATEGORIES.map((value) => ({ value, label: tCategory(value) }))}
               value={draft.category}
-              onChange={(event) => set('category')(event.target.value)}
+              onChange={(event) => {
+                set('category')(event.target.value);
+              }}
             />
           ) : null}
           <TextField
             label={t('form.city')}
             error={fieldErrors.city}
             value={draft.city}
-            onChange={(event) => set('city')(event.target.value)}
+            onChange={(event) => {
+              set('city')(event.target.value);
+            }}
           />
           <TextField
             label={t('form.phone')}
@@ -194,7 +201,9 @@ export function AccountForm({
             type="tel"
             dir="ltr"
             value={draft.phone}
-            onChange={(event) => set('phone')(event.target.value)}
+            onChange={(event) => {
+              set('phone')(event.target.value);
+            }}
           />
           <TextField
             label={t('form.email')}
@@ -202,7 +211,9 @@ export function AccountForm({
             type="email"
             dir="ltr"
             value={draft.email}
-            onChange={(event) => set('email')(event.target.value)}
+            onChange={(event) => {
+              set('email')(event.target.value);
+            }}
           />
           {kind === 'merchant' ? (
             <div className="sm:col-span-2">
@@ -223,7 +234,9 @@ export function AccountForm({
               error={fieldErrors.commissionProfileId}
               options={profileOptions}
               value={draft.commissionProfileId}
-              onChange={(event) => set('commissionProfileId')(event.target.value)}
+              onChange={(event) => {
+                set('commissionProfileId')(event.target.value);
+              }}
             />
           ) : null}
         </div>

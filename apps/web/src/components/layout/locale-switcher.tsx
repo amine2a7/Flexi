@@ -31,12 +31,11 @@ export function LocaleSwitcher() {
                   isCurrent ? 'bg-navy font-title text-on-navy' : 'text-navy hover:bg-border',
                 )}
               >
-                <span className="hidden sm:inline">{t(`language.${locale}`)}</span>
                 {/* Short code on phones; the full endonym stays the accessible name. */}
                 <span className="sm:hidden" aria-hidden="true">
                   {t(`language.short.${locale}`)}
                 </span>
-                <span className="sr-only sm:hidden">{t(`language.${locale}`)}</span>
+                <span className="sr-only sm:not-sr-only">{t(`language.${locale}`)}</span>
               </Link>
             </li>
           );

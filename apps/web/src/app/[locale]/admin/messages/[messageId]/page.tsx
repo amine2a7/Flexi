@@ -111,7 +111,9 @@ export default function ContactMessagePage() {
                   </a>
                   <Button
                     icon={<CheckCheck aria-hidden="true" className="size-icon-md" />}
-                    onClick={() => setConfirming(true)}
+                    onClick={() => {
+                      setConfirming(true);
+                    }}
                   >
                     {t('handle')}
                   </Button>
@@ -160,7 +162,9 @@ export default function ContactMessagePage() {
                 maxLength={NOTE_MAX}
                 value={note}
                 error={note.length > NOTE_MAX ? t('noteTooLong') : undefined}
-                onChange={(event) => setNote(event.target.value)}
+                onChange={(event) => {
+                  setNote(event.target.value);
+                }}
               />
             </div>
           </ConfirmDialog>

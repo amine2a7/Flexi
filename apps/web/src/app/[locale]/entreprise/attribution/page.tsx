@@ -125,7 +125,9 @@ export default function AllocationPage() {
           type="checkbox"
           aria-label={t('select', { name: `${row.firstName} ${row.lastName}` })}
           checked={selected.has(row.id)}
-          onChange={() => toggle(row)}
+          onChange={() => {
+            toggle(row);
+          }}
           className="size-icon-md"
         />
       ),
@@ -173,13 +175,18 @@ export default function AllocationPage() {
       ) : null}
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <FilterBar searchLabel={t('search')} onApply={(filters) => setQ(filters.q)} />
+          <FilterBar
+            searchLabel={t('search')}
+            onApply={(filters) => {
+              setQ(filters.q);
+            }}
+          />
           <div className="mb-3">
             <Button
               variant="ghost"
               size="sm"
               disabled={rows.length === 0}
-              onClick={() =>
+              onClick={() => {
                 setSelected((current) => {
                   const next = new Map(current);
                   for (const row of rows) {
@@ -187,8 +194,8 @@ export default function AllocationPage() {
                     else next.set(row.id, row);
                   }
                   return next;
-                })
-              }
+                });
+              }}
             >
               {t('selectPage')}
             </Button>
@@ -235,7 +242,9 @@ export default function AllocationPage() {
               inputMode="decimal"
               dir="ltr"
               value={amountText}
-              onChange={(event) => setAmountText(event.target.value)}
+              onChange={(event) => {
+                setAmountText(event.target.value);
+              }}
             />
             <StatCard
               label={t('total')}
@@ -250,7 +259,9 @@ export default function AllocationPage() {
             />
             <Button
               disabled={selected.size === 0 || millimes === undefined || millimes === 0}
-              onClick={() => setConfirming(true)}
+              onClick={() => {
+                setConfirming(true);
+              }}
             >
               {t('submit')}
             </Button>
@@ -410,7 +421,12 @@ function AllocationImport({
               rowKey={(row) => String(row.line)}
               empty={{ title: t('emptyTitle') }}
             />
-            <Button disabled={preview.lines.length === 0} onClick={() => setConfirming(true)}>
+            <Button
+              disabled={preview.lines.length === 0}
+              onClick={() => {
+                setConfirming(true);
+              }}
+            >
               {t('importConfirm')}
             </Button>
             <ConfirmDialog

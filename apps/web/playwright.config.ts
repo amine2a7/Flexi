@@ -10,6 +10,8 @@ const PROD_URL = `http://localhost:${String(PROD_PORT)}`;
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
+  // Locally the dev server compiles pages on first hit: more workers make it time out.
+  ...(process.env.CI ? {} : { workers: 2 }),
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : [['list']],

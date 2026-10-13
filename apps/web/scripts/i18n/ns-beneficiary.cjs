@@ -91,13 +91,6 @@ module.exports = {
       find: ['Continuer', 'Continue', 'متابعة'],
       merchantNotFound: ['Aucun commerçant avec ce code.', 'No merchant with this code.', 'لا يوجد تاجر بهذا الرمز.'],
       amountLabel: ['Montant (TND)', 'Amount (TND)', 'المبلغ (د.ت)'],
-      amountHint: ['Exemple : 18,500', 'Example: 18.500', 'مثال: 18,500'],
-      amountPreview: ['Montant lu : {amount}', 'Amount read: {amount}', 'المبلغ المقروء: {amount}'],
-      amountInvalid: [
-        'Montant invalide : chiffres et séparateur décimal, 3 décimales au plus.',
-        'Invalid amount: digits and a decimal separator, 3 decimals at most.',
-        'مبلغ غير صالح: أرقام وفاصلة عشرية، 3 أرقام عشرية على الأكثر.',
-      ],
       payTitle: ['Payer {merchant}', 'Pay {merchant}', 'الدفع لـ {merchant}'],
       continue: ['Continuer', 'Continue', 'متابعة'],
       change: ['Changer de commerçant', 'Change merchant', 'تغيير التاجر'],

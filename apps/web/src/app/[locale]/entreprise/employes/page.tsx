@@ -95,7 +95,9 @@ export default function EmployeesPage() {
             <Button
               variant="secondary"
               icon={<UserPlus aria-hidden="true" className="size-icon-sm" />}
-              onClick={() => setAdding(true)}
+              onClick={() => {
+                setAdding(true);
+              }}
             >
               {t('add')}
             </Button>
@@ -131,7 +133,9 @@ export default function EmployeesPage() {
       <AddEmployee
         open={adding}
         onOpenChange={setAdding}
-        onCreated={() => setRefresh((value) => value + 1)}
+        onCreated={() => {
+          setRefresh((value) => value + 1);
+        }}
       />
     </>
   );
@@ -214,9 +218,9 @@ function AddEmployee({
               type={field === 'email' ? 'email' : field === 'phone' ? 'tel' : 'text'}
               dir={field === 'email' || field === 'phone' ? 'ltr' : undefined}
               value={draft[field]}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, [field]: event.target.value }))
-              }
+              onChange={(event) => {
+                setDraft((current) => ({ ...current, [field]: event.target.value }));
+              }}
             />
           ))}
         </div>

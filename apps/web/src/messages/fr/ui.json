@@ -56,5 +56,10 @@
     "limitUsed": "{spent} dépensés aujourd'hui sur {limit}",
     "noTransfer": "Chaque type a son propre solde : aucun transfert ni paiement entre types.",
     "insufficient": "Solde {type} insuffisant : il manque {missing}."
+  },
+  "amountField": {
+    "hint": "Exemple : 18,500",
+    "preview": "Montant lu : {amount}",
+    "invalid": "Montant invalide : chiffres et séparateur décimal, 3 décimales au plus."
   }
 }

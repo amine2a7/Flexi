@@ -16,7 +16,10 @@ import {
 } from './util';
 
 type S = Schemas;
-type FieldError = { pointer: string; code: S['FieldErrorCode'] };
+interface FieldError {
+  pointer: string;
+  code: S['FieldErrorCode'];
+}
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE = /^\+[1-9][0-9]{7,14}$/;
@@ -35,7 +38,7 @@ function checkMessage(body: Partial<S['ContactMessageCreate']>): FieldError[] {
   if (body.phone !== undefined && !PHONE.test(body.phone)) {
     errors.push({ pointer: '/phone', code: 'INVALID_FORMAT' });
   }
-  if (!TYPES.includes(body.requesterType as S['ContactRequesterType'])) {
+  if (body.requesterType === undefined || !TYPES.includes(body.requesterType)) {
     errors.push({ pointer: '/requesterType', code: 'REQUIRED' });
   }
   const message = text(body.message);

@@ -73,7 +73,9 @@ export default function AdminCompaniesPage() {
         actions={
           <Button
             icon={<Building2 aria-hidden="true" className="size-icon-sm" />}
-            onClick={() => setCreating(true)}
+            onClick={() => {
+              setCreating(true);
+            }}
           >
             {t('create')}
           </Button>
@@ -105,7 +107,9 @@ export default function AdminCompaniesPage() {
         kind="company"
         open={creating}
         onOpenChange={setCreating}
-        onCreated={() => setRefresh((value) => value + 1)}
+        onCreated={() => {
+          setRefresh((value) => value + 1);
+        }}
       />
     </>
   );

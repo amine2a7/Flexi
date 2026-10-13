@@ -16,6 +16,7 @@ import { useFundsMessage } from '@/components/beneficiaire/funds-message';
 import { PinDialog } from '@/components/beneficiaire/pin-dialog';
 import { QrScanner } from '@/components/beneficiaire/qr-scanner';
 import { Amount } from '@/components/ui/amount';
+import { AmountField } from '@/components/ui/amount-field';
 import { Button, buttonClasses } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
 import { Countdown } from '@/components/ui/countdown';
@@ -57,7 +58,12 @@ export default function PayPage() {
       />
       {tab === 'code' ? <MyCode onPaid={setPaid} /> : <PayMerchant onPaid={setPaid} />}
       {paid !== undefined ? (
-        <PaidScreen operation={paid} onClose={() => setPaid(undefined)} />
+        <PaidScreen
+          operation={paid}
+          onClose={() => {
+            setPaid(undefined);
+          }}
+        />
       ) : null}
     </>
   );
@@ -119,6 +125,8 @@ function MyCode({ onPaid }: { onPaid: (operation: Operation) => void }) {
   }, []);
 
   useEffect(() => {
+    // Polling of server state (an external system): the state is set when each answer arrives.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadRequests();
     const timer = setInterval(() => void loadRequests(), POLL_MS);
     return () => {
@@ -129,7 +137,12 @@ function MyCode({ onPaid }: { onPaid: (operation: Operation) => void }) {
   useEffect(() => {
     if (code === undefined) return undefined;
     const left = new Date(code.expiresAt).getTime() - Date.now();
-    const timer = setTimeout(() => setExpired(true), Math.max(left, 0));
+    const timer = setTimeout(
+      () => {
+        setExpired(true);
+      },
+      Math.max(left, 0),
+    );
     return () => {
       clearTimeout(timer);
     };
@@ -226,7 +239,9 @@ function MyCode({ onPaid }: { onPaid: (operation: Operation) => void }) {
                   <Button
                     className="flex-1"
                     icon={<Check aria-hidden="true" className="size-icon-md" />}
-                    onClick={() => setConfirming(request)}
+                    onClick={() => {
+                      setConfirming(request);
+                    }}
                   >
                     {t('confirm')}
                   </Button>
@@ -242,7 +257,9 @@ function MyCode({ onPaid }: { onPaid: (operation: Operation) => void }) {
           request={confirming}
           describe={(problem) => fundsMessage(problem, confirming.creditType)}
           locale={locale}
-          onClose={() => setConfirming(undefined)}
+          onClose={() => {
+            setConfirming(undefined);
+          }}
           onPaid={(operation) => {
             setConfirming(undefined);
             void loadRequests();
@@ -416,7 +433,9 @@ function PayMerchant({ onPaid }: { onPaid: (operation: Operation) => void }) {
                 maxLength={6}
                 dir="ltr"
                 value={codeText}
-                onChange={(event) => setCodeText(event.target.value.replace(/\D/g, ''))}
+                onChange={(event) => {
+                  setCodeText(event.target.value.replace(/\D/g, ''));
+                }}
               />
               <Button type="submit" loading={looking} disabled={!/^[0-9]{6}$/.test(codeText)}>
                 {t('find')}
@@ -464,20 +483,19 @@ function PayMerchant({ onPaid }: { onPaid: (operation: Operation) => void }) {
               <Amount millimes={balanceOf(creditType) ?? 0} />
             </p>
           ) : null}
-          <TextField
+          <AmountField
             label={t('amountLabel')}
-            hint={
-              millimes === undefined || millimes === 0
-                ? t('amountHint')
-                : t('amountPreview', { amount: formatMillimesWithCurrency(millimes, locale) })
-            }
-            error={amountText !== '' && millimes === undefined ? t('amountInvalid') : undefined}
-            inputMode="decimal"
-            dir="ltr"
             value={amountText}
-            onChange={(event) => setAmountText(event.target.value)}
+            onChange={(text) => {
+              setAmountText(text);
+            }}
           />
-          <Button disabled={!ready} onClick={() => setPaying(true)}>
+          <Button
+            disabled={!ready}
+            onClick={() => {
+              setPaying(true);
+            }}
+          >
             {millimes === undefined || !ready
               ? t('continue')
               : t('confirmAction', { amount: formatMillimesWithCurrency(millimes, locale) })}
@@ -500,7 +518,9 @@ function PayMerchant({ onPaid }: { onPaid: (operation: Operation) => void }) {
               ]}
             />
           }
-          onClose={() => setPaying(false)}
+          onClose={() => {
+            setPaying(false);
+          }}
           onSubmit={async (pin) => {
             const { data, error: problem } = await getApi().POST('/v1/employee/payments', {
               params: { header: { 'Idempotency-Key': intentKey } },

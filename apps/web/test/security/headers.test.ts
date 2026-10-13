@@ -79,7 +79,7 @@ describe('static security headers', () => {
     expect(headers.get('X-Frame-Options')).toBe('DENY');
     expect(headers.get('Cross-Origin-Opener-Policy')).toBe('same-origin');
     expect(headers.get('Cross-Origin-Resource-Policy')).toBe('same-origin');
-    expect(headers.get('Permissions-Policy')).toContain('camera=()');
+    expect(headers.get('Permissions-Policy')).toContain('camera=(self)');
     expect(headers.get('Permissions-Policy')).toContain('geolocation=()');
   });
 

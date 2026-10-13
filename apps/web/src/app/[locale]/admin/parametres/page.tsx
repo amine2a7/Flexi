@@ -29,7 +29,7 @@ type Settings = Schemas['PlatformSettings'];
 function bpsToText(bps: number, locale: Locale): string {
   const fraction = bps % 100;
   if (fraction === 0) return String(Math.trunc(bps / 100));
-  return `${Math.trunc(bps / 100)}${locale === 'en' ? '.' : ','}${String(fraction).padStart(2, '0')}`;
+  return `${String(Math.trunc(bps / 100))}${locale === 'en' ? '.' : ','}${String(fraction).padStart(2, '0')}`;
 }
 
 function integerIn(text: string, min: number, max: number): number | undefined {
@@ -89,7 +89,9 @@ export default function SettingsPage() {
           settings.status === 'success' ? (
             <Button
               icon={<SlidersHorizontal aria-hidden="true" className="size-icon-sm" />}
-              onClick={() => setEditing(true)}
+              onClick={() => {
+                setEditing(true);
+              }}
             >
               {t('request')}
             </Button>
@@ -139,7 +141,9 @@ export default function SettingsPage() {
             <ChangeSettings
               current={settings.data}
               locale={locale}
-              onClose={() => setEditing(false)}
+              onClose={() => {
+                setEditing(false);
+              }}
             />
           ) : null}
         </>
@@ -182,8 +186,9 @@ function ChangeSettings({
   const [error, setError] = useState<unknown>(undefined);
   const [saving, setSaving] = useState(false);
 
-  const set = (field: keyof typeof draft) => (value: string) =>
+  const set = (field: keyof typeof draft) => (value: string) => {
     setDraft((previous) => ({ ...previous, [field]: value }));
+  };
 
   async function onSubmit(event: SyntheticEvent) {
     event.preventDefault();
@@ -296,7 +301,9 @@ function ChangeSettings({
             inputMode="decimal"
             dir="ltr"
             value={draft.payoutMinimum}
-            onChange={(event) => set('payoutMinimum')(event.target.value)}
+            onChange={(event) => {
+              set('payoutMinimum')(event.target.value);
+            }}
           />
           <TextField
             label={t('creditValidityLabel')}
@@ -304,7 +311,9 @@ function ChangeSettings({
             inputMode="numeric"
             dir="ltr"
             value={draft.creditValidity}
-            onChange={(event) => set('creditValidity')(event.target.value)}
+            onChange={(event) => {
+              set('creditValidity')(event.target.value);
+            }}
           />
           <TextField
             label={t('maxFamilyLabel')}
@@ -312,7 +321,9 @@ function ChangeSettings({
             inputMode="numeric"
             dir="ltr"
             value={draft.maxFamily}
-            onChange={(event) => set('maxFamily')(event.target.value)}
+            onChange={(event) => {
+              set('maxFamily')(event.target.value);
+            }}
           />
           <TextField
             label={t('orderFeeLabel')}
@@ -320,19 +331,22 @@ function ChangeSettings({
             inputMode="decimal"
             dir="ltr"
             value={draft.orderFee}
-            onChange={(event) => set('orderFee')(event.target.value)}
+            onChange={(event) => {
+              set('orderFee')(event.target.value);
+            }}
           />
         </div>
         <fieldset className="flex flex-col gap-4">
           <legend className="mb-2 text-title-sm text-text">{t('typesTitle')}</legend>
           {types.map((item, index) => {
             const label = typeLabel(item.creditType);
-            const update = (patch: Partial<(typeof types)[number]>) =>
+            const update = (patch: Partial<(typeof types)[number]>) => {
               setTypes((previous) =>
                 previous.map((entry, position) =>
                   position === index ? { ...entry, ...patch } : entry,
                 ),
               );
+            };
             return (
               <div
                 key={item.creditType}
@@ -343,7 +357,9 @@ function ChangeSettings({
                     type="checkbox"
                     className="size-icon-sm accent-navy"
                     checked={item.enabled}
-                    onChange={(event) => update({ enabled: event.target.checked })}
+                    onChange={(event) => {
+                      update({ enabled: event.target.checked });
+                    }}
                   />
                   <CreditTypeBadge type={item.creditType} />
                   <span className="text-caption text-text-muted">
@@ -357,7 +373,9 @@ function ChangeSettings({
                     inputMode="decimal"
                     dir="ltr"
                     value={item.commission}
-                    onChange={(event) => update({ commission: event.target.value })}
+                    onChange={(event) => {
+                      update({ commission: event.target.value });
+                    }}
                   />
                   <TextField
                     label={t('typeValidityLabel', { type: label })}
@@ -365,7 +383,9 @@ function ChangeSettings({
                     inputMode="numeric"
                     dir="ltr"
                     value={item.validity}
-                    onChange={(event) => update({ validity: event.target.value })}
+                    onChange={(event) => {
+                      update({ validity: event.target.value });
+                    }}
                   />
                   <TextField
                     label={t('typeLimitLabel', { type: label })}
@@ -373,7 +393,9 @@ function ChangeSettings({
                     inputMode="decimal"
                     dir="ltr"
                     value={item.limit}
-                    onChange={(event) => update({ limit: event.target.value })}
+                    onChange={(event) => {
+                      update({ limit: event.target.value });
+                    }}
                   />
                 </div>
               </div>
@@ -385,7 +407,9 @@ function ChangeSettings({
           error={invalid.reason}
           value={draft.reason}
           maxLength={500}
-          onChange={(event) => set('reason')(event.target.value)}
+          onChange={(event) => {
+            set('reason')(event.target.value);
+          }}
         />
         <div className="flex justify-end">
           <Button type="submit" loading={saving}>

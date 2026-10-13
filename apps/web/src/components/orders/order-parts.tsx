@@ -314,7 +314,9 @@ export function ReasonDialog({
           value={reason}
           maxLength={500}
           dir="auto"
-          onChange={(event) => setReason(event.target.value)}
+          onChange={(event) => {
+            setReason(event.target.value);
+          }}
         />
         <div className="flex justify-end">
           <Button type="submit" variant="danger" loading={saving}>

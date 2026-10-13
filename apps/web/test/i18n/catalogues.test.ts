@@ -49,7 +49,12 @@ describe('message catalogues', () => {
   it('writes every language name in its own language (endonyms)', () => {
     for (const locale of routing.locales) {
       const names = loadMessages(locale).language;
-      expect(names).toEqual({ fr: 'Français', ar: 'العربية', en: 'English' });
+      expect(names).toEqual({
+        fr: 'Français',
+        ar: 'العربية',
+        en: 'English',
+        short: { fr: 'FR', ar: 'ع', en: 'EN' },
+      });
     }
   });
 });

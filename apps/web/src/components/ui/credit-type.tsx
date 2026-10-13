@@ -169,7 +169,9 @@ export function CreditTypeBreakdown({
   const locale = useLocale();
   const total = items.reduce((sum, item) => sum + item.amountMillimes, 0);
   if (total === 0) return <p className="text-body text-text-muted">{t('breakdownEmpty')}</p>;
-  let offset = 0;
+  // Start of each segment: running sum of the widths before it (computed once, no mutation).
+  const widths = items.map((item) => (item.amountMillimes / total) * 100);
+  const starts = widths.map((_, index) => widths.slice(0, index).reduce((sum, w) => sum + w, 0));
   return (
     <div className="flex flex-col gap-4">
       <svg
@@ -178,15 +180,12 @@ export function CreditTypeBreakdown({
         aria-hidden="true"
         className="h-avatar-md w-full overflow-hidden rounded-button"
       >
-        {items.map((item) => {
-          const width = (item.amountMillimes / total) * 100;
-          const x = offset;
-          offset += width;
+        {items.map((item, index) => {
           return (
             <rect
               key={item.creditType}
-              x={x}
-              width={width}
+              x={starts[index]}
+              width={widths[index]}
               height={6}
               className={`fill-${token(item.creditType).solid}`}
             />
@@ -236,7 +235,9 @@ export function CreditTypeSelect({
       {...(placeholder === undefined ? {} : { placeholder })}
       options={types.map((type) => ({ value: type, label: typeLabel(type) }))}
       value={value}
-      onChange={(event) => onChange(event.target.value as CreditType | '')}
+      onChange={(event) => {
+        onChange(event.target.value as CreditType | '');
+      }}
     />
   );
 }
@@ -274,9 +275,9 @@ export function CreditTypeCheckboxes({
                 type="checkbox"
                 className="size-icon-sm accent-navy"
                 checked={checked}
-                onChange={() =>
-                  onChange(checked ? value.filter((item) => item !== type) : [...value, type])
-                }
+                onChange={() => {
+                  onChange(checked ? value.filter((item) => item !== type) : [...value, type]);
+                }}
               />
               <CreditTypeBadge type={type} />
             </label>

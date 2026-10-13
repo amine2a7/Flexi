@@ -130,7 +130,9 @@ function OrderView({
               <Button
                 variant="secondary"
                 icon={<Ban aria-hidden="true" className="size-icon-sm" />}
-                onClick={() => setCancelling(true)}
+                onClick={() => {
+                  setCancelling(true);
+                }}
               >
                 {t('company.cancel')}
               </Button>

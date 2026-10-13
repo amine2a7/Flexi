@@ -179,13 +179,17 @@ export default function AdminOrdersPage() {
           label={t('status.AWAITING_CONFIRMATION')}
           hint={t('admin.toConfirm')}
           count={toConfirm}
-          onShow={() => apply({ ...NO_FILTER, status: 'AWAITING_CONFIRMATION' })}
+          onShow={() => {
+            apply({ ...NO_FILTER, status: 'AWAITING_CONFIRMATION' });
+          }}
         />
         <ActionTile
           label={t('status.AWAITING_VALIDATION')}
           hint={t('admin.toValidate')}
           count={toValidate}
-          onShow={() => apply({ ...NO_FILTER, status: 'AWAITING_VALIDATION' })}
+          onShow={() => {
+            apply({ ...NO_FILTER, status: 'AWAITING_VALIDATION' });
+          }}
         />
       </div>
       <Card>
@@ -199,24 +203,26 @@ export default function AdminOrdersPage() {
             options={ORDER_STATUSES.map((value) => ({ value, label: t(`status.${value}`) }))}
             placeholder={tFilters('allStatuses')}
             value={draft.status}
-            onChange={(event) =>
-              setDraft((previous) => ({ ...previous, status: event.target.value as Status | '' }))
-            }
+            onChange={(event) => {
+              setDraft((previous) => ({ ...previous, status: event.target.value as Status | '' }));
+            }}
           />
           <SelectField
             label={t('fields.company')}
             options={companyOptions}
             placeholder={t('admin.allCompanies')}
             value={draft.companyId}
-            onChange={(event) =>
-              setDraft((previous) => ({ ...previous, companyId: event.target.value }))
-            }
+            onChange={(event) => {
+              setDraft((previous) => ({ ...previous, companyId: event.target.value }));
+            }}
           />
           <CreditTypeSelect
             label={tFilters('creditType')}
             placeholder={tFilters('allTypes')}
             value={draft.creditType}
-            onChange={(value) => setDraft((previous) => ({ ...previous, creditType: value }))}
+            onChange={(value) => {
+              setDraft((previous) => ({ ...previous, creditType: value }));
+            }}
           />
           <div className="flex gap-2">
             <Button
@@ -226,7 +232,12 @@ export default function AdminOrdersPage() {
             >
               {t('admin.apply')}
             </Button>
-            <Button variant="ghost" onClick={() => apply(NO_FILTER)}>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                apply(NO_FILTER);
+              }}
+            >
               {t('admin.reset')}
             </Button>
           </div>

@@ -128,14 +128,18 @@ function KycView({
                 <Button
                   variant="secondary"
                   icon={<X aria-hidden="true" className="size-icon-sm" />}
-                  onClick={() => setDialog('reject')}
+                  onClick={() => {
+                    setDialog('reject');
+                  }}
                 >
                   {t('reject')}
                 </Button>
                 <Button
                   variant="success"
                   icon={<Check aria-hidden="true" className="size-icon-sm" />}
-                  onClick={() => setDialog('approve')}
+                  onClick={() => {
+                    setDialog('approve');
+                  }}
                 >
                   {t('approve')}
                 </Button>
@@ -181,7 +185,9 @@ function KycView({
       </div>
       <ConfirmDialog
         open={dialog === 'approve'}
-        onOpenChange={(open) => setDialog(open ? 'approve' : undefined)}
+        onOpenChange={(open) => {
+          setDialog(open ? 'approve' : undefined);
+        }}
         title={t('approveTitle', { name: file.accountName })}
         description={t('approveMessage')}
         confirmLabel={t('approve')}
@@ -194,7 +200,9 @@ function KycView({
           title={t('rejectTitle', { name: file.accountName })}
           label={t('rejectReason')}
           confirmLabel={t('reject')}
-          onClose={() => setDialog(undefined)}
+          onClose={() => {
+            setDialog(undefined);
+          }}
           onSubmit={async (reason) =>
             settle(
               await getApi().POST('/v1/admin/kyc-files/{fileId}/reject', {

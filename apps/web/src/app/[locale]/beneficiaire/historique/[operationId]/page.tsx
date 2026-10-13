@@ -85,7 +85,9 @@ export default function OperationReceiptPage() {
               variant="secondary"
               className="mt-6 w-full print:hidden sm:w-auto"
               icon={<Printer aria-hidden="true" className="size-icon-md" />}
-              onClick={() => window.print()}
+              onClick={() => {
+                window.print();
+              }}
             >
               {t('print')}
             </Button>

@@ -9,6 +9,7 @@ import {
   guardRead,
   guardWrite,
   isResponse,
+  latency,
   listParams,
   paginate,
   problem,
@@ -90,7 +91,7 @@ function checkPin(pin: string): Response | undefined {
 /** Balance and daily limit of ONE type: never covered by another type (rule 5). */
 function checkFunds(amount: number, creditType: CreditType): Response | undefined {
   const balance = wallet().balances.find((item) => item.creditType === creditType);
-  if (balance === undefined || !balance.enabled) {
+  if (!balance?.enabled) {
     return validationProblem([{ pointer: '/creditType', code: 'INVALID_ENUM' }]);
   }
   if (amount > balance.balanceMillimes) {
@@ -174,7 +175,7 @@ function activeRequests(): S['EmployeePaymentRequest'][] {
 export function linkEmployeePayment(code: string, payment: MockPayment): boolean {
   const state = employee();
   const active = state.activeCode;
-  if (active === undefined || active.code !== code || active.expiresAt < Date.now()) return false;
+  if (active?.code !== code || active.expiresAt < Date.now()) return false;
   state.activeCode = undefined;
   payment.customer = {
     firstName: state.profile.firstName,
@@ -377,6 +378,7 @@ export const employeeHandlers = [
   // Development only (not in the contract): a merchant request arrives, as if a shop had typed
   // the beneficiary's code. Lets the web space be tested alone in one tab.
   http.post(apiUrl('/__demo/employee/payment-request'), async () => {
+    await latency();
     const account = currentAccount();
     if (account?.role !== 'EMPLOYEE') return problem(403, 'FORBIDDEN');
     const shop =

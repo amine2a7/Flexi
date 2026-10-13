@@ -36,7 +36,8 @@ test.describe('production security', () => {
     expect(headers['x-frame-options']).toBe('DENY');
     expect(headers['cross-origin-opener-policy']).toBe('same-origin');
     expect(headers['cross-origin-resource-policy']).toBe('same-origin');
-    expect(headers['permissions-policy']).toContain('camera=()');
+    // Camera for the page itself only: the beneficiary scans the merchant QR.
+    expect(headers['permissions-policy']).toContain('camera=(self)');
     expect(headers['strict-transport-security']).toMatch(/^max-age=\d+; includeSubDomains$/);
     expect(headers['cache-control']).toBe('no-store');
     expect(headers['x-powered-by']).toBeUndefined();

@@ -55,7 +55,12 @@ export default function AuditPage() {
     <>
       <PageHeader title={t('title')} description={t('description')} />
       <Card>
-        <FilterBar searchLabel={t('search')} onApply={(filters) => setQ(filters.q)} />
+        <FilterBar
+          searchLabel={t('search')}
+          onApply={(filters) => {
+            setQ(filters.q);
+          }}
+        />
         <DataTable
           caption={t('title')}
           columns={columns}

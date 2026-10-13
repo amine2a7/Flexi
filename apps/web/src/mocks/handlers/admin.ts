@@ -57,7 +57,10 @@ function validTypes(types: readonly string[] | undefined): boolean {
   return (
     Array.isArray(types) &&
     types.length > 0 &&
-    types.every((type) => (CREDIT_TYPES as readonly string[]).includes(type))
+    types.every(
+      (type: unknown) =>
+        typeof type === 'string' && (CREDIT_TYPES as readonly string[]).includes(type),
+    )
   );
 }
 

@@ -87,7 +87,9 @@ function PasswordCard() {
           autoComplete="current-password"
           value={current}
           error={currentInvalid ? t('currentPasswordInvalid') : undefined}
-          onChange={(event) => setCurrent(event.target.value)}
+          onChange={(event) => {
+            setCurrent(event.target.value);
+          }}
         />
         <PasswordFields
           password={password}
@@ -162,21 +164,27 @@ function PinCard() {
           {...pinField}
           label={t('currentPin')}
           value={current}
-          onChange={(event) => setCurrent(digits(event.target.value))}
+          onChange={(event) => {
+            setCurrent(digits(event.target.value));
+          }}
         />
         <TextField
           {...pinField}
           label={t('newPin')}
           hint={t('pinFormat')}
           value={next}
-          onChange={(event) => setNext(digits(event.target.value))}
+          onChange={(event) => {
+            setNext(digits(event.target.value));
+          }}
         />
         <TextField
           {...pinField}
           label={t('confirmPin')}
           value={confirmation}
           error={mismatch ? t('pinMismatch') : undefined}
-          onChange={(event) => setConfirmation(digits(event.target.value))}
+          onChange={(event) => {
+            setConfirmation(digits(event.target.value));
+          }}
         />
         <Button
           type="submit"
@@ -251,7 +259,9 @@ function MfaCard() {
               autoComplete="current-password"
               value={password}
               error={currentInvalid ? t('currentPasswordInvalid') : undefined}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) => {
+                setPassword(event.target.value);
+              }}
             />
             <TextField
               label={t('currentCode')}
@@ -260,7 +270,9 @@ function MfaCard() {
               maxLength={10}
               dir="ltr"
               value={code}
-              onChange={(event) => setCode(event.target.value.trim().toUpperCase())}
+              onChange={(event) => {
+                setCode(event.target.value.trim().toUpperCase());
+              }}
             />
             <Button
               type="submit"

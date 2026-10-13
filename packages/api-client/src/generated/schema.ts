@@ -629,6 +629,27 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/me/onboarding-tour': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Marque la visite guidée comme vue ou passée
+     * @description Session complète. Idempotent : un nouvel appel ne change rien. Relancer la visite depuis
+     *     le menu Aide ne remet pas l'état à `false`.
+     */
+    post: operations['completeOnboardingTour'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/merchant/dashboard': {
     parameters: {
       query?: never;
@@ -2037,6 +2058,11 @@ export interface components {
         /** @description Codes de secours encore utilisables (0 à 10, DP n° 10). */
         recoveryCodesRemaining: number;
       };
+      /**
+       * @description Visite guidée de première connexion déjà vue ou passée (Commerçant, Entreprise,
+       *     Bénéficiaire). `false` : le client l'affiche à l'arrivée dans l'espace.
+       */
+      onboardingTourDone: boolean;
     };
     /** TenantSummary */
     TenantSummary: {
@@ -4713,11 +4739,35 @@ export interface operations {
            *         "required": true,
            *         "enrolled": true,
            *         "recoveryCodesRemaining": 10
-           *       }
+           *       },
+           *       "onboardingTourDone": true
            *     }
            */
           'application/json': components['schemas']['Me'];
         };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  completeOnboardingTour: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès, sans contenu. */
+      204: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       401: components['responses']['Unauthorized'];
       403: components['responses']['Forbidden'];

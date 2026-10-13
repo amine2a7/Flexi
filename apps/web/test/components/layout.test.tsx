@@ -46,7 +46,13 @@ describe.each(routing.locales)('layout pieces in %s', (locale) => {
     renderIn(locale, <LocaleSwitcher />);
     const nav = screen.getByRole('navigation', { name: loadMessages(locale).nav.language });
     const links = within(nav).getAllByRole('link');
-    expect(links.map((link) => link.textContent)).toEqual(['Français', 'العربية', 'English']);
+    // Text read by assistive technologies: the short code shown on phones is aria-hidden.
+    const spoken = (link: HTMLElement) =>
+      [...link.children]
+        .filter((child) => child.getAttribute('aria-hidden') !== 'true')
+        .map((child) => child.textContent)
+        .join('');
+    expect(links.map(spoken)).toEqual(['Français', 'العربية', 'English']);
     expect(links.map((link) => link.getAttribute('lang'))).toEqual(['fr', 'ar', 'en']);
     const current = links.filter((link) => link.getAttribute('aria-current') === 'true');
     expect(current).toHaveLength(1);

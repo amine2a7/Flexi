@@ -387,6 +387,23 @@ module.exports = {
         "Not enough {type} balance: {missing} missing.",
         "رصيد {type} غير كافٍ: ينقص {missing}."
       ]
+    },
+    "amountField": {
+      "hint": [
+        "Exemple : 18,500",
+        "Example: 18.500",
+        "مثال: 18,500"
+      ],
+      "preview": [
+        "Montant lu : {amount}",
+        "Amount read: {amount}",
+        "المبلغ المقروء: {amount}"
+      ],
+      "invalid": [
+        "Montant invalide : chiffres et séparateur décimal, 3 décimales au plus.",
+        "Invalid amount: digits and decimal separator, 3 decimals at most.",
+        "مبلغ غير صالح: أرقام وفاصل عشري، 3 أرقام عشرية على الأكثر."
+      ]
     }
   },
   "layout": {

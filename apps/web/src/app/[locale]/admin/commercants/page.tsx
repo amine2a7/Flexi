@@ -99,7 +99,9 @@ export default function AdminMerchantsPage() {
         actions={
           <Button
             icon={<Store aria-hidden="true" className="size-icon-sm" />}
-            onClick={() => setCreating(true)}
+            onClick={() => {
+              setCreating(true);
+            }}
           >
             {t('create')}
           </Button>
@@ -131,7 +133,9 @@ export default function AdminMerchantsPage() {
         kind="merchant"
         open={creating}
         onOpenChange={setCreating}
-        onCreated={() => setRefresh((value) => value + 1)}
+        onCreated={() => {
+          setRefresh((value) => value + 1);
+        }}
       />
     </>
   );

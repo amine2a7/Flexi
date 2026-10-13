@@ -408,6 +408,8 @@ function buildAdmin(now: number, merchantRate: number) {
     rateBps: profile.rateBps,
   });
 
+  const standard = profiles[0];
+  if (standard === undefined) throw new Error('seed: no commission profile');
   const merchants: S['MerchantAccount'][] = [];
   const used = new Set<string>([MERCHANT_TENANT.label]);
   merchants.push({
@@ -417,7 +419,7 @@ function buildAdmin(now: number, merchantRate: number) {
     acceptedCreditTypes: ['RESTAURATION', 'CADEAUX'],
     city: 'Tunis',
     status: 'APPROVED',
-    commissionProfile: summary(profiles[0]!),
+    commissionProfile: summary(standard),
     createdAt: iso(now - 200 * DAY),
   });
   while (merchants.length < 46) {
@@ -794,6 +796,29 @@ function savedOrders(): { orders: MockOrder[]; balances: TypeBalances } | undefi
       : (JSON.parse(raw) as { orders: MockOrder[]; balances: TypeBalances });
   } catch {
     return undefined;
+  }
+}
+
+// Accounts that have seen or skipped the onboarding tour (server state in the real API).
+const TOUR_KEY = 'fp_mock_tour_v1';
+
+export function tourDone(accountId: string): boolean {
+  try {
+    const raw = sessionStorage.getItem(TOUR_KEY);
+    return raw !== null && (JSON.parse(raw) as string[]).includes(accountId);
+  } catch {
+    return false;
+  }
+}
+
+export function markTourDone(accountId: string): void {
+  try {
+    const raw = sessionStorage.getItem(TOUR_KEY);
+    const ids = raw === null ? [] : (JSON.parse(raw) as string[]);
+    if (!ids.includes(accountId))
+      sessionStorage.setItem(TOUR_KEY, JSON.stringify([...ids, accountId]));
+  } catch {
+    // Storage unavailable: the tour shows again after a reload.
   }
 }
 

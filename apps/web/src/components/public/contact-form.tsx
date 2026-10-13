@@ -39,8 +39,9 @@ export function ContactForm() {
   const [failure, setFailure] = useState<unknown>(undefined);
   const [sending, setSending] = useState(false);
   const [reference, setReference] = useState<string | undefined>(undefined);
-  const set = (field: keyof typeof draft) => (value: string) =>
+  const set = (field: keyof typeof draft) => (value: string) => {
     setDraft((previous) => ({ ...previous, [field]: value }));
+  };
 
   function validate(): Partial<Record<Field, string>> {
     const next: Partial<Record<Field, string>> = {};
@@ -145,7 +146,9 @@ export function ContactForm() {
         autoComplete="name"
         value={draft.name}
         error={errors.name}
-        onChange={(event) => set('name')(event.target.value)}
+        onChange={(event) => {
+          set('name')(event.target.value);
+        }}
       />
       <TextField
         label={t('email')}
@@ -154,7 +157,9 @@ export function ContactForm() {
         dir="ltr"
         value={draft.email}
         error={errors.email}
-        onChange={(event) => set('email')(event.target.value)}
+        onChange={(event) => {
+          set('email')(event.target.value);
+        }}
       />
       <TextField
         label={t('phone')}
@@ -164,13 +169,17 @@ export function ContactForm() {
         dir="ltr"
         value={draft.phone}
         error={errors.phone}
-        onChange={(event) => set('phone')(event.target.value)}
+        onChange={(event) => {
+          set('phone')(event.target.value);
+        }}
       />
       <TextField
         label={t('company')}
         autoComplete="organization"
         value={draft.companyName}
-        onChange={(event) => set('companyName')(event.target.value)}
+        onChange={(event) => {
+          set('companyName')(event.target.value);
+        }}
       />
       <div className="sm:col-span-2">
         <SelectField
@@ -179,7 +188,9 @@ export function ContactForm() {
           options={REQUESTERS.map((value) => ({ value, label: t(`types.${value}`) }))}
           value={draft.requesterType}
           error={errors.requesterType}
-          onChange={(event) => set('requesterType')(event.target.value)}
+          onChange={(event) => {
+            set('requesterType')(event.target.value);
+          }}
         />
       </div>
       <div className="sm:col-span-2">
@@ -189,7 +200,9 @@ export function ContactForm() {
           maxLength={2000}
           value={draft.message}
           error={errors.message}
-          onChange={(event) => set('message')(event.target.value)}
+          onChange={(event) => {
+            set('message')(event.target.value);
+          }}
         />
       </div>
       <div className="sm:col-span-2">

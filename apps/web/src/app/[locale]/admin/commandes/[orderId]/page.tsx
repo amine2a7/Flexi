@@ -174,13 +174,17 @@ function AdminOrderView({
                   <Button
                     variant="secondary"
                     icon={<X aria-hidden="true" className="size-icon-sm" />}
-                    onClick={() => setDialog('refuse')}
+                    onClick={() => {
+                      setDialog('refuse');
+                    }}
                   >
                     {t('admin.refuse')}
                   </Button>
                   <Button
                     icon={<Check aria-hidden="true" className="size-icon-sm" />}
-                    onClick={() => setDialog('confirm')}
+                    onClick={() => {
+                      setDialog('confirm');
+                    }}
                   >
                     {t('admin.confirm')}
                   </Button>
@@ -214,7 +218,9 @@ function AdminOrderView({
                     <Button
                       variant="secondary"
                       icon={<FileX aria-hidden="true" className="size-icon-sm" />}
-                      onClick={() => setDialog('reject')}
+                      onClick={() => {
+                        setDialog('reject');
+                      }}
                     >
                       {t('admin.rejectProof')}
                     </Button>
@@ -261,7 +267,9 @@ function AdminOrderView({
 
       <ConfirmDialog
         open={dialog === 'confirm'}
-        onOpenChange={(open) => setDialog(open ? 'confirm' : undefined)}
+        onOpenChange={(open) => {
+          setDialog(open ? 'confirm' : undefined);
+        }}
         title={t('admin.confirmTitle', { reference: order.reference })}
         description={t('admin.confirmMessage', { amount: total })}
         confirmLabel={t('admin.confirm')}
@@ -275,7 +283,9 @@ function AdminOrderView({
       />
       <ConfirmDialog
         open={dialog === 'validate'}
-        onOpenChange={(open) => setDialog(open ? 'validate' : undefined)}
+        onOpenChange={(open) => {
+          setDialog(open ? 'validate' : undefined);
+        }}
         title={t('admin.validateTitle', { reference: order.reference })}
         description={t('admin.validateMessage', {
           amount: formatMillimesWithCurrency(declared ?? order.totalMillimes, locale),
@@ -312,7 +322,9 @@ function AdminOrderView({
           title={t('admin.refuseTitle', { reference: order.reference })}
           label={t('admin.refuseReason')}
           confirmLabel={t('admin.refuse')}
-          onClose={() => setDialog(undefined)}
+          onClose={() => {
+            setDialog(undefined);
+          }}
           onSubmit={async (reason) =>
             settle(
               await getApi().POST('/v1/admin/credit-orders/{orderId}/refuse', {
@@ -331,7 +343,9 @@ function AdminOrderView({
           label={t('admin.rejectReason')}
           hint={t('admin.rejectReasonHint')}
           confirmLabel={t('admin.rejectProof')}
-          onClose={() => setDialog(undefined)}
+          onClose={() => {
+            setDialog(undefined);
+          }}
           onSubmit={async (reason) =>
             settle(
               await getApi().POST('/v1/admin/credit-orders/{orderId}/reject-proof', {

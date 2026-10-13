@@ -27,7 +27,7 @@ test.describe('application skeleton', () => {
     await expect(page).toHaveURL(/\/en$/);
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(
-      page.getByRole('heading', { level: 1, name: 'Application skeleton' }),
+      page.getByRole('heading', { level: 1, name: /no paper and no card/ }),
     ).toBeVisible();
   });
 

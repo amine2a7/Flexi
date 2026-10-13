@@ -1,6 +1,6 @@
 import type { Schemas } from '@flexipay/api-client';
 import { http, HttpResponse } from 'msw';
-import { currentAccount, db, type MockSession } from '../db';
+import { currentAccount, db, markTourDone, tourDone, type MockSession } from '../db';
 import { DEMO_MFA_CODE, DEMO_RECOVERY_CODES } from '../fixtures/accounts';
 import { apiUrl, latency, problem, sessionCookie, validationProblem } from './util';
 
@@ -233,6 +233,16 @@ export const authHandlers = [
         enrolled: account.mfaEnrolled,
         recoveryCodesRemaining: account.recoveryCodes.length,
       },
+      onboardingTourDone: tourDone(account.id),
     });
+  }),
+
+  http.post(apiUrl('/v1/me/onboarding-tour'), async () => {
+    await latency();
+    const account = currentAccount();
+    if (account === undefined || db.session?.step !== 'NONE')
+      return problem(401, 'UNAUTHENTICATED');
+    markTourDone(account.id);
+    return new HttpResponse(null, { status: 204 });
   }),
 ];

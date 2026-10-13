@@ -46,7 +46,9 @@ export function DeclareTransferForm({
   const [saving, setSaving] = useState(false);
   // One key per intention: any change of the declaration starts a new one.
   const [intentKey, setIntentKey] = useState(newIdempotencyKey);
-  const changed = () => setIntentKey(newIdempotencyKey());
+  const changed = () => {
+    setIntentKey(newIdempotencyKey());
+  };
 
   function validate(): Partial<Record<Field, string>> {
     const found: Partial<Record<Field, string>> = {};

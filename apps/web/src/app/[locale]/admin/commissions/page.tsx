@@ -61,7 +61,9 @@ export default function CommissionsPage() {
           size="sm"
           icon={<Pencil aria-hidden="true" className="size-icon-sm" />}
           aria-label={t('changeFor', { name: row.name })}
-          onClick={() => setEditing(row)}
+          onClick={() => {
+            setEditing(row);
+          }}
         >
           {t('change')}
         </Button>
@@ -89,7 +91,9 @@ export default function CommissionsPage() {
           key={editing.id}
           profile={editing}
           locale={locale}
-          onClose={() => setEditing(undefined)}
+          onClose={() => {
+            setEditing(undefined);
+          }}
         />
       ) : null}
     </>
@@ -167,7 +171,9 @@ function ChangeRate({
           inputMode="decimal"
           dir="ltr"
           value={rateText}
-          onChange={(event) => setRateText(event.target.value)}
+          onChange={(event) => {
+            setRateText(event.target.value);
+          }}
         />
         <TextField
           label={t('reason')}
@@ -175,7 +181,9 @@ function ChangeRate({
           error={reasonError}
           value={reason}
           maxLength={500}
-          onChange={(event) => setReason(event.target.value)}
+          onChange={(event) => {
+            setReason(event.target.value);
+          }}
         />
         <div className="flex justify-end">
           <Button type="submit" loading={saving}>

@@ -7,7 +7,7 @@ import { MAX_BPS, MAX_MILLIMES } from './money';
 // preview under the field shows how it was read (UX-05).
 
 const DECIMAL: Record<Locale, string> = { fr: ',', ar: ',', en: '.' };
-const GROUP = /[\s  ]/g;
+const GROUP = /[\s\u00a0\u202f]/g;
 
 function digitsOnly(value: string): boolean {
   return /^[0-9]+$/.test(value);

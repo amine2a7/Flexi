@@ -147,7 +147,9 @@ function PayoutView({
                 <Button
                   variant="secondary"
                   icon={<X aria-hidden="true" className="size-icon-sm" />}
-                  onClick={() => setDialog('reject')}
+                  onClick={() => {
+                    setDialog('reject');
+                  }}
                 >
                   {t('reject')}
                 </Button>
@@ -214,7 +216,9 @@ function PayoutView({
       </div>
       <ConfirmDialog
         open={dialog === 'approve'}
-        onOpenChange={(open) => setDialog(open ? 'approve' : undefined)}
+        onOpenChange={(open) => {
+          setDialog(open ? 'approve' : undefined);
+        }}
         title={t('approveTitle', { reference: payout.reference })}
         description={t('approveMessage', {
           net: formatMillimesWithCurrency(payout.netMillimes, locale),
@@ -233,7 +237,9 @@ function PayoutView({
           title={t('rejectTitle', { reference: payout.reference })}
           label={t('rejectReason')}
           confirmLabel={t('reject')}
-          onClose={() => setDialog(undefined)}
+          onClose={() => {
+            setDialog(undefined);
+          }}
           onSubmit={async (reason) =>
             settle(
               await getApi().POST('/v1/admin/payout-requests/{payoutId}/reject', {
