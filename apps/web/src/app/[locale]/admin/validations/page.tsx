@@ -54,10 +54,25 @@ export default function ApprovalsPage() {
 
   const columns: Column<Approval>[] = [
     { key: 'type', header: t('type'), cell: (row) => t(`types.${row.type}`) },
-    { key: 'subject', header: t('subject'), cell: (row) => row.subject },
+    {
+      key: 'subject',
+      header: t('subject'),
+      cell: (row) => row.subject,
+      sortValue: (row) => row.subject,
+    },
     { key: 'detail', header: t('detail'), cell: (row) => <span dir="auto">{detail(row)}</span> },
-    { key: 'initiator', header: t('initiator'), cell: (row) => row.initiatorName },
-    { key: 'date', header: t('date'), cell: (row) => formatDateTime(row.createdAt, locale) },
+    {
+      key: 'initiator',
+      header: t('initiator'),
+      cell: (row) => row.initiatorName,
+      sortValue: (row) => row.initiatorName,
+    },
+    {
+      key: 'date',
+      header: t('date'),
+      cell: (row) => formatDateTime(row.createdAt, locale),
+      sortValue: (row) => row.createdAt,
+    },
     tab === 'pending'
       ? {
           key: 'actions',

@@ -30,10 +30,27 @@ export default function CommissionsPage() {
   const [editing, setEditing] = useState<Profile | undefined>(undefined);
 
   const columns: Column<Profile>[] = [
-    { key: 'name', header: t('name'), cell: (row) => row.name },
-    { key: 'rate', header: t('rate'), align: 'end', cell: (row) => <Rate bps={row.rateBps} /> },
-    { key: 'merchants', header: t('merchants'), align: 'end', cell: (row) => row.merchantsCount },
-    { key: 'updated', header: t('updated'), cell: (row) => formatDateTime(row.updatedAt, locale) },
+    { key: 'name', header: t('name'), cell: (row) => row.name, sortValue: (row) => row.name },
+    {
+      key: 'rate',
+      header: t('rate'),
+      align: 'end',
+      cell: (row) => <Rate bps={row.rateBps} />,
+      sortValue: (row) => row.rateBps,
+    },
+    {
+      key: 'merchants',
+      header: t('merchants'),
+      align: 'end',
+      cell: (row) => row.merchantsCount,
+      sortValue: (row) => row.merchantsCount,
+    },
+    {
+      key: 'updated',
+      header: t('updated'),
+      cell: (row) => formatDateTime(row.updatedAt, locale),
+      sortValue: (row) => row.updatedAt,
+    },
     {
       key: 'action',
       header: t('change'),

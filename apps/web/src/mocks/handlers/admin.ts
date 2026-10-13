@@ -26,8 +26,29 @@ function publicApproval(approval: MockApproval, accountId: string): S['Approval'
 
 function requiredFields(body: Record<string, unknown>, fields: readonly string[]) {
   return fields
-    .filter((field) => typeof body[field] !== 'string' || (body[field]).trim() === '')
+    .filter((field) => typeof body[field] !== 'string' || body[field].trim() === '')
     .map((field) => ({ pointer: `/${field}`, code: 'REQUIRED' as const }));
+}
+
+/** Six last months: credits from the validated demo orders, platform payments seeded. */
+function adminFlows(): S['AdminMonthlyFlow'][] {
+  const now = new Date();
+  return Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
+    const month = `${String(date.getFullYear())}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const credited = db.orders
+      .filter((order) =>
+        order.history.some(
+          (event) => event.action === 'VALIDATED' && event.occurredAt.startsWith(month),
+        ),
+      )
+      .reduce((sum, order) => sum + order.amountMillimes, 0);
+    return {
+      month,
+      creditedMillimes: credited,
+      paymentsMillimes: 61_500_000 + ((index * 4_441) % 9) * 2_350_000,
+    };
+  });
 }
 
 export const adminHandlers = [
@@ -49,6 +70,7 @@ export const adminHandlers = [
         companies.filter((company) => company.status === 'PENDING_KYC').length,
       nextSettlementNetMillimes:
         batches.find((batch) => batch.status === 'SCHEDULED')?.netMillimes ?? 0,
+      monthlyFlows: adminFlows(),
     });
   }),
 

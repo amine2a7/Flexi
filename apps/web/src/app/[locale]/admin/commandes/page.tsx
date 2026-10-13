@@ -101,18 +101,26 @@ export default function AdminOrdersPage() {
           {row.reference}
         </Link>
       ),
+      sortValue: (row) => row.reference,
     },
-    { key: 'company', header: t('fields.company'), cell: (row) => row.companyName },
+    {
+      key: 'company',
+      header: t('fields.company'),
+      cell: (row) => row.companyName,
+      sortValue: (row) => row.companyName,
+    },
     {
       key: 'created',
       header: t('fields.createdAt'),
       cell: (row) => formatDateTime(row.createdAt, locale),
+      sortValue: (row) => row.createdAt,
     },
     {
       key: 'total',
       header: t('fields.total'),
       align: 'end',
       cell: (row) => <Amount millimes={row.totalMillimes} />,
+      sortValue: (row) => row.totalMillimes,
     },
     {
       key: 'declared',
@@ -127,6 +135,7 @@ export default function AdminOrdersPage() {
       key: 'status',
       header: t('fields.status'),
       cell: (row) => <OrderStatusBadge status={row.status} />,
+      sortValue: (row) => row.status,
     },
     {
       key: 'open',

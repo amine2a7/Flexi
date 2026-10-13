@@ -1,6 +1,6 @@
 {
   "dashboard": {
-    "title": "الإشراف",
+    "title": "نظرة عامة على المنصة",
     "description": "نشاط المنصة والإجراءات التي تنتظرك.",
     "merchants": "التجار",
     "companies": "المؤسسات",
@@ -9,7 +9,24 @@
     "kyc": "ملفات التحقق في الانتظار",
     "nextSettlement": "التسوية القادمة (الصافي)",
     "seeApprovals": "معالجة المصادقات",
-    "createMerchant": "إنشاء تاجر"
+    "createMerchant": "إنشاء تاجر",
+    "todoConfirm": "{count, plural, one {# طلبية أرصدة للتأكيد} other {# طلبيات أرصدة للتأكيد}}",
+    "todoValidate": "{count, plural, one {# تحويل مؤسسة للتحقق} other {# تحويلات مؤسسات للتحقق}}",
+    "todoApprovals": "{count, plural, one {# طلب في انتظار المصادقة المزدوجة} other {# طلبات في انتظار المصادقة المزدوجة}}",
+    "todoKyc": "{count, plural, one {# ملف تحقق من الهوية للمراجعة} other {# ملفات تحقق من الهوية للمراجعة}}",
+    "todoOpen": "معالجة",
+    "flowsTitle": "التدفقات خلال الأشهر الستة الأخيرة",
+    "flowsDescription": "الأرصدة المضافة للمؤسسات والدفعات لدى التجار.",
+    "seriesCredited": "الأرصدة المضافة",
+    "seriesPayments": "الدفعات",
+    "ordersTitle": "طلبيات للمعالجة",
+    "ordersDescription": "الطلبيات التي تنتظر تأكيدك أو مصادقتك.",
+    "ordersEmpty": "لا توجد طلبيات للمعالجة.",
+    "seeOrders": "عرض كل الطلبيات",
+    "companiesHint": "حسابات المؤسسات",
+    "merchantsHint": "حسابات التجار",
+    "volumeHint": "الدفعات المؤكدة اليوم",
+    "nextSettlementHint": "دفعة التسوية بعد يومين"
   },
   "merchants": {
     "title": "التجار",

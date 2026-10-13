@@ -1,19 +1,89 @@
 'use client';
 
-import { BadgeCheck, Building2, CalendarClock, FileSearch, Store, TrendingUp } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import {
+  BadgeCheck,
+  Building2,
+  CalendarClock,
+  ClipboardCheck,
+  FileSearch,
+  Landmark,
+  ShoppingCart,
+  Store,
+  TrendingUp,
+} from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
 import { useApiQuery } from '@/lib/api/use-api-query';
+import { formatDateTime, formatShortMonth } from '@/lib/format/date';
+import { formatMillimesWithCurrency } from '@/lib/format/money';
+import { OrderStatusBadge } from '@/components/orders/order-parts';
+import { useOrderCount } from '@/components/orders/use-order-count';
+import { ActivityList, TodoPanel, type TodoItem } from '@/components/ui/activity';
 import { Amount } from '@/components/ui/amount';
+import { BarChart } from '@/components/ui/bar-chart';
 import { buttonClasses } from '@/components/ui/button';
-import { StatCard } from '@/components/ui/card';
+import { Card, CardTitle, StatCard } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/layout-blocks';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 
 export default function AdminDashboardPage() {
   const t = useTranslations('admin.dashboard');
+  const locale = useLocale();
   const dashboard = useApiQuery(() => getApi().GET('/v1/admin/dashboard'), []);
+  const toConfirm = useOrderCount('admin', 'AWAITING_CONFIRMATION');
+  const toValidate = useOrderCount('admin', 'AWAITING_VALIDATION');
+  // The list puts the orders waiting for an admin action first (contract).
+  const orders = useApiQuery(
+    () => getApi().GET('/v1/admin/credit-orders', { params: { query: { limit: 5 } } }),
+    [],
+  );
+
+  const todos: TodoItem[] = [];
+  if (toConfirm !== undefined && toConfirm > 0) {
+    todos.push({
+      key: 'confirm',
+      icon: <ShoppingCart className="size-icon-md" />,
+      text: t('todoConfirm', { count: toConfirm }),
+      href: '/admin/commandes',
+      actionLabel: t('todoOpen'),
+    });
+  }
+  if (toValidate !== undefined && toValidate > 0) {
+    todos.push({
+      key: 'validate',
+      icon: <Landmark className="size-icon-md" />,
+      text: t('todoValidate', { count: toValidate }),
+      href: '/admin/commandes',
+      actionLabel: t('todoOpen'),
+    });
+  }
+  if (dashboard.status === 'success' && dashboard.data.pendingApprovalsCount > 0) {
+    todos.push({
+      key: 'approvals',
+      icon: <ClipboardCheck className="size-icon-md" />,
+      text: t('todoApprovals', { count: dashboard.data.pendingApprovalsCount }),
+      href: '/admin/validations',
+      actionLabel: t('todoOpen'),
+    });
+  }
+  if (dashboard.status === 'success' && dashboard.data.pendingKycCount > 0) {
+    todos.push({
+      key: 'kyc',
+      icon: <FileSearch className="size-icon-md" />,
+      text: t('todoKyc', { count: dashboard.data.pendingKycCount }),
+      href: '/admin/commercants',
+      actionLabel: t('todoOpen'),
+    });
+  }
+
+  const actionOrders =
+    orders.status === 'success'
+      ? orders.data.data.filter(
+          (order) =>
+            order.status === 'AWAITING_CONFIRMATION' || order.status === 'AWAITING_VALIDATION',
+        )
+      : [];
 
   return (
     <>
@@ -33,45 +103,95 @@ export default function AdminDashboardPage() {
           </>
         }
       />
-      {dashboard.status === 'loading' ? <LoadingBlock lines={4} /> : null}
+      {dashboard.status === 'loading' ? <LoadingBlock lines={6} /> : null}
       {dashboard.status === 'error' ? (
         <ErrorState error={dashboard.error} onRetry={dashboard.reload} />
       ) : null}
       {dashboard.status === 'success' ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <StatCard
-            label={t('volume')}
-            value={<Amount millimes={dashboard.data.todayVolumeMillimes} size="title" />}
-            icon={<TrendingUp className="size-icon-md" />}
-            tone="positive"
-          />
-          <StatCard
-            label={t('approvals')}
-            value={dashboard.data.pendingApprovalsCount}
-            icon={<BadgeCheck className="size-icon-md" />}
-            tone={dashboard.data.pendingApprovalsCount > 0 ? 'attention' : 'default'}
-          />
-          <StatCard
-            label={t('nextSettlement')}
-            value={<Amount millimes={dashboard.data.nextSettlementNetMillimes} size="title" />}
-            icon={<CalendarClock className="size-icon-md" />}
-          />
-          <StatCard
-            label={t('merchants')}
-            value={dashboard.data.merchantsCount}
-            icon={<Store className="size-icon-md" />}
-          />
-          <StatCard
-            label={t('companies')}
-            value={dashboard.data.companiesCount}
-            icon={<Building2 className="size-icon-md" />}
-          />
-          <StatCard
-            label={t('kyc')}
-            value={dashboard.data.pendingKycCount}
-            icon={<FileSearch className="size-icon-md" />}
-            tone={dashboard.data.pendingKycCount > 0 ? 'attention' : 'default'}
-          />
+        <div className="flex flex-col gap-6">
+          <TodoPanel items={todos} />
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              label={t('volume')}
+              value={<Amount millimes={dashboard.data.todayVolumeMillimes} size="title" />}
+              hint={t('volumeHint')}
+              icon={<TrendingUp className="size-icon-md" />}
+              tone="positive"
+            />
+            <StatCard
+              label={t('nextSettlement')}
+              value={<Amount millimes={dashboard.data.nextSettlementNetMillimes} size="title" />}
+              hint={t('nextSettlementHint')}
+              icon={<CalendarClock className="size-icon-md" />}
+            />
+            <StatCard
+              label={t('merchants')}
+              value={dashboard.data.merchantsCount}
+              hint={t('merchantsHint')}
+              icon={<Store className="size-icon-md" />}
+            />
+            <StatCard
+              label={t('companies')}
+              value={dashboard.data.companiesCount}
+              hint={t('companiesHint')}
+              icon={<Building2 className="size-icon-md" />}
+            />
+          </div>
+          <div className="grid gap-6 lg:grid-cols-3">
+            <Card className="lg:col-span-2">
+              <CardTitle description={t('flowsDescription')}>{t('flowsTitle')}</CardTitle>
+              <BarChart
+                title={t('flowsTitle')}
+                series={[
+                  {
+                    key: 'credited',
+                    label: t('seriesCredited'),
+                    fillClass: 'fill-navy',
+                    dotClass: 'bg-navy',
+                  },
+                  {
+                    key: 'payments',
+                    label: t('seriesPayments'),
+                    fillClass: 'fill-emerald',
+                    dotClass: 'bg-emerald',
+                  },
+                ]}
+                points={dashboard.data.monthlyFlows.map((flow) => ({
+                  key: flow.month,
+                  label: formatShortMonth(flow.month, locale),
+                  values: [flow.creditedMillimes, flow.paymentsMillimes],
+                }))}
+                format={(value) => formatMillimesWithCurrency(value, locale)}
+              />
+            </Card>
+            <Card>
+              <CardTitle
+                description={t('ordersDescription')}
+                action={
+                  <Link href="/admin/commandes" className="text-label text-navy underline">
+                    {t('seeOrders')}
+                  </Link>
+                }
+              >
+                {t('ordersTitle')}
+              </CardTitle>
+              <ActivityList
+                empty={t('ordersEmpty')}
+                items={actionOrders.map((order) => ({
+                  key: order.id,
+                  href: `/admin/commandes/${order.id}`,
+                  title: order.companyName,
+                  subtitle: `${order.reference} · ${formatDateTime(order.createdAt, locale)}`,
+                  end: (
+                    <>
+                      <Amount millimes={order.totalMillimes} />
+                      <OrderStatusBadge status={order.status} />
+                    </>
+                  ),
+                }))}
+              />
+            </Card>
+          </div>
         </div>
       ) : null}
     </>

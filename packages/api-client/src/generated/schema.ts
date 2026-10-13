@@ -2099,6 +2099,17 @@ export interface components {
       /** Format: int32 */
       pendingKycCount: number;
       nextSettlementNetMillimes: components['schemas']['AmountMillimes'];
+      /** @description Six derniers mois, du plus ancien au mois en cours (graphique du tableau de bord). */
+      monthlyFlows: components['schemas']['AdminMonthlyFlow'][];
+    };
+    /** AdminMonthlyFlow */
+    AdminMonthlyFlow: {
+      /** @description Mois (AAAA-MM), fuseau métier Africa/Tunis. */
+      month: string;
+      /** @description Crédits ajoutés aux soldes des entreprises (commandes validées) sur le mois. */
+      creditedMillimes: components['schemas']['AmountMillimes'];
+      /** @description Paiements confirmés chez les commerçants sur le mois. */
+      paymentsMillimes: components['schemas']['AmountMillimes'];
     };
     /** MerchantAccount */
     MerchantAccount: {

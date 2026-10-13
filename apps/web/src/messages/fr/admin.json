@@ -1,6 +1,6 @@
 {
   "dashboard": {
-    "title": "Supervision",
+    "title": "Vue d'ensemble de la plateforme",
     "description": "L'activité de la plateforme et les actions qui vous attendent.",
     "merchants": "Commerçants",
     "companies": "Entreprises",
@@ -9,7 +9,24 @@
     "kyc": "Dossiers KYC en attente",
     "nextSettlement": "Prochain règlement (net)",
     "seeApprovals": "Traiter les validations",
-    "createMerchant": "Créer un commerçant"
+    "createMerchant": "Créer un commerçant",
+    "todoConfirm": "{count, plural, one {# commande de crédits à confirmer} other {# commandes de crédits à confirmer}}",
+    "todoValidate": "{count, plural, one {# virement d'entreprise à vérifier} other {# virements d'entreprise à vérifier}}",
+    "todoApprovals": "{count, plural, one {# demande en double validation} other {# demandes en double validation}}",
+    "todoKyc": "{count, plural, one {# dossier KYC à contrôler} other {# dossiers KYC à contrôler}}",
+    "todoOpen": "Traiter",
+    "flowsTitle": "Flux des six derniers mois",
+    "flowsDescription": "Crédits ajoutés aux entreprises et paiements chez les commerçants.",
+    "seriesCredited": "Crédits ajoutés",
+    "seriesPayments": "Paiements",
+    "ordersTitle": "Commandes à traiter",
+    "ordersDescription": "Les commandes qui attendent votre confirmation ou votre validation.",
+    "ordersEmpty": "Aucune commande à traiter.",
+    "seeOrders": "Voir toutes les commandes",
+    "companiesHint": "Comptes entreprise",
+    "merchantsHint": "Comptes commerçant",
+    "volumeHint": "Paiements confirmés aujourd'hui",
+    "nextSettlementHint": "Lot de règlement J+2"
   },
   "merchants": {
     "title": "Commerçants",

@@ -1,7 +1,7 @@
 'use client';
 
 import type { Schemas } from '@flexipay/api-client';
-import { SlidersHorizontal } from 'lucide-react';
+import { CalendarClock, Percent, SlidersHorizontal, Users, Wallet } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
@@ -13,9 +13,9 @@ import { formatMillimes } from '@/lib/format/money';
 import { parseBps, parseMillimes } from '@/lib/format/money-input';
 import { Amount, Rate } from '@/components/ui/amount';
 import { Button } from '@/components/ui/button';
-import { Card, CardTitle } from '@/components/ui/card';
+import { StatCard } from '@/components/ui/card';
 import { TextField } from '@/components/ui/field';
-import { Alert, DescriptionList, PageHeader } from '@/components/ui/layout-blocks';
+import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { Modal } from '@/components/ui/modal';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { useToast } from '@/components/ui/toast';
@@ -63,23 +63,29 @@ export default function SettingsPage() {
       ) : null}
       {settings.status === 'success' ? (
         <>
-          <Card>
-            <CardTitle>{t('current')}</CardTitle>
-            <DescriptionList
-              items={[
-                {
-                  label: t('payoutMinimum'),
-                  value: <Amount millimes={settings.data.payoutMinimumMillimes} />,
-                },
-                {
-                  label: t('creditValidity'),
-                  value: t('creditValidityValue', { months: settings.data.creditValidityMonths }),
-                },
-                { label: t('maxFamily'), value: settings.data.maxFamilyMembers },
-                { label: t('orderFee'), value: <Rate bps={settings.data.orderFeeRateBps} /> },
-              ]}
+          <h2 className="mb-4 text-title-sm text-text">{t('current')}</h2>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              label={t('orderFee')}
+              value={<Rate bps={settings.data.orderFeeRateBps} />}
+              icon={<Percent className="size-icon-md" />}
             />
-          </Card>
+            <StatCard
+              label={t('creditValidity')}
+              value={t('creditValidityValue', { months: settings.data.creditValidityMonths })}
+              icon={<CalendarClock className="size-icon-md" />}
+            />
+            <StatCard
+              label={t('payoutMinimum')}
+              value={<Amount millimes={settings.data.payoutMinimumMillimes} size="title" />}
+              icon={<Wallet className="size-icon-md" />}
+            />
+            <StatCard
+              label={t('maxFamily')}
+              value={settings.data.maxFamilyMembers}
+              icon={<Users className="size-icon-md" />}
+            />
+          </div>
           {editing ? (
             <ChangeSettings
               current={settings.data}

@@ -24,14 +24,27 @@ export default function AdminSettlementsPage() {
       key: 'date',
       header: t('date'),
       cell: (row) => formatCalendarDate(row.settlementDate, locale),
+      sortValue: (row) => row.settlementDate,
     },
-    { key: 'reference', header: t('reference'), cell: (row) => row.reference },
-    { key: 'merchants', header: t('merchants'), align: 'end', cell: (row) => row.merchantsCount },
+    {
+      key: 'reference',
+      header: t('reference'),
+      cell: (row) => row.reference,
+      sortValue: (row) => row.reference,
+    },
+    {
+      key: 'merchants',
+      header: t('merchants'),
+      align: 'end',
+      cell: (row) => row.merchantsCount,
+      sortValue: (row) => row.merchantsCount,
+    },
     {
       key: 'gross',
       header: t('gross'),
       align: 'end',
       cell: (row) => <Amount millimes={row.grossMillimes} />,
+      sortValue: (row) => row.grossMillimes,
     },
     {
       key: 'commission',
@@ -44,8 +57,14 @@ export default function AdminSettlementsPage() {
       header: t('net'),
       align: 'end',
       cell: (row) => <Amount millimes={row.netMillimes} />,
+      sortValue: (row) => row.netMillimes,
     },
-    { key: 'status', header: t('status'), cell: (row) => <StatusBadge status={row.status} /> },
+    {
+      key: 'status',
+      header: t('status'),
+      cell: (row) => <StatusBadge status={row.status} />,
+      sortValue: (row) => row.status,
+    },
   ];
   return (
     <>

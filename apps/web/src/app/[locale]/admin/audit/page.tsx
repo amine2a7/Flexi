@@ -23,8 +23,18 @@ export default function AuditPage() {
     [q],
   );
   const columns: Column<Schemas['AuditLogEntry']>[] = [
-    { key: 'date', header: t('date'), cell: (row) => formatDateTime(row.occurredAt, locale) },
-    { key: 'actor', header: t('actor'), cell: (row) => row.actorName },
+    {
+      key: 'date',
+      header: t('date'),
+      cell: (row) => formatDateTime(row.occurredAt, locale),
+      sortValue: (row) => row.occurredAt,
+    },
+    {
+      key: 'actor',
+      header: t('actor'),
+      cell: (row) => row.actorName,
+      sortValue: (row) => row.actorName,
+    },
     {
       key: 'action',
       header: t('action'),
@@ -34,7 +44,12 @@ export default function AuditPage() {
         </code>
       ),
     },
-    { key: 'target', header: t('target'), cell: (row) => row.target },
+    {
+      key: 'target',
+      header: t('target'),
+      cell: (row) => row.target,
+      sortValue: (row) => row.target,
+    },
   ];
   return (
     <>

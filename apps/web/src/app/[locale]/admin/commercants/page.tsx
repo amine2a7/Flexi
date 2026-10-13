@@ -44,9 +44,9 @@ export default function AdminMerchantsPage() {
   );
 
   const columns: Column<Schemas['MerchantAccount']>[] = [
-    { key: 'name', header: t('name'), cell: (row) => row.name },
+    { key: 'name', header: t('name'), cell: (row) => row.name, sortValue: (row) => row.name },
     { key: 'category', header: t('category'), cell: (row) => tCategory(row.category) },
-    { key: 'city', header: t('city'), cell: (row) => row.city },
+    { key: 'city', header: t('city'), cell: (row) => row.city, sortValue: (row) => row.city },
     {
       key: 'profile',
       header: t('profile'),
@@ -57,8 +57,18 @@ export default function AdminMerchantsPage() {
         </span>
       ),
     },
-    { key: 'created', header: t('created'), cell: (row) => formatDateTime(row.createdAt, locale) },
-    { key: 'status', header: t('status'), cell: (row) => <StatusBadge status={row.status} /> },
+    {
+      key: 'created',
+      header: t('created'),
+      cell: (row) => formatDateTime(row.createdAt, locale),
+      sortValue: (row) => row.createdAt,
+    },
+    {
+      key: 'status',
+      header: t('status'),
+      cell: (row) => <StatusBadge status={row.status} />,
+      sortValue: (row) => row.status,
+    },
   ];
 
   return (

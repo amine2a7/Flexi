@@ -1,6 +1,6 @@
 {
   "dashboard": {
-    "title": "Overview",
+    "title": "Platform overview",
     "description": "Platform activity and the actions waiting for you.",
     "merchants": "Merchants",
     "companies": "Companies",
@@ -9,7 +9,24 @@
     "kyc": "Pending KYC files",
     "nextSettlement": "Next settlement (net)",
     "seeApprovals": "Handle approvals",
-    "createMerchant": "Create a merchant"
+    "createMerchant": "Create a merchant",
+    "todoConfirm": "{count, plural, one {# credit order to confirm} other {# credit orders to confirm}}",
+    "todoValidate": "{count, plural, one {# company transfer to check} other {# company transfers to check}}",
+    "todoApprovals": "{count, plural, one {# request awaiting four-eyes approval} other {# requests awaiting four-eyes approval}}",
+    "todoKyc": "{count, plural, one {# KYC file to check} other {# KYC files to check}}",
+    "todoOpen": "Handle",
+    "flowsTitle": "Flows over the last six months",
+    "flowsDescription": "Credits added to companies and payments at merchants.",
+    "seriesCredited": "Credits added",
+    "seriesPayments": "Payments",
+    "ordersTitle": "Orders to handle",
+    "ordersDescription": "Orders waiting for your confirmation or validation.",
+    "ordersEmpty": "No orders to handle.",
+    "seeOrders": "See all orders",
+    "companiesHint": "Company accounts",
+    "merchantsHint": "Merchant accounts",
+    "volumeHint": "Payments confirmed today",
+    "nextSettlementHint": "D+2 settlement batch"
   },
   "merchants": {
     "title": "Merchants",

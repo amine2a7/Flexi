@@ -42,11 +42,27 @@ export default function AdminCompaniesPage() {
   );
 
   const columns: Column<Schemas['CompanyAccount']>[] = [
-    { key: 'name', header: t('name'), cell: (row) => row.name },
-    { key: 'city', header: t('city'), cell: (row) => row.city },
-    { key: 'employees', header: t('employees'), align: 'end', cell: (row) => row.employeesCount },
-    { key: 'created', header: t('created'), cell: (row) => formatDateTime(row.createdAt, locale) },
-    { key: 'status', header: t('status'), cell: (row) => <StatusBadge status={row.status} /> },
+    { key: 'name', header: t('name'), cell: (row) => row.name, sortValue: (row) => row.name },
+    { key: 'city', header: t('city'), cell: (row) => row.city, sortValue: (row) => row.city },
+    {
+      key: 'employees',
+      header: t('employees'),
+      align: 'end',
+      cell: (row) => row.employeesCount,
+      sortValue: (row) => row.employeesCount,
+    },
+    {
+      key: 'created',
+      header: t('created'),
+      cell: (row) => formatDateTime(row.createdAt, locale),
+      sortValue: (row) => row.createdAt,
+    },
+    {
+      key: 'status',
+      header: t('status'),
+      cell: (row) => <StatusBadge status={row.status} />,
+      sortValue: (row) => row.status,
+    },
   ];
 
   return (
