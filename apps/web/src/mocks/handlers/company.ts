@@ -70,6 +70,31 @@ function analyseCsv(csv: string): S['EmployeeImportPreview'] {
   };
 }
 
+/** Six last months: credits from the validated demo orders, allocations seeded (current month real). */
+function companyFlows(
+  orders: readonly S['CreditOrderDetail'][],
+  employees: readonly S['Employee'][],
+): S['CompanyMonthlyFlow'][] {
+  const now = new Date();
+  return Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
+    const month = `${String(date.getFullYear())}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const credited = orders
+      .filter((order) => order.status === 'VALIDATED')
+      .filter((order) =>
+        order.history.some(
+          (event) => event.action === 'VALIDATED' && event.occurredAt.startsWith(month),
+        ),
+      )
+      .reduce((sum, order) => sum + order.amountMillimes, 0);
+    const allocated =
+      index === 5
+        ? employees.reduce((sum, employee) => sum + employee.monthAllocatedMillimes, 0)
+        : 9_200_000 + ((index * 3_571) % 7) * 310_000;
+    return { month, creditedMillimes: credited, allocatedMillimes: allocated };
+  });
+}
+
 export const companyHandlers = [
   http.get(apiUrl('/v1/company/dashboard'), async () => {
     const account = await guardRead('COMPANY');
@@ -87,6 +112,7 @@ export const companyHandlers = [
       pendingOrdersCount: orders.filter((order) => OPEN_ORDER_STATUSES.includes(order.status))
         .length,
       recentOrders: orders.slice(0, 5).map(orderSummary),
+      monthlyFlows: companyFlows(orders, employees),
     });
   }),
 

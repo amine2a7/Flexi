@@ -18,6 +18,7 @@ import { Alert, DescriptionList } from '@/components/ui/layout-blocks';
 import { Modal } from '@/components/ui/modal';
 import { LoadingBlock } from '@/components/ui/states';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { Timeline } from '@/components/ui/timeline';
 import { useToast } from '@/components/ui/toast';
 
 export type Order = Schemas['CreditOrderDetail'];
@@ -282,30 +283,23 @@ export function OrderHistory({ history }: { history: readonly Schemas['CreditOrd
   return (
     <Card>
       <CardTitle>{t('history.title')}</CardTitle>
-      <ol className="flex flex-col gap-4">
-        {history.map((event, index) => (
-          <li
-            key={`${event.action}-${event.occurredAt}-${String(index)}`}
-            className="flex flex-col gap-1 border-s border-border ps-4"
-          >
-            <span className="text-body font-title text-text">
-              {tRoot(messageKey(`orders.event.${event.action}`))}
-            </span>
-            <span className="text-caption text-text-muted">
-              {formatDateTime(event.occurredAt, locale)} ·{' '}
-              {t('history.by', {
-                name: event.actorName,
-                role: event.actorRole === 'ADMIN' ? t('role.ADMIN') : t('role.COMPANY'),
-              })}
-            </span>
-            {event.reason !== undefined ? (
-              <span className="text-body text-text" dir="auto">
-                {t('history.reason', { reason: event.reason })}
-              </span>
-            ) : null}
-          </li>
-        ))}
-      </ol>
+      <Timeline
+        entries={history.map((event, index) => ({
+          key: `${event.action}-${event.occurredAt}-${String(index)}`,
+          title: tRoot(messageKey(`orders.event.${event.action}`)),
+          meta: `${formatDateTime(event.occurredAt, locale)} · ${t('history.by', {
+            name: event.actorName,
+            role: event.actorRole === 'ADMIN' ? t('role.ADMIN') : t('role.COMPANY'),
+          })}`,
+          ...(event.reason === undefined
+            ? {}
+            : { detail: t('history.reason', { reason: event.reason }) }),
+          tone:
+            event.action === 'REFUSED' || event.action === 'PROOF_REJECTED' || event.action === 'CANCELLED'
+              ? ('danger' as const)
+              : ('default' as const),
+        }))}
+      />
     </Card>
   );
 }

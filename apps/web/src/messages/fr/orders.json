@@ -106,7 +106,15 @@
     "cancelMessage": "La commande ne pourra plus être payée. Ne faites pas de virement pour cette commande.",
     "cancelConfirm": "Annuler la commande",
     "cancelledToast": "Commande annulée.",
-    "createdToast": "Commande {reference} créée : FlexiPay va la confirmer."
+    "createdToast": "Commande {reference} créée : FlexiPay va la confirmer.",
+    "kpiWallet": "Solde disponible",
+    "kpiWalletHint": "Crédits prêts à être attribués",
+    "kpiConfirmation": "À confirmer par FlexiPay",
+    "kpiConfirmationHint": "Aucune action de votre part",
+    "kpiPayment": "En attente de votre virement",
+    "kpiPaymentHint": "Virez puis déclarez le virement",
+    "kpiValidation": "Virements en vérification",
+    "kpiValidationHint": "Crédits ajoutés après validation"
   },
   "admin": {
     "title": "Commandes de crédits",

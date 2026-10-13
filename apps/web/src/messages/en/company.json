@@ -1,20 +1,28 @@
 {
   "dashboard": {
-    "title": "Hello {name}",
-    "description": "Your balance, employees and orders at a glance.",
+    "title": "Your credit portfolio",
+    "description": "Order credits, allocate them to your employees and follow their use.",
     "wallet": "Available balance",
     "walletHint": "Credits ready to be allocated",
     "employees": "Active employees",
     "employeesHint": "{total} employees in total",
     "allocated": "Allocated this month",
     "pendingOrders": "Orders in progress",
-    "pendingHint": "Awaiting payment or reconciliation",
+    "pendingHint": "Awaiting confirmation, payment or validation",
     "order": "Order credits",
     "allocate": "Allocate credits",
     "recent": "Latest orders",
     "seeOrders": "See all orders",
     "emptyTitle": "No orders yet",
-    "emptyMessage": "Order credits to top up your balance."
+    "emptyMessage": "Order credits to top up your balance.",
+    "flowsTitle": "Flows over the last six months",
+    "flowsDescription": "Credits added to your balance and credits allocated to your employees.",
+    "seriesCredited": "Credits added",
+    "seriesAllocated": "Credits allocated",
+    "recentDescription": "Your latest credit orders and their status.",
+    "todoPay": "Order {reference}: transfer {amount}, then declare your transfer.",
+    "todoRejected": "Order {reference}: proof rejected, declare your transfer again.",
+    "todoAction": "Open the order"
   },
   "orders": {
     "title": "Credit orders",

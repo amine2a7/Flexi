@@ -1813,6 +1813,17 @@ export interface components {
       /** Format: int32 */
       pendingOrdersCount: number;
       recentOrders: components['schemas']['CreditOrder'][];
+      /** @description Six derniers mois, du plus ancien au mois en cours (graphique du tableau de bord). */
+      monthlyFlows: components['schemas']['CompanyMonthlyFlow'][];
+    };
+    /** CompanyMonthlyFlow */
+    CompanyMonthlyFlow: {
+      /** @description Mois (AAAA-MM), fuseau métier Africa/Tunis. */
+      month: string;
+      /** @description Crédits ajoutés au solde (commandes validées) sur le mois. */
+      creditedMillimes: components['schemas']['AmountMillimes'];
+      /** @description Crédits attribués aux employés sur le mois. */
+      allocatedMillimes: components['schemas']['AmountMillimes'];
     };
     /**
      * EmployeeStatus

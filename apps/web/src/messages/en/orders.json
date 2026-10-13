@@ -106,7 +106,15 @@
     "cancelMessage": "The order can no longer be paid. Do not make a transfer for this order.",
     "cancelConfirm": "Cancel the order",
     "cancelledToast": "Order cancelled.",
-    "createdToast": "Order {reference} created: FlexiPay will confirm it."
+    "createdToast": "Order {reference} created: FlexiPay will confirm it.",
+    "kpiWallet": "Available balance",
+    "kpiWalletHint": "Credits ready to allocate",
+    "kpiConfirmation": "To be confirmed by FlexiPay",
+    "kpiConfirmationHint": "No action needed from you",
+    "kpiPayment": "Waiting for your transfer",
+    "kpiPaymentHint": "Transfer, then declare it",
+    "kpiValidation": "Transfers being checked",
+    "kpiValidationHint": "Credits added once validated"
   },
   "admin": {
     "title": "Credit orders",

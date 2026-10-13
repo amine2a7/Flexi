@@ -1,20 +1,28 @@
 {
   "dashboard": {
-    "title": "مرحبًا {name}",
-    "description": "رصيدك وموظفوك وطلبياتك في لمحة.",
+    "title": "محفظة أرصدتك",
+    "description": "اطلب الأرصدة ووزّعها على موظفيك وتابع استعمالها.",
     "wallet": "الرصيد المتاح",
     "walletHint": "أرصدة جاهزة للتوزيع",
     "employees": "الموظفون النشطون",
     "employeesHint": "{total} موظفًا في المجموع",
     "allocated": "الموزَّع هذا الشهر",
     "pendingOrders": "طلبيات قيد المعالجة",
-    "pendingHint": "في انتظار الدفع أو المطابقة",
+    "pendingHint": "في انتظار التأكيد أو الدفع أو المصادقة",
     "order": "طلب أرصدة",
     "allocate": "توزيع الأرصدة",
     "recent": "آخر الطلبيات",
     "seeOrders": "عرض كل الطلبيات",
     "emptyTitle": "لا توجد طلبيات",
-    "emptyMessage": "اطلب أرصدة لتغذية رصيدك."
+    "emptyMessage": "اطلب أرصدة لتغذية رصيدك.",
+    "flowsTitle": "التدفقات خلال الأشهر الستة الأخيرة",
+    "flowsDescription": "الأرصدة المضافة إلى رصيدك والأرصدة الموزّعة على موظفيك.",
+    "seriesCredited": "الأرصدة المضافة",
+    "seriesAllocated": "الأرصدة الموزّعة",
+    "recentDescription": "آخر طلبيات الأرصدة وحالتها.",
+    "todoPay": "الطلبية {reference}: حوّل {amount} ثم صرّح بتحويلك.",
+    "todoRejected": "الطلبية {reference}: رُفض الإثبات، صرّح بتحويلك من جديد.",
+    "todoAction": "فتح الطلبية"
   },
   "orders": {
     "title": "طلبيات الأرصدة",

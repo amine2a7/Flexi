@@ -16,7 +16,12 @@ export function useOrderColumns(): Column<Schemas['CreditOrder']>[] {
   const tOrders = useTranslations('orders');
   const locale = useLocale();
   return [
-    { key: 'date', header: t('date'), cell: (row) => formatDateTime(row.createdAt, locale) },
+    {
+      key: 'date',
+      header: t('date'),
+      cell: (row) => formatDateTime(row.createdAt, locale),
+      sortValue: (row) => row.createdAt,
+    },
     {
       key: 'reference',
       header: t('reference'),
@@ -29,20 +34,28 @@ export function useOrderColumns(): Column<Schemas['CreditOrder']>[] {
           {row.reference}
         </Link>
       ),
+      sortValue: (row) => row.reference,
     },
     {
       key: 'credits',
       header: t('credits'),
       align: 'end',
       cell: (row) => <Amount millimes={row.amountMillimes} />,
+      sortValue: (row) => row.amountMillimes,
     },
     {
       key: 'total',
       header: t('total'),
       align: 'end',
       cell: (row) => <Amount millimes={row.totalMillimes} />,
+      sortValue: (row) => row.totalMillimes,
     },
-    { key: 'status', header: t('status'), cell: (row) => <OrderStatusBadge status={row.status} /> },
+    {
+      key: 'status',
+      header: t('status'),
+      cell: (row) => <OrderStatusBadge status={row.status} />,
+      sortValue: (row) => row.status,
+    },
     {
       key: 'open',
       header: tOrders('fields.action'),

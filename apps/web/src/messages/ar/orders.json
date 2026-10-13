@@ -106,7 +106,15 @@
     "cancelMessage": "لن يعود بالإمكان دفع الطلبية. لا تُجرِ أي تحويل لهذه الطلبية.",
     "cancelConfirm": "إلغاء الطلبية",
     "cancelledToast": "تم إلغاء الطلبية.",
-    "createdToast": "تم إنشاء الطلبية {reference}: ستؤكدها FlexiPay."
+    "createdToast": "تم إنشاء الطلبية {reference}: ستؤكدها FlexiPay.",
+    "kpiWallet": "الرصيد المتاح",
+    "kpiWalletHint": "أرصدة جاهزة للتوزيع",
+    "kpiConfirmation": "في انتظار تأكيد FlexiPay",
+    "kpiConfirmationHint": "لا يتطلب أي إجراء منك",
+    "kpiPayment": "في انتظار تحويلك",
+    "kpiPaymentHint": "حوّل ثم صرّح بالتحويل",
+    "kpiValidation": "تحويلات قيد التحقق",
+    "kpiValidationHint": "تُضاف الأرصدة بعد المصادقة"
   },
   "admin": {
     "title": "طلبيات الأرصدة",

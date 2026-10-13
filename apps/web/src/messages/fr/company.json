@@ -1,20 +1,28 @@
 {
   "dashboard": {
-    "title": "Bonjour {name}",
-    "description": "Votre solde, vos employés et vos commandes en un coup d'œil.",
+    "title": "Votre portefeuille de crédits",
+    "description": "Commandez des crédits, attribuez-les à vos employés et suivez leur utilisation.",
     "wallet": "Solde disponible",
     "walletHint": "Crédits prêts à être attribués",
     "employees": "Employés actifs",
     "employeesHint": "{total} employés au total",
     "allocated": "Attribué ce mois",
     "pendingOrders": "Commandes en cours",
-    "pendingHint": "En attente de paiement ou de rapprochement",
+    "pendingHint": "En attente de confirmation, de paiement ou de validation",
     "order": "Commander des crédits",
     "allocate": "Attribuer des crédits",
     "recent": "Dernières commandes",
     "seeOrders": "Voir toutes les commandes",
     "emptyTitle": "Aucune commande",
-    "emptyMessage": "Commandez des crédits pour alimenter votre solde."
+    "emptyMessage": "Commandez des crédits pour alimenter votre solde.",
+    "flowsTitle": "Flux des six derniers mois",
+    "flowsDescription": "Crédits ajoutés à votre solde et crédits attribués à vos employés.",
+    "seriesCredited": "Crédits ajoutés",
+    "seriesAllocated": "Crédits attribués",
+    "recentDescription": "Vos dernières commandes de crédits et leur statut.",
+    "todoPay": "Commande {reference} : virez {amount} puis déclarez votre virement.",
+    "todoRejected": "Commande {reference} : justificatif rejeté, déclarez à nouveau votre virement.",
+    "todoAction": "Ouvrir la commande"
   },
   "orders": {
     "title": "Commandes de crédits",

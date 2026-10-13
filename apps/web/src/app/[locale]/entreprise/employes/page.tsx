@@ -1,7 +1,7 @@
 'use client';
 
 import type { Schemas } from '@flexipay/api-client';
-import { FileUp, UserPlus } from 'lucide-react';
+import { FileUp, UserPlus, WalletCards } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
@@ -28,6 +28,7 @@ const EMPTY: Draft = { employeeNumber: '', firstName: '', lastName: '', email: '
 
 export default function EmployeesPage() {
   const t = useTranslations('company.employees');
+  const tDashboard = useTranslations('company.dashboard');
   const tStatus = useTranslations('statusLabel');
   const [filters, setFilters] = useState({ q: '', status: '' });
   const [adding, setAdding] = useState(false);
@@ -50,8 +51,19 @@ export default function EmployeesPage() {
   );
 
   const columns: Column<Employee>[] = [
-    { key: 'number', header: t('fields.employeeNumber'), cell: (row) => row.employeeNumber },
-    { key: 'name', header: t('name'), cell: (row) => `${row.firstName} ${row.lastName}` },
+    {
+      key: 'name',
+      header: t('name'),
+      cell: (row) => (
+        <span className="flex flex-col">
+          <span className="font-label text-text">{`${row.firstName} ${row.lastName}`}</span>
+          <span className="text-caption text-text-muted" dir="ltr">
+            {row.employeeNumber}
+          </span>
+        </span>
+      ),
+      sortValue: (row) => `${row.lastName} ${row.firstName}`,
+    },
     { key: 'email', header: t('fields.email'), cell: (row) => <span dir="ltr">{row.email}</span> },
     { key: 'phone', header: t('fields.phone'), cell: (row) => <span dir="ltr">{row.phone}</span> },
     {
@@ -59,8 +71,14 @@ export default function EmployeesPage() {
       header: t('allocated'),
       align: 'end',
       cell: (row) => <Amount millimes={row.monthAllocatedMillimes} />,
+      sortValue: (row) => row.monthAllocatedMillimes,
     },
-    { key: 'status', header: t('status'), cell: (row) => <StatusBadge status={row.status} /> },
+    {
+      key: 'status',
+      header: t('status'),
+      cell: (row) => <StatusBadge status={row.status} />,
+      sortValue: (row) => row.status,
+    },
   ];
 
   return (
@@ -75,11 +93,16 @@ export default function EmployeesPage() {
               {t('import')}
             </Link>
             <Button
+              variant="secondary"
               icon={<UserPlus aria-hidden="true" className="size-icon-sm" />}
               onClick={() => setAdding(true)}
             >
               {t('add')}
             </Button>
+            <Link href="/entreprise/attribution" className={buttonClasses('primary')}>
+              <WalletCards aria-hidden="true" className="size-icon-sm" />
+              {tDashboard('allocate')}
+            </Link>
           </>
         }
       />
