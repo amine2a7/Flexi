@@ -33,5 +33,12 @@
   "todo": {
     "title": "À faire",
     "empty": "Rien à faire pour le moment."
+  },
+  "file": {
+    "loading": "Chargement du fichier…",
+    "error": "Le fichier n'a pas pu être chargé.",
+    "download": "Télécharger",
+    "pdf": "Document PDF : téléchargez-le pour le consulter.",
+    "size": "{name} · {size} Ko"
   }
 }

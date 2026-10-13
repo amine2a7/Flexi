@@ -26,7 +26,8 @@
     "companiesHint": "حسابات المؤسسات",
     "merchantsHint": "حسابات التجار",
     "volumeHint": "الدفعات المؤكدة اليوم",
-    "nextSettlementHint": "دفعة التسوية بعد يومين"
+    "nextSettlementHint": "دفعة التسوية بعد يومين",
+    "todoPayouts": "{count, plural, one {# طلب تحويل تاجر للمراجعة} other {# طلبات تحويل تجار للمراجعة}}"
   },
   "merchants": {
     "title": "التجار",
@@ -147,7 +148,15 @@
     "commission": "العمولة",
     "net": "الصافي",
     "status": "الحالة",
-    "emptyTitle": "لا توجد دفعات تسوية"
+    "emptyTitle": "لا توجد دفعات تسوية",
+    "open": "فتح",
+    "openBatch": "فتح الدفعة {reference}",
+    "detailTitle": "الدفعة {reference}",
+    "back": "العودة إلى التسويات",
+    "payoutsTitle": "تحويلات الدفعة",
+    "merchant": "التاجر",
+    "iban": "IBAN",
+    "action": "الإجراء"
   },
   "audit": {
     "title": "سجل التدقيق",
@@ -179,5 +188,110 @@
     "createdToast": "أُرسل الطلب. يجب أن يصادق عليه مشرف آخر.",
     "pending": "يوجد تغيير في انتظار المصادقة.",
     "invalid": "تحقّق من القيم المدخلة."
+  },
+  "kyc": {
+    "open": "فتح",
+    "status": "الحالة",
+    "historyTitle": "السجل",
+    "by": "بواسطة {name}",
+    "title": "ملفات التحقق من الهوية",
+    "description": "راجع وثائق التجار والمؤسسات. يبقى الحساب غير نشِط حتى المصادقة على ملفه.",
+    "account": "الحساب",
+    "type": "النوع",
+    "city": "المدينة",
+    "submittedAt": "تاريخ الإيداع",
+    "documents": "الوثائق",
+    "types": {
+      "MERCHANT": "تاجر",
+      "COMPANY": "مؤسسة"
+    },
+    "statuses": {
+      "PENDING": "للمراجعة",
+      "APPROVED": "مصادق عليه",
+      "REJECTED": "مرفوض"
+    },
+    "filterType": "نوع الحساب",
+    "allTypes": "كل الأنواع",
+    "empty": "لا توجد ملفات لهذه المرشحات",
+    "kpiPending": "ملفات للمراجعة",
+    "detailTitle": "ملف التحقق: {name}",
+    "back": "العودة إلى الملفات",
+    "pendingInfo": "راجع كل وثيقة ثم صادق على الملف أو ارفضه. يبقى الحساب غير نشِط حتى المصادقة.",
+    "documentsTitle": "وثائق الملف",
+    "documentTypes": {
+      "REGISTRY_EXTRACT": "مضمون السجل التجاري",
+      "TAX_CERTIFICATE": "شهادة جبائية",
+      "MANAGER_ID": "بطاقة هوية المسيّر",
+      "BANK_DETAILS": "كشف الهوية البنكية"
+    },
+    "approve": "المصادقة على الملف",
+    "approveTitle": "المصادقة على ملف {name}؟",
+    "approveMessage": "يصبح الحساب نشِطًا ويمكنه استعمال FlexiPay.",
+    "approvedToast": "تمت المصادقة: الحساب نشِط.",
+    "reject": "رفض الملف",
+    "rejectTitle": "رفض ملف {name}",
+    "rejectReason": "سبب الرفض (يظهر لصاحب الحساب)",
+    "rejectedToast": "رُفض الملف: يبقى الحساب غير نشِط.",
+    "rejectedInfo": "سبب الرفض: {reason}",
+    "event": {
+      "SUBMITTED": "إيداع الملف",
+      "APPROVED": "المصادقة على الملف",
+      "REJECTED": "رفض الملف"
+    },
+    "openFile": "فتح ملف {name}"
+  },
+  "payouts": {
+    "open": "فتح",
+    "status": "الحالة",
+    "historyTitle": "السجل",
+    "by": "بواسطة {name}",
+    "title": "تحويلات التجار",
+    "description": "راجع كل طلب: الإجمالي والعمولة والصافي وIBAN. تنضم التحويلات المصادق عليها إلى دفعة التسوية القادمة.",
+    "reference": "المرجع",
+    "merchant": "التاجر",
+    "requestedAt": "تاريخ الطلب",
+    "gross": "الإجمالي",
+    "commission": "العمولة",
+    "rate": "النسبة",
+    "net": "الصافي",
+    "iban": "IBAN",
+    "batch": "الدفعة",
+    "search": "التاجر أو المرجع",
+    "empty": "لا توجد طلبات لهذه المرشحات",
+    "kpiPending": "طلبات للمراجعة",
+    "detailTitle": "التحويل {reference}",
+    "back": "العودة إلى التحويلات",
+    "pendingInfo": "تحقق من المبلغ الصافي وIBAN التاجر قبل المصادقة.",
+    "approve": "المصادقة على التحويل",
+    "approveTitle": "المصادقة على التحويل {reference}؟",
+    "approveMessage": "سيُحوَّل {net} إلى {merchant} على IBAN {iban} ضمن دفعة التسوية القادمة.",
+    "approvedToast": "تمت المصادقة: أُضيف التحويل إلى الدفعة القادمة.",
+    "reject": "رفض التحويل",
+    "rejectTitle": "رفض التحويل {reference}",
+    "rejectReason": "سبب الرفض (يظهر للتاجر)",
+    "rejectedToast": "رُفض التحويل.",
+    "batchInfo": "مُدرج في الدفعة {reference}.",
+    "seeBatch": "عرض الدفعة",
+    "openPayout": "فتح التحويل {reference}",
+    "event": {
+      "REQUESTED": "إرسال الطلب من التاجر",
+      "CHECKED": "المصادقة على الطلب من FlexiPay",
+      "SENT": "إرسال التحويل إلى البنك",
+      "EXECUTED": "تنفيذ التحويل",
+      "REJECTED": "رفض الطلب"
+    }
+  },
+  "transactions": {
+    "title": "المعاملات",
+    "description": "كل الدفعات لدى التجار، مع البحث والتصفية حسب الحالة.",
+    "search": "التاجر أو المؤسسة أو المرجع",
+    "date": "التاريخ",
+    "reference": "المرجع",
+    "merchant": "التاجر",
+    "company": "المؤسسة",
+    "category": "الصنف",
+    "amount": "المبلغ",
+    "status": "الحالة",
+    "empty": "لا توجد معاملات لهذه المرشحات"
   }
 }

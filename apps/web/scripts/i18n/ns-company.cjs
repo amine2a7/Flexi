@@ -280,6 +280,16 @@ module.exports = {
         "Nouvelle commande",
         "New order",
         "طلبية جديدة"
+      ],
+      "category": [
+        "Catégorie de crédits",
+        "Credit category",
+        "صنف الأرصدة"
+      ],
+      "categoryHint": [
+        "Une seule catégorie pour le moment : Restauration.",
+        "A single category for now: Food.",
+        "صنف واحد حاليًا: المطاعم."
       ]
     },
     "employees": {

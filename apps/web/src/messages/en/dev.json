@@ -5,7 +5,8 @@
     "admin": "Administrator",
     "company": "Company",
     "merchant": "Merchant",
-    "firstLogin": "First sign-in"
+    "firstLogin": "First sign-in",
+    "admin2": "Administrator (second approval)"
   },
   "codes": {
     "title": "Demo customer codes",

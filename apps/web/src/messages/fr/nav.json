@@ -26,6 +26,9 @@
     "approvals": "Validations",
     "settlements": "Règlements",
     "audit": "Journal d'audit",
-    "settings": "Paramétrage"
+    "settings": "Paramétrage",
+    "kyc": "Dossiers KYC",
+    "payouts": "Virements commerçants",
+    "transactions": "Transactions"
   }
 }

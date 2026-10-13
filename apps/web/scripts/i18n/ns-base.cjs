@@ -278,6 +278,33 @@ module.exports = {
         "Nothing to do for now.",
         "لا شيء للقيام به حاليًا."
       ]
+    },
+    "file": {
+      "loading": [
+        "Chargement du fichier…",
+        "Loading the file…",
+        "جارٍ تحميل الملف…"
+      ],
+      "error": [
+        "Le fichier n'a pas pu être chargé.",
+        "The file could not be loaded.",
+        "تعذّر تحميل الملف."
+      ],
+      "download": [
+        "Télécharger",
+        "Download",
+        "تنزيل"
+      ],
+      "pdf": [
+        "Document PDF : téléchargez-le pour le consulter.",
+        "PDF document: download it to view it.",
+        "مستند PDF: نزّله للاطلاع عليه."
+      ],
+      "size": [
+        "{name} · {size} Ko",
+        "{name} · {size} KB",
+        "{name} · {size} ك.ب"
+      ]
     }
   },
   "layout": {
@@ -567,6 +594,21 @@ module.exports = {
         "Paramétrage",
         "Settings",
         "الإعدادات"
+      ],
+      "kyc": [
+        "Dossiers KYC",
+        "KYC files",
+        "ملفات التحقق"
+      ],
+      "payouts": [
+        "Virements commerçants",
+        "Merchant payouts",
+        "تحويلات التجار"
+      ],
+      "transactions": [
+        "Transactions",
+        "Transactions",
+        "المعاملات"
       ]
     }
   },
@@ -919,6 +961,11 @@ module.exports = {
         "Première connexion",
         "First sign-in",
         "أول تسجيل دخول"
+      ],
+      "admin2": [
+        "Administrateur (2e validation)",
+        "Administrator (second approval)",
+        "مشرف (المصادقة الثانية)"
       ]
     },
     "codes": {
@@ -953,5 +1000,12 @@ module.exports = {
         "أضف ‎?mock=slow أو ‎?mock=error أو ‎?mock=empty إلى العنوان لاختبار تحميل بطيء أو خطأ أو قائمة فارغة."
       ]
     }
+  },
+  "creditCategory": {
+    "RESTAURATION": [
+      "Restauration",
+      "Food",
+      "المطاعم"
+    ]
   }
 };

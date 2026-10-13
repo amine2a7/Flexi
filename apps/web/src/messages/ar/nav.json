@@ -26,6 +26,9 @@
     "approvals": "المصادقات",
     "settlements": "التسويات",
     "audit": "سجل التدقيق",
-    "settings": "الإعدادات"
+    "settings": "الإعدادات",
+    "kyc": "ملفات التحقق",
+    "payouts": "تحويلات التجار",
+    "transactions": "المعاملات"
   }
 }

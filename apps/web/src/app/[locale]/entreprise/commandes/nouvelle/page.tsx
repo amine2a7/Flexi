@@ -12,10 +12,14 @@ import { parseMillimes } from '@/lib/format/money-input';
 import { AmountBreakdown } from '@/components/ui/amount';
 import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
-import { TextField } from '@/components/ui/field';
+import { SelectField, TextField } from '@/components/ui/field';
 import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { ConfirmDialog } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast';
+
+type Category = Schemas['CreditCategory'];
+// V1: a single category (decision); the model already carries it for more categories.
+const CATEGORIES: readonly Category[] = ['RESTAURATION'];
 
 /** Credit order: fees summary computed by the server, confirmation, then the transfer reference. */
 export default function NewOrderPage() {
@@ -26,6 +30,7 @@ export default function NewOrderPage() {
   const toast = useToast();
   const locale = useLocale();
   const [amountText, setAmountText] = useState('');
+  const [category, setCategory] = useState<Category>('RESTAURATION');
   const [quote, setQuote] = useState<Schemas['CreditOrderQuote'] | undefined>(undefined);
   const [quoting, setQuoting] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -59,7 +64,7 @@ export default function NewOrderPage() {
     try {
       const { data, error: problem } = await getApi().POST('/v1/company/orders', {
         params: { header: { 'Idempotency-Key': intentKey } },
-        body: { amountMillimes: quote.amountMillimes },
+        body: { amountMillimes: quote.amountMillimes, category },
       });
       setConfirming(false);
       if (data === undefined) setError(problem);
@@ -93,6 +98,18 @@ export default function NewOrderPage() {
             className="flex flex-col gap-5"
             noValidate
           >
+            <SelectField
+              label={t('category')}
+              hint={t('categoryHint')}
+              options={CATEGORIES.map((value) => ({
+                value,
+                label: tRoot(messageKey(`creditCategory.${value}`)),
+              }))}
+              value={category}
+              onChange={(event) => {
+                setCategory(event.target.value as Category);
+              }}
+            />
             <TextField
               label={t('amount')}
               hint={

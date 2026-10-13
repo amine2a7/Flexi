@@ -9,6 +9,7 @@ import { Link } from '@/i18n/navigation';
 import { getApi, newIdempotencyKey } from '@/lib/api/client';
 import { errorMessageKey } from '@/lib/api/problem';
 import { useApiQuery } from '@/lib/api/use-api-query';
+import { formatDateTime } from '@/lib/format/date';
 import { formatMillimesWithCurrency } from '@/lib/format/money';
 import {
   DeclarationCard,
@@ -99,10 +100,16 @@ function AdminOrderView({
         });
 
   /** Applies the result of an action: new order, conflict (reload) or error. */
-  function settle(result: { data?: Order; error?: unknown }, successMessage: string): unknown {
+  function settle(
+    result: { data?: Order; error?: unknown },
+    successMessage: string | ((order: Order) => string),
+  ): unknown {
     if (result.data !== undefined) {
       setDialog(undefined);
-      toast.notify('success', successMessage);
+      toast.notify(
+        'success',
+        typeof successMessage === 'string' ? successMessage : successMessage(result.data),
+      );
       onChange(result.data);
       return undefined;
     }
@@ -115,7 +122,10 @@ function AdminOrderView({
     return result.error;
   }
 
-  async function run(action: () => Promise<{ data?: Order; error?: unknown }>, message: string) {
+  async function run(
+    action: () => Promise<{ data?: Order; error?: unknown }>,
+    message: string | ((order: Order) => string),
+  ) {
     setSaving(true);
     setError(undefined);
     try {
@@ -128,6 +138,12 @@ function AdminOrderView({
       setSaving(false);
     }
   }
+
+  const validateLabel = !order.requiresSecondValidation
+    ? t('admin.validate')
+    : order.firstValidation === undefined
+      ? t('admin.firstValidate')
+      : t('admin.secondValidate');
 
   const step = {
     AWAITING_CONFIRMATION: t('admin.stepConfirm'),
@@ -172,11 +188,28 @@ function AdminOrderView({
               ) : null}
               {order.status === 'AWAITING_VALIDATION' ? (
                 <>
+                  {order.requiresSecondValidation ? (
+                    <Alert
+                      tone={order.firstValidation?.byMe === true ? 'warning' : 'info'}
+                      title={t('admin.fourEyesTitle')}
+                    >
+                      {order.firstValidation === undefined
+                        ? t('admin.fourEyesInfo')
+                        : order.firstValidation.byMe
+                          ? t('admin.firstByMe', {
+                              date: formatDateTime(order.firstValidation.occurredAt, locale),
+                            })
+                          : t('admin.firstDone', {
+                              name: order.firstValidation.actorName,
+                              date: formatDateTime(order.firstValidation.occurredAt, locale),
+                            })}
+                    </Alert>
+                  ) : null}
                   {mismatchText !== undefined ? (
-          <Alert tone="warning" title={t('admin.mismatchTitle')}>
-            {mismatchText}
-          </Alert>
-        ) : null}
+                    <Alert tone="warning" title={t('admin.mismatchTitle')}>
+                      {mismatchText}
+                    </Alert>
+                  ) : null}
                   <div className="flex flex-wrap justify-end gap-3">
                     <Button
                       variant="secondary"
@@ -185,16 +218,18 @@ function AdminOrderView({
                     >
                       {t('admin.rejectProof')}
                     </Button>
-                    <Button
-                      variant="success"
-                      icon={<CircleCheck aria-hidden="true" className="size-icon-sm" />}
-                      onClick={() => {
-                        setValidateKey(newIdempotencyKey());
-                        setDialog('validate');
-                      }}
-                    >
-                      {t('admin.validate')}
-                    </Button>
+                    {order.firstValidation?.byMe === true ? null : (
+                      <Button
+                        variant="success"
+                        icon={<CircleCheck aria-hidden="true" className="size-icon-sm" />}
+                        onClick={() => {
+                          setValidateKey(newIdempotencyKey());
+                          setDialog('validate');
+                        }}
+                      >
+                        {validateLabel}
+                      </Button>
+                    )}
                   </div>
                 </>
               ) : null}
@@ -247,7 +282,7 @@ function AdminOrderView({
           credits: formatMillimesWithCurrency(order.amountMillimes, locale),
           company: order.companyName,
         })}
-        confirmLabel={t('admin.validate')}
+        confirmLabel={validateLabel}
         confirmVariant="success"
         loading={saving}
         onConfirm={() =>
@@ -259,7 +294,10 @@ function AdminOrderView({
                   header: { 'Idempotency-Key': validateKey },
                 },
               }),
-            t('admin.validatedToast'),
+            (updated) =>
+              updated.status === 'VALIDATED'
+                ? t('admin.validatedToast')
+                : t('admin.firstValidatedToast'),
           )
         }
       >

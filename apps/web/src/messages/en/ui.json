@@ -33,5 +33,12 @@
   "todo": {
     "title": "To do",
     "empty": "Nothing to do for now."
+  },
+  "file": {
+    "loading": "Loading the file…",
+    "error": "The file could not be loaded.",
+    "download": "Download",
+    "pdf": "PDF document: download it to view it.",
+    "size": "{name} · {size} KB"
   }
 }

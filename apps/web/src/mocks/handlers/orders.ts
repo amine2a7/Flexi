@@ -1,6 +1,14 @@
 import type { Schemas } from '@flexipay/api-client';
 import { http, HttpResponse } from 'msw';
-import { commissionOf, currentAccount, db, invoicesOf, saveOrders, type MockOrder } from '../db';
+import {
+  commissionOf,
+  currentAccount,
+  db,
+  invoicesOf,
+  saveOrders,
+  SECOND_VALIDATION_THRESHOLD_MILLIMES,
+  type MockOrder,
+} from '../db';
 import { COMPANY_TENANT } from '../fixtures/accounts';
 import { FUNDING_ACCOUNT } from '../fixtures/funding-account';
 import {
@@ -23,7 +31,10 @@ type S = Schemas;
 const MAX_PROOF_BYTES = 5 * 1024 * 1024;
 const NEEDS_ADMIN: readonly S['OrderStatus'][] = ['AWAITING_CONFIRMATION', 'AWAITING_VALIDATION'];
 /** Orders still in progress (company dashboard counter). */
-export const OPEN_ORDER_STATUSES: readonly S['OrderStatus'][] = [...NEEDS_ADMIN, 'AWAITING_PAYMENT'];
+export const OPEN_ORDER_STATUSES: readonly S['OrderStatus'][] = [
+  ...NEEDS_ADMIN,
+  'AWAITING_PAYMENT',
+];
 
 export function orderSummary(order: MockOrder): S['CreditOrder'] {
   const {
@@ -32,14 +43,27 @@ export function orderSummary(order: MockOrder): S['CreditOrder'] {
     history: _history,
     refusalReason: _refusal,
     proofRejectionReason: _rejection,
+    requiresSecondValidation: _four,
+    firstValidator: _first,
     ...rest
   } = order;
   return rest;
 }
 
 function detail(order: MockOrder): S['CreditOrderDetail'] {
-  const { proof: _proof, ...rest } = order;
-  return rest;
+  const { proof: _proof, firstValidator, ...rest } = order;
+  return {
+    ...rest,
+    ...(firstValidator === undefined || order.status !== 'AWAITING_VALIDATION'
+      ? {}
+      : {
+          firstValidation: {
+            actorName: firstValidator.actorName,
+            occurredAt: firstValidator.occurredAt,
+            byMe: firstValidator.actorId === currentAccount()?.id,
+          },
+        }),
+  };
 }
 
 function find(id: string, companyOnly: boolean): MockOrder | undefined {
@@ -174,6 +198,8 @@ export const orderHandlers = [
       id: crypto.randomUUID(),
       reference: `CMD-2026-${String(7300 + db.orders.length)}`,
       status: 'AWAITING_CONFIRMATION',
+      category: body.category ?? 'RESTAURATION',
+      requiresSecondValidation: body.amountMillimes > SECOND_VALIDATION_THRESHOLD_MILLIMES,
       companyId: COMPANY_TENANT.id,
       companyName: own?.name ?? COMPANY_TENANT.label,
       amountMillimes: body.amountMillimes,
@@ -272,7 +298,7 @@ export const orderHandlers = [
       order.status = 'AWAITING_VALIDATION';
       record(order, 'TRANSFER_DECLARED');
       audit('orders.declare-transfer', order.reference);
-    saveOrders();
+      saveOrders();
       return HttpResponse.json<S['CreditOrderDetail']>(detail(order), { status: 201 });
     },
   ),
@@ -343,6 +369,21 @@ export const orderHandlers = [
     const order = find(String(params.orderId), false);
     if (order === undefined) return problem(404, 'NOT_FOUND');
     if (order.status !== 'AWAITING_VALIDATION') return conflict();
+    // Four-eyes (rule 12): above the threshold, two different administrators validate.
+    if (order.requiresSecondValidation) {
+      if (order.firstValidator === undefined) {
+        order.firstValidator = {
+          actorId: account.id,
+          actorName: account.displayName,
+          occurredAt: new Date().toISOString(),
+        };
+        record(order, 'FIRST_VALIDATION');
+        audit('orders.first-validation', order.reference);
+        saveOrders();
+        return HttpResponse.json<S['CreditOrderDetail']>(detail(order));
+      }
+      if (order.firstValidator.actorId === account.id) return problem(403, 'FORBIDDEN');
+    }
     order.status = 'VALIDATED';
     record(order, 'VALIDATED');
     if (order.companyId === COMPANY_TENANT.id) db.company.walletMillimes += order.amountMillimes;
@@ -364,12 +405,13 @@ export const orderHandlers = [
       if (isResponse(reason)) return reason;
       order.status = 'AWAITING_PAYMENT';
       order.proofRejectionReason = reason;
+      delete order.firstValidator;
       delete order.declaration;
       delete order.declaredAmountMillimes;
       delete order.proof;
       record(order, 'PROOF_REJECTED', reason);
       audit('orders.reject-proof', order.reference);
-    saveOrders();
+      saveOrders();
       return HttpResponse.json<S['CreditOrderDetail']>(detail(order));
     },
   ),

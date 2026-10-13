@@ -1,11 +1,14 @@
 'use client';
 
 import type { Schemas } from '@flexipay/api-client';
+import { ChevronRight } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
 import { usePagedList } from '@/lib/api/use-paged-list';
 import { formatCalendarDate } from '@/lib/format/date';
 import { Amount } from '@/components/ui/amount';
+import { buttonClasses } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { PageHeader } from '@/components/ui/layout-blocks';
@@ -29,7 +32,15 @@ export default function AdminSettlementsPage() {
     {
       key: 'reference',
       header: t('reference'),
-      cell: (row) => row.reference,
+      cell: (row) => (
+        <Link
+          href={`/admin/reglements/${row.id}`}
+          className="font-label text-navy underline-offset-2 hover:underline"
+          dir="ltr"
+        >
+          {row.reference}
+        </Link>
+      ),
       sortValue: (row) => row.reference,
     },
     {
@@ -64,6 +75,21 @@ export default function AdminSettlementsPage() {
       header: t('status'),
       cell: (row) => <StatusBadge status={row.status} />,
       sortValue: (row) => row.status,
+    },
+    {
+      key: 'open',
+      header: t('action'),
+      align: 'end',
+      cell: (row) => (
+        <Link
+          href={`/admin/reglements/${row.id}`}
+          className={buttonClasses('ghost', 'sm')}
+          aria-label={t('openBatch', { reference: row.reference })}
+        >
+          {t('open')}
+          <ChevronRight aria-hidden="true" className="size-icon-sm rtl:rotate-180" />
+        </Link>
+      ),
     },
   ];
   return (

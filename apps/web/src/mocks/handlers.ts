@@ -1,6 +1,7 @@
 import { http, type RequestHandler } from 'msw';
 import { MOCK_FIXTURE_SENTINEL } from './fixtures/sentinel';
 import { adminHandlers } from './handlers/admin';
+import { adminOpsHandlers } from './handlers/admin-ops';
 import { authHandlers } from './handlers/auth';
 import { companyHandlers } from './handlers/company';
 import { merchantHandlers } from './handlers/merchant';
@@ -24,6 +25,7 @@ export const handlers: RequestHandler[] = [
   ...companyHandlers,
   ...orderHandlers,
   ...adminHandlers,
+  ...adminOpsHandlers,
 ];
 
 export const MOCK_HANDLERS_MARKER = MOCK_FIXTURE_SENTINEL;

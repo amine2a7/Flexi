@@ -26,7 +26,8 @@
     "companiesHint": "Comptes entreprise",
     "merchantsHint": "Comptes commerçant",
     "volumeHint": "Paiements confirmés aujourd'hui",
-    "nextSettlementHint": "Lot de règlement J+2"
+    "nextSettlementHint": "Lot de règlement J+2",
+    "todoPayouts": "{count, plural, one {# demande de virement commerçant à contrôler} other {# demandes de virement commerçant à contrôler}}"
   },
   "merchants": {
     "title": "Commerçants",
@@ -147,7 +148,15 @@
     "commission": "Commission",
     "net": "Net",
     "status": "Statut",
-    "emptyTitle": "Aucun lot de règlement"
+    "emptyTitle": "Aucun lot de règlement",
+    "open": "Ouvrir",
+    "openBatch": "Ouvrir le lot {reference}",
+    "detailTitle": "Lot {reference}",
+    "back": "Retour aux règlements",
+    "payoutsTitle": "Virements du lot",
+    "merchant": "Commerçant",
+    "iban": "IBAN",
+    "action": "Action"
   },
   "audit": {
     "title": "Journal d'audit",
@@ -179,5 +188,110 @@
     "createdToast": "Demande envoyée. Un autre administrateur doit la valider.",
     "pending": "Une modification est déjà en attente de validation.",
     "invalid": "Vérifiez les valeurs saisies."
+  },
+  "kyc": {
+    "open": "Ouvrir",
+    "status": "Statut",
+    "historyTitle": "Historique",
+    "by": "par {name}",
+    "title": "Dossiers KYC",
+    "description": "Contrôlez les pièces des commerçants et des entreprises. Un compte reste inactif tant que son dossier n'est pas validé.",
+    "account": "Compte",
+    "type": "Type",
+    "city": "Ville",
+    "submittedAt": "Déposé le",
+    "documents": "Pièces",
+    "types": {
+      "MERCHANT": "Commerçant",
+      "COMPANY": "Entreprise"
+    },
+    "statuses": {
+      "PENDING": "À contrôler",
+      "APPROVED": "Validé",
+      "REJECTED": "Refusé"
+    },
+    "filterType": "Type de compte",
+    "allTypes": "Tous les types",
+    "empty": "Aucun dossier pour ces filtres",
+    "kpiPending": "Dossiers à contrôler",
+    "detailTitle": "Dossier KYC : {name}",
+    "back": "Retour aux dossiers",
+    "pendingInfo": "Vérifiez chaque pièce, puis validez ou refusez le dossier. Le compte reste inactif tant que le KYC n'est pas validé.",
+    "documentsTitle": "Pièces du dossier",
+    "documentTypes": {
+      "REGISTRY_EXTRACT": "Extrait du registre de commerce",
+      "TAX_CERTIFICATE": "Attestation fiscale",
+      "MANAGER_ID": "Pièce d'identité du gérant",
+      "BANK_DETAILS": "Relevé d'identité bancaire (RIB)"
+    },
+    "approve": "Valider le dossier",
+    "approveTitle": "Valider le dossier de {name} ?",
+    "approveMessage": "Le compte devient actif et peut utiliser FlexiPay.",
+    "approvedToast": "Dossier validé : le compte est actif.",
+    "reject": "Refuser le dossier",
+    "rejectTitle": "Refuser le dossier de {name}",
+    "rejectReason": "Motif du refus (visible par le titulaire)",
+    "rejectedToast": "Dossier refusé : le compte reste inactif.",
+    "rejectedInfo": "Motif du refus : {reason}",
+    "event": {
+      "SUBMITTED": "Dossier déposé",
+      "APPROVED": "Dossier validé",
+      "REJECTED": "Dossier refusé"
+    },
+    "openFile": "Ouvrir le dossier de {name}"
+  },
+  "payouts": {
+    "open": "Ouvrir",
+    "status": "Statut",
+    "historyTitle": "Historique",
+    "by": "par {name}",
+    "title": "Virements commerçants",
+    "description": "Contrôlez chaque demande : brut, commission, net et IBAN. Les virements validés rejoignent le prochain lot de règlement.",
+    "reference": "Référence",
+    "merchant": "Commerçant",
+    "requestedAt": "Demandé le",
+    "gross": "Brut",
+    "commission": "Commission",
+    "rate": "Taux",
+    "net": "Net",
+    "iban": "IBAN",
+    "batch": "Lot",
+    "search": "Commerçant ou référence",
+    "empty": "Aucune demande pour ces filtres",
+    "kpiPending": "Demandes à contrôler",
+    "detailTitle": "Virement {reference}",
+    "back": "Retour aux virements",
+    "pendingInfo": "Vérifiez le montant net et l'IBAN du commerçant avant de valider.",
+    "approve": "Valider le virement",
+    "approveTitle": "Valider le virement {reference} ?",
+    "approveMessage": "{net} seront virés à {merchant} sur l’IBAN {iban}, dans le prochain lot de règlement.",
+    "approvedToast": "Virement validé : ajouté au prochain lot.",
+    "reject": "Refuser le virement",
+    "rejectTitle": "Refuser le virement {reference}",
+    "rejectReason": "Motif du refus (visible par le commerçant)",
+    "rejectedToast": "Virement refusé.",
+    "batchInfo": "Inclus dans le lot {reference}.",
+    "seeBatch": "Voir le lot",
+    "openPayout": "Ouvrir le virement {reference}",
+    "event": {
+      "REQUESTED": "Demande envoyée par le commerçant",
+      "CHECKED": "Demande validée par FlexiPay",
+      "SENT": "Virement envoyé à la banque",
+      "EXECUTED": "Virement exécuté",
+      "REJECTED": "Demande refusée"
+    }
+  },
+  "transactions": {
+    "title": "Transactions",
+    "description": "Tous les paiements chez les commerçants, avec recherche et filtre par statut.",
+    "search": "Commerçant, entreprise ou référence",
+    "date": "Date",
+    "reference": "Référence",
+    "merchant": "Commerçant",
+    "company": "Entreprise",
+    "category": "Catégorie",
+    "amount": "Montant",
+    "status": "Statut",
+    "empty": "Aucune transaction pour ces filtres"
   }
 }

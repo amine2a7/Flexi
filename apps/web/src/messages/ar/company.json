@@ -58,7 +58,9 @@
     "doneTitle": "تمّ تسجيل الطلبية",
     "doneMessage": "قم بتحويل {amount} مع ذكر المرجع {reference}. ستتوفر الأرصدة بعد المطابقة.",
     "backToOrders": "عرض طلبياتي",
-    "another": "طلبية جديدة"
+    "another": "طلبية جديدة",
+    "category": "صنف الأرصدة",
+    "categoryHint": "صنف واحد حاليًا: المطاعم."
   },
   "employees": {
     "title": "الموظفون",

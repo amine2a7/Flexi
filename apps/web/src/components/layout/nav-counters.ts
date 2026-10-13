@@ -7,7 +7,8 @@ import { getApi } from '@/lib/api/client';
 type Role = Schemas['Role'];
 
 /** Counters shown in the sidebar next to what waits for an action of the signed-in user. */
-export type NavCounter = 'companyOrdersToPay' | 'adminOrdersToHandle' | 'adminApprovals';
+export type NavCounter =
+  'companyOrdersToPay' | 'adminOrdersToHandle' | 'adminApprovals' | 'adminKyc' | 'adminPayouts';
 export type NavCounts = Partial<Record<NavCounter, number>>;
 
 type CountResult = Promise<{ data?: { page: Schemas['PageInfo'] } }>;
@@ -32,7 +33,7 @@ const LOADERS: Partial<Record<Role, () => Promise<NavCounts>>> = {
           params: { query: { status, limit: 1, withCount: true } },
         }),
       );
-    const [toConfirm, toValidate, approvals] = await Promise.all([
+    const [toConfirm, toValidate, approvals, kyc, payouts] = await Promise.all([
       orders('AWAITING_CONFIRMATION'),
       orders('AWAITING_VALIDATION'),
       count(() =>
@@ -40,8 +41,23 @@ const LOADERS: Partial<Record<Role, () => Promise<NavCounts>>> = {
           params: { query: { status: 'PENDING', limit: 1, withCount: true } },
         }),
       ),
+      count(() =>
+        getApi().GET('/v1/admin/kyc-files', {
+          params: { query: { status: 'PENDING', limit: 1, withCount: true } },
+        }),
+      ),
+      count(() =>
+        getApi().GET('/v1/admin/payout-requests', {
+          params: { query: { status: 'REQUESTED', limit: 1, withCount: true } },
+        }),
+      ),
     ]);
-    return { adminOrdersToHandle: toConfirm + toValidate, adminApprovals: approvals };
+    return {
+      adminOrdersToHandle: toConfirm + toValidate,
+      adminApprovals: approvals,
+      adminKyc: kyc,
+      adminPayouts: payouts,
+    };
   },
 };
 

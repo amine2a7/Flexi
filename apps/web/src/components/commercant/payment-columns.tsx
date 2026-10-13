@@ -2,6 +2,7 @@
 
 import type { Schemas } from '@flexipay/api-client';
 import { useLocale, useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import { formatDateTime } from '@/lib/format/date';
 import { Amount } from '@/components/ui/amount';
 import type { Column } from '@/components/ui/data-table';
@@ -12,6 +13,7 @@ type Payment = Schemas['MerchantPayment'];
 /** Columns shared by the dashboard and the history (customer, reference, amount, date, status). */
 export function usePaymentColumns(): Column<Payment>[] {
   const t = useTranslations('merchant.payments');
+  const tDetail = useTranslations('merchant.paymentDetail');
   const locale = useLocale();
   return [
     {
@@ -31,9 +33,14 @@ export function usePaymentColumns(): Column<Payment>[] {
       key: 'reference',
       header: t('reference'),
       cell: (row) => (
-        <span className="tabular-nums" dir="ltr">
+        <Link
+          href={`/commercant/historique/${row.id}`}
+          className="font-label text-navy underline-offset-2 hover:underline"
+          dir="ltr"
+          aria-label={tDetail('openPayment', { reference: row.reference })}
+        >
           {row.reference}
-        </span>
+        </Link>
       ),
       sortValue: (row) => row.reference,
     },

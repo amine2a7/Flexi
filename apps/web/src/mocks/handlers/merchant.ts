@@ -52,6 +52,32 @@ function publicPayment(payment: MockPayment): S['MerchantPayment'] {
   return rest;
 }
 
+/** Payment detail: frozen rate, commission and net, D+2 settlement date, steps reached. */
+function paymentDetail(payment: MockPayment): S['MerchantPaymentDetail'] {
+  const base = publicPayment(payment);
+  const start = new Date(base.createdAt).getTime();
+  const collected = base.status === 'CONFIRMED' || base.status === 'SETTLED';
+  const commission = collected ? commissionOf(base.amountMillimes, db.merchant.rateBps) : 0;
+  const settlementDate = collected ? calendarDate(start + 2 * 86_400_000) : null;
+  const history: S['PaymentEvent'][] = [{ status: 'INITIATED', occurredAt: base.createdAt }];
+  if (base.status !== 'INITIATED') {
+    const decided = base.status === 'REFUSED' ? 'REFUSED' : 'CONFIRMED';
+    history.push({ status: decided, occurredAt: new Date(start + 25_000).toISOString() });
+  }
+  if (base.status === 'SETTLED' && settlementDate !== null) {
+    history.push({ status: 'SETTLED', occurredAt: `${settlementDate}T07:00:00.000Z` });
+  }
+  return {
+    ...base,
+    category: 'RESTAURATION',
+    commissionRateBps: db.merchant.rateBps,
+    commissionMillimes: commission,
+    netMillimes: collected ? base.amountMillimes - commission : 0,
+    settlementDate,
+    history,
+  };
+}
+
 function receivables(): S['Receivable'][] {
   return db.merchant.payments
     .map(settle)
@@ -69,8 +95,7 @@ const totalOf = (items: readonly { amountMillimes: number }[]) =>
   items.reduce((sum, item) => sum + item.amountMillimes, 0);
 
 /** Net of the commission, integer millimes (mock of the server rule). */
-const netOf = (gross: number) =>
-  gross - Math.floor((gross * db.merchant.rateBps + 5_000) / 10_000);
+const netOf = (gross: number) => gross - Math.floor((gross * db.merchant.rateBps + 5_000) / 10_000);
 
 /** Six last months: the current month from the real demo payments, earlier months seeded. */
 function monthlyFlows(): S['MerchantMonthlyFlow'][] {
@@ -98,11 +123,20 @@ function monthlyFlows(): S['MerchantMonthlyFlow'][] {
 }
 
 const HOUR_MS = 3_600_000;
-const PAYOUT_STEPS: readonly S['PayoutRequestStatus'][] = ['REQUESTED', 'CHECKED', 'SENT', 'EXECUTED'];
+const PAYOUT_STEPS: readonly S['PayoutRequestStatus'][] = [
+  'REQUESTED',
+  'CHECKED',
+  'SENT',
+  'EXECUTED',
+];
 const PAYOUT_OFFSETS = [0, 6 * HOUR_MS, 26 * HOUR_MS, 50 * HOUR_MS];
 
 /** Steps reached by a payout request, consistent with its status (demo timestamps). */
-function payoutHistory(payout: S['PayoutRequest']): S['PayoutEvent'][] {
+export function payoutHistory(
+  payout: Pick<S['PayoutRequest'], 'id' | 'status' | 'requestedAt'>,
+): S['PayoutEvent'][] {
+  const recorded = db.admin.payoutEvents.get(payout.id);
+  if (recorded !== undefined) return recorded;
   const start = new Date(payout.requestedAt).getTime();
   if (payout.status === 'REJECTED') {
     return [
@@ -197,7 +231,7 @@ export const merchantHandlers = [
     if (isResponse(account)) return account;
     const payment = db.merchant.payments.find((item) => item.id === params.paymentId);
     if (payment === undefined) return problem(404, 'NOT_FOUND');
-    return HttpResponse.json<S['MerchantPayment']>(publicPayment(payment));
+    return HttpResponse.json<S['MerchantPaymentDetail']>(paymentDetail(payment));
   }),
 
   http.post(apiUrl('/v1/merchant/payments/:paymentId/cancel'), async ({ request, params }) => {
@@ -289,7 +323,10 @@ export const merchantHandlers = [
     if (isResponse(account)) return account;
     const payout = db.merchant.payouts.find((item) => item.id === params.payoutId);
     if (payout === undefined) return problem(404, 'NOT_FOUND');
-    return HttpResponse.json<S['PayoutRequestDetail']>({ ...payout, history: payoutHistory(payout) });
+    return HttpResponse.json<S['PayoutRequestDetail']>({
+      ...payout,
+      history: payoutHistory(payout),
+    });
   }),
 
   http.get(apiUrl('/v1/merchant/settlements'), async ({ request }) => {

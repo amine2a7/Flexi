@@ -14,7 +14,8 @@
     "CANCELLED": "إلغاء الطلبية",
     "TRANSFER_DECLARED": "التصريح بالتحويل",
     "PROOF_REJECTED": "رفض الإثبات",
-    "VALIDATED": "المصادقة على الدفع وإضافة الأرصدة إلى الرصيد"
+    "VALIDATED": "المصادقة على الدفع وإضافة الأرصدة إلى الرصيد",
+    "FIRST_VALIDATION": "المصادقة الأولى (مصادقة مزدوجة)"
   },
   "role": {
     "ADMIN": "FlexiPay",
@@ -30,7 +31,8 @@
     "paymentReference": "البيان الواجب ذكره في التحويل",
     "status": "الحالة",
     "declared": "المبلغ المصرّح به",
-    "action": "الإجراء"
+    "action": "الإجراء",
+    "category": "الصنف"
   },
   "open": "فتح",
   "openOrder": "فتح الطلبية {reference}",
@@ -153,7 +155,14 @@
     "rejectedToast": "تم رفض الإثبات: دُعيت المؤسسة إلى التصريح من جديد.",
     "noDeclaration": "لم يُصرَّح بأي تحويل بعد.",
     "refusedInfo": "سبب الرفض: {reason}",
-    "lastRejection": "آخر إثبات مرفوض: {reason}"
+    "lastRejection": "آخر إثبات مرفوض: {reason}",
+    "fourEyesTitle": "مصادقة مزدوجة مطلوبة",
+    "fourEyesInfo": "فوق 10000,000 د.ت من الأرصدة، يجب أن يصادق مشرفان مختلفان على الدفع.",
+    "firstDone": "المصادقة الأولى من {name} في {date}. يجب أن يصادق مشرف ثانٍ.",
+    "firstByMe": "قمت بالمصادقة الأولى في {date}: يجب أن يصادق مشرف آخر.",
+    "firstValidate": "المصادقة الأولى",
+    "secondValidate": "المصادقة (الثانية)",
+    "firstValidatedToast": "سُجّلت المصادقة الأولى: يجب أن يصادق مشرف ثانٍ."
   },
   "reasonRequired": "السبب إلزامي.",
   "conflict": "تغيّرت هذه الطلبية في الأثناء: تم تحديث الصفحة."

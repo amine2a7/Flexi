@@ -68,6 +68,11 @@ module.exports = {
         "Paiement validé, crédits ajoutés au solde",
         "Payment validated, credits added to the balance",
         "المصادقة على الدفع وإضافة الأرصدة إلى الرصيد"
+      ],
+      "FIRST_VALIDATION": [
+        "Première validation (double validation)",
+        "First approval (four-eyes)",
+        "المصادقة الأولى (مصادقة مزدوجة)"
       ]
     },
     "role": {
@@ -132,6 +137,11 @@ module.exports = {
         "Action",
         "Action",
         "الإجراء"
+      ],
+      "category": [
+        "Catégorie",
+        "Category",
+        "الصنف"
       ]
     },
     "open": [
@@ -691,6 +701,41 @@ module.exports = {
         "Dernier justificatif rejeté : {reason}",
         "Last proof rejected: {reason}",
         "آخر إثبات مرفوض: {reason}"
+      ],
+      "fourEyesTitle": [
+        "Double validation requise",
+        "Four-eyes approval required",
+        "مصادقة مزدوجة مطلوبة"
+      ],
+      "fourEyesInfo": [
+        "Au-delà de 10 000,000 TND de crédits, deux administrateurs différents doivent valider le paiement.",
+        "Above 10,000.000 TND of credits, two different administrators must validate the payment.",
+        "فوق 10000,000 د.ت من الأرصدة، يجب أن يصادق مشرفان مختلفان على الدفع."
+      ],
+      "firstDone": [
+        "Première validation par {name} le {date}. Un second administrateur doit valider.",
+        "First approval by {name} on {date}. A second administrator must validate.",
+        "المصادقة الأولى من {name} في {date}. يجب أن يصادق مشرف ثانٍ."
+      ],
+      "firstByMe": [
+        "Vous avez fait la première validation le {date} : un autre administrateur doit valider.",
+        "You made the first approval on {date}: another administrator must validate.",
+        "قمت بالمصادقة الأولى في {date}: يجب أن يصادق مشرف آخر."
+      ],
+      "firstValidate": [
+        "Première validation",
+        "First approval",
+        "المصادقة الأولى"
+      ],
+      "secondValidate": [
+        "Valider (2e validation)",
+        "Validate (second approval)",
+        "المصادقة (الثانية)"
+      ],
+      "firstValidatedToast": [
+        "Première validation enregistrée : un second administrateur doit valider.",
+        "First approval recorded: a second administrator must validate.",
+        "سُجّلت المصادقة الأولى: يجب أن يصادق مشرف ثانٍ."
       ]
     },
     "reasonRequired": [

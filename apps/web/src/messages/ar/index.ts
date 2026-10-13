@@ -14,6 +14,7 @@ import statusLabel from './statusLabel.json';
 import category from './category.json';
 import subRole from './subRole.json';
 import dev from './dev.json';
+import creditCategory from './creditCategory.json';
 import company from './company.json';
 import orders from './orders.json';
 
@@ -34,6 +35,7 @@ const messages = {
   category: category,
   subRole: subRole,
   dev: dev,
+  creditCategory: creditCategory,
   company: company,
   orders: orders,
 };

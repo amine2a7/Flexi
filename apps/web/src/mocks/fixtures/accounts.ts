@@ -66,6 +66,26 @@ export function createDemoAccounts(): DemoAccount[] {
       ],
     },
     {
+      id: '01930a1c-0009-7a00-8000-000000000009',
+      identifier: 'admin2@flexipay.test',
+      password: DEMO_PASSWORD,
+      role: 'ADMIN',
+      subRole: 'FINANCE',
+      displayName: 'Hela R.',
+      tenant: null,
+      temporaryPassword: false,
+      mfaEnrolled: true,
+      recoveryCodes: [...DEMO_RECOVERY_CODES],
+      permissions: [
+        'merchants.manage',
+        'companies.manage',
+        'commissions.request',
+        'approvals.decide',
+        'audit.read',
+        'settings.request',
+      ],
+    },
+    {
       id: '01930a1c-0002-7a00-8000-000000000002',
       identifier: 'entreprise@flexipay.test',
       password: DEMO_PASSWORD,
@@ -110,6 +130,7 @@ export function createDemoAccounts(): DemoAccount[] {
 /** Shown in the development panel of /login (never rendered in a production build). */
 export const DEMO_ACCOUNT_HINTS = [
   { role: 'admin', identifier: 'admin@flexipay.test', password: DEMO_PASSWORD },
+  { role: 'admin2', identifier: 'admin2@flexipay.test', password: DEMO_PASSWORD },
   { role: 'company', identifier: 'entreprise@flexipay.test', password: DEMO_PASSWORD },
   { role: 'merchant', identifier: 'commercant@flexipay.test', password: DEMO_PASSWORD },
   { role: 'firstLogin', identifier: 'premiere@flexipay.test', password: DEMO_FIRST_LOGIN_PASSWORD },

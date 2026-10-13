@@ -80,9 +80,11 @@ export default function PayoutDetailPage() {
                   key: `${event.status}-${event.occurredAt}`,
                   title: t(`event.${event.status}`),
                   meta: formatDateTime(event.occurredAt, locale),
-                  ...(event.reasonKey === undefined
-                    ? {}
-                    : { detail: tRoot(messageKey(`merchant.${event.reasonKey}`)) }),
+                  ...(event.reason !== undefined
+                    ? { detail: event.reason }
+                    : event.reasonKey === undefined
+                      ? {}
+                      : { detail: tRoot(messageKey(`merchant.${event.reasonKey}`)) }),
                   tone: event.status === 'REJECTED' ? 'danger' : 'default',
                 }))}
               />

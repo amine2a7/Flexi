@@ -411,7 +411,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** État d'un encaissement (suivi de la confirmation) */
+    /** Détail d'un encaissement (suivi de la confirmation, commission, règlement, historique) */
     get: operations['getMerchantPayment'];
     put?: never;
     post?: never;
@@ -1039,6 +1039,9 @@ export interface paths {
      * Valider le virement reçu et créditer le solde de l'entreprise (AWAITING_VALIDATION → VALIDATED)
      * @description L'administrateur a vérifié l'arrivée des fonds sur le compte de FlexiPay. Les crédits
      *     (`amountMillimes`) sont ajoutés au solde de l'entreprise dans la même transaction.
+     *     Double validation (règle 12) : si `requiresSecondValidation`, le premier appel enregistre
+     *     `firstValidation` (statut inchangé) ; le second appel, par un **autre** administrateur, valide.
+     *     Le même administrateur une seconde fois : `403 FORBIDDEN`.
      */
     post: operations['validateCreditOrderPayment'];
     delete?: never;
@@ -1088,6 +1091,169 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/admin/kyc-files': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Dossiers KYC des commerçants et des entreprises
+     * @description Tri — dossiers `PENDING` d'abord, puis par date de dépôt décroissante.
+     */
+    get: operations['listKycFiles'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/kyc-files/{fileId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Dossier KYC avec ses pièces et son historique */
+    get: operations['getKycFile'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/kyc-files/{fileId}/documents/{documentId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Pièce d'un dossier KYC
+     * @description Fichier tel que déposé (JPG, PNG ou PDF), servi avec son type d'origine,
+     *     `Content-Disposition: attachment` et `X-Content-Type-Options: nosniff`.
+     */
+    get: operations['getKycDocument'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/kyc-files/{fileId}/approve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Valider un dossier KYC (le compte devient actif, `APPROVED`) */
+    post: operations['approveKycFile'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/kyc-files/{fileId}/reject': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Refuser un dossier KYC avec un motif (le compte reste inactif, `REJECTED`) */
+    post: operations['rejectKycFile'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/payout-requests': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Demandes de virement des commerçants
+     * @description Tri — demandes `REQUESTED` (à contrôler) d'abord, puis par date décroissante.
+     */
+    get: operations['listAdminPayoutRequests'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/payout-requests/{payoutId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Demande de virement (brut, commission, net, IBAN, historique) */
+    get: operations['getAdminPayoutRequest'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/payout-requests/{payoutId}/approve': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Valider une demande de virement (`REQUESTED` → `CHECKED`), ajoutée au prochain lot de règlement */
+    post: operations['approveAdminPayoutRequest'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/payout-requests/{payoutId}/reject': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Refuser une demande de virement avec un motif (`REQUESTED` → `REJECTED`) */
+    post: operations['rejectAdminPayoutRequest'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/admin/settlements': {
     parameters: {
       query?: never;
@@ -1097,6 +1263,40 @@ export interface paths {
     };
     /** Lots de règlement des commerçants (J+2) */
     get: operations['listSettlementBatches'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/settlements/{batchId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Détail d'un lot de règlement (virements validés qui le composent) */
+    get: operations['getSettlementBatch'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/transactions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Transactions globales (paiements chez les commerçants) */
+    get: operations['listAdminTransactions'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1517,8 +1717,16 @@ export interface components {
       label: string;
     };
     /**
+     * CreditCategory
+     * @description Catégorie de crédits. V1 : une seule catégorie, `RESTAURATION` ; le modèle (soldes, commandes,
+     *     paiements) porte déjà la catégorie pour en ajouter d'autres sans changement cassant.
+     * @enum {string}
+     */
+    CreditCategory: 'RESTAURATION';
+    /**
      * AccountStatus
-     * @description Compte (cahier §8) — En attente KYC, Validé, Rejeté, Suspendu.
+     * @description Compte (cahier §8) — En attente KYC, Validé, Rejeté, Suspendu. Un compte reste **inactif**
+     *     (aucune opération métier) tant que son dossier KYC n'est pas validé (`APPROVED`).
      * @enum {string}
      */
     AccountStatus: 'PENDING_KYC' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
@@ -1602,6 +1810,33 @@ export interface components {
       createdAt: components['schemas']['Timestamp'];
       /** @description Fin de validité tant que `INITIATED` ; `null` ensuite. */
       expiresAt: components['schemas']['Timestamp'] | null;
+    };
+    /**
+     * MerchantPaymentDetail
+     * @description Encaissement avec sa commission, sa date de règlement et ses étapes.
+     */
+    MerchantPaymentDetail: {
+      id: components['schemas']['Uuid'];
+      reference: string;
+      status: components['schemas']['PaymentStatus'];
+      amountMillimes: components['schemas']['PositiveAmountMillimes'];
+      customer: components['schemas']['CustomerSummary'];
+      createdAt: components['schemas']['Timestamp'];
+      /** @description Fin de validité tant que `INITIATED` ; `null` ensuite. */
+      expiresAt: components['schemas']['Timestamp'] | null;
+      category: components['schemas']['CreditCategory'];
+      /** @description Taux figé au moment de l'encaissement. */
+      commissionRateBps: components['schemas']['RateBps'];
+      commissionMillimes: components['schemas']['AmountMillimes'];
+      netMillimes: components['schemas']['AmountMillimes'];
+      /** @description Date de règlement J+2 (fuseau Africa/Tunis) ; `null` si non encaissé. */
+      settlementDate: components['schemas']['CalendarDate'] | null;
+      history: components['schemas']['PaymentEvent'][];
+    };
+    /** PaymentEvent */
+    PaymentEvent: {
+      status: components['schemas']['PaymentStatus'];
+      occurredAt: components['schemas']['Timestamp'];
     };
     /**
      * MerchantPaymentPage
@@ -1713,8 +1948,10 @@ export interface components {
     PayoutEvent: {
       status: components['schemas']['PayoutRequestStatus'];
       occurredAt: components['schemas']['Timestamp'];
-      /** @description Clé i18n du motif de rejet (aucun texte libre venu du serveur). */
+      /** @description Clé i18n d'un motif de rejet automatique. */
       reasonKey?: string;
+      /** @description Motif saisi par l'administrateur qui a refusé la demande. */
+      reason?: string;
     };
     /**
      * PayoutRequestPage
@@ -1925,12 +2162,15 @@ export interface components {
     /** CreditOrderCreate */
     CreditOrderCreate: {
       amountMillimes: components['schemas']['PositiveAmountMillimes'];
+      /** @description Catégorie commandée (défaut `RESTAURATION`). */
+      category?: components['schemas']['CreditCategory'];
     };
     /** CreditOrder */
     CreditOrder: {
       id: components['schemas']['Uuid'];
       reference: string;
       status: components['schemas']['OrderStatus'];
+      category: components['schemas']['CreditCategory'];
       companyId: components['schemas']['Uuid'];
       companyName: string;
       amountMillimes: components['schemas']['PositiveAmountMillimes'];
@@ -1950,6 +2190,7 @@ export interface components {
       id: components['schemas']['Uuid'];
       reference: string;
       status: components['schemas']['OrderStatus'];
+      category: components['schemas']['CreditCategory'];
       companyId: components['schemas']['Uuid'];
       companyName: string;
       amountMillimes: components['schemas']['PositiveAmountMillimes'];
@@ -1966,6 +2207,14 @@ export interface components {
       refusalReason?: string;
       /** @description Motif du dernier rejet de justificatif, affiché à l'entreprise pour redéclarer. */
       proofRejectionReason?: string;
+      /**
+       * @description Double validation (règle 12) : vrai quand les crédits dépassent 10 000,000 TND
+       *     (`amountMillimes` > 10000000). La validation du paiement exige alors deux administrateurs
+       *     différents.
+       */
+      requiresSecondValidation: boolean;
+      /** @description Première validation enregistrée, en attente du second administrateur. */
+      firstValidation?: components['schemas']['FirstValidation'];
       history: components['schemas']['CreditOrderEvent'][];
     };
     /**
@@ -1979,7 +2228,15 @@ export interface components {
       | 'CANCELLED'
       | 'TRANSFER_DECLARED'
       | 'PROOF_REJECTED'
+      | 'FIRST_VALIDATION'
       | 'VALIDATED';
+    /** FirstValidation */
+    FirstValidation: {
+      actorName: string;
+      occurredAt: components['schemas']['Timestamp'];
+      /** @description Vrai si l'administrateur connecté a fait cette première validation (il ne peut pas faire la seconde). */
+      byMe: boolean;
+    };
     /**
      * CreditOrderEvent
      * @description Étape de l'historique d'une commande (qui, quoi, quand).
@@ -2228,6 +2485,153 @@ export interface components {
       commissionMillimes: components['schemas']['AmountMillimes'];
       netMillimes: components['schemas']['AmountMillimes'];
       status: components['schemas']['SettlementStatus'];
+    };
+    /** SettlementBatchDetail */
+    SettlementBatchDetail: {
+      id: components['schemas']['Uuid'];
+      reference: string;
+      settlementDate: components['schemas']['CalendarDate'];
+      /** Format: int32 */
+      merchantsCount: number;
+      grossMillimes: components['schemas']['AmountMillimes'];
+      commissionMillimes: components['schemas']['AmountMillimes'];
+      netMillimes: components['schemas']['AmountMillimes'];
+      status: components['schemas']['SettlementStatus'];
+      /** @description Virements validés qui composent le lot (sommes égales aux totaux du lot). */
+      payouts: components['schemas']['AdminPayoutRequest'][];
+    };
+    /**
+     * DecisionReason
+     * @description Motif obligatoire d'un refus (visible par le titulaire du compte).
+     */
+    DecisionReason: {
+      reason: string;
+    };
+    /**
+     * KycStatus
+     * @enum {string}
+     */
+    KycStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+    /**
+     * KycAccountType
+     * @enum {string}
+     */
+    KycAccountType: 'MERCHANT' | 'COMPANY';
+    /**
+     * KycDocumentType
+     * @description Extrait du registre de commerce, attestation fiscale, pièce d'identité du gérant, RIB.
+     * @enum {string}
+     */
+    KycDocumentType: 'REGISTRY_EXTRACT' | 'TAX_CERTIFICATE' | 'MANAGER_ID' | 'BANK_DETAILS';
+    /** KycDocument */
+    KycDocument: {
+      id: components['schemas']['Uuid'];
+      type: components['schemas']['KycDocumentType'];
+      fileName: string;
+      /** @enum {string} */
+      contentType: 'image/jpeg' | 'image/png' | 'application/pdf';
+      /** Format: int32 */
+      sizeBytes: number;
+      uploadedAt: components['schemas']['Timestamp'];
+    };
+    /** KycEvent */
+    KycEvent: {
+      /** @enum {string} */
+      action: 'SUBMITTED' | 'APPROVED' | 'REJECTED';
+      occurredAt: components['schemas']['Timestamp'];
+      actorName: string;
+      reason?: string;
+    };
+    /** KycFileSummary */
+    KycFileSummary: {
+      id: components['schemas']['Uuid'];
+      accountType: components['schemas']['KycAccountType'];
+      accountId: components['schemas']['Uuid'];
+      accountName: string;
+      city: string;
+      status: components['schemas']['KycStatus'];
+      submittedAt: components['schemas']['Timestamp'];
+      /** Format: int32 */
+      documentsCount: number;
+    };
+    /** KycFile */
+    KycFile: {
+      id: components['schemas']['Uuid'];
+      accountType: components['schemas']['KycAccountType'];
+      accountId: components['schemas']['Uuid'];
+      accountName: string;
+      city: string;
+      status: components['schemas']['KycStatus'];
+      submittedAt: components['schemas']['Timestamp'];
+      /** Format: int32 */
+      documentsCount: number;
+      documents: components['schemas']['KycDocument'][];
+      rejectionReason?: string;
+      history: components['schemas']['KycEvent'][];
+    };
+    /** KycFilePage */
+    KycFilePage: {
+      data: components['schemas']['KycFileSummary'][];
+      page: components['schemas']['PageInfo'];
+    };
+    /**
+     * AdminPayoutRequest
+     * @description Demande de virement vue par l'administrateur (IBAN complet pour le contrôle).
+     */
+    AdminPayoutRequest: {
+      id: components['schemas']['Uuid'];
+      reference: string;
+      status: components['schemas']['PayoutRequestStatus'];
+      merchantId: components['schemas']['Uuid'];
+      merchantName: string;
+      grossMillimes: components['schemas']['PositiveAmountMillimes'];
+      commissionRateBps: components['schemas']['RateBps'];
+      commissionMillimes: components['schemas']['AmountMillimes'];
+      netMillimes: components['schemas']['AmountMillimes'];
+      requestedAt: components['schemas']['Timestamp'];
+      iban: string;
+      /** @description Lot de règlement qui contient le virement validé. */
+      batchId?: components['schemas']['Uuid'];
+      batchReference?: string;
+    };
+    /** AdminPayoutRequestDetail */
+    AdminPayoutRequestDetail: {
+      id: components['schemas']['Uuid'];
+      reference: string;
+      status: components['schemas']['PayoutRequestStatus'];
+      merchantId: components['schemas']['Uuid'];
+      merchantName: string;
+      grossMillimes: components['schemas']['PositiveAmountMillimes'];
+      commissionRateBps: components['schemas']['RateBps'];
+      commissionMillimes: components['schemas']['AmountMillimes'];
+      netMillimes: components['schemas']['AmountMillimes'];
+      requestedAt: components['schemas']['Timestamp'];
+      iban: string;
+      batchId?: components['schemas']['Uuid'];
+      batchReference?: string;
+      history: components['schemas']['PayoutEvent'][];
+    };
+    /** AdminPayoutRequestPage */
+    AdminPayoutRequestPage: {
+      data: components['schemas']['AdminPayoutRequest'][];
+      page: components['schemas']['PageInfo'];
+    };
+    /** AdminTransaction */
+    AdminTransaction: {
+      id: components['schemas']['Uuid'];
+      reference: string;
+      merchantName: string;
+      /** @description Entreprise de l'employé qui a payé. */
+      companyName: string;
+      category: components['schemas']['CreditCategory'];
+      amountMillimes: components['schemas']['PositiveAmountMillimes'];
+      status: components['schemas']['PaymentStatus'];
+      createdAt: components['schemas']['Timestamp'];
+    };
+    /** AdminTransactionPage */
+    AdminTransactionPage: {
+      data: components['schemas']['AdminTransaction'][];
+      page: components['schemas']['PageInfo'];
     };
     /**
      * SettlementBatchPage
@@ -3317,7 +3721,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['MerchantPayment'];
+          'application/json': components['schemas']['MerchantPaymentDetail'];
         };
       };
       401: components['responses']['Unauthorized'];
@@ -4764,6 +5168,317 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  listKycFiles: {
+    parameters: {
+      query?: {
+        /** @description Nombre maximal d'éléments par page. */
+        limit?: components['parameters']['Limit'];
+        /** @description Curseur opaque renvoyé par `page.nextCursor`. Absent pour la première page. */
+        cursor?: components['parameters']['Cursor'];
+        /**
+         * @description Demande le compteur borné `page.count` (§7). À n'envoyer qu'au premier chargement et à
+         *     chaque changement de filtre.
+         */
+        withCount?: components['parameters']['WithCount'];
+        /** @description Filtre par statut. */
+        status?: components['schemas']['KycStatus'];
+        /** @description Filtre par type de compte. */
+        accountType?: components['schemas']['KycAccountType'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['KycFilePage'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getKycFile: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        fileId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['KycFile'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getKycDocument: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        fileId: components['schemas']['Uuid'];
+        documentId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Le fichier. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'image/jpeg': string;
+          'image/png': string;
+          'application/pdf': string;
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  approveKycFile: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        fileId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['KycFile'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  rejectKycFile: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        fileId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DecisionReason'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['KycFile'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  listAdminPayoutRequests: {
+    parameters: {
+      query?: {
+        /** @description Nombre maximal d'éléments par page. */
+        limit?: components['parameters']['Limit'];
+        /** @description Curseur opaque renvoyé par `page.nextCursor`. Absent pour la première page. */
+        cursor?: components['parameters']['Cursor'];
+        /**
+         * @description Demande le compteur borné `page.count` (§7). À n'envoyer qu'au premier chargement et à
+         *     chaque changement de filtre.
+         */
+        withCount?: components['parameters']['WithCount'];
+        /** @description Filtre par statut. */
+        status?: components['schemas']['PayoutRequestStatus'];
+        /** @description Recherche par commerçant ou référence (insensible à la casse). Jamais journalisée. */
+        q?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminPayoutRequestPage'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getAdminPayoutRequest: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        payoutId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminPayoutRequestDetail'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  approveAdminPayoutRequest: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        payoutId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminPayoutRequestDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  rejectAdminPayoutRequest: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        payoutId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DecisionReason'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminPayoutRequestDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   listSettlementBatches: {
     parameters: {
       query?: {
@@ -4796,6 +5511,80 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SettlementBatchPage'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getSettlementBatch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        batchId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SettlementBatchDetail'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  listAdminTransactions: {
+    parameters: {
+      query?: {
+        /** @description Nombre maximal d'éléments par page. */
+        limit?: components['parameters']['Limit'];
+        /** @description Curseur opaque renvoyé par `page.nextCursor`. Absent pour la première page. */
+        cursor?: components['parameters']['Cursor'];
+        /**
+         * @description Demande le compteur borné `page.count` (§7). À n'envoyer qu'au premier chargement et à
+         *     chaque changement de filtre.
+         */
+        withCount?: components['parameters']['WithCount'];
+        /** @description Borne basse incluse de la période (UTC). */
+        createdFrom?: components['parameters']['CreatedFrom'];
+        /** @description Borne haute exclue de la période (UTC). */
+        createdTo?: components['parameters']['CreatedTo'];
+        /** @description Filtre par statut. */
+        status?: components['schemas']['PaymentStatus'];
+        /** @description Recherche par commerçant, entreprise ou référence (insensible à la casse). Jamais journalisée. */
+        q?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminTransactionPage'];
         };
       };
       400: components['responses']['BadRequest'];
@@ -4946,6 +5735,9 @@ export const subRoleValues: ReadonlyArray<FlattenedDeepRequired<components>['sch
     'READ_ONLY',
     'CASHIER',
   ];
+export const creditCategoryValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['CreditCategory']
+> = ['RESTAURATION'];
 export const accountStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['AccountStatus']
 > = ['PENDING_KYC', 'APPROVED', 'REJECTED', 'SUSPENDED'];
@@ -5001,6 +5793,7 @@ export const creditOrderEventActionValues: ReadonlyArray<
   'CANCELLED',
   'TRANSFER_DECLARED',
   'PROOF_REJECTED',
+  'FIRST_VALIDATION',
   'VALIDATED',
 ];
 export const transferProofContentTypeValues: ReadonlyArray<
@@ -5012,6 +5805,21 @@ export const invoiceStatusValues: ReadonlyArray<
 export const approvalTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['ApprovalType']
 > = ['COMMISSION_RATE_CHANGE', 'SETTINGS_CHANGE'];
+export const kycStatusValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['KycStatus']
+> = ['PENDING', 'APPROVED', 'REJECTED'];
+export const kycAccountTypeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['KycAccountType']
+> = ['MERCHANT', 'COMPANY'];
+export const kycDocumentTypeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['KycDocumentType']
+> = ['REGISTRY_EXTRACT', 'TAX_CERTIFICATE', 'MANAGER_ID', 'BANK_DETAILS'];
+export const kycDocumentContentTypeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['KycDocument']['contentType']
+> = ['image/jpeg', 'image/png', 'application/pdf'];
+export const kycEventActionValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['KycEvent']['action']
+> = ['SUBMITTED', 'APPROVED', 'REJECTED'];
 export const problemCodeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['ProblemCode']
 > = [

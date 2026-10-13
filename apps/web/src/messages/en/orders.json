@@ -14,7 +14,8 @@
     "CANCELLED": "Order cancelled",
     "TRANSFER_DECLARED": "Transfer declared",
     "PROOF_REJECTED": "Proof rejected",
-    "VALIDATED": "Payment validated, credits added to the balance"
+    "VALIDATED": "Payment validated, credits added to the balance",
+    "FIRST_VALIDATION": "First approval (four-eyes)"
   },
   "role": {
     "ADMIN": "FlexiPay",
@@ -30,7 +31,8 @@
     "paymentReference": "Reference to put on the transfer",
     "status": "Status",
     "declared": "Declared amount",
-    "action": "Action"
+    "action": "Action",
+    "category": "Category"
   },
   "open": "Open",
   "openOrder": "Open order {reference}",
@@ -153,7 +155,14 @@
     "rejectedToast": "Proof rejected: the company is asked to declare again.",
     "noDeclaration": "No transfer declared yet.",
     "refusedInfo": "Reason for refusal: {reason}",
-    "lastRejection": "Last proof rejected: {reason}"
+    "lastRejection": "Last proof rejected: {reason}",
+    "fourEyesTitle": "Four-eyes approval required",
+    "fourEyesInfo": "Above 10,000.000 TND of credits, two different administrators must validate the payment.",
+    "firstDone": "First approval by {name} on {date}. A second administrator must validate.",
+    "firstByMe": "You made the first approval on {date}: another administrator must validate.",
+    "firstValidate": "First approval",
+    "secondValidate": "Validate (second approval)",
+    "firstValidatedToast": "First approval recorded: a second administrator must validate."
   },
   "reasonRequired": "A reason is required.",
   "conflict": "This order changed in the meantime: the page was refreshed."

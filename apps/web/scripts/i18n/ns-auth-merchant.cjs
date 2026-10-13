@@ -1159,6 +1159,105 @@ module.exports = {
         "The registered bank account must be checked: contact support.",
         "يجب التحقق من الحساب البنكي المسجّل: اتصل بالدعم."
       ]
+    },
+    "paymentDetail": {
+      "title": [
+        "Paiement {reference}",
+        "Payment {reference}",
+        "الدفعة {reference}"
+      ],
+      "back": [
+        "Retour à l'historique",
+        "Back to history",
+        "العودة إلى السجل"
+      ],
+      "summary": [
+        "Paiement",
+        "Payment",
+        "الدفعة"
+      ],
+      "customer": [
+        "Client",
+        "Customer",
+        "الحريف"
+      ],
+      "createdAt": [
+        "Date",
+        "Date",
+        "التاريخ"
+      ],
+      "category": [
+        "Catégorie",
+        "Category",
+        "الصنف"
+      ],
+      "amount": [
+        "Montant payé",
+        "Amount paid",
+        "المبلغ المدفوع"
+      ],
+      "commission": [
+        "Commission",
+        "Commission",
+        "العمولة"
+      ],
+      "net": [
+        "Net à régler",
+        "Net to settle",
+        "الصافي للتسوية"
+      ],
+      "settlementDate": [
+        "Date de règlement",
+        "Settlement date",
+        "تاريخ التسوية"
+      ],
+      "noSettlement": [
+        "Aucun règlement : paiement non encaissé.",
+        "No settlement: payment not collected.",
+        "لا تسوية: الدفعة غير محصّلة."
+      ],
+      "historyTitle": [
+        "Historique",
+        "History",
+        "السجل"
+      ],
+      "event": {
+        "INITIATED": [
+          "Demande envoyée au client",
+          "Request sent to the customer",
+          "إرسال الطلب إلى الحريف"
+        ],
+        "CONFIRMED": [
+          "Paiement confirmé par le client",
+          "Payment confirmed by the customer",
+          "تأكيد الدفع من الحريف"
+        ],
+        "SETTLED": [
+          "Montant réglé sur votre compte",
+          "Amount settled to your account",
+          "تسوية المبلغ في حسابك"
+        ],
+        "REFUSED": [
+          "Paiement refusé ou annulé",
+          "Payment refused or cancelled",
+          "رفض الدفع أو إلغاؤه"
+        ],
+        "DISPUTED": [
+          "Paiement en litige",
+          "Payment disputed",
+          "الدفعة محل نزاع"
+        ]
+      },
+      "open": [
+        "Ouvrir",
+        "Open",
+        "فتح"
+      ],
+      "openPayment": [
+        "Ouvrir le paiement {reference}",
+        "Open payment {reference}",
+        "فتح الدفعة {reference}"
+      ]
     }
   }
 };

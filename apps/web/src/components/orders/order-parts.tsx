@@ -1,9 +1,9 @@
 'use client';
 
 import type { Schemas } from '@flexipay/api-client';
-import { Copy, Download, FileText } from 'lucide-react';
+import { Copy } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useState, type SyntheticEvent } from 'react';
+import { useState, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
 import { asProblem, errorMessageKey } from '@/lib/api/problem';
 import { useApiQuery } from '@/lib/api/use-api-query';
@@ -11,7 +11,7 @@ import { getApi } from '@/lib/api/client';
 import { formatCalendarDate, formatDateTime } from '@/lib/format/date';
 import { formatMillimesWithCurrency } from '@/lib/format/money';
 import { Amount } from '@/components/ui/amount';
-import { Button, buttonClasses } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
 import { TextField } from '@/components/ui/field';
 import { Alert, DescriptionList } from '@/components/ui/layout-blocks';
@@ -19,6 +19,7 @@ import { Modal } from '@/components/ui/modal';
 import { LoadingBlock } from '@/components/ui/states';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Timeline } from '@/components/ui/timeline';
+import { FileViewer, type FileLoader } from '@/components/ui/file-viewer';
 import { useToast } from '@/components/ui/toast';
 
 export type Order = Schemas['CreditOrderDetail'];
@@ -49,6 +50,7 @@ export function isStateConflict(error: unknown): boolean {
 
 export function OrderSummaryCard({ order, showCompany }: { order: Order; showCompany: boolean }) {
   const t = useTranslations('orders.fields');
+  const tRoot = useTranslations();
   const tOrders = useTranslations('orders');
   const locale = useLocale();
   return (
@@ -61,6 +63,7 @@ export function OrderSummaryCard({ order, showCompany }: { order: Order; showCom
           { label: t('reference'), value: <span dir="ltr">{order.reference}</span> },
           ...(showCompany ? [{ label: t('company'), value: order.companyName }] : []),
           { label: t('createdAt'), value: formatDateTime(order.createdAt, locale) },
+          { label: t('category'), value: tRoot(messageKey(`creditCategory.${order.category}`)) },
           { label: t('credits'), value: <Amount millimes={order.amountMillimes} /> },
           { label: t('fees'), value: <Amount millimes={order.feesMillimes} /> },
           {
@@ -143,82 +146,6 @@ export function FundingAccountCard({ paymentReference }: { paymentReference: str
   );
 }
 
-type ProofLoader = () => Promise<{ data?: Blob; error?: unknown }>;
-
-/** Transfer proof: inline preview of an image, download link for every type. */
-function ProofViewer({
-  load,
-  proof,
-  reference,
-}: {
-  load: ProofLoader;
-  proof: Schemas['TransferProof'];
-  reference: string;
-}) {
-  const t = useTranslations('orders.proof');
-  const [state, setState] = useState<
-    { status: 'loading' } | { status: 'error' } | { status: 'ready'; url: string; image: boolean }
-  >({ status: 'loading' });
-
-  useEffect(() => {
-    let active = true;
-    let url: string | undefined;
-    load()
-      .then(({ data }) => {
-        if (!active) return;
-        if (data === undefined) {
-          setState({ status: 'error' });
-          return;
-        }
-        url = URL.createObjectURL(data);
-        setState({ status: 'ready', url, image: data.type.startsWith('image/') });
-      })
-      .catch(() => {
-        if (active) setState({ status: 'error' });
-      });
-    return () => {
-      active = false;
-      if (url !== undefined) URL.revokeObjectURL(url);
-    };
-  }, [load]);
-
-  const sizeKb = Math.max(1, Math.round(proof.sizeBytes / 1024));
-  return (
-    <div className="flex flex-col gap-3">
-      <p className="flex items-center gap-2 text-caption text-text-muted">
-        <FileText aria-hidden="true" className="size-icon-sm" />
-        <span dir="ltr">{t('size', { name: proof.fileName, size: sizeKb })}</span>
-      </p>
-      {state.status === 'loading' ? (
-        <p className="text-body text-text-muted">{t('loading')}</p>
-      ) : null}
-      {state.status === 'error' ? <Alert tone="danger">{t('error')}</Alert> : null}
-      {state.status === 'ready' ? (
-        <>
-          {!state.image ? (
-            <p className="text-body text-text-muted">{t('pdf')}</p>
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element -- local blob, not optimisable
-            <img
-              src={state.url}
-              alt={t('alt', { reference })}
-              className="w-full max-w-form-max-width rounded-card-desktop border border-border object-contain"
-            />
-          )}
-          <a
-            href={state.url}
-            download={proof.fileName}
-            className={buttonClasses('secondary', 'sm')}
-          >
-            <Download aria-hidden="true" className="size-icon-sm" />
-            {t('download')}
-          </a>
-        </>
-      ) : null}
-    </div>
-  );
-}
-
 /** Declared transfer with its proof; the amount gap is highlighted for the admin. */
 export function DeclarationCard({
   order,
@@ -226,7 +153,7 @@ export function DeclarationCard({
   warnOnMismatch,
 }: {
   order: Order;
-  loadProof: ProofLoader;
+  loadProof: FileLoader;
   warnOnMismatch: boolean;
 }) {
   const t = useTranslations('orders.declaration');
@@ -268,7 +195,12 @@ export function DeclarationCard({
         />
         <div className="flex flex-col gap-2">
           <h3 className="text-label font-title text-text">{tProof('title')}</h3>
-          <ProofViewer load={loadProof} proof={declaration.proof} reference={order.reference} />
+          <FileViewer
+            load={loadProof}
+            fileName={declaration.proof.fileName}
+            sizeBytes={declaration.proof.sizeBytes}
+            alt={tProof('alt', { reference: order.reference })}
+          />
         </div>
       </div>
     </Card>
@@ -295,7 +227,9 @@ export function OrderHistory({ history }: { history: readonly Schemas['CreditOrd
             ? {}
             : { detail: t('history.reason', { reason: event.reason }) }),
           tone:
-            event.action === 'REFUSED' || event.action === 'PROOF_REJECTED' || event.action === 'CANCELLED'
+            event.action === 'REFUSED' ||
+            event.action === 'PROOF_REJECTED' ||
+            event.action === 'CANCELLED'
               ? ('danger' as const)
               : ('default' as const),
         }))}

@@ -5,7 +5,8 @@
     "admin": "Administrateur",
     "company": "Entreprise",
     "merchant": "Commerçant",
-    "firstLogin": "Première connexion"
+    "firstLogin": "Première connexion",
+    "admin2": "Administrateur (2e validation)"
   },
   "codes": {
     "title": "Codes clients de démonstration",

@@ -58,7 +58,9 @@
     "doneTitle": "Commande enregistrée",
     "doneMessage": "Effectuez un virement de {amount} en indiquant la référence {reference}. Les crédits seront disponibles après rapprochement.",
     "backToOrders": "Voir mes commandes",
-    "another": "Nouvelle commande"
+    "another": "Nouvelle commande",
+    "category": "Catégorie de crédits",
+    "categoryHint": "Une seule catégorie pour le moment : Restauration."
   },
   "employees": {
     "title": "Employés",

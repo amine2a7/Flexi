@@ -179,5 +179,28 @@
   },
   "payoutRejection": {
     "ibanCheck": "يجب التحقق من الحساب البنكي المسجّل: اتصل بالدعم."
+  },
+  "paymentDetail": {
+    "title": "الدفعة {reference}",
+    "back": "العودة إلى السجل",
+    "summary": "الدفعة",
+    "customer": "الحريف",
+    "createdAt": "التاريخ",
+    "category": "الصنف",
+    "amount": "المبلغ المدفوع",
+    "commission": "العمولة",
+    "net": "الصافي للتسوية",
+    "settlementDate": "تاريخ التسوية",
+    "noSettlement": "لا تسوية: الدفعة غير محصّلة.",
+    "historyTitle": "السجل",
+    "event": {
+      "INITIATED": "إرسال الطلب إلى الحريف",
+      "CONFIRMED": "تأكيد الدفع من الحريف",
+      "SETTLED": "تسوية المبلغ في حسابك",
+      "REFUSED": "رفض الدفع أو إلغاؤه",
+      "DISPUTED": "الدفعة محل نزاع"
+    },
+    "open": "فتح",
+    "openPayment": "فتح الدفعة {reference}"
   }
 }

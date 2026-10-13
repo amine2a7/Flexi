@@ -26,6 +26,9 @@
     "approvals": "Approvals",
     "settlements": "Settlements",
     "audit": "Audit log",
-    "settings": "Settings"
+    "settings": "Settings",
+    "kyc": "KYC files",
+    "payouts": "Merchant payouts",
+    "transactions": "Transactions"
   }
 }

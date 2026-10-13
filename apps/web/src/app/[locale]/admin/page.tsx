@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  ArrowLeftRight,
   BadgeCheck,
   Building2,
   CalendarClock,
@@ -33,6 +34,14 @@ export default function AdminDashboardPage() {
   const dashboard = useApiQuery(() => getApi().GET('/v1/admin/dashboard'), []);
   const toConfirm = useOrderCount('admin', 'AWAITING_CONFIRMATION');
   const toValidate = useOrderCount('admin', 'AWAITING_VALIDATION');
+  const payouts = useApiQuery(
+    () =>
+      getApi().GET('/v1/admin/payout-requests', {
+        params: { query: { status: 'REQUESTED', limit: 1, withCount: true } },
+      }),
+    [],
+  );
+  const payoutsToCheck = payouts.status === 'success' ? (payouts.data.page.count?.value ?? 0) : 0;
   // The list puts the orders waiting for an admin action first (contract).
   const orders = useApiQuery(
     () => getApi().GET('/v1/admin/credit-orders', { params: { query: { limit: 5 } } }),
@@ -58,6 +67,15 @@ export default function AdminDashboardPage() {
       actionLabel: t('todoOpen'),
     });
   }
+  if (payoutsToCheck > 0) {
+    todos.push({
+      key: 'payouts',
+      icon: <ArrowLeftRight className="size-icon-md" />,
+      text: t('todoPayouts', { count: payoutsToCheck }),
+      href: '/admin/virements',
+      actionLabel: t('todoOpen'),
+    });
+  }
   if (dashboard.status === 'success' && dashboard.data.pendingApprovalsCount > 0) {
     todos.push({
       key: 'approvals',
@@ -72,7 +90,7 @@ export default function AdminDashboardPage() {
       key: 'kyc',
       icon: <FileSearch className="size-icon-md" />,
       text: t('todoKyc', { count: dashboard.data.pendingKycCount }),
-      href: '/admin/commercants',
+      href: '/admin/kyc',
       actionLabel: t('todoOpen'),
     });
   }

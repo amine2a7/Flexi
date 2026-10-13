@@ -136,6 +136,11 @@ module.exports = {
         "Lot de règlement J+2",
         "D+2 settlement batch",
         "دفعة التسوية بعد يومين"
+      ],
+      "todoPayouts": [
+        "{count, plural, one {# demande de virement commerçant à contrôler} other {# demandes de virement commerçant à contrôler}}",
+        "{count, plural, one {# merchant payout request to check} other {# merchant payout requests to check}}",
+        "{count, plural, one {# طلب تحويل تاجر للمراجعة} other {# طلبات تحويل تجار للمراجعة}}"
       ]
     },
     "merchants": {
@@ -677,6 +682,46 @@ module.exports = {
         "Aucun lot de règlement",
         "No settlement batch",
         "لا توجد دفعات تسوية"
+      ],
+      "open": [
+        "Ouvrir",
+        "Open",
+        "فتح"
+      ],
+      "openBatch": [
+        "Ouvrir le lot {reference}",
+        "Open batch {reference}",
+        "فتح الدفعة {reference}"
+      ],
+      "detailTitle": [
+        "Lot {reference}",
+        "Batch {reference}",
+        "الدفعة {reference}"
+      ],
+      "back": [
+        "Retour aux règlements",
+        "Back to settlements",
+        "العودة إلى التسويات"
+      ],
+      "payoutsTitle": [
+        "Virements du lot",
+        "Payouts of the batch",
+        "تحويلات الدفعة"
+      ],
+      "merchant": [
+        "Commerçant",
+        "Merchant",
+        "التاجر"
+      ],
+      "iban": [
+        "IBAN",
+        "IBAN",
+        "IBAN"
+      ],
+      "action": [
+        "Action",
+        "Action",
+        "الإجراء"
       ]
     },
     "audit": {
@@ -816,6 +861,467 @@ module.exports = {
         "Vérifiez les valeurs saisies.",
         "Check the values entered.",
         "تحقّق من القيم المدخلة."
+      ]
+    },
+    "kyc": {
+      "open": [
+        "Ouvrir",
+        "Open",
+        "فتح"
+      ],
+      "status": [
+        "Statut",
+        "Status",
+        "الحالة"
+      ],
+      "historyTitle": [
+        "Historique",
+        "History",
+        "السجل"
+      ],
+      "by": [
+        "par {name}",
+        "by {name}",
+        "بواسطة {name}"
+      ],
+      "title": [
+        "Dossiers KYC",
+        "KYC files",
+        "ملفات التحقق من الهوية"
+      ],
+      "description": [
+        "Contrôlez les pièces des commerçants et des entreprises. Un compte reste inactif tant que son dossier n'est pas validé.",
+        "Check the documents of merchants and companies. An account stays inactive until its file is approved.",
+        "راجع وثائق التجار والمؤسسات. يبقى الحساب غير نشِط حتى المصادقة على ملفه."
+      ],
+      "account": [
+        "Compte",
+        "Account",
+        "الحساب"
+      ],
+      "type": [
+        "Type",
+        "Type",
+        "النوع"
+      ],
+      "city": [
+        "Ville",
+        "City",
+        "المدينة"
+      ],
+      "submittedAt": [
+        "Déposé le",
+        "Submitted on",
+        "تاريخ الإيداع"
+      ],
+      "documents": [
+        "Pièces",
+        "Documents",
+        "الوثائق"
+      ],
+      "types": {
+        "MERCHANT": [
+          "Commerçant",
+          "Merchant",
+          "تاجر"
+        ],
+        "COMPANY": [
+          "Entreprise",
+          "Company",
+          "مؤسسة"
+        ]
+      },
+      "statuses": {
+        "PENDING": [
+          "À contrôler",
+          "To check",
+          "للمراجعة"
+        ],
+        "APPROVED": [
+          "Validé",
+          "Approved",
+          "مصادق عليه"
+        ],
+        "REJECTED": [
+          "Refusé",
+          "Rejected",
+          "مرفوض"
+        ]
+      },
+      "filterType": [
+        "Type de compte",
+        "Account type",
+        "نوع الحساب"
+      ],
+      "allTypes": [
+        "Tous les types",
+        "All types",
+        "كل الأنواع"
+      ],
+      "empty": [
+        "Aucun dossier pour ces filtres",
+        "No files for these filters",
+        "لا توجد ملفات لهذه المرشحات"
+      ],
+      "kpiPending": [
+        "Dossiers à contrôler",
+        "Files to check",
+        "ملفات للمراجعة"
+      ],
+      "detailTitle": [
+        "Dossier KYC : {name}",
+        "KYC file: {name}",
+        "ملف التحقق: {name}"
+      ],
+      "back": [
+        "Retour aux dossiers",
+        "Back to files",
+        "العودة إلى الملفات"
+      ],
+      "pendingInfo": [
+        "Vérifiez chaque pièce, puis validez ou refusez le dossier. Le compte reste inactif tant que le KYC n'est pas validé.",
+        "Check each document, then approve or reject the file. The account stays inactive until the KYC is approved.",
+        "راجع كل وثيقة ثم صادق على الملف أو ارفضه. يبقى الحساب غير نشِط حتى المصادقة."
+      ],
+      "documentsTitle": [
+        "Pièces du dossier",
+        "Documents of the file",
+        "وثائق الملف"
+      ],
+      "documentTypes": {
+        "REGISTRY_EXTRACT": [
+          "Extrait du registre de commerce",
+          "Trade register extract",
+          "مضمون السجل التجاري"
+        ],
+        "TAX_CERTIFICATE": [
+          "Attestation fiscale",
+          "Tax certificate",
+          "شهادة جبائية"
+        ],
+        "MANAGER_ID": [
+          "Pièce d'identité du gérant",
+          "Manager's ID",
+          "بطاقة هوية المسيّر"
+        ],
+        "BANK_DETAILS": [
+          "Relevé d'identité bancaire (RIB)",
+          "Bank details (RIB)",
+          "كشف الهوية البنكية"
+        ]
+      },
+      "approve": [
+        "Valider le dossier",
+        "Approve the file",
+        "المصادقة على الملف"
+      ],
+      "approveTitle": [
+        "Valider le dossier de {name} ?",
+        "Approve {name}'s file?",
+        "المصادقة على ملف {name}؟"
+      ],
+      "approveMessage": [
+        "Le compte devient actif et peut utiliser FlexiPay.",
+        "The account becomes active and can use FlexiPay.",
+        "يصبح الحساب نشِطًا ويمكنه استعمال FlexiPay."
+      ],
+      "approvedToast": [
+        "Dossier validé : le compte est actif.",
+        "File approved: the account is active.",
+        "تمت المصادقة: الحساب نشِط."
+      ],
+      "reject": [
+        "Refuser le dossier",
+        "Reject the file",
+        "رفض الملف"
+      ],
+      "rejectTitle": [
+        "Refuser le dossier de {name}",
+        "Reject {name}'s file",
+        "رفض ملف {name}"
+      ],
+      "rejectReason": [
+        "Motif du refus (visible par le titulaire)",
+        "Reason (shown to the holder)",
+        "سبب الرفض (يظهر لصاحب الحساب)"
+      ],
+      "rejectedToast": [
+        "Dossier refusé : le compte reste inactif.",
+        "File rejected: the account stays inactive.",
+        "رُفض الملف: يبقى الحساب غير نشِط."
+      ],
+      "rejectedInfo": [
+        "Motif du refus : {reason}",
+        "Reason for rejection: {reason}",
+        "سبب الرفض: {reason}"
+      ],
+      "event": {
+        "SUBMITTED": [
+          "Dossier déposé",
+          "File submitted",
+          "إيداع الملف"
+        ],
+        "APPROVED": [
+          "Dossier validé",
+          "File approved",
+          "المصادقة على الملف"
+        ],
+        "REJECTED": [
+          "Dossier refusé",
+          "File rejected",
+          "رفض الملف"
+        ]
+      },
+      "openFile": [
+        "Ouvrir le dossier de {name}",
+        "Open {name}'s file",
+        "فتح ملف {name}"
+      ]
+    },
+    "payouts": {
+      "open": [
+        "Ouvrir",
+        "Open",
+        "فتح"
+      ],
+      "status": [
+        "Statut",
+        "Status",
+        "الحالة"
+      ],
+      "historyTitle": [
+        "Historique",
+        "History",
+        "السجل"
+      ],
+      "by": [
+        "par {name}",
+        "by {name}",
+        "بواسطة {name}"
+      ],
+      "title": [
+        "Virements commerçants",
+        "Merchant payouts",
+        "تحويلات التجار"
+      ],
+      "description": [
+        "Contrôlez chaque demande : brut, commission, net et IBAN. Les virements validés rejoignent le prochain lot de règlement.",
+        "Check each request: gross, commission, net and IBAN. Approved payouts join the next settlement batch.",
+        "راجع كل طلب: الإجمالي والعمولة والصافي وIBAN. تنضم التحويلات المصادق عليها إلى دفعة التسوية القادمة."
+      ],
+      "reference": [
+        "Référence",
+        "Reference",
+        "المرجع"
+      ],
+      "merchant": [
+        "Commerçant",
+        "Merchant",
+        "التاجر"
+      ],
+      "requestedAt": [
+        "Demandé le",
+        "Requested on",
+        "تاريخ الطلب"
+      ],
+      "gross": [
+        "Brut",
+        "Gross",
+        "الإجمالي"
+      ],
+      "commission": [
+        "Commission",
+        "Commission",
+        "العمولة"
+      ],
+      "rate": [
+        "Taux",
+        "Rate",
+        "النسبة"
+      ],
+      "net": [
+        "Net",
+        "Net",
+        "الصافي"
+      ],
+      "iban": [
+        "IBAN",
+        "IBAN",
+        "IBAN"
+      ],
+      "batch": [
+        "Lot",
+        "Batch",
+        "الدفعة"
+      ],
+      "search": [
+        "Commerçant ou référence",
+        "Merchant or reference",
+        "التاجر أو المرجع"
+      ],
+      "empty": [
+        "Aucune demande pour ces filtres",
+        "No requests for these filters",
+        "لا توجد طلبات لهذه المرشحات"
+      ],
+      "kpiPending": [
+        "Demandes à contrôler",
+        "Requests to check",
+        "طلبات للمراجعة"
+      ],
+      "detailTitle": [
+        "Virement {reference}",
+        "Payout {reference}",
+        "التحويل {reference}"
+      ],
+      "back": [
+        "Retour aux virements",
+        "Back to payouts",
+        "العودة إلى التحويلات"
+      ],
+      "pendingInfo": [
+        "Vérifiez le montant net et l'IBAN du commerçant avant de valider.",
+        "Check the net amount and the merchant's IBAN before approving.",
+        "تحقق من المبلغ الصافي وIBAN التاجر قبل المصادقة."
+      ],
+      "approve": [
+        "Valider le virement",
+        "Approve the payout",
+        "المصادقة على التحويل"
+      ],
+      "approveTitle": [
+        "Valider le virement {reference} ?",
+        "Approve payout {reference}?",
+        "المصادقة على التحويل {reference}؟"
+      ],
+      "approveMessage": [
+        "{net} seront virés à {merchant} sur l’IBAN {iban}, dans le prochain lot de règlement.",
+        "{net} will be paid to {merchant} on IBAN {iban}, in the next settlement batch.",
+        "سيُحوَّل {net} إلى {merchant} على IBAN {iban} ضمن دفعة التسوية القادمة."
+      ],
+      "approvedToast": [
+        "Virement validé : ajouté au prochain lot.",
+        "Payout approved: added to the next batch.",
+        "تمت المصادقة: أُضيف التحويل إلى الدفعة القادمة."
+      ],
+      "reject": [
+        "Refuser le virement",
+        "Reject the payout",
+        "رفض التحويل"
+      ],
+      "rejectTitle": [
+        "Refuser le virement {reference}",
+        "Reject payout {reference}",
+        "رفض التحويل {reference}"
+      ],
+      "rejectReason": [
+        "Motif du refus (visible par le commerçant)",
+        "Reason (shown to the merchant)",
+        "سبب الرفض (يظهر للتاجر)"
+      ],
+      "rejectedToast": [
+        "Virement refusé.",
+        "Payout rejected.",
+        "رُفض التحويل."
+      ],
+      "batchInfo": [
+        "Inclus dans le lot {reference}.",
+        "Included in batch {reference}.",
+        "مُدرج في الدفعة {reference}."
+      ],
+      "seeBatch": [
+        "Voir le lot",
+        "See the batch",
+        "عرض الدفعة"
+      ],
+      "openPayout": [
+        "Ouvrir le virement {reference}",
+        "Open payout {reference}",
+        "فتح التحويل {reference}"
+      ],
+      "event": {
+        "REQUESTED": [
+          "Demande envoyée par le commerçant",
+          "Request sent by the merchant",
+          "إرسال الطلب من التاجر"
+        ],
+        "CHECKED": [
+          "Demande validée par FlexiPay",
+          "Request approved by FlexiPay",
+          "المصادقة على الطلب من FlexiPay"
+        ],
+        "SENT": [
+          "Virement envoyé à la banque",
+          "Transfer sent to the bank",
+          "إرسال التحويل إلى البنك"
+        ],
+        "EXECUTED": [
+          "Virement exécuté",
+          "Transfer executed",
+          "تنفيذ التحويل"
+        ],
+        "REJECTED": [
+          "Demande refusée",
+          "Request rejected",
+          "رفض الطلب"
+        ]
+      }
+    },
+    "transactions": {
+      "title": [
+        "Transactions",
+        "Transactions",
+        "المعاملات"
+      ],
+      "description": [
+        "Tous les paiements chez les commerçants, avec recherche et filtre par statut.",
+        "All payments at merchants, with search and status filter.",
+        "كل الدفعات لدى التجار، مع البحث والتصفية حسب الحالة."
+      ],
+      "search": [
+        "Commerçant, entreprise ou référence",
+        "Merchant, company or reference",
+        "التاجر أو المؤسسة أو المرجع"
+      ],
+      "date": [
+        "Date",
+        "Date",
+        "التاريخ"
+      ],
+      "reference": [
+        "Référence",
+        "Reference",
+        "المرجع"
+      ],
+      "merchant": [
+        "Commerçant",
+        "Merchant",
+        "التاجر"
+      ],
+      "company": [
+        "Entreprise",
+        "Company",
+        "المؤسسة"
+      ],
+      "category": [
+        "Catégorie",
+        "Category",
+        "الصنف"
+      ],
+      "amount": [
+        "Montant",
+        "Amount",
+        "المبلغ"
+      ],
+      "status": [
+        "Statut",
+        "Status",
+        "الحالة"
+      ],
+      "empty": [
+        "Aucune transaction pour ces filtres",
+        "No transactions for these filters",
+        "لا توجد معاملات لهذه المرشحات"
       ]
     }
   }

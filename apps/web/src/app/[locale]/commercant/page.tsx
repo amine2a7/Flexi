@@ -139,6 +139,7 @@ export default function MerchantDashboardPage() {
                 empty={t('emptyMessage')}
                 items={dashboard.data.recentPayments.map((payment) => ({
                   key: payment.id,
+                  href: `/commercant/historique/${payment.id}`,
                   title: `${payment.customer.firstName} ${payment.customer.lastInitial}.`,
                   subtitle: `${payment.reference} · ${formatDateTime(payment.createdAt, locale)}`,
                   end: (

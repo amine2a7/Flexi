@@ -1174,7 +1174,7 @@ paths:
     get:
       tags: [merchant]
       operationId: getMerchantPayment
-      summary: État d'un encaissement (suivi de la confirmation)
+      summary: Détail d'un encaissement (suivi de la confirmation, commission, règlement, historique)
       parameters:
         - name: paymentId
           in: path
@@ -1192,7 +1192,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MerchantPayment'
+                $ref: '#/components/schemas/MerchantPaymentDetail'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -2613,6 +2613,9 @@ paths:
       description: |
         L'administrateur a vérifié l'arrivée des fonds sur le compte de FlexiPay. Les crédits
         (`amountMillimes`) sont ajoutés au solde de l'entreprise dans la même transaction.
+        Double validation (règle 12) : si `requiresSecondValidation`, le premier appel enregistre
+        `firstValidation` (statut inchangé) ; le second appel, par un **autre** administrateur, valide.
+        Le même administrateur une seconde fois : `403 FORBIDDEN`.
       x-financial: true
       parameters:
         - name: orderId
@@ -2736,6 +2739,371 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/admin/kyc-files:
+    get:
+      tags: [admin]
+      operationId: listKycFiles
+      summary: Dossiers KYC des commerçants et des entreprises
+      description: Tri — dossiers `PENDING` d'abord, puis par date de dépôt décroissante.
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - name: status
+          in: query
+          required: false
+          description: Filtre par statut.
+          schema:
+            $ref: '#/components/schemas/KycStatus'
+        - name: accountType
+          in: query
+          required: false
+          description: Filtre par type de compte.
+          schema:
+            $ref: '#/components/schemas/KycAccountType'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KycFilePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/kyc-files/{fileId}:
+    get:
+      tags: [admin]
+      operationId: getKycFile
+      summary: Dossier KYC avec ses pièces et son historique
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KycFile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/kyc-files/{fileId}/documents/{documentId}:
+    get:
+      tags: [admin]
+      operationId: getKycDocument
+      summary: Pièce d'un dossier KYC
+      description: |
+        Fichier tel que déposé (JPG, PNG ou PDF), servi avec son type d'origine,
+        `Content-Disposition: attachment` et `X-Content-Type-Options: nosniff`.
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Le fichier.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/kyc-files/{fileId}/approve:
+    post:
+      tags: [admin]
+      operationId: approveKycFile
+      summary: Valider un dossier KYC (le compte devient actif, `APPROVED`)
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KycFile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/kyc-files/{fileId}/reject:
+    post:
+      tags: [admin]
+      operationId: rejectKycFile
+      summary: Refuser un dossier KYC avec un motif (le compte reste inactif, `REJECTED`)
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionReason'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KycFile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/payout-requests:
+    get:
+      tags: [admin]
+      operationId: listAdminPayoutRequests
+      summary: Demandes de virement des commerçants
+      description: Tri — demandes `REQUESTED` (à contrôler) d'abord, puis par date décroissante.
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - name: status
+          in: query
+          required: false
+          description: Filtre par statut.
+          schema:
+            $ref: '#/components/schemas/PayoutRequestStatus'
+        - name: q
+          in: query
+          required: false
+          description: Recherche par commerçant ou référence (insensible à la casse). Jamais journalisée.
+          schema:
+            type: string
+            maxLength: 100
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPayoutRequestPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/payout-requests/{payoutId}:
+    get:
+      tags: [admin]
+      operationId: getAdminPayoutRequest
+      summary: Demande de virement (brut, commission, net, IBAN, historique)
+      parameters:
+        - name: payoutId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPayoutRequestDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/payout-requests/{payoutId}/approve:
+    post:
+      tags: [admin]
+      operationId: approveAdminPayoutRequest
+      summary: Valider une demande de virement (`REQUESTED` → `CHECKED`), ajoutée au prochain lot de règlement
+      x-financial: true
+      parameters:
+        - name: payoutId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPayoutRequestDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/payout-requests/{payoutId}/reject:
+    post:
+      tags: [admin]
+      operationId: rejectAdminPayoutRequest
+      summary: Refuser une demande de virement avec un motif (`REQUESTED` → `REJECTED`)
+      parameters:
+        - name: payoutId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionReason'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPayoutRequestDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/admin/settlements:
     get:
       tags: [admin]
@@ -2759,6 +3127,85 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SettlementBatchPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/settlements/{batchId}:
+    get:
+      tags: [admin]
+      operationId: getSettlementBatch
+      summary: Détail d'un lot de règlement (virements validés qui le composent)
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementBatchDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/transactions:
+    get:
+      tags: [admin]
+      operationId: listAdminTransactions
+      summary: Transactions globales (paiements chez les commerçants)
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - $ref: '#/components/parameters/CreatedFrom'
+        - $ref: '#/components/parameters/CreatedTo'
+        - name: status
+          in: query
+          required: false
+          description: Filtre par statut.
+          schema:
+            $ref: '#/components/schemas/PaymentStatus'
+        - name: q
+          in: query
+          required: false
+          description: Recherche par commerçant, entreprise ou référence (insensible à la casse). Jamais journalisée.
+          schema:
+            type: string
+            maxLength: 100
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminTransactionPage'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -3587,9 +4034,18 @@ components:
           type: string
           maxLength: 200
     # ---------------------------------------------------------------- statuts métier (provisoires)
+    CreditCategory:
+      title: CreditCategory
+      description: |
+        Catégorie de crédits. V1 : une seule catégorie, `RESTAURATION` ; le modèle (soldes, commandes,
+        paiements) porte déjà la catégorie pour en ajouter d'autres sans changement cassant.
+      type: string
+      enum: [RESTAURATION]
     AccountStatus:
       title: AccountStatus
-      description: Compte (cahier §8) — En attente KYC, Validé, Rejeté, Suspendu.
+      description: |
+        Compte (cahier §8) — En attente KYC, Validé, Rejeté, Suspendu. Un compte reste **inactif**
+        (aucune opération métier) tant que son dossier KYC n'est pas validé (`APPROVED`).
       type: string
       enum: [PENDING_KYC, APPROVED, REJECTED, SUSPENDED]
     OrderStatus:
@@ -3685,6 +4141,61 @@ components:
           oneOf:
             - $ref: '#/components/schemas/Timestamp'
             - type: 'null'
+    MerchantPaymentDetail:
+      title: MerchantPaymentDetail
+      description: Encaissement avec sa commission, sa date de règlement et ses étapes.
+      type: object
+      additionalProperties: false
+      required: [id, reference, status, amountMillimes, customer, createdAt, expiresAt, category, commissionRateBps, commissionMillimes, netMillimes, settlementDate, history]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 32
+        status:
+          $ref: '#/components/schemas/PaymentStatus'
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        customer:
+          $ref: '#/components/schemas/CustomerSummary'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        expiresAt:
+          description: Fin de validité tant que `INITIATED` ; `null` ensuite.
+          oneOf:
+            - $ref: '#/components/schemas/Timestamp'
+            - type: 'null'
+        category:
+          $ref: '#/components/schemas/CreditCategory'
+        commissionRateBps:
+          description: Taux figé au moment de l'encaissement.
+          $ref: '#/components/schemas/RateBps'
+        commissionMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        netMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        settlementDate:
+          description: Date de règlement J+2 (fuseau Africa/Tunis) ; `null` si non encaissé.
+          oneOf:
+            - $ref: '#/components/schemas/CalendarDate'
+            - type: 'null'
+        history:
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/PaymentEvent'
+    PaymentEvent:
+      title: PaymentEvent
+      type: object
+      additionalProperties: false
+      required: [status, occurredAt]
+      properties:
+        status:
+          $ref: '#/components/schemas/PaymentStatus'
+        occurredAt:
+          $ref: '#/components/schemas/Timestamp'
     MerchantPaymentPage:
       title: MerchantPaymentPage
       description: Liste paginée de MerchantPayment (§7).
@@ -3906,9 +4417,13 @@ components:
         occurredAt:
           $ref: '#/components/schemas/Timestamp'
         reasonKey:
-          description: Clé i18n du motif de rejet (aucun texte libre venu du serveur).
+          description: Clé i18n d'un motif de rejet automatique.
           type: string
           pattern: '^payoutRejection\.[a-z][A-Za-z0-9]*$'
+        reason:
+          description: Motif saisi par l'administrateur qui a refusé la demande.
+          type: string
+          maxLength: 500
     PayoutRequestPage:
       title: PayoutRequestPage
       description: Liste paginée de PayoutRequest (§7).
@@ -4347,11 +4862,14 @@ components:
       properties:
         amountMillimes:
           $ref: '#/components/schemas/PositiveAmountMillimes'
+        category:
+          description: Catégorie commandée (défaut `RESTAURATION`).
+          $ref: '#/components/schemas/CreditCategory'
     CreditOrder:
       title: CreditOrder
       type: object
       additionalProperties: false
-      required: [id, reference, status, companyId, companyName, amountMillimes, feesMillimes, totalMillimes, createdAt, paymentReference]
+      required: [id, reference, status, category, companyId, companyName, amountMillimes, feesMillimes, totalMillimes, createdAt, paymentReference]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -4361,6 +4879,8 @@ components:
           maxLength: 32
         status:
           $ref: '#/components/schemas/OrderStatus'
+        category:
+          $ref: '#/components/schemas/CreditCategory'
         companyId:
           $ref: '#/components/schemas/Uuid'
         companyName:
@@ -4388,7 +4908,7 @@ components:
       description: Commande avec sa déclaration de virement, son dernier motif et son historique.
       type: object
       additionalProperties: false
-      required: [id, reference, status, companyId, companyName, amountMillimes, feesMillimes, totalMillimes, createdAt, paymentReference, history]
+      required: [id, reference, status, category, companyId, companyName, amountMillimes, feesMillimes, totalMillimes, createdAt, paymentReference, history, requiresSecondValidation]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -4398,6 +4918,8 @@ components:
           maxLength: 32
         status:
           $ref: '#/components/schemas/OrderStatus'
+        category:
+          $ref: '#/components/schemas/CreditCategory'
         companyId:
           $ref: '#/components/schemas/Uuid'
         companyName:
@@ -4431,6 +4953,15 @@ components:
           description: Motif du dernier rejet de justificatif, affiché à l'entreprise pour redéclarer.
           type: string
           maxLength: 500
+        requiresSecondValidation:
+          description: |
+            Double validation (règle 12) : vrai quand les crédits dépassent 10 000,000 TND
+            (`amountMillimes` > 10000000). La validation du paiement exige alors deux administrateurs
+            différents.
+          type: boolean
+        firstValidation:
+          description: Première validation enregistrée, en attente du second administrateur.
+          $ref: '#/components/schemas/FirstValidation'
         history:
           type: array
           maxItems: 100
@@ -4439,7 +4970,22 @@ components:
     CreditOrderEventAction:
       title: CreditOrderEventAction
       type: string
-      enum: [CREATED, CONFIRMED, REFUSED, CANCELLED, TRANSFER_DECLARED, PROOF_REJECTED, VALIDATED]
+      enum: [CREATED, CONFIRMED, REFUSED, CANCELLED, TRANSFER_DECLARED, PROOF_REJECTED, FIRST_VALIDATION, VALIDATED]
+    FirstValidation:
+      title: FirstValidation
+      type: object
+      additionalProperties: false
+      required: [actorName, occurredAt, byMe]
+      properties:
+        actorName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        occurredAt:
+          $ref: '#/components/schemas/Timestamp'
+        byMe:
+          description: Vrai si l'administrateur connecté a fait cette première validation (il ne peut pas faire la seconde).
+          type: boolean
     CreditOrderEvent:
       title: CreditOrderEvent
       description: Étape de l'historique d'une commande (qui, quoi, quand).
@@ -4946,6 +5492,323 @@ components:
           $ref: '#/components/schemas/AmountMillimes'
         status:
           $ref: '#/components/schemas/SettlementStatus'
+    SettlementBatchDetail:
+      title: SettlementBatchDetail
+      type: object
+      additionalProperties: false
+      required: [id, reference, settlementDate, merchantsCount, grossMillimes, commissionMillimes, netMillimes, status, payouts]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 32
+        settlementDate:
+          $ref: '#/components/schemas/CalendarDate'
+        merchantsCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 1000000
+        grossMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        commissionMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        netMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        status:
+          $ref: '#/components/schemas/SettlementStatus'
+        payouts:
+          description: Virements validés qui composent le lot (sommes égales aux totaux du lot).
+          type: array
+          maxItems: 1000
+          items:
+            $ref: '#/components/schemas/AdminPayoutRequest'
+    DecisionReason:
+      title: DecisionReason
+      description: Motif obligatoire d'un refus (visible par le titulaire du compte).
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+    KycStatus:
+      title: KycStatus
+      type: string
+      enum: [PENDING, APPROVED, REJECTED]
+    KycAccountType:
+      title: KycAccountType
+      type: string
+      enum: [MERCHANT, COMPANY]
+    KycDocumentType:
+      title: KycDocumentType
+      description: Extrait du registre de commerce, attestation fiscale, pièce d'identité du gérant, RIB.
+      type: string
+      enum: [REGISTRY_EXTRACT, TAX_CERTIFICATE, MANAGER_ID, BANK_DETAILS]
+    KycDocument:
+      title: KycDocument
+      type: object
+      additionalProperties: false
+      required: [id, type, fileName, contentType, sizeBytes, uploadedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        type:
+          $ref: '#/components/schemas/KycDocumentType'
+        fileName:
+          type: string
+          minLength: 1
+          maxLength: 255
+        contentType:
+          type: string
+          enum: [image/jpeg, image/png, application/pdf]
+        sizeBytes:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 5242880
+        uploadedAt:
+          $ref: '#/components/schemas/Timestamp'
+    KycEvent:
+      title: KycEvent
+      type: object
+      additionalProperties: false
+      required: [action, occurredAt, actorName]
+      properties:
+        action:
+          type: string
+          enum: [SUBMITTED, APPROVED, REJECTED]
+        occurredAt:
+          $ref: '#/components/schemas/Timestamp'
+        actorName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        reason:
+          type: string
+          maxLength: 500
+    KycFileSummary:
+      title: KycFileSummary
+      type: object
+      additionalProperties: false
+      required: [id, accountType, accountId, accountName, city, status, submittedAt, documentsCount]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        accountType:
+          $ref: '#/components/schemas/KycAccountType'
+        accountId:
+          $ref: '#/components/schemas/Uuid'
+        accountName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        city:
+          type: string
+          maxLength: 100
+        status:
+          $ref: '#/components/schemas/KycStatus'
+        submittedAt:
+          $ref: '#/components/schemas/Timestamp'
+        documentsCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 50
+    KycFile:
+      title: KycFile
+      type: object
+      additionalProperties: false
+      required: [id, accountType, accountId, accountName, city, status, submittedAt, documentsCount, documents, history]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        accountType:
+          $ref: '#/components/schemas/KycAccountType'
+        accountId:
+          $ref: '#/components/schemas/Uuid'
+        accountName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        city:
+          type: string
+          maxLength: 100
+        status:
+          $ref: '#/components/schemas/KycStatus'
+        submittedAt:
+          $ref: '#/components/schemas/Timestamp'
+        documentsCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 50
+        documents:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/KycDocument'
+        rejectionReason:
+          type: string
+          maxLength: 500
+        history:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/KycEvent'
+    KycFilePage:
+      title: KycFilePage
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/KycFileSummary'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    AdminPayoutRequest:
+      title: AdminPayoutRequest
+      description: Demande de virement vue par l'administrateur (IBAN complet pour le contrôle).
+      type: object
+      additionalProperties: false
+      required: [id, reference, status, merchantId, merchantName, grossMillimes, commissionRateBps, commissionMillimes, netMillimes, requestedAt, iban]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 32
+        status:
+          $ref: '#/components/schemas/PayoutRequestStatus'
+        merchantId:
+          $ref: '#/components/schemas/Uuid'
+        merchantName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        grossMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        commissionRateBps:
+          $ref: '#/components/schemas/RateBps'
+        commissionMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        netMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        requestedAt:
+          $ref: '#/components/schemas/Timestamp'
+        iban:
+          type: string
+          pattern: '^TN[0-9]{22}$'
+        batchId:
+          description: Lot de règlement qui contient le virement validé.
+          $ref: '#/components/schemas/Uuid'
+        batchReference:
+          type: string
+          maxLength: 32
+    AdminPayoutRequestDetail:
+      title: AdminPayoutRequestDetail
+      type: object
+      additionalProperties: false
+      required: [id, reference, status, merchantId, merchantName, grossMillimes, commissionRateBps, commissionMillimes, netMillimes, requestedAt, iban, history]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 32
+        status:
+          $ref: '#/components/schemas/PayoutRequestStatus'
+        merchantId:
+          $ref: '#/components/schemas/Uuid'
+        merchantName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        grossMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        commissionRateBps:
+          $ref: '#/components/schemas/RateBps'
+        commissionMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        netMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        requestedAt:
+          $ref: '#/components/schemas/Timestamp'
+        iban:
+          type: string
+          pattern: '^TN[0-9]{22}$'
+        batchId:
+          $ref: '#/components/schemas/Uuid'
+        batchReference:
+          type: string
+          maxLength: 32
+        history:
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/PayoutEvent'
+    AdminPayoutRequestPage:
+      title: AdminPayoutRequestPage
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/AdminPayoutRequest'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    AdminTransaction:
+      title: AdminTransaction
+      type: object
+      additionalProperties: false
+      required: [id, reference, merchantName, companyName, category, amountMillimes, status, createdAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 32
+        merchantName:
+          type: string
+          maxLength: 200
+        companyName:
+          description: Entreprise de l'employé qui a payé.
+          type: string
+          maxLength: 200
+        category:
+          $ref: '#/components/schemas/CreditCategory'
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        status:
+          $ref: '#/components/schemas/PaymentStatus'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+    AdminTransactionPage:
+      title: AdminTransactionPage
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/AdminTransaction'
+        page:
+          $ref: '#/components/schemas/PageInfo'
     SettlementBatchPage:
       title: SettlementBatchPage
       description: Liste paginée de SettlementBatch (§7).

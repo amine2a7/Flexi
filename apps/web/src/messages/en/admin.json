@@ -26,7 +26,8 @@
     "companiesHint": "Company accounts",
     "merchantsHint": "Merchant accounts",
     "volumeHint": "Payments confirmed today",
-    "nextSettlementHint": "D+2 settlement batch"
+    "nextSettlementHint": "D+2 settlement batch",
+    "todoPayouts": "{count, plural, one {# merchant payout request to check} other {# merchant payout requests to check}}"
   },
   "merchants": {
     "title": "Merchants",
@@ -147,7 +148,15 @@
     "commission": "Commission",
     "net": "Net",
     "status": "Status",
-    "emptyTitle": "No settlement batch"
+    "emptyTitle": "No settlement batch",
+    "open": "Open",
+    "openBatch": "Open batch {reference}",
+    "detailTitle": "Batch {reference}",
+    "back": "Back to settlements",
+    "payoutsTitle": "Payouts of the batch",
+    "merchant": "Merchant",
+    "iban": "IBAN",
+    "action": "Action"
   },
   "audit": {
     "title": "Audit log",
@@ -179,5 +188,110 @@
     "createdToast": "Request sent. Another administrator must approve it.",
     "pending": "A change is already waiting for approval.",
     "invalid": "Check the values entered."
+  },
+  "kyc": {
+    "open": "Open",
+    "status": "Status",
+    "historyTitle": "History",
+    "by": "by {name}",
+    "title": "KYC files",
+    "description": "Check the documents of merchants and companies. An account stays inactive until its file is approved.",
+    "account": "Account",
+    "type": "Type",
+    "city": "City",
+    "submittedAt": "Submitted on",
+    "documents": "Documents",
+    "types": {
+      "MERCHANT": "Merchant",
+      "COMPANY": "Company"
+    },
+    "statuses": {
+      "PENDING": "To check",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected"
+    },
+    "filterType": "Account type",
+    "allTypes": "All types",
+    "empty": "No files for these filters",
+    "kpiPending": "Files to check",
+    "detailTitle": "KYC file: {name}",
+    "back": "Back to files",
+    "pendingInfo": "Check each document, then approve or reject the file. The account stays inactive until the KYC is approved.",
+    "documentsTitle": "Documents of the file",
+    "documentTypes": {
+      "REGISTRY_EXTRACT": "Trade register extract",
+      "TAX_CERTIFICATE": "Tax certificate",
+      "MANAGER_ID": "Manager's ID",
+      "BANK_DETAILS": "Bank details (RIB)"
+    },
+    "approve": "Approve the file",
+    "approveTitle": "Approve {name}'s file?",
+    "approveMessage": "The account becomes active and can use FlexiPay.",
+    "approvedToast": "File approved: the account is active.",
+    "reject": "Reject the file",
+    "rejectTitle": "Reject {name}'s file",
+    "rejectReason": "Reason (shown to the holder)",
+    "rejectedToast": "File rejected: the account stays inactive.",
+    "rejectedInfo": "Reason for rejection: {reason}",
+    "event": {
+      "SUBMITTED": "File submitted",
+      "APPROVED": "File approved",
+      "REJECTED": "File rejected"
+    },
+    "openFile": "Open {name}'s file"
+  },
+  "payouts": {
+    "open": "Open",
+    "status": "Status",
+    "historyTitle": "History",
+    "by": "by {name}",
+    "title": "Merchant payouts",
+    "description": "Check each request: gross, commission, net and IBAN. Approved payouts join the next settlement batch.",
+    "reference": "Reference",
+    "merchant": "Merchant",
+    "requestedAt": "Requested on",
+    "gross": "Gross",
+    "commission": "Commission",
+    "rate": "Rate",
+    "net": "Net",
+    "iban": "IBAN",
+    "batch": "Batch",
+    "search": "Merchant or reference",
+    "empty": "No requests for these filters",
+    "kpiPending": "Requests to check",
+    "detailTitle": "Payout {reference}",
+    "back": "Back to payouts",
+    "pendingInfo": "Check the net amount and the merchant's IBAN before approving.",
+    "approve": "Approve the payout",
+    "approveTitle": "Approve payout {reference}?",
+    "approveMessage": "{net} will be paid to {merchant} on IBAN {iban}, in the next settlement batch.",
+    "approvedToast": "Payout approved: added to the next batch.",
+    "reject": "Reject the payout",
+    "rejectTitle": "Reject payout {reference}",
+    "rejectReason": "Reason (shown to the merchant)",
+    "rejectedToast": "Payout rejected.",
+    "batchInfo": "Included in batch {reference}.",
+    "seeBatch": "See the batch",
+    "openPayout": "Open payout {reference}",
+    "event": {
+      "REQUESTED": "Request sent by the merchant",
+      "CHECKED": "Request approved by FlexiPay",
+      "SENT": "Transfer sent to the bank",
+      "EXECUTED": "Transfer executed",
+      "REJECTED": "Request rejected"
+    }
+  },
+  "transactions": {
+    "title": "Transactions",
+    "description": "All payments at merchants, with search and status filter.",
+    "search": "Merchant, company or reference",
+    "date": "Date",
+    "reference": "Reference",
+    "merchant": "Merchant",
+    "company": "Company",
+    "category": "Category",
+    "amount": "Amount",
+    "status": "Status",
+    "empty": "No transactions for these filters"
   }
 }

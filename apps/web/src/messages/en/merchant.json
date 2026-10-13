@@ -179,5 +179,28 @@
   },
   "payoutRejection": {
     "ibanCheck": "The registered bank account must be checked: contact support."
+  },
+  "paymentDetail": {
+    "title": "Payment {reference}",
+    "back": "Back to history",
+    "summary": "Payment",
+    "customer": "Customer",
+    "createdAt": "Date",
+    "category": "Category",
+    "amount": "Amount paid",
+    "commission": "Commission",
+    "net": "Net to settle",
+    "settlementDate": "Settlement date",
+    "noSettlement": "No settlement: payment not collected.",
+    "historyTitle": "History",
+    "event": {
+      "INITIATED": "Request sent to the customer",
+      "CONFIRMED": "Payment confirmed by the customer",
+      "SETTLED": "Amount settled to your account",
+      "REFUSED": "Payment refused or cancelled",
+      "DISPUTED": "Payment disputed"
+    },
+    "open": "Open",
+    "openPayment": "Open payment {reference}"
   }
 }

@@ -58,7 +58,9 @@
     "doneTitle": "Order saved",
     "doneMessage": "Make a transfer of {amount} with the reference {reference}. Credits will be available after reconciliation.",
     "backToOrders": "See my orders",
-    "another": "New order"
+    "another": "New order",
+    "category": "Credit category",
+    "categoryHint": "A single category for now: Food."
   },
   "employees": {
     "title": "Employees",

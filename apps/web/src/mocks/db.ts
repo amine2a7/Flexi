@@ -1,4 +1,5 @@
 import type { Schemas } from '@flexipay/api-client';
+import { buildKycFiles, buildOtherPayouts, buildTransactions } from './admin-seed';
 import {
   COMPANY_TENANT,
   MERCHANT_TENANT,
@@ -30,7 +31,18 @@ export type MockApproval = Omit<S['Approval'], 'initiatedByMe'> & {
 };
 
 /** Credit order with the uploaded transfer proof (kept in memory only). */
-export type MockOrder = S['CreditOrderDetail'] & { proof?: Blob };
+export type MockOrder = Omit<S['CreditOrderDetail'], 'firstValidation'> & {
+  proof?: Blob;
+  /** First of the two admin validations (four-eyes above the threshold), kept server side. */
+  firstValidator?: { actorId: string; actorName: string; occurredAt: string };
+};
+
+/** Four-eyes threshold on credit orders (decision): credits above 10 000,000 TND. */
+export const SECOND_VALIDATION_THRESHOLD_MILLIMES = 10_000_000;
+export const ADMIN_IDS = {
+  'Amine K.': '01930a1c-0001-7a00-8000-000000000001',
+  'Hela R.': '01930a1c-0009-7a00-8000-000000000009',
+} as const;
 
 export interface MockSession {
   accountId: string;
@@ -66,6 +78,16 @@ export interface MockDb {
     batches: S['SettlementBatch'][];
     audit: S['AuditLogEntry'][];
     settings: S['PlatformSettings'];
+    kycFiles: S['KycFile'][];
+    /** Payout requests of the other merchants (the demo shop's are in merchant.payouts). */
+    payoutRequests: S['AdminPayoutRequest'][];
+    /** Steps recorded by an admin decision on a payout request (approve / reject). */
+    payoutEvents: Map<string, S['PayoutEvent'][]>;
+    /** Payout lines of each settlement batch (generated on first read, then appended to). */
+    batchLines: Map<string, S['AdminPayoutRequest'][]>;
+    transactions: S['AdminTransaction'][];
+    /** Generated demo documents (KYC pieces), by document id. */
+    documents: Map<string, Blob>;
   };
   /** Credit orders of every company (company space: own orders only; admin space: all). */
   orders: MockOrder[];
@@ -508,7 +530,7 @@ function buildAdmin(now: number, merchantRate: number) {
 }
 
 const HOUR = 60 * MINUTE;
-const ADMIN_NAMES = ['Amine K.', 'Hela R.'] as const;
+const ADMIN_NAMES = ['Amine K.', 'Hela R.'] as const satisfies readonly (keyof typeof ADMIN_IDS)[];
 const REFUSAL_REASONS = [
   "Dossier KYC de l'entreprise incomplet : merci de transmettre l'extrait du registre de commerce.",
   'Montant inhabituel : merci de contacter votre chargé de compte avant de commander.',
@@ -523,7 +545,11 @@ type OrderScenario =
   | 'AMOUNT_MISMATCH'
   | 'VALIDATED'
   | 'REFUSED'
-  | 'CANCELLED';
+  | 'CANCELLED'
+  /** Awaiting validation, first validation by Hela R. (Amine K. can finish). */
+  | 'FIRST_BY_OTHER'
+  /** Awaiting validation, first validation by Amine K. (needs admin2). */
+  | 'FIRST_BY_ME';
 
 /** One credit order and its history, consistent with its status (who did what, and when). */
 function buildOrder(
@@ -534,7 +560,11 @@ function buildOrder(
   createdAtMs: number,
   scenario: OrderScenario,
 ): MockOrder {
-  const value = amount(random, 4_000_000, 32_000_000, 100_000);
+  const drawn = amount(random, 4_000_000, 32_000_000, 100_000);
+  const value =
+    scenario === 'FIRST_BY_OTHER' || scenario === 'FIRST_BY_ME'
+      ? Math.max(drawn, 12_500_000)
+      : drawn;
   const fees = commissionOf(value, 150);
   const total = value + fees;
   const admin = random.pick(ADMIN_NAMES);
@@ -544,10 +574,11 @@ function buildOrder(
     offset: number,
     actorRole: S['Role'],
     reason?: string,
+    adminOverride?: string,
   ): S['CreditOrderEvent'] => ({
     action,
     occurredAt: at(offset),
-    actorName: actorRole === 'ADMIN' ? admin : requester,
+    actorName: actorRole === 'ADMIN' ? (adminOverride ?? admin) : requester,
     actorRole,
     ...(reason === undefined ? {} : { reason }),
   });
@@ -555,6 +586,8 @@ function buildOrder(
     id: random.uuid(),
     reference,
     status: 'AWAITING_CONFIRMATION',
+    category: 'RESTAURATION',
+    requiresSecondValidation: value > SECOND_VALIDATION_THRESHOLD_MILLIMES,
     companyId: company.id,
     companyName: company.name,
     amountMillimes: value,
@@ -606,6 +639,20 @@ function buildOrder(
   declare(18 * HOUR, scenario === 'AMOUNT_MISMATCH' ? total - 600_000 : total);
   order.status = 'AWAITING_VALIDATION';
   if (scenario === 'AWAITING_VALIDATION' || scenario === 'AMOUNT_MISMATCH') return order;
+  const other = admin === 'Amine K.' ? 'Hela R.' : 'Amine K.';
+  if (scenario === 'FIRST_BY_OTHER' || scenario === 'FIRST_BY_ME') {
+    const first = scenario === 'FIRST_BY_ME' ? 'Amine K.' : 'Hela R.';
+    order.history.push(event('FIRST_VALIDATION', 26 * HOUR, 'ADMIN', undefined, first));
+    order.firstValidator = {
+      actorId: ADMIN_IDS[first],
+      actorName: first,
+      occurredAt: at(26 * HOUR),
+    };
+    return order;
+  }
+  if (order.requiresSecondValidation) {
+    order.history.push(event('FIRST_VALIDATION', 28 * HOUR, 'ADMIN', undefined, other));
+  }
   order.history.push(event('VALIDATED', 30 * HOUR, 'ADMIN'));
   order.status = 'VALIDATED';
   return order;
@@ -619,7 +666,7 @@ function buildOrders(now: number, companies: readonly S['CompanyAccount'][]): Mo
     0: 'AWAITING_CONFIRMATION',
     1: 'AWAITING_PAYMENT',
     2: 'PROOF_REJECTED',
-    3: 'AWAITING_VALIDATION',
+    3: 'FIRST_BY_OTHER',
     5: 'REFUSED',
     7: 'CANCELLED',
     19: 'CANCELLED',
@@ -643,7 +690,7 @@ function buildOrders(now: number, companies: readonly S['CompanyAccount'][]): Mo
     'AMOUNT_MISMATCH',
     'AWAITING_CONFIRMATION',
     'AWAITING_PAYMENT',
-    'AWAITING_VALIDATION',
+    'FIRST_BY_ME',
     'AWAITING_CONFIRMATION',
   ];
   for (let index = 0; index < 28; index += 1) {
@@ -692,7 +739,7 @@ export function invoicesOf(orders: readonly MockOrder[]): S['Invoice'][] {
 // The order circuit spans two accounts (company, then admin) and page reloads: orders and the
 // company balance are kept in this tab's sessionStorage (demo data only; uploaded files are not
 // kept, a demo transfer notice replaces them after a reload).
-const ORDERS_KEY = 'fp_mock_orders';
+const ORDERS_KEY = 'fp_mock_orders_v2';
 
 export function saveOrders(): void {
   try {
@@ -709,7 +756,9 @@ export function saveOrders(): void {
 function savedOrders(): { orders: MockOrder[]; walletMillimes: number } | undefined {
   try {
     const raw = sessionStorage.getItem(ORDERS_KEY);
-    return raw === null ? undefined : (JSON.parse(raw) as { orders: MockOrder[]; walletMillimes: number });
+    return raw === null
+      ? undefined
+      : (JSON.parse(raw) as { orders: MockOrder[]; walletMillimes: number });
   } catch {
     return undefined;
   }
@@ -718,7 +767,16 @@ function savedOrders(): { orders: MockOrder[]; walletMillimes: number } | undefi
 function build(): MockDb {
   const now = Date.now();
   const merchant = buildMerchant(now);
-  const admin = buildAdmin(now, merchant.rateBps);
+  const base = buildAdmin(now, merchant.rateBps);
+  const admin = {
+    ...base,
+    kycFiles: buildKycFiles(base.merchants, base.companies),
+    payoutRequests: buildOtherPayouts(base.merchants, now),
+    payoutEvents: new Map<string, S['PayoutEvent'][]>(),
+    batchLines: new Map<string, S['AdminPayoutRequest'][]>(),
+    transactions: buildTransactions(base.merchants, base.companies, now),
+    documents: new Map<string, Blob>(),
+  };
   const saved = savedOrders();
   const orders = saved?.orders ?? buildOrders(now, admin.companies);
   const company = buildCompany();

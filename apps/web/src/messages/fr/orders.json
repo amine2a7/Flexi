@@ -14,7 +14,8 @@
     "CANCELLED": "Commande annulée",
     "TRANSFER_DECLARED": "Virement déclaré",
     "PROOF_REJECTED": "Justificatif rejeté",
-    "VALIDATED": "Paiement validé, crédits ajoutés au solde"
+    "VALIDATED": "Paiement validé, crédits ajoutés au solde",
+    "FIRST_VALIDATION": "Première validation (double validation)"
   },
   "role": {
     "ADMIN": "FlexiPay",
@@ -30,7 +31,8 @@
     "paymentReference": "Motif à indiquer sur le virement",
     "status": "Statut",
     "declared": "Montant déclaré",
-    "action": "Action"
+    "action": "Action",
+    "category": "Catégorie"
   },
   "open": "Ouvrir",
   "openOrder": "Ouvrir la commande {reference}",
@@ -153,7 +155,14 @@
     "rejectedToast": "Justificatif rejeté : l'entreprise est invitée à déclarer à nouveau.",
     "noDeclaration": "Aucun virement déclaré pour le moment.",
     "refusedInfo": "Motif du refus : {reason}",
-    "lastRejection": "Dernier justificatif rejeté : {reason}"
+    "lastRejection": "Dernier justificatif rejeté : {reason}",
+    "fourEyesTitle": "Double validation requise",
+    "fourEyesInfo": "Au-delà de 10 000,000 TND de crédits, deux administrateurs différents doivent valider le paiement.",
+    "firstDone": "Première validation par {name} le {date}. Un second administrateur doit valider.",
+    "firstByMe": "Vous avez fait la première validation le {date} : un autre administrateur doit valider.",
+    "firstValidate": "Première validation",
+    "secondValidate": "Valider (2e validation)",
+    "firstValidatedToast": "Première validation enregistrée : un second administrateur doit valider."
   },
   "reasonRequired": "Le motif est obligatoire.",
   "conflict": "Cette commande a changé entre-temps : la page a été actualisée."
