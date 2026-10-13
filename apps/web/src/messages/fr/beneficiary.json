@@ -1,7 +1,7 @@
 {
   "home": {
     "title": "Mon solde",
-    "description": "Vos crédits repas, à utiliser chez les commerçants partenaires.",
+    "description": "Un solde par type de crédit, à utiliser chez les commerçants qui acceptent ce type.",
     "balance": "Solde disponible",
     "offeredBy": "Crédits offerts par {company}",
     "expiring": "{amount} expirent le {date}",
@@ -33,7 +33,7 @@
     "requestsEmpty": "Aucune demande en attente. Elle apparaîtra ici dès que le commerçant aura saisi votre code.",
     "merchant": "Commerçant",
     "amount": "Montant",
-    "category": "Catégorie",
+    "category": "Type de crédit",
     "confirm": "Confirmer",
     "refuse": "Refuser",
     "confirmTitle": "Confirmer le paiement",
@@ -75,6 +75,7 @@
     "description": "Vos paiements, crédits reçus et expirations.",
     "type": "Type",
     "allTypes": "Tous les types",
+    "allOperations": "Toutes les opérations",
     "types": {
       "PAYMENT": "Paiement",
       "ALLOCATION": "Crédits reçus",
@@ -100,7 +101,7 @@
     "date": "Date",
     "counterparty": "Commerçant ou entreprise",
     "city": "Ville",
-    "category": "Catégorie",
+    "category": "Type de crédit",
     "type": "Type",
     "reference": "Référence",
     "balanceAfter": "Solde après l'opération",

@@ -1,7 +1,7 @@
 {
   "home": {
     "title": "My balance",
-    "description": "Your meal credits, to use at partner merchants.",
+    "description": "One balance per credit type, to use at merchants that accept this type.",
     "balance": "Available balance",
     "offeredBy": "Credits offered by {company}",
     "expiring": "{amount} expire on {date}",
@@ -33,7 +33,7 @@
     "requestsEmpty": "No pending request. It will appear here as soon as the merchant enters your code.",
     "merchant": "Merchant",
     "amount": "Amount",
-    "category": "Category",
+    "category": "Credit type",
     "confirm": "Confirm",
     "refuse": "Refuse",
     "confirmTitle": "Confirm the payment",
@@ -75,6 +75,7 @@
     "description": "Your payments, credits received and expiries.",
     "type": "Type",
     "allTypes": "All types",
+    "allOperations": "All operations",
     "types": {
       "PAYMENT": "Payment",
       "ALLOCATION": "Credits received",
@@ -100,7 +101,7 @@
     "date": "Date",
     "counterparty": "Merchant or company",
     "city": "City",
-    "category": "Category",
+    "category": "Credit type",
     "type": "Type",
     "reference": "Reference",
     "balanceAfter": "Balance after the operation",

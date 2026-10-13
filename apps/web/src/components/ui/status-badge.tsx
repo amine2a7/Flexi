@@ -71,6 +71,7 @@ const API_TO_TOKEN: Record<string, string> = {
   // PaymentStatus
   INITIATED: 'INITIE',
   CONFIRMED: 'CONFIRME',
+  COMPLETED: 'CONFIRME',
   SETTLED: 'REGLE',
   REFUSED: 'REFUSE',
   DISPUTED: 'EN_LITIGE',
@@ -134,7 +135,11 @@ export function StatusBadge({ status, context, labelKey }: StatusBadgeProps) {
       )}
     >
       <Icon aria-hidden="true" className="size-icon-sm" />
-      {t(messageKey(labelKey ?? (orderToken === undefined ? token.labelKey : `orders.status.${status}`)))}
+      {t(
+        messageKey(
+          labelKey ?? (orderToken === undefined ? token.labelKey : `orders.status.${status}`),
+        ),
+      )}
     </span>
   );
 }

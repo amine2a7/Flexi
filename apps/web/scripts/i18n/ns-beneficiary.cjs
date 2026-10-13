@@ -4,9 +4,9 @@ module.exports = {
     home: {
       title: ['Mon solde', 'My balance', 'رصيدي'],
       description: [
-        'Vos crédits repas, à utiliser chez les commerçants partenaires.',
-        'Your meal credits, to use at partner merchants.',
-        'أرصدة وجباتك، للاستعمال لدى التجار الشركاء.',
+        'Un solde par type de crédit, à utiliser chez les commerçants qui acceptent ce type.',
+        'One balance per credit type, to use at merchants that accept this type.',
+        'رصيد لكل نوع، للاستعمال لدى التجار الذين يقبلون هذا النوع.',
       ],
       balance: ['Solde disponible', 'Available balance', 'الرصيد المتاح'],
       offeredBy: ['Crédits offerts par {company}', 'Credits offered by {company}', 'أرصدة مقدّمة من {company}'],
@@ -55,7 +55,7 @@ module.exports = {
       ],
       merchant: ['Commerçant', 'Merchant', 'التاجر'],
       amount: ['Montant', 'Amount', 'المبلغ'],
-      category: ['Catégorie', 'Category', 'الصنف'],
+      category: ['Type de crédit', 'Credit type', 'نوع الرصيد'],
       confirm: ['Confirmer', 'Confirm', 'تأكيد'],
       refuse: ['Refuser', 'Refuse', 'رفض'],
       confirmTitle: ['Confirmer le paiement', 'Confirm the payment', 'تأكيد الدفع'],
@@ -117,6 +117,7 @@ module.exports = {
       description: ['Vos paiements, crédits reçus et expirations.', 'Your payments, credits received and expiries.', 'دفعاتك والأرصدة المستلمة وانتهاءات الصلاحية.'],
       type: ['Type', 'Type', 'النوع'],
       allTypes: ['Tous les types', 'All types', 'كل الأنواع'],
+      allOperations: ['Toutes les opérations', 'All operations', 'كل العمليات'],
       types: {
         PAYMENT: ['Paiement', 'Payment', 'دفع'],
         ALLOCATION: ['Crédits reçus', 'Credits received', 'أرصدة مستلمة'],
@@ -142,7 +143,7 @@ module.exports = {
       date: ['Date', 'Date', 'التاريخ'],
       counterparty: ['Commerçant ou entreprise', 'Merchant or company', 'التاجر أو المؤسسة'],
       city: ['Ville', 'City', 'المدينة'],
-      category: ['Catégorie', 'Category', 'الصنف'],
+      category: ['Type de crédit', 'Credit type', 'نوع الرصيد'],
       type: ['Type', 'Type', 'النوع'],
       reference: ['Référence', 'Reference', 'المرجع'],
       balanceAfter: ["Solde après l'opération", 'Balance after the operation', 'الرصيد بعد العملية'],

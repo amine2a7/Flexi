@@ -21,6 +21,7 @@ export function PinDialog({
   confirmLabel,
   onSubmit,
   onClose,
+  describe,
 }: {
   title: string;
   description?: string;
@@ -29,6 +30,8 @@ export function PinDialog({
   /** Returns the API error, or undefined on success. */
   onSubmit: (pin: string) => Promise<unknown>;
   onClose: () => void;
+  /** Precise message of a known problem (e.g. balance of the type), else the generic one. */
+  describe?: (error: unknown) => string | undefined;
 }) {
   const t = useTranslations('beneficiary.pin');
   const tRoot = useTranslations();
@@ -63,7 +66,9 @@ export function PinDialog({
       <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-4" noValidate>
         {recap}
         {error !== undefined ? (
-          <Alert tone="danger">{tRoot(messageKey(errorMessageKey(error)))}</Alert>
+          <Alert tone="danger">
+            {describe?.(error) ?? tRoot(messageKey(errorMessageKey(error)))}
+          </Alert>
         ) : null}
         <TextField
           label={t('label')}

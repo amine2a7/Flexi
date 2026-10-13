@@ -17,6 +17,8 @@ interface FilterBarProps {
   readonly searchLabel?: string;
   readonly statusLabel?: string;
   readonly statusOptions?: readonly { value: string; label: string }[];
+  /** First option of the status select (default: all statuses). */
+  readonly statusPlaceholder?: string;
   /** Adds the credit type filter (every list with amounts of credit). */
   readonly withCreditType?: boolean;
   readonly onApply: (filters: Filters) => void;
@@ -27,6 +29,7 @@ export function FilterBar({
   searchLabel,
   statusLabel,
   statusOptions,
+  statusPlaceholder,
   withCreditType = false,
   onApply,
 }: FilterBarProps) {
@@ -60,7 +63,7 @@ export function FilterBar({
         <SelectField
           label={statusLabel}
           options={statusOptions}
-          placeholder={t('allStatuses')}
+          placeholder={statusPlaceholder ?? t('allStatuses')}
           value={status}
           onChange={(event) => {
             setStatus(event.target.value);

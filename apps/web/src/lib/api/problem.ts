@@ -14,6 +14,8 @@ const MESSAGE_KEYS: Readonly<Record<string, string>> = {
   INSUFFICIENT_FUNDS: 'errors.insufficientFunds',
   LIMIT_EXCEEDED: 'errors.limitExceeded',
   PAYMENT_DECLINED: 'errors.paymentDeclined',
+  PIN_INVALID: 'errors.pinInvalid',
+  PIN_LOCKED: 'errors.pinLocked',
   RATE_LIMITED: 'errors.rateLimited',
   INTERNAL_ERROR: 'errors.internalError',
   SERVICE_UNAVAILABLE: 'errors.serviceUnavailable',

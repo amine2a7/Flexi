@@ -14,12 +14,13 @@ import { formatMillimesWithCurrency, formatRateBps } from '@/lib/format/money';
 import { parseMillimes } from '@/lib/format/money-input';
 import { Amount } from '@/components/ui/amount';
 import { Button, buttonClasses } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardTitle } from '@/components/ui/card';
 import { Countdown } from '@/components/ui/countdown';
 import { CreditTypeBadge, CreditTypeSelect, type CreditType } from '@/components/ui/credit-type';
 import { TextField } from '@/components/ui/field';
 import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { ConfirmDialog } from '@/components/ui/modal';
+import { QrCode } from '@/components/ui/qr-code';
 import { ResultScreen } from '@/components/ui/result-screen';
 import { useToast } from '@/components/ui/toast';
 
@@ -263,6 +264,20 @@ export default function CollectPage() {
           )}
         </div>
       </Card>
+      {profile.status === 'success' ? (
+        <Card className="mt-6">
+          <CardTitle description={t('myQrHint')}>{t('myQr')}</CardTitle>
+          <div className="flex flex-col items-center gap-3 text-center">
+            <QrCode
+              value={`flexipay:merchant:${profile.data.paymentCode}`}
+              label={t('qrLabel', { code: profile.data.paymentCode })}
+            />
+            <p className="text-label text-text" dir="ltr">
+              {t('myCode', { code: profile.data.paymentCode })}
+            </p>
+          </div>
+        </Card>
+      ) : null}
       {DemoCodes !== null ? (
         <div className="mt-6">
           <DemoCodes />
