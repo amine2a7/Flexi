@@ -26,7 +26,7 @@ Comme `commun-connexion.md` et `commun-premiere-connexion.md` : `Card` (`size.au
 | `auth.forgot.message` | Saisissez votre e-mail ou votre numéro de téléphone. Si un compte correspond, vous recevrez les instructions pour choisir un nouveau mot de passe. |
 | `auth.forgot.identifier.label` | E-mail ou numéro de téléphone |
 | `auth.forgot.submit` | Envoyer les instructions |
-| `auth.forgot.sent` | Si un compte correspond à cet identifiant, des instructions viennent d'être envoyées. |
+| `auth.forgot.sent.label` | Si un compte correspond à cet identifiant, des instructions viennent d'être envoyées. |
 | `auth.forgot.back` | Retour à la connexion |
 | `auth.forgot.sent.hint` | Vérifiez vos messages, y compris les courriers indésirables, et assurez-vous que l'identifiant saisi est correct. |
 | `auth.forgot.restart` | Recommencer avec un autre identifiant |

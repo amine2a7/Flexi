@@ -33,7 +33,7 @@ Quand `Countdown` atteint 0 : texte « Délai dépassé. » (`common.countdown.e
 | `merchant.collectResult.matricule` | Matricule |
 | `merchant.collectResult.category` | Catégorie |
 | `merchant.collectResult.amount` | Montant |
-| `merchant.collectResult.cancel` | Annuler l'encaissement |
+| `merchant.collectResult.cancel.label` | Annuler l'encaissement |
 | `merchant.collectResult.cancel.confirm.title` | Annuler cet encaissement ? |
 | `merchant.collectResult.cancel.confirm.consequence` | Le client ne pourra plus confirmer ce paiement. |
 | `merchant.collectResult.cancel.confirm.action` | Annuler l'encaissement |
@@ -45,7 +45,7 @@ Quand `Countdown` atteint 0 : texte « Délai dépassé. » (`common.countdown.e
 | `merchant.collectResult.print` | Imprimer le reçu |
 | `merchant.collectResult.history` | Voir l'historique |
 | `merchant.collectResult.new` | Nouvel encaissement (= `errors.paymentDeclined.action`) |
-| `errors.paymentDeclined` | Paiement refusé. Le client peut vérifier son application. |
+| `errors.paymentDeclined.label` | Paiement refusé. Le client peut vérifier son application. |
 | `common.countdown.remaining` / `.expired` | Temps restant : {seconds} s · Délai dépassé |
 | `merchant.collectResult.a11y.waiting` | En attente de la confirmation du client. |
 | `merchant.collectResult.a11y.accepted` | Paiement accepté : {amount} dinars tunisiens. |

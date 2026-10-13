@@ -129,11 +129,11 @@ Menu du compte (liste) : Mon profil · Langue (Français / العربية / Engl
 | Clé | FR |
 |---|---|
 | `nav.breadcrumb.label` | Fil d'Ariane |
-| `nav.notifications` | Notifications |
+| `nav.notifications.label` | Notifications |
 | `nav.notifications.unread` | {count, plural, one {# notification non lue} other {# notifications non lues}} |
 | `nav.notifications.none` | Aucune notification non lue |
 | `nav.userMenu` | Menu du compte |
-| `nav.profile` | Mon profil |
+| `nav.profile.label` | Mon profil |
 | `nav.language` | Langue |
 | `nav.logout` | Se déconnecter |
 
@@ -143,7 +143,7 @@ L'action principale utilise les clés de la page (`ecran.action.principale`). Le
 
 **6. RTL.** L'en-tête est inversé (menu / fil d'Ariane à `start` = droite) ; séparateur du fil d'Ariane `ChevronLeft` en RTL (miroir) ; la cloche et le menu du compte sont à `end` ; le compteur est à l'`end` supérieur de la cloche ; le sélecteur de langue change `dir` et la police (`font.family-ar`).
 
-**7. Accessibilité.** `<header role="banner">` ; fil d'Ariane `<nav aria-label>` en liste ordonnée, `aria-current="page"` sur le segment courant ; cloche : nom accessible `nav.notifications` + compteur annoncé (`nav.notifications.unread`) — le compteur n'est pas la seule information ; menu du compte : `aria-haspopup="menu"`, flèches Haut/Bas, Échap ; cibles ≥ 44 px. **Ordre de focus :** (après la sidebar) bouton menu → fil d'Ariane → **action principale** → notifications → menu du compte → contenu. Titre de page `h1` unique dans le contenu ; `document.title` = « {page} – FlexiPay ».
+**7. Accessibilité.** `<header role="banner">` ; fil d'Ariane `<nav aria-label>` en liste ordonnée, `aria-current="page"` sur le segment courant ; cloche : nom accessible `nav.notifications.label` + compteur annoncé (`nav.notifications.unread`) — le compteur n'est pas la seule information ; menu du compte : `aria-haspopup="menu"`, flèches Haut/Bas, Échap ; cibles ≥ 44 px. **Ordre de focus :** (après la sidebar) bouton menu → fil d'Ariane → **action principale** → notifications → menu du compte → contenu. Titre de page `h1` unique dans le contenu ; `document.title` = « {page} – FlexiPay ».
 
 **8. Responsive.** ≥ `breakpoint.lg` : tous les éléments. < `breakpoint.lg` : bouton menu à `start`, fil d'Ariane réduit au **titre de la page courante** (segments parents dans le menu au clic), action principale **conservée avec son texte** : si l'espace manque, elle passe sous le `h1` (jamais réduite à une icône, ux R-03) ; badge de rôle déplacé dans le menu du compte. **Pages de niveau 2 ou plus (UX-20) :** le fil d'Ariane réduit est remplacé par un lien `common.nav.backTo` « Retour à {page parente} » (chevron miroir en RTL) placé au-dessus du `h1`, qui ramène à la liste **avec ses filtres et son curseur** (état dans l'URL, `dev-composants.md` NC.1) ; plus de « menu caché sous le titre ». **< `breakpoint.sm` : cloche + menu du compte seuls ; l'action principale (UX-18) n'est jamais « en bas de page » :** elle se place **sous le `h1`, en pleine largeur, en tête du contenu** ; pour un **formulaire ou un écran de décision** (récapitulatif de virement, de commande, création de compte) elle va dans une **barre d'action collante en bas de l'écran** (padding `space.4`, zone sûre, sans masquer le dernier champ ni le dernier message d'erreur). Elle reste la première action dans l'ordre de focus après le `h1`.
 
@@ -200,7 +200,7 @@ L'action principale utilise les clés de la page (`ecran.action.principale`). Le
 | Onglet | Clé | FR | Icône |
 |---|---|---|---|
 | 1 | `nav.pro.home` | Accueil | `House` |
-| 2 | `nav.pro.collect` | Encaisser | `QrCode` |
+| 2 | `nav.pro.collect.label` | Encaisser | `QrCode` |
 | 3 | `nav.pro.settlements` | Règlements | `Landmark` |
 | 4 | `nav.pro.history` | Historique | `History` |
 | 5 | `nav.pro.profile` | Profil | `UserRound` |
@@ -231,7 +231,7 @@ L'action principale utilise les clés de la page (`ecran.action.principale`). Le
 
 **3. Tokens.** Fond `color.navy` · hauteur `size.header-height` + zone sûre haute (l'Accueil ajoute `space.6` pour le chevauchement de la carte) · padding horizontal `space.4` · avatar `size.avatar-lg` (48), `radius.avatar`, fond `color.navy-deep`, initiales `color.on-navy` `type-scale.label` · salutation `type-scale.body-lg` `color.on-navy` ; nom ou rôle `type-scale.caption` `color.on-navy-muted` · cloche `Bell` `size.icon-lg` `color.on-navy`, zone `size.touch-target-mobile` ; compteur : pastille `color.danger`, texte `color.on-danger` `type-scale.micro`.
 
-**4. Textes et clés.** `nav.greeting` « Bonjour, {name} » · `nav.notifications` « Notifications » · `nav.notifications.unread` (pluriel ICU, comme N.2) · `nav.avatar.open` « Ouvrir mon profil ». Nom affiché : prénom seul ou `displayName` (données de `/me`).
+**4. Textes et clés.** `nav.greeting.label` « Bonjour, {name} » · `nav.notifications.label` « Notifications » · `nav.notifications.unread` (pluriel ICU, comme N.2) · `nav.avatar.open` « Ouvrir mon profil ». Nom affiché : prénom seul ou `displayName` (données de `/me`).
 
 **5. États.** Chargement : avatar et deux lignes en squelette sur fond navy (primitives avec fond `color.navy-deep`). Erreur de `/me` : initiales génériques, salutation neutre `nav.greeting.generic` « Bonjour », pas de blocage. Hors connexion : inchangé + bandeau (N.7). Session expirée : N.6. Compteur de notifications indisponible : cloche sans compteur.
 

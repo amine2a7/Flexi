@@ -34,9 +34,9 @@ Propriétaire et caissier (permission « encaisser », nom à confirmer, format 
 | `merchant.collect.code.help` | 8 chiffres. |
 | `merchant.collect.amount.label` | Montant à encaisser |
 | `merchant.collect.submit` | Encaisser |
-| `merchant.collect.offline` | `common.state.offline.actionDisabled` « Indisponible hors connexion. » (+ « L'encaissement nécessite une connexion. » `merchant.collect.offline.message`) |
+| `merchant.collect.offline.label` | `common.state.offline.actionDisabled` « Indisponible hors connexion. » (+ « L'encaissement nécessite une connexion. » `merchant.collect.offline.message`) |
 | `merchant.collect.declined.action` | Nouvel encaissement (`errors.paymentDeclined.action`) |
-| `errors.paymentDeclined` | Paiement refusé. Le client peut vérifier son application. |
+| `errors.paymentDeclined.label` | Paiement refusé. Le client peut vérifier son application. |
 | `errors.field.invalidFormat` | Le format est incorrect. (code mal formé) |
 | `errors.field.required` | Ce champ est obligatoire. |
 | `common.field.amount.invalid` / `common.field.amount.preview` | voir C.2 |
@@ -52,7 +52,7 @@ Texte du refus : **exactement** « Paiement refusé. Le client peut vérifier so
 | Trop de demandes (`429`) | `errors.rateLimited` + compte à rebours, bouton désactivé avec raison |
 | Erreur serveur / réseau | `errors.internal` / `errors.network` + « Réessayer » avec **la même clé** + référence ; `common.state.error.safeRetry` |
 | `409 IDEMPOTENCY_REQUEST_IN_PROGRESS` | bandeau « Traitement en cours… », nouvel essai automatique après `Retry-After` |
-| Hors connexion | bandeau C.8.4 ; bouton désactivé avec `merchant.collect.offline` ; la saisie est conservée |
+| Hors connexion | bandeau C.8.4 ; bouton désactivé avec `merchant.collect.offline.label` ; la saisie est conservée |
 | Session expirée | N.6 (code et montant non conservés) |
 | Permission refusée | C.8.8 |
 | Vide / solde insuffisant / plafond | **sans objet** : le commerçant ne voit jamais de solde ni de motif (COM-04 v4.1, critère d'acceptation 4 réservé au payeur) |

@@ -10,6 +10,7 @@ Chaque fichier `docs/design/specs/<espace>-<ecran>.md` contient, dans cet ordre 
 
 ## S1. Conventions
 - **Routes** (noms techniques en anglais, textes d'interface en français) : `/login`, `/admin/…`, `/company/…`, `/merchant/…`. Les fichiers de spec gardent des noms français (`commercant-encaissement.md`).
+- **Clés feuille/dossier :** le texte d'une clé qui a des sous-clés est porté par `<clé>.label` (règle détaillée et liste : `fondations-composants.md` A.4) ; les `messageKey` du serveur sont résolues par `<messageKey>.label` puis `<messageKey>`.
 - **Clés i18n** : `<espace>.<ecran>.<element>` avec `espace` ∈ `auth` · `merchant` · `company` · `admin` ; clés partagées : `common.*`, `errors.*`, `status.*`, `nav.*`, `role.*`, `category.*`. Pluriels et variables au format ICU (`{count, plural, one {…} other {…}}`, `{amount}`, `{date}`). Les textes FR de ces specs sont les **valeurs de référence** ; AR et EN sont fournis par l'équipe de traduction (jamais inventés par design). Aucune chaîne juridique n'est rédigée par design.
 - **Références au contrat** : `E` = existe dans `openapi.yaml` ; `N` = à créer (proposition dans `_besoins-contrat.md`, identifiant `CT-<espace>-<n>`). Une spec ne fige jamais un nom marqué `N` : elle le propose, backend tranche.
 - **Un écran = une action principale** (bouton `primary`, ou `accent` pour une réussite/confirmation financière) dans l'en-tête de page (N.2) ; sous `breakpoint.sm`, voir N.2 (UX-18).
@@ -21,7 +22,7 @@ Coquille N.1/N.2 · `h1` unique (titre de page) · fil d'Ariane (niveau 1) ou li
 | État | Rendu | Référence |
 |---|---|---|
 | Chargement | squelette aux dimensions du contenu final, annonce `common.state.loading` une fois | C.7, C.8.1 |
-| Chargement lent (> `UI.slowLoadingMs`) | `common.state.slow` ; lecture : « Arrêter le chargement » ; **écriture : jamais d'annulation**, « Vérifier l'état de l'opération » | C.8.1 |
+| Chargement lent (> `UI.slowLoadingMs`) | `common.state.slow.label` ; lecture : « Arrêter le chargement » ; **écriture : jamais d'annulation**, « Vérifier l'état de l'opération » | C.8.1 |
 | Vide | `StateView` `inline`/`page` : illustration, titre, message, **une action pour en sortir** (clés `ecran.empty.title|message|action`) | C.8.2 |
 | Vide après filtre | `common.state.emptyFiltered.*` + « Effacer les filtres » | C.8.2 |
 | Erreur | message de `messageKey`, **Réessayer**, référence copiable (`requestId`) | C.8.3, C.9 |
@@ -81,7 +82,7 @@ Aucun jeton, secret MFA, RIB complet, mot de passe, solde complet ni donnée per
 Ces valeurs sont des paramètres d'affichage (pas des tokens visuels, pas des règles métier) ; frontend les déclare **en un seul module** (`ui-constants`) et toute modification passe par design. Elles répondent à la remarque conformite S-05.
 | Constante | Valeur | Usage |
 |---|---|---|
-| `UI.slowLoadingMs` | 10 000 | seuil du message `common.state.slow` (C.8.1) |
+| `UI.slowLoadingMs` | 10 000 | seuil du message `common.state.slow.label` (C.8.1) |
 | `UI.skeletonDelayMs` | = `motion.base` (200) | délai avant d'afficher un squelette (C.7) |
 | `UI.skeletonRowsInitial` | 6 | lignes de squelette d'une liste au premier chargement |
 | `UI.skeletonRowsNextPage` | 3 | lignes de squelette en fin de liste (A.8) |

@@ -41,7 +41,7 @@ Après succès : `nextStep: NONE`, espace de l'utilisateur, avec un toast `succe
 | `auth.mfa.recovery.title` | Codes de secours |
 | `auth.mfa.recovery.message` | Ces codes ne seront plus affichés. Conservez-les dans un endroit sûr. |
 | `auth.mfa.recovery.copy` / `.download` / `.print` | Copier tous les codes · Télécharger (.txt) · Imprimer |
-| `auth.mfa.recovery.confirm` | J'ai conservé mes codes de secours |
+| `auth.mfa.recovery.confirm.label` | J'ai conservé mes codes de secours |
 | `auth.mfa.recovery.confirm.required` | Confirmez que vous avez conservé vos codes pour continuer. |
 | `auth.mfa.recovery.submit` | Terminer |
 | `auth.mfa.enroll.title` | Activer la double authentification |

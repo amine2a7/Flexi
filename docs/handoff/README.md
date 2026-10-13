@@ -169,7 +169,8 @@ DÉCISIONS NÉCESSAIRES : … (ou « aucune »)
 | PreToolUse (Edit/Write) | `enforce-scope.js` | Bloque une écriture hors périmètre |
 | PreToolUse (Edit/Write/NotebookEdit) | `protect-files.js` | Bloque `.env*`, `secrets/`, `*.pem`, `*.key`, migrations existantes (chemins Windows, casse, flux `::$DATA`, noms courts 8.3) |
 | git pre-commit (natif) | `.githooks/pre-commit` | gitleaks sur l'index réel du commit, après l'indexation (`-a`, chemins, alias compris) ; refus si gitleaks est absent (S1-01). Protège aussi les commits de l'utilisateur. Activé par poste (§14) |
-| PreToolUse (Bash) | `guard-bash.sh` → `guard-bash.js` | Analyse le seul segment `git … commit` (jamais le message) : refuse `-n`/`--no-verify` (et abréviations), toute modification de `core.hooksPath` ou de `.githooks/`, les alias à la volée, `commit-tree` ; vérifie avant commit que le hook natif est actif et intact (S1-01, S1-02). Aide : SQL destructeur sur ledger et audit, hors messages de commit (CF-09). Une modification de `.githooks/` déjà commité est commitée par l'utilisateur |
+| git pre-push (natif) | `.githooks/pre-push` | gitleaks sur chaque commit poussé, y compris ceux créés sans pre-commit (stash, cherry-pick, am, rebase) ; refus si gitleaks est absent (S1-09) |
+| PreToolUse (Bash) | `guard-bash.sh` → `guard-bash.js` | Analyse le seul segment `git … commit` (jamais le message) ; corps de heredoc traités comme données sauf s'ils alimentent un interpréteur ou psql (S1-10). Refuse `-n`/`--no-verify` (et abréviations) sur commit et push, toute modification de `core.hooksPath`, de `.githooks/` ou de `.git/config` hors git, les variables `GIT_CONFIG_*`/`GIT_DIR`/`GIT_INDEX_FILE`, les alias, les sous-commandes git non littérales, `commit-tree` ; vérifie avant commit ou push que les hooks natifs sont actifs et intacts (S1-01, S1-02, S1-09). Aide : SQL destructeur sur ledger et audit, hors messages de commit (CF-09). Une modification de `.githooks/` déjà commité est commitée par l'utilisateur |
 | PostToolUse (Edit/Write) | `format.sh` | Prettier / dart format |
 | TaskCompleted | `task-completed.js` | Refuse la complétion si lint, typecheck ou tests du périmètre échouent |
 | TeammateIdle | `teammate-idle.js` | Réclame le rapport (j) à un coéquipier qui a travaillé sans l'envoyer |
@@ -232,7 +233,7 @@ Toujours **exécuter le hook comme fichier** (`bash .claude/hooks/x.sh`, `node .
 export CLAUDE_PROJECT_DIR="$PWD"
 # Périmètres de tous les agents (55 cas, dont ux, qualite, conformite) : tous doivent passer
 node --test .claude/hooks/test/enforce-scope.test.js
-# guard-bash (53 cas : -n, --no-verify, core.hooksPath, .githooks, faux positifs S1-02, SQL) : tous doivent passer
+# guard-bash (78 cas : -n, --no-verify, core.hooksPath, .githooks, GIT_CONFIG_*, alias, heredocs, faux positifs, SQL) : tous doivent passer
 node --test .claude/hooks/test/guard-bash.test.js
 # Périmètres : doit bloquer (2), puis laisser passer (0)
 echo '{"agent_type":"securite","tool_input":{"file_path":"apps/api/x.ts"}}' | node .claude/hooks/enforce-scope.js; echo "code $?"
