@@ -1,10 +1,9 @@
-import { mkdir, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { Response } from 'express';
 import { ENV, KEYS, type Keys } from '../config/env.provider.js';
 import type { Env } from '../config/env.js';
 import { AuditService } from '../common/audit.service.js';
+import { OutboxService } from '../common/outbox.service.js';
 import {
   decryptSecret,
   encryptSecret,
@@ -70,14 +69,13 @@ export type LoginOutcome =
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger('Auth');
-
   constructor(
     @Inject(DbService) private readonly db: DbService,
     @Inject(SessionService) private readonly sessions: SessionService,
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(KEYS) private readonly keys: Keys,
     @Inject(ENV) private readonly env: Env,
+    @Inject(OutboxService) private readonly outbox: OutboxService,
   ) {}
 
   private ip(): string {
@@ -453,6 +451,13 @@ export class AuthService {
         where: { id: user.id },
         data: { passwordHash, mustChangePassword: false, tempPasswordExpiresAt: null },
       });
+      // An invited employee becomes active when it chooses its own password.
+      if (updated.employeeId !== null) {
+        await tx.employee.updateMany({
+          where: { id: updated.employeeId, status: 'INVITED' },
+          data: { status: 'ACTIVE' },
+        });
+      }
       const session = await tx.session.findUniqueOrThrow({ where: { id: who.sessionId } });
       // Every other session of the account is closed (DP n° 12).
       await this.sessions.revokeOthers(tx, user.id, session.familyId);
@@ -487,24 +492,20 @@ export class AuthService {
     await this.deliver(user, byPhone, secret);
   }
 
-  /**
-   * No e-mail or SMS provider yet: in development the message is written to var/outbox (ignored
-   * by Git), never to the logs. In production the API refuses to pretend it sent anything.
-   */
+  /** Reset code (SMS) or link (e-mail), through the outbox (no provider yet). */
   private async deliver(user: User, byPhone: boolean, secret: string): Promise<void> {
-    if (this.env.NODE_ENV === 'production') {
-      this.logger.warn('password reset requested but no e-mail / SMS provider is configured');
-      return;
-    }
-    const origin = this.env.webOrigins[0] ?? 'http://localhost:3001';
-    const text = byPhone
-      ? `SMS to ${user.phone ?? ''}: your FlexiPay code is ${secret} (10 min).`
-      : `E-mail to ${user.email}: reset your password at ${origin}/fr/mot-de-passe-oublie/nouveau#token=${secret} (15 min).`;
-    const dir = join(this.env.uploadDir, '..', 'outbox');
-    await mkdir(dir, { recursive: true });
-    await writeFile(
-      join(dir, `${new Date().toISOString().replaceAll(':', '-')}-${user.id}.txt`),
-      `${text}\n`,
+    await this.outbox.send(
+      byPhone
+        ? {
+            to: user.phone ?? '',
+            subject: 'Code FlexiPay',
+            text: `Votre code FlexiPay est ${secret} (10 min).`,
+          }
+        : {
+            to: user.email,
+            subject: 'Réinitialisation de votre mot de passe FlexiPay',
+            text: `Choisissez un nouveau mot de passe : ${this.outbox.webOrigin()}/fr/mot-de-passe-oublie/nouveau#token=${secret} (15 min).`,
+          },
     );
   }
 

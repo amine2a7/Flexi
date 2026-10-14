@@ -2182,6 +2182,13 @@ paths:
       tags: [company]
       operationId: createEmployee
       summary: Créer un employé (mot de passe temporaire envoyé, RG-2.2)
+      description: |
+        Crée aussi le compte de connexion de l'employé (rôle EMPLOYEE) et envoie l'invitation (décision du 2026-10-14) :
+        identifiant = e-mail, mot de passe temporaire valable 72 h, changement obligatoire à la
+        première connexion puis enrôlement MFA. Le mot de passe temporaire n'est jamais renvoyé
+        dans la réponse ni journalisé ; il ne part que dans l'invitation (boîte d'envoi locale en
+        développement, aucun fournisseur d'e-mail en production pour l'instant). Un e-mail déjà
+        utilisé pour se connecter : `409 RESOURCE_STATE_CONFLICT`, rien n'est créé.
       requestBody:
         required: true
         content:
@@ -2252,6 +2259,11 @@ paths:
       tags: [company]
       operationId: confirmEmployeeImport
       summary: Confirmer un import (lignes valides de l'aperçu)
+      description: |
+        Crée les employés des lignes valides, chacun avec son compte de connexion et son invitation
+        (mot de passe temporaire de 72 h, comme `createEmployee`). L'aperçu signale par
+        `ALREADY_EXISTS` sur `email` une adresse qui sert déjà à se connecter : la ligne est
+        écartée.
       requestBody:
         required: true
         content:
@@ -2785,7 +2797,14 @@ paths:
     post:
       tags: [admin]
       operationId: createMerchantAccount
-      summary: Créer un commerçant (profil de commission obligatoire)
+      summary: Créer un commerçant (profil de commission facultatif)
+      description: |
+        Crée aussi le compte de connexion du responsable du commerce (rôle MERCHANT, OWNER) et envoie l'invitation (décision du 2026-10-14) :
+        identifiant = e-mail, mot de passe temporaire valable 72 h, changement obligatoire à la
+        première connexion puis enrôlement MFA. Le mot de passe temporaire n'est jamais renvoyé
+        dans la réponse ni journalisé ; il ne part que dans l'invitation (boîte d'envoi locale en
+        développement, aucun fournisseur d'e-mail en production pour l'instant). Un e-mail déjà
+        utilisé pour se connecter : `409 RESOURCE_STATE_CONFLICT`, rien n'est créé.
       requestBody:
         required: true
         content:
@@ -2941,6 +2960,13 @@ paths:
       tags: [admin]
       operationId: createCompanyAccount
       summary: Créer une entreprise
+      description: |
+        Crée aussi le compte de connexion du responsable de l'entreprise (rôle COMPANY, OWNER) et envoie l'invitation (décision du 2026-10-14) :
+        identifiant = e-mail, mot de passe temporaire valable 72 h, changement obligatoire à la
+        première connexion puis enrôlement MFA. Le mot de passe temporaire n'est jamais renvoyé
+        dans la réponse ni journalisé ; il ne part que dans l'invitation (boîte d'envoi locale en
+        développement, aucun fournisseur d'e-mail en production pour l'instant). Un e-mail déjà
+        utilisé pour se connecter : `409 RESOURCE_STATE_CONFLICT`, rien n'est créé.
       requestBody:
         required: true
         content:

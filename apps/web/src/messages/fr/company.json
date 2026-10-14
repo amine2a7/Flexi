@@ -115,7 +115,7 @@
       "ALREADY_EXISTS": "Employé déjà existant"
     },
     "confirm": "Créer {count} employés",
-    "created": "{count} employés ont été créés.",
+    "created": "{count} employés ont été créés. Chacun a reçu son invitation.",
     "back": "Retour aux employés",
     "onlyValid": "Seules les lignes valides seront créées. Corrigez le fichier pour les autres."
   },

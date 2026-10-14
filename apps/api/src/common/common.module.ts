@@ -1,11 +1,13 @@
 import { Global, Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ENV, envProvider, KEYS, keysProvider, type Keys } from '../config/env.provider.js';
+import { InvitationService } from '../auth/invitation.service.js';
 import { SessionService } from '../auth/session.service.js';
 import { AuditService } from './audit.service.js';
 import { AuthGuard } from './auth.guard.js';
 import { DbService } from './db.service.js';
 import { IdempotencyService } from './idempotency.service.js';
+import { OutboxService } from './outbox.service.js';
 import { Paginator } from './pagination.js';
 import { ProblemFilter } from './problem.filter.js';
 import { FILE_STORAGE, LocalDiskStorage } from './storage.js';
@@ -21,6 +23,8 @@ import type { Env } from '../config/env.js';
     SessionService,
     AuditService,
     IdempotencyService,
+    OutboxService,
+    InvitationService,
     {
       provide: Paginator,
       inject: [KEYS],
@@ -41,6 +45,8 @@ import type { Env } from '../config/env.js';
     SessionService,
     AuditService,
     IdempotencyService,
+    OutboxService,
+    InvitationService,
     Paginator,
     FILE_STORAGE,
   ],

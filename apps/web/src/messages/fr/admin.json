@@ -59,7 +59,7 @@
       "invalidFormat": "Format invalide."
     },
     "submit": "Créer le commerçant",
-    "createdToast": "{name} a été créé (en attente KYC).",
+    "createdToast": "{name} a été créé (en attente KYC). Invitation envoyée au responsable.",
     "duplicate": "Un commerçant porte déjà ce nom.",
     "types": "Types acceptés",
     "open": "Ouvrir",
@@ -94,7 +94,7 @@
       "invalidFormat": "Format invalide."
     },
     "submit": "Créer l'entreprise",
-    "createdToast": "{name} a été créée (en attente KYC).",
+    "createdToast": "{name} a été créée (en attente KYC). Invitation envoyée au responsable.",
     "duplicate": "Une entreprise porte déjà ce nom."
   },
   "commissions": {

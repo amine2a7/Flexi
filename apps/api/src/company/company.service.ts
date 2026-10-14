@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
+import { InvitationService } from '../auth/invitation.service.js';
 import { AuditService } from '../common/audit.service.js';
 import { uuidv7 } from '../common/crypto.js';
 import { DbService, type Tx } from '../common/db.service.js';
@@ -73,6 +74,7 @@ export class CompanyService {
     @Inject(SettingsService) private readonly settings: SettingsService,
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(Paginator) private readonly paginator: Paginator,
+    @Inject(InvitationService) private readonly invitations: InvitationService,
   ) {}
 
   private companyId(): string {
@@ -241,7 +243,20 @@ export class CompanyService {
     if (input.phone.trim() !== '' && !PHONE.test(input.phone))
       errors.push({ in: 'body', pointer: '/phone', code: 'INVALID_FORMAT' });
     if (errors.length > 0) throw validationFailed(errors);
-    return this.db.user(async (tx) => {
+    const id = uuidv7();
+    const firstName = input.firstName.trim();
+    const lastName = input.lastName.trim();
+    // Its sign-in account and invitation come with it (decision of 2026-10-14).
+    const [invitation] = await this.invitations.prepare([
+      {
+        role: 'EMPLOYEE',
+        subRole: null,
+        displayName: `${firstName} ${lastName.charAt(0)}.`,
+        email: input.email,
+        employeeId: id,
+      },
+    ]);
+    const body = await this.db.user(async (tx) => {
       const email = input.email.trim().toLowerCase();
       const exists = await tx.employee.findFirst({
         where: { OR: [{ employeeNumber: input.employeeNumber.trim() }, { email }] },
@@ -249,23 +264,32 @@ export class CompanyService {
       if (exists !== null) throw problems.conflict();
       const employee = await tx.employee.create({
         data: {
-          id: uuidv7(),
+          id,
           companyId,
           employeeNumber: input.employeeNumber.trim(),
-          firstName: input.firstName.trim(),
-          lastName: input.lastName.trim(),
+          firstName,
+          lastName,
           email,
           phone: input.phone.trim(),
           status: 'INVITED',
         },
       });
+      if (invitation !== undefined) await this.invitations.create(tx, [invitation]);
       await this.audit.record(tx, 'employees.create', `${employee.firstName} ${employee.lastName}`);
       return this.employeeBody(employee, 0n);
     });
+    if (invitation !== undefined) await this.invitations.deliver([invitation]);
+    return body;
   }
 
   async previewEmployees(csv: string) {
     const companyId = this.companyId();
+    // E-mails that already sign in (any tenant): their account could not be created.
+    const listed = csv
+      .split(/\r?\n/)
+      .flatMap((line) => line.split(/[;,]/).slice(3, 4))
+      .slice(0, 5_001);
+    const inUse = await this.db.system((tx) => this.invitations.emailsInUse(tx, listed));
     return this.db.user(async (tx) => {
       const existing = await tx.employee.findMany({
         select: { employeeNumber: true, email: true },
@@ -278,7 +302,13 @@ export class CompanyService {
       csv.split(/\r?\n/).forEach((raw, index) => {
         const line = raw.trim();
         if (line === '' || (index === 0 && /matricule|employeeNumber/i.test(line))) return;
-        const cells = line.split(/[;,]/).map((cell) => neutralise(cell.trim()));
+        // Formula characters are neutralised (CSV injection), except in a phone number that
+        // matches the strict E.164 format: it cannot hold a formula, and its "+" is required.
+        const cells = line
+          .split(/[;,]/)
+          .map((cell, column) =>
+            column === 4 && PHONE.test(cell.trim()) ? cell.trim() : neutralise(cell.trim()),
+          );
         const [employeeNumber = '', firstName = '', lastName = '', email = '', phone = ''] = cells;
         const values = { employeeNumber, firstName, lastName, email, phone };
         const issues: ImportRow['issues'] = [];
@@ -292,6 +322,8 @@ export class CompanyService {
           issues.push({ field: 'employeeNumber', code: 'DUPLICATE_IN_FILE' });
         } else if (numbers.has(employeeNumber) || emails.has(email.toLowerCase())) {
           issues.push({ field: 'employeeNumber', code: 'ALREADY_EXISTS' });
+        } else if (inUse.has(email.trim().toLowerCase())) {
+          issues.push({ field: 'email', code: 'ALREADY_EXISTS' });
         }
         seenNumbers.add(employeeNumber);
         seenEmails.add(email.toLowerCase());
@@ -326,8 +358,26 @@ export class CompanyService {
       throw problems.conflict();
     }
     this.previews.delete(previewId);
-    const valid = preview.rows.filter((row) => row.issues.length === 0);
-    return this.db.user(async (tx) => {
+    const inUse = await this.db.system((tx) =>
+      this.invitations.emailsInUse(
+        tx,
+        preview.rows.map((row) => row.email),
+      ),
+    );
+    const valid = preview.rows
+      .filter((row) => row.issues.length === 0 && !inUse.has(row.email.toLowerCase()))
+      .map((row) => ({ ...row, id: uuidv7() }));
+    // Accounts and invitations of the imported employees (hashing before the SQL transaction).
+    const prepared = await this.invitations.prepare(
+      valid.map((row) => ({
+        role: 'EMPLOYEE' as const,
+        subRole: null,
+        displayName: `${row.firstName} ${row.lastName.charAt(0)}.`,
+        email: row.email,
+        employeeId: row.id,
+      })),
+    );
+    const created = await this.db.user(async (tx) => {
       const existing = await tx.employee.findMany({
         select: { employeeNumber: true, email: true },
       });
@@ -338,7 +388,7 @@ export class CompanyService {
       );
       await tx.employee.createMany({
         data: fresh.map((row) => ({
-          id: uuidv7(),
+          id: row.id,
           companyId,
           employeeNumber: row.employeeNumber,
           firstName: row.firstName,
@@ -348,9 +398,14 @@ export class CompanyService {
           status: 'INVITED' as const,
         })),
       });
+      const ids = new Set(fresh.map((row) => row.id));
+      const invited = prepared.filter((item) => ids.has(item.invitee.employeeId ?? ''));
+      await this.invitations.create(tx, invited);
       await this.audit.record(tx, 'employees.import', `${String(fresh.length)} employés`);
-      return { createdCount: fresh.length };
+      return invited;
     });
+    await this.invitations.deliver(created);
+    return { createdCount: created.length };
   }
 
   // ---------------------------------------------------------------- allocation

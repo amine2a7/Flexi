@@ -59,7 +59,7 @@
       "invalidFormat": "Invalid format."
     },
     "submit": "Create the merchant",
-    "createdToast": "{name} has been created (pending KYC).",
+    "createdToast": "{name} was created (KYC pending). Invitation sent to the owner.",
     "duplicate": "A merchant already has this name.",
     "types": "Accepted types",
     "open": "Open",
@@ -94,7 +94,7 @@
       "invalidFormat": "Invalid format."
     },
     "submit": "Create the company",
-    "createdToast": "{name} has been created (pending KYC).",
+    "createdToast": "{name} was created (KYC pending). Invitation sent to the owner.",
     "duplicate": "A company already has this name."
   },
   "commissions": {

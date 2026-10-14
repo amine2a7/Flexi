@@ -1,5 +1,6 @@
 import { randomInt } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
+import { InvitationService } from '../auth/invitation.service.js';
 import { AuditService } from '../common/audit.service.js';
 import { uuidv7 } from '../common/crypto.js';
 import { DbService, type Tx } from '../common/db.service.js';
@@ -98,6 +99,7 @@ export class AdminService {
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(Paginator) private readonly paginator: Paginator,
     @Inject(FILE_STORAGE) private readonly storage: FileStorage,
+    @Inject(InvitationService) private readonly invitations: InvitationService,
   ) {}
 
   private period(request: { createdFrom?: Date; createdTo?: Date }, field = 'createdAt') {
@@ -226,7 +228,18 @@ export class AdminService {
     commissionProfileId?: string | undefined;
     acceptedCreditTypes: CreditType[];
   }) {
-    return this.db.user(async (tx) => {
+    const id = uuidv7();
+    // The owner's sign-in account and invitation come with the shop (decision of 2026-10-14).
+    const invitations = await this.invitations.prepare([
+      {
+        role: 'MERCHANT',
+        subRole: 'OWNER',
+        displayName: input.name.trim(),
+        email: input.email,
+        merchantId: id,
+      },
+    ]);
+    const body = await this.db.user(async (tx) => {
       // Without a profile, the rate of each credit type applies (decision of 2026-10-14).
       const profile =
         input.commissionProfileId === undefined
@@ -245,7 +258,7 @@ export class AdminService {
         paymentCode = String(randomInt(100_000, 1_000_000));
       const merchant = await tx.merchant.create({
         data: {
-          id: uuidv7(),
+          id,
           name: input.name.trim(),
           category: input.category,
           city: input.city.trim(),
@@ -258,10 +271,13 @@ export class AdminService {
         },
         include: { commissionProfile: true },
       });
+      await this.invitations.create(tx, invitations);
       await this.openKyc(tx, 'MERCHANT', { merchantId: merchant.id });
       await this.audit.record(tx, 'merchants.create', merchant.name);
       return merchantAccount(merchant);
     });
+    await this.invitations.deliver(invitations);
+    return body;
   }
 
   async setMerchantTypes(id: string, types: CreditType[]) {
@@ -311,14 +327,24 @@ export class AdminService {
   }
 
   async createCompany(input: { name: string; city: string; phone: string; email: string }) {
-    return this.db.user(async (tx) => {
+    const id = uuidv7();
+    const invitations = await this.invitations.prepare([
+      {
+        role: 'COMPANY',
+        subRole: 'OWNER',
+        displayName: input.name.trim(),
+        email: input.email,
+        companyId: id,
+      },
+    ]);
+    const body = await this.db.user(async (tx) => {
       const exists = await tx.company.findFirst({
         where: { name: { equals: input.name.trim(), mode: 'insensitive' } },
       });
       if (exists !== null) throw problems.conflict();
       const company = await tx.company.create({
         data: {
-          id: uuidv7(),
+          id,
           name: input.name.trim(),
           city: input.city.trim(),
           phone: input.phone,
@@ -326,6 +352,7 @@ export class AdminService {
           status: 'PENDING_KYC',
         },
       });
+      await this.invitations.create(tx, invitations);
       await this.openKyc(tx, 'COMPANY', { companyId: company.id });
       await this.audit.record(tx, 'companies.create', company.name);
       return {
@@ -337,6 +364,8 @@ export class AdminService {
         createdAt: company.createdAt.toISOString(),
       };
     });
+    await this.invitations.deliver(invitations);
+    return body;
   }
 
   private async openKyc(
