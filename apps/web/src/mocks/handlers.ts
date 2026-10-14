@@ -1,4 +1,4 @@
-import { http, type RequestHandler } from 'msw';
+import { http, HttpResponse, type RequestHandler } from 'msw';
 import { MOCK_FIXTURE_SENTINEL } from './fixtures/sentinel';
 import { adminHandlers } from './handlers/admin';
 import { adminOpsHandlers } from './handlers/admin-ops';
@@ -15,6 +15,10 @@ const sessionRestore = http.all(apiUrl('/v1/*'), ({ cookies }) => {
   restoreSession(cookies[MOCK_SESSION_COOKIE]);
 });
 
+// Runs last: sessionRestore matches every route, so MSW would let a route that no handler answers
+// go to the network (a real API, if one runs). It fails like a network error instead.
+const notMocked = http.all(apiUrl('/v1/*'), () => HttpResponse.error());
+
 /**
  * Mock handlers of the FlexiPay API, one file per space. Every response body is typed with the
  * generated types of `@flexipay/api-client` (contract docs/handoff/contracts/openapi.yaml):
@@ -30,6 +34,7 @@ export const handlers: RequestHandler[] = [
   ...adminHandlers,
   ...adminOpsHandlers,
   ...contactHandlers,
+  notMocked,
 ];
 
 export const MOCK_HANDLERS_MARKER = MOCK_FIXTURE_SENTINEL;

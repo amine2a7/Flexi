@@ -15,6 +15,8 @@
     "refused": "Declined by the customer",
     "declined": "Declined at once",
     "serverError": "Server error",
-    "scenarios": "Add ?mock=slow, ?mock=error or ?mock=empty to the address to test slow loading, an error or an empty list."
+    "scenarios": "Add ?mock=slow, ?mock=error or ?mock=empty to the address to test slow loading, an error or an empty list.",
+    "realTitle": "Customer codes (real API)",
+    "realSteps": "Open a private window, sign in as beneficiaire@flexipay.test (PIN 1234), then Pay > My code: type here the 8-digit code shown (valid for 60 s)."
   }
 }

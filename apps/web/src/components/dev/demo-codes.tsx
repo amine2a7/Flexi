@@ -11,9 +11,26 @@ const CODES = [
   { code: '99999999', key: 'serverError' },
 ] as const;
 
-/** Development panel of the collect screen: customer codes of the mocked API. */
+// Real local API (pnpm dev:api): codes come from a signed-in beneficiary, no fixed code exists.
+const REAL_API = process.env.NEXT_PUBLIC_API_MOCKING === 'disabled';
+
+/** Development panel of the collect screen: customer codes of the mocked API, or how to get one. */
 export function DemoCodes() {
   const t = useTranslations('dev.codes');
+  if (REAL_API) {
+    return (
+      <aside
+        data-marker={DEMO_ACCOUNTS_MARKER}
+        className="flex flex-col gap-2 rounded-card-desktop border border-warning bg-warning-soft p-4 text-warning-text"
+      >
+        <p className="flex items-center gap-2 text-label">
+          <FlaskConical aria-hidden="true" className="size-icon-sm" />
+          {t('realTitle')}
+        </p>
+        <p className="text-caption">{t('realSteps')}</p>
+      </aside>
+    );
+  }
   return (
     <aside
       data-marker={DEMO_ACCOUNTS_MARKER}

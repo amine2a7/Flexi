@@ -15,6 +15,8 @@
     "refused": "Refusé par le client",
     "declined": "Refusé immédiatement",
     "serverError": "Erreur serveur",
-    "scenarios": "Ajoutez ?mock=slow, ?mock=error ou ?mock=empty à l'adresse pour tester un chargement lent, une erreur ou une liste vide."
+    "scenarios": "Ajoutez ?mock=slow, ?mock=error ou ?mock=empty à l'adresse pour tester un chargement lent, une erreur ou une liste vide.",
+    "realTitle": "Codes clients (API réelle)",
+    "realSteps": "Ouvrez une fenêtre de navigation privée, connectez-vous avec beneficiaire@flexipay.test (code PIN 1234), puis Payer > Mon code : saisissez ici le code à 8 chiffres affiché (valable 60 s)."
   }
 }

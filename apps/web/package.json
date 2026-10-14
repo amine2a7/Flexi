@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "node scripts/dev.mjs",
+    "dev:api": "node scripts/dev.mjs --real-api",
     "build": "node scripts/remove-mock-worker.mjs && next build",
     "start": "next start",
     "lint": "eslint .",
