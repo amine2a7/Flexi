@@ -1,0 +1,51 @@
+{
+  "name": "@flexipay/api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "FlexiPay API (NestJS, PostgreSQL, Prisma + raw SQL ledger) implementing docs/handoff/contracts/openapi.yaml",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=../../infra/.env src/main.ts",
+    "start": "node --env-file-if-exists=../../infra/.env dist/main.js",
+    "build": "prisma generate && tsc -p tsconfig.build.json",
+    "typecheck": "prisma generate && tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "env:init": "node scripts/init-env.mjs",
+    "db:setup": "tsx --env-file-if-exists=../../infra/.env scripts/db-setup.ts",
+    "db:migrate": "tsx --env-file-if-exists=../../infra/.env scripts/db-migrate.ts",
+    "db:seed": "tsx --env-file-if-exists=../../infra/.env prisma/seed.ts",
+    "db:reset": "tsx --env-file-if-exists=../../infra/.env scripts/db-setup.ts --reset"
+  },
+  "dependencies": {
+    "@flexipay/shared": "workspace:*",
+    "@nestjs/common": "11.2.7",
+    "@nestjs/core": "11.2.7",
+    "@nestjs/platform-express": "11.2.7",
+    "@node-rs/argon2": "2.2.1",
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "express": "5.2.1",
+    "pg": "8.23.0",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@flexipay/api-client": "workspace:^",
+    "@flexipay/config": "workspace:^",
+    "@nestjs/testing": "11.2.7",
+    "@types/express": "5.0.6",
+    "@types/multer": "2.3.0",
+    "@types/node": "22.20.4",
+    "@types/pg": "8.23.1",
+    "@types/supertest": "7.2.1",
+    "eslint": "10.11.0",
+    "prisma": "7.10.0",
+    "supertest": "7.3.0",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "vitest": "4.1.11"
+  }
+}

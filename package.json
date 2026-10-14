@@ -24,7 +24,10 @@
     "turbo": "2.11.4"
   },
   "pnpm": {
-    "onlyBuiltDependencies": [],
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "prisma"
+    ],
     "overrides": {
       "@grpc/grpc-js@^1": "1.13.6",
       "@types/dockerode@^4": "4.0.1",

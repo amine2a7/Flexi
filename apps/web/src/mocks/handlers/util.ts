@@ -49,11 +49,11 @@ export function problem(status: number, code: S['ProblemCode'], details?: Record
 
 export function validationProblem(errors: { pointer: string; code: S['FieldErrorCode'] }[]) {
   return problem(400, 'VALIDATION_FAILED', {
-    errors: errors.map((error) => ({
+    fields: errors.map((error) => ({
       in: 'body',
       pointer: error.pointer,
       code: error.code,
-      messageKey: `fieldErrors.${error.code}`,
+      messageKey: `errors.field.${camel(error.code)}`,
     })),
   });
 }

@@ -1,0 +1,4 @@
+# Generated Prisma client (pnpm build / typecheck regenerate it)
+src/generated/
+# Local file storage (KYC pieces, transfer proofs): never in Git
+var/

@@ -26,6 +26,20 @@ export function asProblem(error: unknown): ApiProblem | undefined {
   return isProblem(error) ? error : undefined;
 }
 
+/** Invalid fields of a `400 VALIDATION_FAILED` (contract §4: `details.fields[]`), else empty. */
+export function fieldErrors(error: unknown): { pointer: string; code: string }[] {
+  const problem = asProblem(error);
+  if (problem?.code !== 'VALIDATION_FAILED') return [];
+  const fields = (problem.details as { fields?: unknown } | undefined)?.fields;
+  if (!Array.isArray(fields)) return [];
+  return fields.flatMap((item: unknown) => {
+    const field = item as { pointer?: unknown; code?: unknown };
+    return typeof field.pointer === 'string' && typeof field.code === 'string'
+      ? [{ pointer: field.pointer, code: field.code }]
+      : [];
+  });
+}
+
 /** i18n key explaining an API error; network failures and unknown codes get a generic message. */
 export function errorMessageKey(error: unknown): string {
   const problem = asProblem(error);

@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
 import { getApi } from '@/lib/api/client';
-import { asProblem, errorMessageKey } from '@/lib/api/problem';
+import { asProblem, errorMessageKey, fieldErrors as readFieldErrors } from '@/lib/api/problem';
 import { useApiQuery } from '@/lib/api/use-api-query';
 import { formatRateBps } from '@/lib/format/money';
 import { Button } from '@/components/ui/button';
@@ -116,12 +116,11 @@ export function AccountForm({
         onCreated();
         return;
       }
-      const details = asProblem(result.error)?.details as
-        { errors?: { pointer: string; code: string }[] } | undefined;
-      if (details?.errors !== undefined) {
+      const fields = readFieldErrors(result.error);
+      if (fields.length > 0) {
         setFieldErrors(
           Object.fromEntries(
-            details.errors.map((item) => [
+            fields.map((item) => [
               item.pointer.slice(1),
               item.code === 'REQUIRED' || item.code === 'INVALID_ENUM'
                 ? t('form.required')

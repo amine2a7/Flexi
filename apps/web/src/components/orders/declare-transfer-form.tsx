@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
 import { getApi, newIdempotencyKey } from '@/lib/api/client';
-import { asProblem, errorMessageKey } from '@/lib/api/problem';
+import { asProblem, errorMessageKey, fieldErrors as readFieldErrors } from '@/lib/api/problem';
 import { formatMillimesWithCurrency } from '@/lib/format/money';
 import { parseMillimes } from '@/lib/format/money-input';
 import { Button } from '@/components/ui/button';
@@ -95,14 +95,13 @@ export function DeclareTransferForm({
         return;
       }
       const parsed = asProblem(problem);
-      const details = parsed?.details as
-        { errors?: { pointer: string; code: string }[] } | undefined;
+      const fields = readFieldErrors(problem);
       if (parsed?.code === 'PAYLOAD_TOO_LARGE') setErrors({ proof: t('fileTooLarge') });
       else if (parsed?.code === 'UNSUPPORTED_MEDIA_TYPE') setErrors({ proof: t('fileType') });
-      else if (details?.errors !== undefined) {
+      else if (fields.length > 0) {
         setErrors(
           Object.fromEntries(
-            details.errors.map((item) => [
+            fields.map((item) => [
               item.pointer.slice(1),
               item.code === 'REQUIRED'
                 ? t('required')

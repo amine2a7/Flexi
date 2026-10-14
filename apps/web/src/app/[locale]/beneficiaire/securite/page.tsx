@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
 import { getApi, setCsrfToken } from '@/lib/api/client';
-import { asProblem, errorMessageKey } from '@/lib/api/problem';
+import { errorMessageKey, fieldErrors as readFieldErrors } from '@/lib/api/problem';
 import { PasswordFields } from '@/components/auth/password-fields';
 import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
@@ -16,9 +16,7 @@ import { useToast } from '@/components/ui/toast';
 
 /** Field code of a 400 VALIDATION_FAILED for one JSON pointer, if any. */
 function fieldCode(error: unknown, pointer: string): string | undefined {
-  const problem = asProblem(error) as
-    { errors?: { pointer?: string; code?: string }[] } | undefined;
-  return problem?.errors?.find((item) => item.pointer === pointer)?.code;
+  return readFieldErrors(error).find((item) => item.pointer === pointer)?.code;
 }
 
 /** Security of the beneficiary: password, two-step verification (recovery codes), payment PIN. */

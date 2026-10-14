@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
 import { getApi } from '@/lib/api/client';
-import { asProblem, errorMessageKey } from '@/lib/api/problem';
+import { errorMessageKey, fieldErrors as readFieldErrors } from '@/lib/api/problem';
 import { Button } from '@/components/ui/button';
 import { SelectField, TextAreaField, TextField } from '@/components/ui/field';
 import { Alert } from '@/components/ui/layout-blocks';
@@ -14,6 +14,13 @@ import { Alert } from '@/components/ui/layout-blocks';
 type Requester = Schemas['ContactRequesterType'];
 type Field = 'name' | 'email' | 'phone' | 'requesterType' | 'message';
 const REQUESTERS: readonly Requester[] = ['COMPANY', 'MERCHANT', 'OTHER'];
+const INVALID = {
+  name: 'invalidName',
+  email: 'invalidEmail',
+  phone: 'invalidPhone',
+  requesterType: 'required',
+  message: 'invalidMessage',
+} as const;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** "98 123 456" or "+216 98 123 456" -> "+21698123456" (E.164); undefined when not a number. */
@@ -81,13 +88,12 @@ export function ContactForm() {
         },
       });
       if (data === undefined) {
-        const fields = (asProblem(error) as { errors?: { pointer?: string }[] } | undefined)
-          ?.errors;
-        if (fields !== undefined && fields.length > 0) {
+        const fields = readFieldErrors(error);
+        if (fields.length > 0) {
           const server: Partial<Record<Field, string>> = {};
           for (const item of fields) {
-            const field = item.pointer?.replace('/', '') as Field | undefined;
-            if (field !== undefined) server[field] = t('required');
+            const field = item.pointer.replace('/', '') as Field;
+            server[field] = item.code === 'REQUIRED' ? t('required') : t(INVALID[field]);
           }
           setErrors(server);
         } else setFailure(error);

@@ -7,7 +7,7 @@ import { useState, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
 import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
-import { asProblem, errorMessageKey } from '@/lib/api/problem';
+import { asProblem, errorMessageKey, fieldErrors as readFieldErrors } from '@/lib/api/problem';
 import { usePagedList } from '@/lib/api/use-paged-list';
 import { Amount } from '@/components/ui/amount';
 import { Button, buttonClasses } from '@/components/ui/button';
@@ -174,12 +174,11 @@ function AddEmployee({
         onCreated();
         return;
       }
-      const details = asProblem(problem)?.details as
-        { errors?: { pointer: string; code: string }[] } | undefined;
-      if (details?.errors !== undefined) {
+      const fields = readFieldErrors(problem);
+      if (fields.length > 0) {
         setFieldErrors(
           Object.fromEntries(
-            details.errors.map((item) => [
+            fields.map((item) => [
               item.pointer.slice(1),
               item.code === 'REQUIRED' ? t('required') : t('invalidFormat'),
             ]),
