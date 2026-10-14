@@ -191,6 +191,15 @@ export class LedgerService {
     return { transactionId, balances: byCode };
   }
 
+  /**
+   * Locks the balance of an account for the rest of the SQL transaction (creates it if needed).
+   * Checks made under this lock (daily limit, payout available) cannot race with another payment.
+   */
+  async lockAccount(tx: Tx, account: AccountRef): Promise<void> {
+    const accountId = await this.ensureAccount(tx, account);
+    await tx.$queryRaw`SELECT account_id FROM account_balances WHERE account_id = ${accountId}::uuid FOR UPDATE`;
+  }
+
   /** Correction: a new transaction with the opposite entries, pointing to the original. */
   async reverse(tx: Tx, transactionId: string, reference: string): Promise<Posted> {
     const rows = await tx.$queryRaw<

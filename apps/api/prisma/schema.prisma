@@ -3,10 +3,10 @@
 // UPDATE and DELETE on them (migration 0001). Row-Level Security policies are in the migrations.
 
 generator client {
-  provider               = "prisma-client"
-  output                 = "../src/generated/prisma"
-  moduleFormat           = "esm"
-  importFileExtension    = "js"
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
 }
 
 datasource db {
@@ -285,34 +285,34 @@ model Employee {
 
 /// One account = one tenant (RG-2.5): companyId, merchantId or employeeId, never two of them.
 model User {
-  id                     String      @id @default(uuid(7)) @db.Uuid
-  role                   Role
-  subRole                SubRole?    @map("sub_role")
-  displayName            String      @map("display_name") @db.VarChar(120)
+  id                    String     @id @default(uuid(7)) @db.Uuid
+  role                  Role
+  subRole               SubRole?   @map("sub_role")
+  displayName           String     @map("display_name") @db.VarChar(120)
   /// Normalized sign-in identifier (lower-case e-mail).
-  email                  String      @unique @db.VarChar(254)
-  phone                  String?     @unique @db.VarChar(16)
-  passwordHash           String      @map("password_hash")
-  mustChangePassword     Boolean     @default(false) @map("must_change_password")
-  tempPasswordExpiresAt  DateTime?   @map("temp_password_expires_at") @db.Timestamptz(3)
+  email                 String     @unique @db.VarChar(254)
+  phone                 String?    @unique @db.VarChar(16)
+  passwordHash          String     @map("password_hash")
+  mustChangePassword    Boolean    @default(false) @map("must_change_password")
+  tempPasswordExpiresAt DateTime?  @map("temp_password_expires_at") @db.Timestamptz(3)
   /// TOTP secret, AES-256-GCM encrypted (never stored in clear).
-  mfaSecretEnc           String?     @map("mfa_secret_enc")
-  mfaPendingSecretEnc    String?     @map("mfa_pending_secret_enc")
-  mfaPendingExpiresAt    DateTime?   @map("mfa_pending_expires_at") @db.Timestamptz(3)
+  mfaSecretEnc          String?    @map("mfa_secret_enc")
+  mfaPendingSecretEnc   String?    @map("mfa_pending_secret_enc")
+  mfaPendingExpiresAt   DateTime?  @map("mfa_pending_expires_at") @db.Timestamptz(3)
   /// Last accepted TOTP time step (a code is never accepted twice).
-  mfaLastStep            BigInt?     @map("mfa_last_step")
-  status                 UserStatus  @default(ACTIVE)
-  failedLogins           Int         @default(0) @map("failed_logins")
-  lockedUntil            DateTime?   @map("locked_until") @db.Timestamptz(3)
-  onboardingTourDone     Boolean     @default(false) @map("onboarding_tour_done")
-  companyId              String?     @map("company_id") @db.Uuid
-  merchantId             String?     @map("merchant_id") @db.Uuid
-  employeeId             String?     @unique @map("employee_id") @db.Uuid
-  createdAt              DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  mfaLastStep           BigInt?    @map("mfa_last_step")
+  status                UserStatus @default(ACTIVE)
+  failedLogins          Int        @default(0) @map("failed_logins")
+  lockedUntil           DateTime?  @map("locked_until") @db.Timestamptz(3)
+  onboardingTourDone    Boolean    @default(false) @map("onboarding_tour_done")
+  companyId             String?    @map("company_id") @db.Uuid
+  merchantId            String?    @map("merchant_id") @db.Uuid
+  employeeId            String?    @unique @map("employee_id") @db.Uuid
+  createdAt             DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  company       Company?        @relation(fields: [companyId], references: [id])
-  merchant      Merchant?       @relation(fields: [merchantId], references: [id])
-  employee      Employee?       @relation(fields: [employeeId], references: [id])
+  company       Company?             @relation(fields: [companyId], references: [id])
+  merchant      Merchant?            @relation(fields: [merchantId], references: [id])
+  employee      Employee?            @relation(fields: [employeeId], references: [id])
   sessions      Session[]
   recoveryCodes RecoveryCode[]
   challenges    MfaChallenge[]
@@ -420,21 +420,21 @@ model CreditTypeSetting {
 }
 
 model Approval {
-  id           String         @id @default(uuid(7)) @db.Uuid
-  type         ApprovalType
-  status       ApprovalStatus @default(PENDING)
-  subject      String         @db.VarChar(200)
+  id            String         @id @default(uuid(7)) @db.Uuid
+  type          ApprovalType
+  status        ApprovalStatus @default(PENDING)
+  subject       String         @db.VarChar(200)
   /// Change to apply once approved (profile id + new rate, or the full settings).
-  payload      Json
-  oldRateBps   Int?           @map("old_rate_bps")
-  newRateBps   Int?           @map("new_rate_bps")
-  reason       String         @db.VarChar(500)
-  initiatorId  String         @map("initiator_id") @db.Uuid
-  initiatorName String        @map("initiator_name") @db.VarChar(120)
-  deciderId    String?        @map("decider_id") @db.Uuid
-  decidedAt    DateTime?      @map("decided_at") @db.Timestamptz(3)
-  rejectReason String?        @map("reject_reason") @db.VarChar(500)
-  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  payload       Json
+  oldRateBps    Int?           @map("old_rate_bps")
+  newRateBps    Int?           @map("new_rate_bps")
+  reason        String         @db.VarChar(500)
+  initiatorId   String         @map("initiator_id") @db.Uuid
+  initiatorName String         @map("initiator_name") @db.VarChar(120)
+  deciderId     String?        @map("decider_id") @db.Uuid
+  decidedAt     DateTime?      @map("decided_at") @db.Timestamptz(3)
+  rejectReason  String?        @map("reject_reason") @db.VarChar(500)
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@map("approvals")
 }
@@ -455,30 +455,30 @@ model AuditLog {
 // ------------------------------------------------------------------ credit orders
 
 model CreditOrder {
-  id                   String      @id @default(uuid(7)) @db.Uuid
-  reference            String      @unique @db.VarChar(32)
-  companyId            String      @map("company_id") @db.Uuid
-  status               OrderStatus @default(AWAITING_CONFIRMATION)
-  amountMillimes       BigInt      @map("amount_millimes")
-  feeRateBps           Int         @map("fee_rate_bps")
-  feesMillimes         BigInt      @map("fees_millimes")
-  totalMillimes        BigInt      @map("total_millimes")
+  id                     String      @id @default(uuid(7)) @db.Uuid
+  reference              String      @unique @db.VarChar(32)
+  companyId              String      @map("company_id") @db.Uuid
+  status                 OrderStatus @default(AWAITING_CONFIRMATION)
+  amountMillimes         BigInt      @map("amount_millimes")
+  feeRateBps             Int         @map("fee_rate_bps")
+  feesMillimes           BigInt      @map("fees_millimes")
+  totalMillimes          BigInt      @map("total_millimes")
   /// Reference to write on the bank transfer.
-  paymentReference     String      @map("payment_reference") @db.VarChar(32)
-  declaredAmountMillimes BigInt?   @map("declared_amount_millimes")
-  transferReference    String?     @map("transfer_reference") @db.VarChar(64)
-  transferDate         DateTime?   @map("transfer_date") @db.Date
-  declaredAt           DateTime?   @map("declared_at") @db.Timestamptz(3)
-  proofStorageKey      String?     @map("proof_storage_key")
-  proofFileName        String?     @map("proof_file_name") @db.VarChar(255)
-  proofContentType     String?     @map("proof_content_type") @db.VarChar(40)
-  proofSizeBytes       Int?        @map("proof_size_bytes")
-  refusalReason        String?     @map("refusal_reason") @db.VarChar(500)
-  proofRejectionReason String?     @map("proof_rejection_reason") @db.VarChar(500)
-  firstValidatorId     String?     @map("first_validator_id") @db.Uuid
-  firstValidatorName   String?     @map("first_validator_name") @db.VarChar(120)
-  firstValidatedAt     DateTime?   @map("first_validated_at") @db.Timestamptz(3)
-  createdAt            DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  paymentReference       String      @map("payment_reference") @db.VarChar(32)
+  declaredAmountMillimes BigInt?     @map("declared_amount_millimes")
+  transferReference      String?     @map("transfer_reference") @db.VarChar(64)
+  transferDate           DateTime?   @map("transfer_date") @db.Date
+  declaredAt             DateTime?   @map("declared_at") @db.Timestamptz(3)
+  proofStorageKey        String?     @map("proof_storage_key")
+  proofFileName          String?     @map("proof_file_name") @db.VarChar(255)
+  proofContentType       String?     @map("proof_content_type") @db.VarChar(40)
+  proofSizeBytes         Int?        @map("proof_size_bytes")
+  refusalReason          String?     @map("refusal_reason") @db.VarChar(500)
+  proofRejectionReason   String?     @map("proof_rejection_reason") @db.VarChar(500)
+  firstValidatorId       String?     @map("first_validator_id") @db.Uuid
+  firstValidatorName     String?     @map("first_validator_name") @db.VarChar(120)
+  firstValidatedAt       DateTime?   @map("first_validated_at") @db.Timestamptz(3)
+  createdAt              DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
 
   company Company            @relation(fields: [companyId], references: [id])
   lines   CreditOrderLine[]
@@ -566,25 +566,29 @@ model PaymentCode {
 }
 
 model Payment {
-  id                String         @id @default(uuid(7)) @db.Uuid
-  reference         String         @unique @db.VarChar(32)
-  merchantId        String         @map("merchant_id") @db.Uuid
-  employeeId        String         @map("employee_id") @db.Uuid
-  companyId         String         @map("company_id") @db.Uuid
-  creditType        CreditType     @map("credit_type")
-  amountMillimes    BigInt         @map("amount_millimes")
-  status            PaymentStatus
-  channel           PaymentChannel
+  id                   String         @id @default(uuid(7)) @db.Uuid
+  reference            String         @unique @db.VarChar(32)
+  merchantId           String         @map("merchant_id") @db.Uuid
+  employeeId           String         @map("employee_id") @db.Uuid
+  companyId            String         @map("company_id") @db.Uuid
+  creditType           CreditType     @map("credit_type")
+  amountMillimes       BigInt         @map("amount_millimes")
+  status               PaymentStatus
+  channel              PaymentChannel
   /// Deadline of an INITIATED request (the beneficiary confirms with the PIN before it).
-  expiresAt         DateTime?      @map("expires_at") @db.Timestamptz(3)
+  expiresAt            DateTime?      @map("expires_at") @db.Timestamptz(3)
   /// Commission rate of the credit type when the payment was confirmed (display only; the payout
   /// request freezes its own rate, rule 5).
-  commissionRateBps Int?           @map("commission_rate_bps")
-  confirmedAt       DateTime?      @map("confirmed_at") @db.Timestamptz(3)
-  settlementDate    DateTime?      @map("settlement_date") @db.Date
-  transactionId     String?        @map("transaction_id") @db.Uuid
-  payoutId          String?        @map("payout_id") @db.Uuid
-  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  commissionRateBps    Int?           @map("commission_rate_bps")
+  confirmedAt          DateTime?      @map("confirmed_at") @db.Timestamptz(3)
+  settlementDate       DateTime?      @map("settlement_date") @db.Date
+  transactionId        String?        @map("transaction_id") @db.Uuid
+  payoutId             String?        @map("payout_id") @db.Uuid
+  /// Snapshot shown to the merchant (never the employees table).
+  customerFirstName    String         @default("") @map("customer_first_name") @db.VarChar(60)
+  customerLastInitial  String         @default("") @map("customer_last_initial") @db.VarChar(1)
+  customerMaskedNumber String         @default("") @map("customer_masked_number") @db.VarChar(20)
+  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
 
   merchant Merchant       @relation(fields: [merchantId], references: [id])
   employee Employee       @relation(fields: [employeeId], references: [id])
@@ -593,6 +597,7 @@ model Payment {
   @@index([merchantId, createdAt])
   @@index([employeeId, createdAt])
   @@index([status])
+  @@index([employeeId, status, expiresAt], map: "payments_employee_status_idx")
   @@map("payments")
 }
 
@@ -658,8 +663,8 @@ model PayoutRequest {
   transactionId      String?      @map("transaction_id") @db.Uuid
   requestedAt        DateTime     @default(now()) @map("requested_at") @db.Timestamptz(3)
 
-  merchant Merchant          @relation(fields: [merchantId], references: [id])
-  batch    SettlementBatch?  @relation(fields: [batchId], references: [id])
+  merchant Merchant         @relation(fields: [merchantId], references: [id])
+  batch    SettlementBatch? @relation(fields: [batchId], references: [id])
   events   PayoutEvent[]
 
   @@index([merchantId, requestedAt])
@@ -818,17 +823,17 @@ enum EntryDirection {
 
 /// Ledger account. Wallets exist per owner AND per credit type (no transfer between types).
 model LedgerAccount {
-  id         String            @id @default(uuid(7)) @db.Uuid
+  id          String            @id @default(uuid(7)) @db.Uuid
   /// e.g. EMPLOYEE_WALLET:<employeeId>:RESTAURATION, BANK_ESCROW, REVENUE_MERCHANT_COMMISSION.
-  code       String            @unique @db.VarChar(120)
-  kind       LedgerAccountKind
-  ownerType  LedgerOwnerType   @map("owner_type")
-  ownerId    String?           @map("owner_id") @db.Uuid
-  creditType CreditType?       @map("credit_type")
+  code        String            @unique @db.VarChar(120)
+  kind        LedgerAccountKind
+  ownerType   LedgerOwnerType   @map("owner_type")
+  ownerId     String?           @map("owner_id") @db.Uuid
+  creditType  CreditType?       @map("credit_type")
   /// Wallets and payables can never go below zero (checked under lock and by a constraint).
-  nonNegative Boolean          @map("non_negative")
-  currency   String            @default("TND") @db.Char(3)
-  createdAt  DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  nonNegative Boolean           @map("non_negative")
+  currency    String            @default("TND") @db.Char(3)
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
 
   balance AccountBalance?
   entries LedgerEntry[]
@@ -858,15 +863,15 @@ model LedgerTransaction {
 
 /// Immutable (trigger). Debits = credits per transaction (deferred constraint trigger).
 model LedgerEntry {
-  id                  BigInt         @id @default(autoincrement())
-  transactionId       String         @map("transaction_id") @db.Uuid
-  accountId           String         @map("account_id") @db.Uuid
-  direction           EntryDirection
-  amountMillimes      BigInt         @map("amount_millimes")
+  id                   BigInt         @id @default(autoincrement())
+  transactionId        String         @map("transaction_id") @db.Uuid
+  accountId            String         @map("account_id") @db.Uuid
+  direction            EntryDirection
+  amountMillimes       BigInt         @map("amount_millimes")
   /// Balance of the account right after this entry (receipts, statements).
-  balanceAfterMillimes BigInt        @map("balance_after_millimes")
-  lotId               String?        @map("lot_id") @db.Uuid
-  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  balanceAfterMillimes BigInt         @map("balance_after_millimes")
+  lotId                String?        @map("lot_id") @db.Uuid
+  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
 
   transaction LedgerTransaction @relation(fields: [transactionId], references: [id])
   account     LedgerAccount     @relation(fields: [accountId], references: [id])
