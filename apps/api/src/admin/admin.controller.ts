@@ -48,6 +48,7 @@ const settingsBody = z.strictObject({
     creditValidityMonths: z.number().int().min(1).max(60),
     maxFamilyMembers: z.number().int().min(0).max(10),
     orderFeeRateBps: rateBps,
+    expiredCreditsDestination: z.enum(['PLATFORM_REVENUE', 'COMPANY_RETURN']),
     creditTypes: z
       .array(
         z.strictObject({
@@ -95,7 +96,7 @@ export class AdminController {
           city,
           phone: phoneNumber,
           email,
-          commissionProfileId: z.uuid(),
+          commissionProfileId: z.uuid().optional(),
           acceptedCreditTypes: types,
         }),
         body,

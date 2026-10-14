@@ -162,7 +162,7 @@ export class PayoutsService {
         receivablesMillimes: toMillimes(receivables._sum.amountMillimes ?? 0n),
         nextSettlementDate:
           receivables._min.settlementDate === null ? null : dayOf(receivables._min.settlementDate),
-        commissionRateBps: merchant.commissionProfile.rateBps,
+        commissionRateBps: merchant.commissionProfile?.rateBps ?? null,
         recentPayments: recent.map(merchantPayment),
         monthlyFlows: flows.map((flow) => ({
           month: flow.month,
@@ -242,7 +242,7 @@ export class PayoutsService {
         throw new ApiProblem(422, 'INSUFFICIENT_FUNDS', {
           missingMillimes: toMillimes(gross - available),
         });
-      const rate = (await this.settings.creditType(tx, input.creditType)).commissionRateBps;
+      const rate = await this.settings.commissionRate(tx, merchantId, input.creditType);
       const commission = commissionOf(gross, rate);
       const quote = await tx.payoutQuote.create({
         data: {
@@ -279,7 +279,7 @@ export class PayoutsService {
     const merchantId = this.merchantId();
     const quote = await tx.payoutQuote.findUnique({ where: { id: quoteId } });
     if (quote?.merchantId !== merchantId) throw problems.notFound();
-    const rate = (await this.settings.creditType(tx, quote.creditType)).commissionRateBps;
+    const rate = await this.settings.commissionRate(tx, merchantId, quote.creditType);
     if (
       quote.usedAt !== null ||
       quote.expiresAt.getTime() < Date.now() ||

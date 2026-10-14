@@ -125,10 +125,8 @@ export default function CollectPage() {
   }
 
   const result = declined ? 'REFUSED' : payment?.status;
-  const rate =
-    dashboard.status === 'success'
-      ? formatRateBps(dashboard.data.commissionRateBps, locale)
-      : undefined;
+  // Own rate of the shop, or null: the rate of the credit type applies (decision of 2026-10-14).
+  const ownRate = dashboard.status === 'success' ? dashboard.data.commissionRateBps : undefined;
   const resultActions = (
     <>
       <Button variant="secondary" onClick={restart}>
@@ -260,9 +258,13 @@ export default function CollectPage() {
               >
                 {t('submit')}
               </Button>
-              {rate !== undefined ? (
-                <p className="text-caption text-text-muted">{t('ruleNote', { rate })}</p>
-              ) : null}
+              {ownRate === undefined ? null : (
+                <p className="text-caption text-text-muted">
+                  {ownRate === null
+                    ? t('ruleNoteByType')
+                    : t('ruleNote', { rate: formatRateBps(ownRate, locale) })}
+                </p>
+              )}
             </form>
           )}
         </div>

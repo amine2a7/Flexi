@@ -70,7 +70,8 @@
     "myCode": "Code commerçant : {code}",
     "qrLabel": "QR commerçant {code}",
     "creditType": "Type de crédit",
-    "creditTypeHint": "Le client paie avec son solde de ce type uniquement."
+    "creditTypeHint": "Le client paie avec son solde de ce type uniquement.",
+    "ruleNoteByType": "Le montant sera réglé à J+2, commission du type de crédit déduite."
   },
   "history": {
     "title": "Historique des encaissements",

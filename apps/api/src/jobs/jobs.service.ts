@@ -63,8 +63,9 @@ export class JobsService implements OnApplicationBootstrap, OnApplicationShutdow
   }
 
   /**
-   * Expired lots (E10): their remainder leaves the employee wallet of the type (credited to
-   * REVENUE_EXPIRED, spec 02 §2, pending the business decision) and is traced as an EXPIRY.
+   * Expired lots (E10): their remainder leaves the employee wallet of the type and is traced as
+   * an EXPIRY. Destination set by the administrator (decision of 2026-10-14, provisional):
+   * REVENUE_EXPIRED (FlexiPay) or back to the company wallet of the same type.
    */
   async expireLots(now = new Date()): Promise<number> {
     const due = await this.db.system(
@@ -84,6 +85,12 @@ export class JobsService implements OnApplicationBootstrap, OnApplicationShutdow
         const total = lots.reduce((sum, lot) => sum + lot.remaining_millimes, 0n);
         if (total === 0n) return;
         const employee = await tx.employee.findUnique({ where: { id: row.owner_id } });
+        const destination = (await tx.platformSettings.findUnique({ where: { id: 1 } }))
+          ?.expiredCreditsDestination;
+        const target =
+          destination === 'COMPANY_RETURN' && employee !== null
+            ? accounts.companyWallet(employee.companyId, row.credit_type)
+            : accounts.expiredCredits();
         const posted = await this.ledger.post(tx, {
           type: 'CREDIT_EXPIRY',
           reference: `EXP-${row.owner_id.slice(0, 8)}`,
@@ -94,7 +101,7 @@ export class JobsService implements OnApplicationBootstrap, OnApplicationShutdow
               amount: lot.remaining_millimes,
               lotId: lot.id,
             })),
-            { account: accounts.expiredCredits(), direction: 'C', amount: total },
+            { account: target, direction: 'C', amount: total },
           ],
         });
         await tx.$executeRaw`UPDATE credit_lots SET remaining_millimes = 0 WHERE id = ANY(${lots.map((lot) => lot.id)}::uuid[])`;

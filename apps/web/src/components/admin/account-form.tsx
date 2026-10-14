@@ -104,7 +104,10 @@ export function AccountForm({
                 ...common,
                 category: draft.category as Schemas['MerchantCategory'],
                 acceptedCreditTypes: types,
-                commissionProfileId: draft.commissionProfileId,
+                // Optional: without a profile the rate of each credit type applies.
+                ...(draft.commissionProfileId === ''
+                  ? {}
+                  : { commissionProfileId: draft.commissionProfileId }),
               },
             })
           : await getApi().POST('/v1/admin/companies', { body: common });

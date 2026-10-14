@@ -10,6 +10,7 @@ const { createApp } = await import('../../src/app.factory.js');
 const { DbService } = await import('../../src/common/db.service.js');
 const { LedgerService, accounts } = await import('../../src/ledger/ledger.service.js');
 const { PayoutsService } = await import('../../src/payouts/payouts.service.js');
+const { JobsService } = await import('../../src/jobs/jobs.service.js');
 const { hashSecret } = await import('../../src/auth/password.js');
 const { createCompany, createEmployee, createUser, seedSettings, signedIn } =
   await import('./fixtures.js');
@@ -32,13 +33,18 @@ afterAll(async () => {
 
 const key = () => ({ 'Idempotency-Key': randomUUID() });
 
-async function createMerchant(types: ('RESTAURATION' | 'CADEAUX')[] = ['RESTAURATION']) {
+/** A shop; with `ownRateBps`, its own commission profile (otherwise the credit type rate). */
+async function createMerchant(
+  types: ('RESTAURATION' | 'CADEAUX')[] = ['RESTAURATION'],
+  ownRateBps?: number,
+) {
   return db.system(async (tx) => {
-    const profile = await tx.commissionProfile.upsert({
-      where: { name: 'Standard' },
-      create: { name: 'Standard', rateBps: 250 },
-      update: {},
-    });
+    const profile =
+      ownRateBps === undefined
+        ? null
+        : await tx.commissionProfile.create({
+            data: { name: `Profil ${randomUUID().slice(0, 8)}`, rateBps: ownRateBps },
+          });
     return tx.merchant.create({
       data: {
         name: `Café ${randomUUID().slice(0, 5)}`,
@@ -53,7 +59,7 @@ async function createMerchant(types: ('RESTAURATION' | 'CADEAUX')[] = ['RESTAURA
           0,
           24,
         ),
-        commissionProfileId: profile.id,
+        commissionProfileId: profile?.id ?? null,
       },
     });
   });
@@ -352,6 +358,43 @@ describe('payout and settlement', () => {
     expect(books.ok).toBe(true);
   });
 
+  it("applies the merchant's own rate when it has one (decision of 2026-10-14)", async () => {
+    const { client: employee } = await fundedEmployee(80_000n);
+    const merchant = await createMerchant(['RESTAURATION'], 250);
+    const shop = await merchantClient(merchant.id);
+    await employee.call('POST', '/v1/employee/payments', {
+      body: {
+        merchantCode: merchant.paymentCode,
+        creditType: 'RESTAURATION',
+        amountMillimes: 45_000,
+        pin: PIN,
+      },
+      headers: key(),
+    });
+    expect((await shop.call('GET', '/v1/merchant/dashboard')).body.commissionRateBps).toBe(250);
+    const payments = await shop.call('GET', '/v1/merchant/payments');
+    const paymentId = String((payments.body.data as { id: string }[])[0]?.id);
+    expect(
+      (await shop.call('GET', `/v1/merchant/payments/${paymentId}`)).body.commissionRateBps,
+    ).toBe(250);
+    const quote = await shop.call('POST', '/v1/merchant/payout-quotes', {
+      body: { creditType: 'RESTAURATION', grossMillimes: 45_000 },
+    });
+    expect(quote.body).toMatchObject({
+      commissionRateBps: 250,
+      commissionMillimes: 1_125,
+      netMillimes: 43_875,
+    });
+    const requested = await shop.call('POST', '/v1/merchant/payouts', {
+      body: { quoteId: quote.body.quoteId },
+      headers: key(),
+    });
+    expect(requested.body).toMatchObject({ commissionRateBps: 250, netMillimes: 43_875 });
+    // Without its own profile, a shop gets the rate of the credit type (200 for Restauration).
+    const plain = await merchantClient((await createMerchant()).id);
+    expect((await plain.call('GET', '/v1/merchant/dashboard')).body.commissionRateBps).toBeNull();
+  });
+
   it('gives the balance back when the request is rejected (reversal)', async () => {
     const { client: employee } = await fundedEmployee(50_000n);
     const merchant = await createMerchant();
@@ -405,5 +448,64 @@ describe('payout and settlement', () => {
     const other = await merchantClient((await createMerchant()).id);
     expect((await other.call('GET', `/v1/merchant/payments/${paymentId}`)).status).toBe(404);
     expect((await other.call('GET', '/v1/merchant/payments')).body.data).toEqual([]);
+  });
+});
+
+describe('expired credits (destination set by the administrator, decision of 2026-10-14)', () => {
+  /** An employee of a new company with an already expired lot of `amount` Restauration credits. */
+  async function expiredLot(amount: bigint) {
+    const company = await createCompany(db);
+    const employee = await createEmployee(db, company.id);
+    await db.system(async (tx) => {
+      const posted = await ledger.post(tx, {
+        type: 'ALLOCATION',
+        reference: 'TEST',
+        entries: [
+          { account: accounts.bankEscrow(), direction: 'D', amount },
+          { account: accounts.employeeWallet(employee.id, 'RESTAURATION'), direction: 'C', amount },
+        ],
+      });
+      await ledger.addLot(tx, {
+        account: accounts.employeeWallet(employee.id, 'RESTAURATION'),
+        creditType: 'RESTAURATION',
+        amount,
+        expiresAt: new Date(Date.now() - 86_400_000),
+        sourceTransactionId: posted.transactionId,
+      });
+    });
+    return { company, employee };
+  }
+  const destination = (value: 'PLATFORM_REVENUE' | 'COMPANY_RETURN') =>
+    db.system((tx) =>
+      tx.platformSettings.update({ where: { id: 1 }, data: { expiredCreditsDestination: value } }),
+    );
+  const balanceOf = (account: Parameters<typeof ledger.balance>[1]) =>
+    db.system((tx) => ledger.balance(tx, account));
+
+  it('go back to the company wallet of the same type when so set', async () => {
+    const { company, employee } = await expiredLot(7_000n);
+    await destination('COMPANY_RETURN');
+    try {
+      await app.get(JobsService).expireLots();
+    } finally {
+      await destination('PLATFORM_REVENUE');
+    }
+    expect(await balanceOf(accounts.employeeWallet(employee.id, 'RESTAURATION'))).toBe(0n);
+    expect(await balanceOf(accounts.companyWallet(company.id, 'RESTAURATION'))).toBe(7_000n);
+    const traced = await db.system((tx) =>
+      tx.creditExpiry.findMany({ where: { employeeId: employee.id } }),
+    );
+    expect(traced.map((row) => row.amountMillimes)).toEqual([7_000n]);
+  });
+
+  it('go to the provisional REVENUE_EXPIRED account by default', async () => {
+    await destination('PLATFORM_REVENUE');
+    const { company, employee } = await expiredLot(3_000n);
+    const before = await balanceOf(accounts.expiredCredits());
+    await app.get(JobsService).expireLots();
+    expect(await balanceOf(accounts.employeeWallet(employee.id, 'RESTAURATION'))).toBe(0n);
+    expect(await balanceOf(accounts.companyWallet(company.id, 'RESTAURATION'))).toBe(0n);
+    expect((await balanceOf(accounts.expiredCredits())) - before).toBe(3_000n);
+    expect((await db.system((tx) => ledger.reconcile(tx))).ok).toBe(true);
   });
 });

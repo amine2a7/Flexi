@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: FlexiPay API
-  version: 0.3.0
+  version: 0.4.0
   summary: Conventions transverses, authentification web et profil (WB2, espace Commun).
   description: |
     # Contrat d'API FlexiPay (version 0.2.2)
@@ -5422,7 +5422,10 @@ components:
             - $ref: '#/components/schemas/CalendarDate'
             - type: 'null'
         commissionRateBps:
-          $ref: '#/components/schemas/RateBps'
+          description: Taux propre au commerçant, ou `null` (taux du type de crédit, voir le devis).
+          oneOf:
+            - $ref: '#/components/schemas/RateBps'
+            - type: 'null'
         recentPayments:
           type: array
           maxItems: 5
@@ -5801,7 +5804,12 @@ components:
           items:
             $ref: '#/components/schemas/CreditType'
         commissionProfile:
-          $ref: '#/components/schemas/CommissionProfileSummary'
+          description: |
+            Profil de commission propre au commerçant, ou `null` : le taux du type de crédit
+            s'applique alors (décision du 2026-10-14). Le taux est figé dans la demande de virement.
+          oneOf:
+            - $ref: '#/components/schemas/CommissionProfileSummary'
+            - type: 'null'
         pointsOfSale:
           type: array
           maxItems: 50
@@ -6594,7 +6602,12 @@ components:
         status:
           $ref: '#/components/schemas/AccountStatus'
         commissionProfile:
-          $ref: '#/components/schemas/CommissionProfileSummary'
+          description: |
+            Profil de commission propre au commerçant, ou `null` : le taux du type de crédit
+            s'applique alors (décision du 2026-10-14). Le taux est figé dans la demande de virement.
+          oneOf:
+            - $ref: '#/components/schemas/CommissionProfileSummary'
+            - type: 'null'
         createdAt:
           $ref: '#/components/schemas/Timestamp'
     MerchantCreditTypes:
@@ -6629,7 +6642,7 @@ components:
       title: MerchantCreate
       type: object
       additionalProperties: false
-      required: [name, category, acceptedCreditTypes, city, phone, email, commissionProfileId]
+      required: [name, category, acceptedCreditTypes, city, phone, email]
       properties:
         acceptedCreditTypes:
           description: Types de crédit acceptés par le commerçant.
@@ -6656,7 +6669,9 @@ components:
           format: email
           maxLength: 254
         commissionProfileId:
-          description: Profil de commission, obligatoire (liste déroulante).
+          description: |
+            Profil de commission propre au commerçant (liste déroulante), facultatif : sans profil,
+            le taux de chaque type de crédit s'applique.
           $ref: '#/components/schemas/Uuid'
     CompanyAccount:
       title: CompanyAccount
@@ -7227,8 +7242,10 @@ components:
       title: PlatformSettings
       type: object
       additionalProperties: false
-      required: [payoutMinimumMillimes, creditValidityMonths, maxFamilyMembers, orderFeeRateBps, creditTypes]
+      required: [payoutMinimumMillimes, creditValidityMonths, maxFamilyMembers, orderFeeRateBps, expiredCreditsDestination, creditTypes]
       properties:
+        expiredCreditsDestination:
+          $ref: '#/components/schemas/ExpiredCreditsDestination'
         payoutMinimumMillimes:
           $ref: '#/components/schemas/AmountMillimes'
         creditValidityMonths:
@@ -7250,6 +7267,15 @@ components:
           maxItems: 4
           items:
             $ref: '#/components/schemas/CreditTypeSettings'
+    ExpiredCreditsDestination:
+      title: ExpiredCreditsDestination
+      description: |
+        Destination du reste des lots de crédits expirés (décision du 2026-10-14, provisoire en
+        attendant l'avis d'un comptable) : `PLATFORM_REVENUE` = compte `REVENUE_EXPIRED` de
+        FlexiPay ; `COMPANY_RETURN` = retour au solde de l'entreprise, sur le même type de crédit.
+        Modifiée comme tout paramétrage (double validation).
+      type: string
+      enum: [PLATFORM_REVENUE, COMPANY_RETURN]
     PlatformSettingsChange:
       title: PlatformSettingsChange
       type: object

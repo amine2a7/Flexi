@@ -47,8 +47,8 @@
     "formDescription": "سيحصل التاجر على صلاحيات الدخول بعد المصادقة على ملفه.",
     "fieldName": "اسم المحل",
     "categoryPlaceholder": "اختر صنفًا",
-    "profilePlaceholder": "اختر ملفًا (إجباري)",
-    "profileHint": "ستُطبَّق النسبة على تحويلات التاجر.",
+    "profilePlaceholder": "بدون: نسبة نوع الرصيد",
+    "profileHint": "اختياري. بدون ملف، تُطبَّق نسبة عمولة كل نوع رصيد.",
     "profileOption": "{name} ({rate})",
     "form": {
       "phone": "الهاتف",
@@ -209,7 +209,14 @@
     "typeCommissionLabel": "عمولة {type} (%)",
     "typeValidityLabel": "صلاحية {type} (أشهر)",
     "typeLimitLabel": "السقف اليومي {type} (د.ت)",
-    "typeEnabledLabel": "النوع {type} مفعّل"
+    "typeEnabledLabel": "النوع {type} مفعّل",
+    "expiredDestination": "الأرصدة المنتهية",
+    "expiredDestinationLabel": "وجهة الأرصدة المنتهية الصلاحية",
+    "expiredDestinationHint": "مؤقت، في انتظار رأي محاسب.",
+    "destinations": {
+      "PLATFORM_REVENUE": "إيراد FlexiPay",
+      "COMPANY_RETURN": "إرجاع إلى الشركة"
+    }
   },
   "kyc": {
     "open": "فتح",

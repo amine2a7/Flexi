@@ -47,8 +47,8 @@
     "formDescription": "The merchant will get access once the KYB file is validated.",
     "fieldName": "Shop name",
     "categoryPlaceholder": "Choose a category",
-    "profilePlaceholder": "Choose a profile (required)",
-    "profileHint": "The rate will apply to the merchant's payouts.",
+    "profilePlaceholder": "None: credit type rate",
+    "profileHint": "Optional. Without a profile, the commission rate of each credit type applies.",
     "profileOption": "{name} ({rate})",
     "form": {
       "phone": "Phone",
@@ -209,7 +209,14 @@
     "typeCommissionLabel": "{type} commission (%)",
     "typeValidityLabel": "{type} validity (months)",
     "typeLimitLabel": "{type} daily limit (TND)",
-    "typeEnabledLabel": "{type} enabled"
+    "typeEnabledLabel": "{type} enabled",
+    "expiredDestination": "Expired credits",
+    "expiredDestinationLabel": "Destination of expired credits",
+    "expiredDestinationHint": "Provisional, pending an accountant's advice.",
+    "destinations": {
+      "PLATFORM_REVENUE": "FlexiPay revenue",
+      "COMPANY_RETURN": "Back to the company"
+    }
   },
   "kyc": {
     "open": "Open",

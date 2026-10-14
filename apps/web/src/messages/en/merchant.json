@@ -70,7 +70,8 @@
     "myCode": "Merchant code: {code}",
     "qrLabel": "Merchant QR {code}",
     "creditType": "Credit type",
-    "creditTypeHint": "The customer pays with the balance of this type only."
+    "creditTypeHint": "The customer pays with the balance of this type only.",
+    "ruleNoteByType": "The amount is settled at D+2, less the commission of the credit type."
   },
   "history": {
     "title": "Collection history",

@@ -112,10 +112,11 @@ export function buildOtherPayouts(
     const merchant = random.pick(others);
     const gross = random.int(150, 3_800) * 1_000;
     const creditType = random.pick(merchant.acceptedCreditTypes);
-    // Commission of the credit type (platform settings per type).
+    // Own rate of the shop, otherwise the rate of the credit type (decision of 2026-10-14).
     const rate =
+      merchant.commissionProfile?.rateBps ??
       DEFAULT_TYPE_SETTINGS.find((item) => item.creditType === creditType)?.commissionRateBps ??
-      merchant.commissionProfile.rateBps;
+      0;
     const commission = Math.floor((gross * rate + 5_000) / 10_000);
     return {
       id: random.uuid(),

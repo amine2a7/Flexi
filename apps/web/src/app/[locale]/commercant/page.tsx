@@ -96,7 +96,13 @@ export default function MerchantDashboardPage() {
             />
             <StatCard
               label={t('rate')}
-              value={<Rate bps={dashboard.data.commissionRateBps} />}
+              value={
+                dashboard.data.commissionRateBps === null ? (
+                  tTypes('rateByType')
+                ) : (
+                  <Rate bps={dashboard.data.commissionRateBps} />
+                )
+              }
               hint={t('rateHint')}
               icon={<Percent className="size-icon-md" />}
             />

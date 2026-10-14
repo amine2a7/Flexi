@@ -230,10 +230,11 @@ model Merchant {
   paymentCode         String           @unique @map("payment_code") @db.Char(6)
   /// Bank account for payouts (TN + 22 digits). Masked everywhere except the admin payout control.
   iban                String?          @db.Char(24)
-  commissionProfileId String           @map("commission_profile_id") @db.Uuid
+  /// Own commission profile of the shop; null = the rate of each credit type applies.
+  commissionProfileId String?          @map("commission_profile_id") @db.Uuid
   createdAt           DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  commissionProfile CommissionProfile  @relation(fields: [commissionProfileId], references: [id])
+  commissionProfile CommissionProfile? @relation(fields: [commissionProfileId], references: [id])
   users             User[]
   pointsOfSale      PointOfSale[]
   payments          Payment[]
@@ -398,13 +399,20 @@ model LoginFailure {
 
 // ------------------------------------------------------------------ settings
 
+enum ExpiredCreditsDestination {
+  PLATFORM_REVENUE
+  COMPANY_RETURN
+}
+
 model PlatformSettings {
-  id                    Int      @id @default(1)
-  payoutMinimumMillimes BigInt   @map("payout_minimum_millimes")
-  creditValidityMonths  Int      @map("credit_validity_months")
-  maxFamilyMembers      Int      @map("max_family_members")
-  orderFeeRateBps       Int      @map("order_fee_rate_bps")
-  updatedAt             DateTime @default(now()) @map("updated_at") @db.Timestamptz(3)
+  id                        Int                       @id @default(1)
+  payoutMinimumMillimes     BigInt                    @map("payout_minimum_millimes")
+  creditValidityMonths      Int                       @map("credit_validity_months")
+  maxFamilyMembers          Int                       @map("max_family_members")
+  orderFeeRateBps           Int                       @map("order_fee_rate_bps")
+  /// Where the remainder of expired lots goes (provisional, decision of 2026-10-14).
+  expiredCreditsDestination ExpiredCreditsDestination @default(PLATFORM_REVENUE) @map("expired_credits_destination")
+  updatedAt                 DateTime                  @default(now()) @map("updated_at") @db.Timestamptz(3)
 
   @@map("platform_settings")
 }

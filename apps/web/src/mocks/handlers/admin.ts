@@ -113,14 +113,7 @@ export const adminHandlers = [
     const account = await guardWrite(request, 'ADMIN');
     if (isResponse(account)) return account;
     const body = (await request.json()) as S['MerchantCreate'];
-    const errors = requiredFields(body, [
-      'name',
-      'category',
-      'city',
-      'phone',
-      'email',
-      'commissionProfileId',
-    ]);
+    const errors = requiredFields(body, ['name', 'category', 'city', 'phone', 'email']);
     if (body.email !== '' && !EMAIL.test(body.email))
       errors.push({ pointer: '/email', code: 'INVALID_FORMAT' as never });
     if (body.phone !== '' && !PHONE.test(body.phone))
@@ -129,7 +122,11 @@ export const adminHandlers = [
       errors.push({ pointer: '/acceptedCreditTypes', code: 'REQUIRED' });
     }
     if (errors.length > 0) return validationProblem(errors);
-    const profile = db.admin.profiles.find((item) => item.id === body.commissionProfileId);
+    // Optional own profile; without it the rate of each credit type applies (decision 2026-10-14).
+    const profile =
+      body.commissionProfileId === undefined
+        ? null
+        : db.admin.profiles.find((item) => item.id === body.commissionProfileId);
     if (profile === undefined)
       return validationProblem([{ pointer: '/commissionProfileId', code: 'INVALID_ENUM' }]);
     if (
@@ -146,11 +143,12 @@ export const adminHandlers = [
       acceptedCreditTypes: [...new Set(body.acceptedCreditTypes)],
       city: body.city.trim(),
       status: 'PENDING_KYC',
-      commissionProfile: { id: profile.id, name: profile.name, rateBps: profile.rateBps },
+      commissionProfile:
+        profile === null ? null : { id: profile.id, name: profile.name, rateBps: profile.rateBps },
       createdAt: new Date().toISOString(),
     };
     db.admin.merchants.unshift(merchant);
-    profile.merchantsCount += 1;
+    if (profile !== null) profile.merchantsCount += 1;
     audit('merchants.create', merchant.name);
     return HttpResponse.json<S['MerchantAccount']>(merchant, { status: 201 });
   }),
@@ -293,10 +291,10 @@ export const adminHandlers = [
         profile.rateBps = approval.newRateBps;
         profile.updatedAt = new Date().toISOString();
         for (const merchant of db.admin.merchants) {
-          if (merchant.commissionProfile.id === profile.id)
+          if (merchant.commissionProfile?.id === profile.id)
             merchant.commissionProfile.rateBps = profile.rateBps;
         }
-        if (db.merchant.profile.commissionProfile.id === profile.id)
+        if (db.merchant.profile.commissionProfile?.id === profile.id)
           db.merchant.rateBps = profile.rateBps;
       }
     }

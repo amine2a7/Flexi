@@ -1,7 +1,7 @@
 'use client';
 
 import type { Schemas } from '@flexipay/api-client';
-import { CalendarClock, Percent, SlidersHorizontal, Users, Wallet } from 'lucide-react';
+import { CalendarClock, Hourglass, Percent, SlidersHorizontal, Users, Wallet } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
@@ -17,13 +17,17 @@ import { Card, CardTitle, StatCard } from '@/components/ui/card';
 import { CreditTypeBadge, useCreditTypeLabel } from '@/components/ui/credit-type';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { TextField } from '@/components/ui/field';
+import { SelectField, TextField } from '@/components/ui/field';
 import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { Modal } from '@/components/ui/modal';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { useToast } from '@/components/ui/toast';
 
 type Settings = Schemas['PlatformSettings'];
+const DESTINATIONS: readonly Schemas['ExpiredCreditsDestination'][] = [
+  'PLATFORM_REVENUE',
+  'COMPANY_RETURN',
+];
 
 /** Basis points as the user types them (percent, locale decimal separator), integers only. */
 function bpsToText(bps: number, locale: Locale): string {
@@ -126,6 +130,12 @@ export default function SettingsPage() {
               value={settings.data.maxFamilyMembers}
               icon={<Users className="size-icon-md" />}
             />
+            <StatCard
+              label={t('expiredDestination')}
+              value={t(`destinations.${settings.data.expiredCreditsDestination}`)}
+              hint={t('expiredDestinationHint')}
+              icon={<Hourglass className="size-icon-md" />}
+            />
           </div>
           <Card className="mt-6">
             <CardTitle>{t('typesTitle')}</CardTitle>
@@ -170,6 +180,7 @@ function ChangeSettings({
     creditValidity: String(current.creditValidityMonths),
     maxFamily: String(current.maxFamilyMembers),
     orderFee: bpsToText(current.orderFeeRateBps, locale),
+    expiredDestination: current.expiredCreditsDestination,
     reason: '',
   });
   const [types, setTypes] = useState(() =>
@@ -260,6 +271,7 @@ function ChangeSettings({
             creditValidityMonths: settings.creditValidityMonths,
             maxFamilyMembers: settings.maxFamilyMembers,
             orderFeeRateBps: settings.orderFeeRateBps,
+            expiredCreditsDestination: draft.expiredDestination,
             creditTypes: validTypes,
           },
           reason: draft.reason.trim(),
@@ -333,6 +345,17 @@ function ChangeSettings({
             value={draft.orderFee}
             onChange={(event) => {
               set('orderFee')(event.target.value);
+            }}
+          />
+          <SelectField
+            label={t('expiredDestinationLabel')}
+            hint={t('expiredDestinationHint')}
+            options={DESTINATIONS.map((value) => ({ value, label: t(`destinations.${value}`) }))}
+            value={draft.expiredDestination}
+            onChange={(event) => {
+              const value = DESTINATIONS.find((item) => item === event.target.value);
+              if (value !== undefined)
+                setDraft((previous) => ({ ...previous, expiredDestination: value }));
             }}
           />
         </div>

@@ -448,7 +448,7 @@ function buildAdmin(now: number, merchantRate: number) {
   }
   for (const profile of profiles) {
     profile.merchantsCount = merchants.filter(
-      (merchant) => merchant.commissionProfile.id === profile.id,
+      (merchant) => merchant.commissionProfile?.id === profile.id,
     ).length;
   }
 
@@ -562,6 +562,7 @@ function buildAdmin(now: number, merchantRate: number) {
       creditValidityMonths: 12,
       maxFamilyMembers: 4,
       orderFeeRateBps: 150,
+      expiredCreditsDestination: 'PLATFORM_REVENUE' as const,
       creditTypes: DEFAULT_TYPE_SETTINGS.map((item) => ({ ...item })),
     },
   };

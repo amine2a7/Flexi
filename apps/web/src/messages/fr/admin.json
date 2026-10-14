@@ -47,8 +47,8 @@
     "formDescription": "Le commerçant recevra ses accès après validation de son dossier KYB.",
     "fieldName": "Nom du commerce",
     "categoryPlaceholder": "Choisir une catégorie",
-    "profilePlaceholder": "Choisir un profil (obligatoire)",
-    "profileHint": "Le taux s'appliquera aux virements du commerçant.",
+    "profilePlaceholder": "Aucun : taux du type de crédit",
+    "profileHint": "Facultatif. Sans profil, le taux de commission de chaque type de crédit s'applique.",
     "profileOption": "{name} ({rate})",
     "form": {
       "phone": "Téléphone",
@@ -209,7 +209,14 @@
     "typeCommissionLabel": "Commission {type} (%)",
     "typeValidityLabel": "Validité {type} (mois)",
     "typeLimitLabel": "Plafond journalier {type} (TND)",
-    "typeEnabledLabel": "Type {type} activé"
+    "typeEnabledLabel": "Type {type} activé",
+    "expiredDestination": "Crédits expirés",
+    "expiredDestinationLabel": "Destination des crédits expirés",
+    "expiredDestinationHint": "Provisoire, en attendant l'avis d'un comptable.",
+    "destinations": {
+      "PLATFORM_REVENUE": "Revenu FlexiPay",
+      "COMPANY_RETURN": "Retour à l'entreprise"
+    }
   },
   "kyc": {
     "open": "Ouvrir",

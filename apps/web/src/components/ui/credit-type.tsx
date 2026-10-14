@@ -5,6 +5,7 @@ import { CircleHelp, Fuel, Gift, Shirt, UtensilsCrossed, type LucideIcon } from 
 import { useLocale, useTranslations } from 'next-intl';
 import { messageKey } from '@/i18n/keys';
 import { cn } from '@/lib/cn';
+import { Rate } from '@/components/ui/amount';
 import { formatMillimesWithCurrency } from '@/lib/format/money';
 import { Amount } from './amount';
 import { SelectField } from './field';
@@ -174,6 +175,25 @@ export function CreditTypeBalanceCards({
         );
       })}
     </div>
+  );
+}
+
+/**
+ * Commission of a shop: its own profile (name and rate), or the rate of each credit type when it
+ * has none (decision of 2026-10-14).
+ */
+export function CommissionLabel({
+  profile,
+}: {
+  profile: { name: string; rateBps: number } | null;
+}) {
+  const t = useTranslations('ui.creditTypes');
+  if (profile === null) return <span>{t('rateByType')}</span>;
+  return (
+    <span className="flex flex-wrap items-baseline gap-2">
+      {profile.name}
+      <Rate bps={profile.rateBps} />
+    </span>
   );
 }
 

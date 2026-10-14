@@ -9,10 +9,9 @@ import { getApi } from '@/lib/api/client';
 import { usePagedList } from '@/lib/api/use-paged-list';
 import { formatDateTime } from '@/lib/format/date';
 import { AccountForm } from '@/components/admin/account-form';
-import { Rate } from '@/components/ui/amount';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { CreditTypeBadges } from '@/components/ui/credit-type';
+import { CommissionLabel, CreditTypeBadges } from '@/components/ui/credit-type';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { PageHeader } from '@/components/ui/layout-blocks';
@@ -70,12 +69,7 @@ export default function AdminMerchantsPage() {
     {
       key: 'profile',
       header: t('profile'),
-      cell: (row) => (
-        <span className="flex flex-wrap items-baseline gap-2">
-          {row.commissionProfile.name}
-          <Rate bps={row.commissionProfile.rateBps} />
-        </span>
-      ),
+      cell: (row) => <CommissionLabel profile={row.commissionProfile} />,
     },
     {
       key: 'created',

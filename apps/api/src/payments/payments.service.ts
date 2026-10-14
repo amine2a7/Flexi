@@ -249,7 +249,10 @@ export class PaymentsService {
         },
       ],
     });
-    return { transactionId: posted.transactionId, rateBps: setting.commissionRateBps };
+    return {
+      transactionId: posted.transactionId,
+      rateBps: await this.settings.commissionRate(tx, payment.merchantId, payment.creditType),
+    };
   }
 
   /** Confirmation by PIN of a merchant request (financial, idempotent). */
@@ -684,7 +687,7 @@ export class PaymentsService {
       const collected = payment.status === 'CONFIRMED' || payment.status === 'SETTLED';
       const rate =
         payment.commissionRateBps ??
-        (await this.settings.creditType(tx, payment.creditType)).commissionRateBps;
+        (await this.settings.commissionRate(tx, payment.merchantId, payment.creditType));
       const commission = collected ? commissionOf(payment.amountMillimes, rate) : 0n;
       return {
         ...merchantPayment(payment),

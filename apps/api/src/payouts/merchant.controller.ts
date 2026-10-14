@@ -191,16 +191,19 @@ export class MerchantController {
         city: merchant.city,
         address: merchant.address,
         phone: merchant.phone,
-        maskedIban: merchant.iban === null ? "" : `•••• ${merchant.iban.slice(-4)}`,
+        maskedIban: merchant.iban === null ? '' : `•••• ${merchant.iban.slice(-4)}`,
         paymentCode: merchant.paymentCode,
         acceptedCreditTypes: CREDIT_TYPES.filter((type) =>
           merchant.acceptedCreditTypes.includes(type),
         ),
-        commissionProfile: {
-          id: merchant.commissionProfile.id,
-          name: merchant.commissionProfile.name,
-          rateBps: merchant.commissionProfile.rateBps,
-        },
+        commissionProfile:
+          merchant.commissionProfile === null
+            ? null
+            : {
+                id: merchant.commissionProfile.id,
+                name: merchant.commissionProfile.name,
+                rateBps: merchant.commissionProfile.rateBps,
+              },
         pointsOfSale: merchant.pointsOfSale.map((point) => ({
           id: point.id,
           name: point.name,

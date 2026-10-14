@@ -55,7 +55,8 @@
     "pickOne": "اختر نوعًا واحدًا على الأقل.",
     "limitUsed": "صُرف {spent} اليوم من أصل {limit}",
     "noTransfer": "لكل نوع رصيده الخاص: لا تحويل ولا دفع بين الأنواع.",
-    "insufficient": "رصيد {type} غير كافٍ: ينقص {missing}."
+    "insufficient": "رصيد {type} غير كافٍ: ينقص {missing}.",
+    "rateByType": "نسبة نوع الرصيد"
   },
   "amountField": {
     "hint": "مثال: 18,500",

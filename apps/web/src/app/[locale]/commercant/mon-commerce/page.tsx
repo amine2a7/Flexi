@@ -4,9 +4,8 @@ import { MapPin, UserRound } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { getApi } from '@/lib/api/client';
 import { useApiQuery } from '@/lib/api/use-api-query';
-import { Rate } from '@/components/ui/amount';
 import { Card, CardTitle } from '@/components/ui/card';
-import { CreditTypeBadges } from '@/components/ui/credit-type';
+import { CommissionLabel, CreditTypeBadges } from '@/components/ui/credit-type';
 import { DescriptionList, PageHeader } from '@/components/ui/layout-blocks';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 
@@ -41,12 +40,7 @@ export default function ShopPage() {
                 { label: t('iban'), value: <span dir="ltr">{profile.data.maskedIban}</span> },
                 {
                   label: t('commission'),
-                  value: (
-                    <span className="flex flex-wrap gap-2">
-                      <span>{profile.data.commissionProfile.name}</span>
-                      <Rate bps={profile.data.commissionProfile.rateBps} />
-                    </span>
-                  ),
+                  value: <CommissionLabel profile={profile.data.commissionProfile} />,
                 },
               ]}
             />

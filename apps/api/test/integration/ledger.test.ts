@@ -175,12 +175,18 @@ describe('append-only ledger', () => {
     await expect(owner.query('UPDATE ledger_entries SET amount_millimes = 1')).rejects.toThrow(
       /append-only/,
     );
-    await expect(owner.query('DELETE FROM ledger_entries')).rejects.toMatchObject({ code: '42501' });
+    await expect(owner.query('DELETE FROM ledger_entries')).rejects.toMatchObject({
+      code: '42501',
+    });
     await expect(owner.query(`UPDATE ledger_transactions SET reference = 'x'`)).rejects.toThrow(
       /append-only/,
     );
-    await expect(owner.query('DELETE FROM ledger_transactions')).rejects.toMatchObject({ code: '42501' });
-    await expect(owner.query('TRUNCATE ledger_entries CASCADE')).rejects.toMatchObject({ code: '42501' });
+    await expect(owner.query('DELETE FROM ledger_transactions')).rejects.toMatchObject({
+      code: '42501',
+    });
+    await expect(owner.query('TRUNCATE ledger_entries CASCADE')).rejects.toMatchObject({
+      code: '42501',
+    });
     await owner.end();
   });
 
@@ -189,7 +195,9 @@ describe('append-only ledger', () => {
     await expect(app.query('UPDATE ledger_entries SET amount_millimes = 1')).rejects.toMatchObject({
       code: '42501',
     });
-    await expect(app.query('DELETE FROM ledger_transactions')).rejects.toMatchObject({ code: '42501' });
+    await expect(app.query('DELETE FROM ledger_transactions')).rejects.toMatchObject({
+      code: '42501',
+    });
     await app.end();
   });
 
@@ -313,6 +321,65 @@ describe('concurrency', () => {
     expect(refused).toBe(140);
     expect(await balance(accounts.employeeWallet(employee, 'RESTAURATION'))).toBe(0n);
     expect(await balance(accounts.merchantWallet(merchant, 'RESTAURATION'))).toBe(60_000n);
+  });
+});
+
+describe('opening balances (development seed only, decision of 2026-10-14)', () => {
+  const opening = (type: string) =>
+    `INSERT INTO ledger_transactions (id, type, reference) VALUES ('${randomUUID()}', '${type}', 'SEED-TEST')`;
+
+  it('are refused to the application role, even when it claims to be the seed', async () => {
+    await expect(
+      system((tx) =>
+        ledger.post(tx, {
+          type: 'OPENING_BALANCE',
+          reference: 'SEED-TEST',
+          entries: [
+            { account: accounts.bankEscrow(), direction: 'D', amount: 1_000n },
+            {
+              account: accounts.companyWallet(randomUUID(), 'CADEAUX'),
+              direction: 'C',
+              amount: 1_000n,
+            },
+          ],
+        }),
+      ),
+    ).rejects.toThrow(/OPENING_BALANCE/);
+    const app = await appClient();
+    await app.query('BEGIN');
+    await app.query(`SELECT set_config('app.seed', 'on', true)`);
+    await expect(app.query(opening('OPENING_BALANCE'))).rejects.toMatchObject({ code: '42501' });
+    await app.query('ROLLBACK');
+    await app.end();
+  });
+
+  it('are refused to the owner outside the seed, and their reversal too', async () => {
+    const owner = await ownerClient();
+    for (const type of ['OPENING_BALANCE', 'REVERSAL_OPENING_BALANCE']) {
+      await owner.query('BEGIN');
+      await expect(owner.query(opening(type))).rejects.toMatchObject({ code: '42501' });
+      await owner.query('ROLLBACK');
+    }
+    await owner.end();
+  });
+
+  it('are refused in a production database, even to the seed', async () => {
+    const owner = await ownerClient();
+    await owner.query('BEGIN');
+    await owner.query(`SELECT set_config('app.seed', 'on', true)`);
+    await owner.query(`SELECT set_config('app.environment', 'production', true)`);
+    await expect(owner.query(opening('OPENING_BALANCE'))).rejects.toMatchObject({ code: '42501' });
+    await owner.query('ROLLBACK');
+    await owner.end();
+  });
+
+  it('are accepted from the seed (owner, app.seed on, not production)', async () => {
+    const owner = await ownerClient();
+    await owner.query('BEGIN');
+    await owner.query(`SELECT set_config('app.seed', 'on', true)`);
+    await expect(owner.query(opening('OPENING_BALANCE'))).resolves.toBeDefined();
+    await owner.query('ROLLBACK');
+    await owner.end();
   });
 });
 

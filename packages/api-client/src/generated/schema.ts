@@ -2441,7 +2441,8 @@ export interface components {
       todayPaymentsCount: number;
       receivablesMillimes: components['schemas']['AmountMillimes'];
       nextSettlementDate: components['schemas']['CalendarDate'] | null;
-      commissionRateBps: components['schemas']['RateBps'];
+      /** @description Taux propre au commerçant, ou `null` (taux du type de crédit, voir le devis). */
+      commissionRateBps: components['schemas']['RateBps'] | null;
       recentPayments: components['schemas']['MerchantPayment'][];
       /** @description Encaissé ce mois, par type de crédit (répartition). */
       monthByCreditType: components['schemas']['CreditTypeAmount'][];
@@ -2632,7 +2633,11 @@ export interface components {
       paymentCode: string;
       /** @description Types de crédit que le commerce accepte (définis par FlexiPay). */
       acceptedCreditTypes: components['schemas']['CreditType'][];
-      commissionProfile: components['schemas']['CommissionProfileSummary'];
+      /**
+       * @description Profil de commission propre au commerçant, ou `null` : le taux du type de crédit
+       *     s'applique alors (décision du 2026-10-14). Le taux est figé dans la demande de virement.
+       */
+      commissionProfile: components['schemas']['CommissionProfileSummary'] | null;
       pointsOfSale: components['schemas']['PointOfSale'][];
       staff: components['schemas']['StaffMember'][];
     };
@@ -3012,7 +3017,11 @@ export interface components {
       acceptedCreditTypes: components['schemas']['CreditType'][];
       city: string;
       status: components['schemas']['AccountStatus'];
-      commissionProfile: components['schemas']['CommissionProfileSummary'];
+      /**
+       * @description Profil de commission propre au commerçant, ou `null` : le taux du type de crédit
+       *     s'applique alors (décision du 2026-10-14). Le taux est figé dans la demande de virement.
+       */
+      commissionProfile: components['schemas']['CommissionProfileSummary'] | null;
       createdAt: components['schemas']['Timestamp'];
     };
     /** MerchantCreditTypes */
@@ -3038,8 +3047,11 @@ export interface components {
       phone: components['schemas']['PhoneNumber'];
       /** Format: email */
       email: string;
-      /** @description Profil de commission, obligatoire (liste déroulante). */
-      commissionProfileId: components['schemas']['Uuid'];
+      /**
+       * @description Profil de commission propre au commerçant (liste déroulante), facultatif : sans profil,
+       *     le taux de chaque type de crédit s'applique.
+       */
+      commissionProfileId?: components['schemas']['Uuid'];
     };
     /** CompanyAccount */
     CompanyAccount: {
@@ -3307,6 +3319,7 @@ export interface components {
     };
     /** PlatformSettings */
     PlatformSettings: {
+      expiredCreditsDestination: components['schemas']['ExpiredCreditsDestination'];
       payoutMinimumMillimes: components['schemas']['AmountMillimes'];
       /** Format: int32 */
       creditValidityMonths: number;
@@ -3316,6 +3329,15 @@ export interface components {
       /** @description Paramétrage par type (un élément par type, les 4 types). */
       creditTypes: components['schemas']['CreditTypeSettings'][];
     };
+    /**
+     * ExpiredCreditsDestination
+     * @description Destination du reste des lots de crédits expirés (décision du 2026-10-14, provisoire en
+     *     attendant l'avis d'un comptable) : `PLATFORM_REVENUE` = compte `REVENUE_EXPIRED` de
+     *     FlexiPay ; `COMPANY_RETURN` = retour au solde de l'entreprise, sur le même type de crédit.
+     *     Modifiée comme tout paramétrage (double validation).
+     * @enum {string}
+     */
+    ExpiredCreditsDestination: 'PLATFORM_REVENUE' | 'COMPANY_RETURN';
     /** PlatformSettingsChange */
     PlatformSettingsChange: {
       settings: components['schemas']['PlatformSettings'];
@@ -7138,6 +7160,9 @@ export const kycDocumentContentTypeValues: ReadonlyArray<
 export const kycEventActionValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['KycEvent']['action']
 > = ['SUBMITTED', 'APPROVED', 'REJECTED'];
+export const expiredCreditsDestinationValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['ExpiredCreditsDestination']
+> = ['PLATFORM_REVENUE', 'COMPANY_RETURN'];
 export const problemCodeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['ProblemCode']
 > = [

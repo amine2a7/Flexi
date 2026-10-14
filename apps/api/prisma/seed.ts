@@ -200,6 +200,14 @@ const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: urls
 const storage = new LocalDiskStorage(env.uploadDir);
 const ledger = new LedgerService();
 
+const [marked] = await prisma.$queryRaw<
+  { environment: string | null }[]
+>`SELECT current_setting('app.environment', true) AS environment`;
+if (marked?.environment === 'production') {
+  console.error('This database is marked as a production database: no seed.');
+  await prisma.$disconnect();
+  process.exit(1);
+}
 if ((await prisma.user.count()) > 0) {
   console.error('The database already has data: run `pnpm --filter @flexipay/api db:reset` first.');
   await prisma.$disconnect();
@@ -214,6 +222,8 @@ const pinHash = await hashSecret(demo.pin);
 
 const summary = await prisma.$transaction(
   async (tx) => {
+    // The database accepts OPENING_BALANCE entries only in this transaction (migration 0007).
+    await tx.$executeRaw`SELECT set_config('app.seed', 'on', true)`;
     const validity = new Map(
       snap.admin.settings.creditTypes.map((item) => [item.creditType, item.validityMonths]),
     );
@@ -311,7 +321,7 @@ const summary = await prisma.$transaction(
         acceptedCreditTypes: merchant.acceptedCreditTypes,
         paymentCode: own ? snap.merchant.profile.paymentCode : paymentCode(merchant.id),
         iban,
-        commissionProfileId: merchant.commissionProfile.id,
+        commissionProfileId: merchant.commissionProfile?.id ?? null,
         createdAt: at(merchant.createdAt),
       };
     });

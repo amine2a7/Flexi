@@ -60,6 +60,20 @@ export class SettingsService {
     return row;
   }
 
+  /**
+   * Commission rate of a shop for a credit type (decision of 2026-10-14): its own commission
+   * profile when it has one, otherwise the rate of the credit type. Frozen in the payout request.
+   */
+  async commissionRate(tx: Tx, merchantId: string, type: CreditType): Promise<number> {
+    const merchant = await tx.merchant.findUnique({
+      where: { id: merchantId },
+      select: { commissionProfile: { select: { rateBps: true } } },
+    });
+    return (
+      merchant?.commissionProfile?.rateBps ?? (await this.creditType(tx, type)).commissionRateBps
+    );
+  }
+
   async enabledTypes(tx: Tx): Promise<Set<CreditType>> {
     return new Set(
       (await this.creditTypes(tx)).filter((row) => row.enabled).map((row) => row.creditType),

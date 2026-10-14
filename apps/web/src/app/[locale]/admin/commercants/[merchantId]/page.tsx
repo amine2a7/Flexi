@@ -11,10 +11,13 @@ import { getApi } from '@/lib/api/client';
 import { errorMessageKey } from '@/lib/api/problem';
 import { useApiQuery } from '@/lib/api/use-api-query';
 import { formatDateTime } from '@/lib/format/date';
-import { Rate } from '@/components/ui/amount';
 import { Button, buttonClasses } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
-import { CreditTypeCheckboxes, type CreditType } from '@/components/ui/credit-type';
+import {
+  CommissionLabel,
+  CreditTypeCheckboxes,
+  type CreditType,
+} from '@/components/ui/credit-type';
 import { Alert, DescriptionList, PageHeader } from '@/components/ui/layout-blocks';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -91,12 +94,7 @@ function MerchantRecord({ merchant }: { merchant: Schemas['MerchantAccount'] }) 
               { label: t('city'), value: merchant.city },
               {
                 label: t('profile'),
-                value: (
-                  <span className="flex flex-wrap items-baseline gap-2">
-                    {merchant.commissionProfile.name}
-                    <Rate bps={merchant.commissionProfile.rateBps} />
-                  </span>
-                ),
+                value: <CommissionLabel profile={merchant.commissionProfile} />,
               },
               { label: t('created'), value: formatDateTime(merchant.createdAt, locale) },
             ]}

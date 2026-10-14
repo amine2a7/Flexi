@@ -29,7 +29,7 @@ import type {
 } from '../generated/prisma/client.js';
 import { CREDIT_TYPES, SettingsService, typeSettingsBody } from '../platform/settings.service.js';
 
-type MerchantRow = Merchant & { commissionProfile: CommissionProfile };
+type MerchantRow = Merchant & { commissionProfile: CommissionProfile | null };
 
 function merchantAccount(merchant: MerchantRow) {
   return {
@@ -39,11 +39,14 @@ function merchantAccount(merchant: MerchantRow) {
     acceptedCreditTypes: CREDIT_TYPES.filter((type) => merchant.acceptedCreditTypes.includes(type)),
     city: merchant.city,
     status: merchant.status,
-    commissionProfile: {
-      id: merchant.commissionProfile.id,
-      name: merchant.commissionProfile.name,
-      rateBps: merchant.commissionProfile.rateBps,
-    },
+    commissionProfile:
+      merchant.commissionProfile === null
+        ? null
+        : {
+            id: merchant.commissionProfile.id,
+            name: merchant.commissionProfile.name,
+            rateBps: merchant.commissionProfile.rateBps,
+          },
     createdAt: merchant.createdAt.toISOString(),
   };
 }
@@ -68,6 +71,7 @@ export interface PlatformSettingsInput {
   creditValidityMonths: number;
   maxFamilyMembers: number;
   orderFeeRateBps: number;
+  expiredCreditsDestination: 'PLATFORM_REVENUE' | 'COMPANY_RETURN';
   creditTypes: {
     creditType: CreditType;
     enabled: boolean;
@@ -219,13 +223,15 @@ export class AdminService {
     city: string;
     phone: string;
     email: string;
-    commissionProfileId: string;
+    commissionProfileId?: string | undefined;
     acceptedCreditTypes: CreditType[];
   }) {
     return this.db.user(async (tx) => {
-      const profile = await tx.commissionProfile.findUnique({
-        where: { id: input.commissionProfileId },
-      });
+      // Without a profile, the rate of each credit type applies (decision of 2026-10-14).
+      const profile =
+        input.commissionProfileId === undefined
+          ? undefined
+          : await tx.commissionProfile.findUnique({ where: { id: input.commissionProfileId } });
       if (profile === null)
         throw validationFailed([
           { in: 'body', pointer: '/commissionProfileId', code: 'INVALID_ENUM' },
@@ -247,7 +253,7 @@ export class AdminService {
           email: input.email.toLowerCase(),
           acceptedCreditTypes: [...new Set(input.acceptedCreditTypes)],
           paymentCode,
-          commissionProfileId: profile.id,
+          commissionProfileId: profile?.id ?? null,
           status: 'PENDING_KYC',
         },
         include: { commissionProfile: true },
@@ -484,6 +490,7 @@ export class AdminService {
         creditValidityMonths: platform.creditValidityMonths,
         maxFamilyMembers: platform.maxFamilyMembers,
         orderFeeRateBps: platform.orderFeeRateBps,
+        expiredCreditsDestination: platform.expiredCreditsDestination,
         creditTypes: types.map(typeSettingsBody),
       };
     });
@@ -526,6 +533,7 @@ export class AdminService {
         creditValidityMonths: settings.creditValidityMonths,
         maxFamilyMembers: settings.maxFamilyMembers,
         orderFeeRateBps: settings.orderFeeRateBps,
+        expiredCreditsDestination: settings.expiredCreditsDestination,
         updatedAt: new Date(),
       },
     });

@@ -118,7 +118,12 @@ describe('four-eyes approvals', () => {
   it('applies a settings change after approval (202 = request only)', async () => {
     const { first, second } = await admins();
     const current = await first.call('GET', '/v1/admin/settings');
-    const settings = { ...current.body, orderFeeRateBps: 175 };
+    expect(current.body.expiredCreditsDestination).toBe('PLATFORM_REVENUE');
+    const settings = {
+      ...current.body,
+      orderFeeRateBps: 175,
+      expiredCreditsDestination: 'COMPANY_RETURN',
+    };
     const requested = await first.call('PUT', '/v1/admin/settings', {
       body: { settings, reason: 'Nouvelle grille' },
     });
@@ -131,7 +136,10 @@ describe('four-eyes approvals', () => {
         .status,
     ).toBe(409);
     await second.call('POST', `/v1/admin/approvals/${String(requested.body.id)}/approve`);
-    expect((await first.call('GET', '/v1/admin/settings')).body.orderFeeRateBps).toBe(175);
+    expect((await first.call('GET', '/v1/admin/settings')).body).toMatchObject({
+      orderFeeRateBps: 175,
+      expiredCreditsDestination: 'COMPANY_RETURN',
+    });
     const audit = await first.call('GET', '/v1/admin/audit-logs?q=approvals');
     expect(
       (audit.body.data as { action: string }[]).some(

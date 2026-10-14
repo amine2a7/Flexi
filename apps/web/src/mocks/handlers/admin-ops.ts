@@ -126,15 +126,21 @@ function ensureLines(batch: S['SettlementBatch']): AdminPayout[] {
       : Math.floor((batch.commissionMillimes * gross) / batch.grossMillimes);
     grossLeft -= gross;
     commissionLeft -= commission;
+    const creditType = merchant.acceptedCreditTypes[0] ?? 'RESTAURATION';
+    const rate =
+      merchant.commissionProfile?.rateBps ??
+      db.admin.settings.creditTypes.find((item) => item.creditType === creditType)
+        ?.commissionRateBps ??
+      0;
     return {
       id: random.uuid(),
       reference: `VIR-${batch.reference.slice(4)}-${String(index + 1).padStart(2, '0')}`,
       status: batch.status === 'PAID' ? 'EXECUTED' : 'CHECKED',
-      creditType: merchant.acceptedCreditTypes[0] ?? 'RESTAURATION',
+      creditType,
       merchantId: merchant.id,
       merchantName: merchant.name,
       grossMillimes: gross,
-      commissionRateBps: merchant.commissionProfile.rateBps,
+      commissionRateBps: rate,
       commissionMillimes: commission,
       netMillimes: gross - commission,
       requestedAt: new Date(settlementTime - 2 * 86_400_000).toISOString(),
