@@ -191,7 +191,7 @@ export class MerchantController {
         city: merchant.city,
         address: merchant.address,
         phone: merchant.phone,
-        maskedIban: `•••• ${merchant.iban.slice(-4)}`,
+        maskedIban: merchant.iban === null ? "" : `•••• ${merchant.iban.slice(-4)}`,
         paymentCode: merchant.paymentCode,
         acceptedCreditTypes: CREDIT_TYPES.filter((type) =>
           merchant.acceptedCreditTypes.includes(type),

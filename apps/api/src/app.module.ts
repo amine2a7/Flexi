@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AdminModule } from './admin/admin.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { CommonModule } from './common/common.module.js';
 import { HealthController } from './health/health.controller.js';
@@ -9,7 +10,7 @@ import { PayoutsModule } from './payouts/payouts.module.js';
 import { PlatformModule } from './platform/platform.module.js';
 
 @Module({
-  imports: [CommonModule, LedgerModule, PlatformModule, AuthModule, OrdersModule, PaymentsModule, PayoutsModule],
+  imports: [CommonModule, LedgerModule, PlatformModule, AuthModule, OrdersModule, PaymentsModule, PayoutsModule, AdminModule],
   controllers: [HealthController],
 })
 export class AppModule {}

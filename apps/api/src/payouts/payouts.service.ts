@@ -286,7 +286,10 @@ export class PayoutsService {
       quote.commissionRateBps !== rate
     )
       throw problems.conflict();
-    const merchant = await tx.merchant.findUniqueOrThrow({ where: { id: merchantId } });
+    const found = await tx.merchant.findUniqueOrThrow({ where: { id: merchantId } });
+    // No IBAN checked yet (KYC): no payout.
+    if (found.iban === null) throw problems.conflict();
+    const merchant = { ...found, iban: found.iban };
     const [sequence] = await tx.$queryRaw<
       { value: bigint }[]
     >`SELECT nextval('payout_reference_seq') AS value`;

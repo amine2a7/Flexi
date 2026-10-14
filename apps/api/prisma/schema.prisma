@@ -229,7 +229,7 @@ model Merchant {
   /// 6-digit code shown at the till and in the merchant QR (flexipay:merchant:<code>).
   paymentCode         String           @unique @map("payment_code") @db.Char(6)
   /// Bank account for payouts (TN + 22 digits). Masked everywhere except the admin payout control.
-  iban                String           @db.Char(24)
+  iban                String?          @db.Char(24)
   commissionProfileId String           @map("commission_profile_id") @db.Uuid
   createdAt           DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
 
