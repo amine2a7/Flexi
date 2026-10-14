@@ -16,7 +16,8 @@
     "db:setup": "tsx --env-file-if-exists=../../infra/.env scripts/db-setup.ts",
     "db:migrate": "tsx --env-file-if-exists=../../infra/.env scripts/db-migrate.ts",
     "db:seed": "tsx --env-file-if-exists=../../infra/.env prisma/seed.ts",
-    "db:reset": "tsx --env-file-if-exists=../../infra/.env scripts/db-setup.ts --reset"
+    "db:reset": "tsx --env-file-if-exists=../../infra/.env scripts/db-setup.ts --reset",
+    "routes:check": "tsx --env-file-if-exists=../../infra/.env scripts/routes-coverage.ts"
   },
   "dependencies": {
     "@flexipay/shared": "workspace:*",

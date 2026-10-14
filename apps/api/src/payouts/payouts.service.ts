@@ -673,7 +673,7 @@ export class PayoutsService {
     for (const { id } of due) {
       await this.db.system(async (tx) => {
         const payouts = await tx.payoutRequest.findMany({
-          where: { batchId: id, status: 'CHECKED' },
+          where: { batchId: id, status: { in: ['CHECKED', 'SENT'] } },
         });
         for (const payout of payouts) {
           await this.ledger.post(tx, {
