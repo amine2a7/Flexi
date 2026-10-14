@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
 import { Link } from '@/i18n/navigation';
-import { getApi, newIdempotencyKey } from '@/lib/api/client';
+import { csrfHeader, getApi, newIdempotencyKey } from '@/lib/api/client';
 import { errorMessageKey } from '@/lib/api/problem';
 import { useApiQuery } from '@/lib/api/use-api-query';
 import { getApiOrigin } from '@/lib/env';
@@ -334,10 +334,15 @@ function DemoRequest({ onCreated }: { onCreated: () => void }) {
         size="sm"
         icon={<FlaskConical aria-hidden="true" className="size-icon-sm" />}
         onClick={() =>
-          void fetch(`${getApiOrigin() ?? ''}/__demo/employee/payment-request`, {
-            method: 'POST',
-            credentials: 'include',
-          }).then(onCreated)
+          void csrfHeader()
+            .then((headers) =>
+              fetch(`${getApiOrigin() ?? ''}/__demo/employee/payment-request`, {
+                method: 'POST',
+                credentials: 'include',
+                headers,
+              }),
+            )
+            .then(onCreated)
         }
       >
         {t('demo')}

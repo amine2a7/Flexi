@@ -70,6 +70,13 @@ export function getApi(): ApiClient {
   return client;
 }
 
+/** CSRF header for a request outside the typed client (development routes), recovered if needed. */
+export async function csrfHeader(): Promise<Record<string, string>> {
+  const baseUrl = getApiOrigin();
+  const token = csrfToken ?? (baseUrl === undefined ? undefined : await recoverCsrfToken(baseUrl));
+  return token === undefined ? {} : { 'X-CSRF-Token': token };
+}
+
 /** New Idempotency-Key, generated once per user intention (contract §5). */
 export function newIdempotencyKey(): string {
   return crypto.randomUUID();

@@ -1,3 +1,4 @@
+import { WEB_CHANNEL_HEADER } from '@flexipay/api-client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The CSRF token is kept in memory only: after a page reload the client recovers it through the
@@ -65,7 +66,10 @@ describe('API client: CSRF token after a page reload', () => {
     stubFetch();
     const { getApi } = await freshClient();
     await getApi().GET('/v1/me');
-    await getApi().POST('/v1/auth/login', { body: { identifier: 'a@b.test', password: 'x' } });
+    await getApi().POST('/v1/auth/login', {
+      params: { header: WEB_CHANNEL_HEADER },
+      body: { identifier: 'a@b.test', password: 'x' },
+    });
     expect(calls.map((call) => call.url)).toEqual(['/v1/me', '/v1/auth/login']);
   });
 
