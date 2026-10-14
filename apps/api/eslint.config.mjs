@@ -9,6 +9,11 @@ export default [
     languageOptions: { globals: { process: 'readonly', console: 'readonly', URL: 'readonly' } },
   },
   {
+    // Database seed: a command-line program, like the scripts.
+    files: ['prisma/seed.ts'],
+    rules: { 'no-console': 'off' },
+  },
+  {
     // NestJS classes are declared for the DI container (decorators): empty classes are modules.
     files: ['src/**/*.module.ts'],
     rules: { '@typescript-eslint/no-extraneous-class': 'off' },
