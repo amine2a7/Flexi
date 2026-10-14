@@ -31,11 +31,19 @@ export function ResultScreen({
             event.preventDefault();
           }}
           className={cn(
-            'fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 overflow-y-auto p-6 text-center',
+            'fixed inset-0 z-50 flex animate-fade flex-col items-center justify-center gap-6 overflow-y-auto p-6 text-center',
             tone === 'success' ? 'bg-emerald text-on-emerald' : 'bg-danger text-on-danger',
           )}
         >
-          <Icon aria-hidden="true" className="size-illustration" strokeWidth={1.5} />
+          {/* Animation 9: accepted = the circle springs in; refused = the cross shakes (360 ms). */}
+          <Icon
+            aria-hidden="true"
+            className={cn(
+              'size-illustration',
+              tone === 'success' ? 'animate-pop' : 'animate-shake',
+            )}
+            strokeWidth={1.5}
+          />
           <Dialog.Title className="text-headline">{title}</Dialog.Title>
           {description !== undefined ? (
             <Dialog.Description className="max-w-form-max-width text-body-lg">

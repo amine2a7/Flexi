@@ -86,7 +86,9 @@ export default function CompanyDashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
               label={tTypes('total')}
-              value={<Amount millimes={dashboard.data.walletBalanceMillimes} size="title" />}
+              value={
+                <Amount millimes={dashboard.data.walletBalanceMillimes} size="title" countUp />
+              }
               hint={t('walletHint')}
               icon={<Wallet className="size-icon-md" />}
               tone="positive"

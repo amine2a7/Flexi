@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Bénéficiaire · Historique</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#087A4C}a:hover{color:#0B1D33}
+@keyframes fp-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fp-shim{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+@keyframes fp-flash{0%,60%{background:#E3F8EF}100%{background:#FFFFFF}}
+.fp-rise{animation:fp-rise 320ms cubic-bezier(.2,0,0,1) both}
+.fp-sk{position:relative;overflow:hidden;background:#E5EAF0}
+.fp-sk::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);animation:fp-shim 1.2s infinite}
+.fp-flash{animation:fp-flash 1600ms cubic-bezier(.2,0,0,1)}
+@media (prefers-reduced-motion:reduce){.fp-rise,.fp-flash{animation:none}.fp-sk::after{animation:none}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #F4F6F9; font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: #0F1B2A; font-size: 14px">
+  <div style="padding: 20px 18px 84px; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; justify-content: space-between; align-items: center">
+      <h1 style="margin: 0; font-size: 22px">Historique</h1>
+      <button onClick="{{refresh}}" aria-label="Actualiser" style="width: 44px; height: 44px; border-radius: 12px; border: 1px solid #E1E6ED; background: #FFFFFF; display: grid; place-items: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F1B2A" stroke-width="2" aria-hidden="true" style="transform: rotate({{spin}}); transition: transform 600ms cubic-bezier(.2,0,0,1)"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"></path></svg></button>
+    </div>
+    <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px" role="group" aria-label="Filtrer par type">
+      <sc-for list="{{filters}}" as="f" hint-placeholder-count="5">
+        <button onClick="{{f.pick}}" aria-pressed="{{f.pressed}}" style="flex: none; height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid {{f.border}}; background: {{f.bg}}; color: {{f.fg}}; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: background-color 200ms, color 200ms, border-color 200ms">{{f.label}}</button>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{loading}}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 10px" aria-busy="true" aria-label="Chargement">
+        <sc-for list="{{skeleton}}" as="k" hint-placeholder-count="6">
+          <div style="background: #FFFFFF; border: 1px solid #E1E6ED; border-radius: 14px; padding: 14px; display: flex; gap: 12px; align-items: center">
+            <span class="fp-sk" style="width: 40px; height: 40px; border-radius: 12px; flex: none"></span>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px"><span class="fp-sk" style="height: 11px; width: 70%; border-radius: 6px"></span><span class="fp-sk" style="height: 10px; width: 45%; border-radius: 6px"></span></div>
+            <span class="fp-sk" style="height: 12px; width: 56px; border-radius: 6px"></span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ready}}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+          <a href="#" class="{{r.cls}}" style="background: #FFFFFF; border: 1px solid #E1E6ED; border-radius: 14px; padding: 14px; display: flex; gap: 12px; align-items: center; text-decoration: none; color: #0F1B2A; animation-delay: {{r.delay}}">
+            <span style="width: 40px; height: 40px; border-radius: 12px; background: {{r.wash}}; display: grid; place-items: center; flex: none"><span style="width: 12px; height: 12px; border-radius: 3px; background: {{r.color}}"></span></span>
+            <span style="flex: 1; min-width: 0"><b style="display: block; font-size: 14px">{{r.name}}</b><span style="font-size: 12px; color: #5B6878">{{r.type}} · {{r.when}}</span></span>
+            <b style="font-variant-numeric: tabular-nums; color: {{r.amountColor}}">{{r.amount}}</b>
+          </a>
+        </sc-for>
+        <sc-if value="{{empty}}" hint-placeholder-val="{{ false }}"><div class="fp-rise" style="text-align: center; color: #5B6878; padding: 30px 10px">Aucune opération pour ce type ce mois-ci.</div></sc-if>
+      </div>
+    </sc-if>
+  </div>
+
+  <nav aria-label="Navigation" style="position: absolute; left: 0; right: 0; bottom: 0; height: 64px; background: #FFFFFF; border-top: 1px solid #E1E6ED; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))">
+    <span style="position: absolute; top: 0; left: 33.333%; width: 33.333%; height: 3px; background: #12D68A; border-radius: 0 0 3px 3px"></span>
+    <a href="MobileAccueil.dc.html" style="display: grid; place-items: center; font-size: 12px; font-weight: 600; color: #5B6878; text-decoration: none">Accueil</a>
+    <a href="#" aria-current="page" style="display: grid; place-items: center; font-size: 12px; font-weight: 600; color: #0B1D33; text-decoration: none">Historique</a>
+    <a href="#" style="display: grid; place-items: center; font-size: 12px; font-weight: 600; color: #5B6878; text-decoration: none">Profil</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { loading: true, filter: 'Tous', gen: 0, fresh: false, turns: 0 }; }
+  componentDidMount() { this.t = setTimeout(() => this.setState({ loading: false }), 1400); }
+  componentWillUnmount() { clearTimeout(this.t); }
+  renderVals() {
+    const s = this.state;
+    const T = { Restauration: ['#14A06A', '#E5F5EE'], Habillement: ['#2F6FE0', '#E6EEFB'], Carburant: ['#D9761A', '#FCEFE1'], Cadeaux: ['#8A4FD6', '#F1E9FB'] };
+    let data = [
+      ['Restaurant Le Jasmin', 'Restauration', "aujourd'hui 12:41", '−42,500'],
+      ['Station Afriquia Centre', 'Carburant', 'hier 18:05', '−85,000'],
+      ['Crédit reçu de Carthage Industries', 'Cadeaux', '10 oct.', '+50,000'],
+      ['Mode & Vous', 'Habillement', '08 oct.', '−125,000'],
+      ['Café El Medina', 'Restauration', '07 oct.', '−9,800'],
+      ['Librairie Al Kitab', 'Cadeaux', '05 oct.', '−64,000']
+    ];
+    if (s.fresh) data = [['Pâtisserie Masmoudi', 'Restauration', "à l'instant", '−18,000']].concat(data);
+    const rows = data.filter((d) => s.filter === 'Tous' || d[1] === s.filter).map((d, i) => ({
+      name: d[0], type: d[1], when: d[2], amount: d[3], color: T[d[1]][0], wash: T[d[1]][1],
+      amountColor: d[3][0] === '+' ? '#0B7F4F' : '#0F1B2A',
+      cls: (s.fresh && i === 0 && d[2] === "à l'instant") ? 'fp-rise fp-flash' : (s.gen % 2 ? 'fp-rise' : 'fp-rise'),
+      delay: (i * 40) + 'ms'
+    }));
+    const labels = ['Tous', 'Restauration', 'Habillement', 'Carburant', 'Cadeaux'];
+    return {
+      loading: s.loading, ready: !s.loading, rows, empty: !s.loading && rows.length === 0,
+      skeleton: [1, 2, 3, 4, 5, 6],
+      spin: (s.turns * 360) + 'deg',
+      filters: labels.map((l) => {
+        const on = l === s.filter;
+        return { label: l, pressed: on ? 'true' : 'false', bg: on ? '#0B1D33' : '#FFFFFF', fg: on ? '#FFFFFF' : '#0F1B2A', border: on ? '#0B1D33' : '#E1E6ED',
+          pick: () => { this.setState({ filter: l, loading: true }); clearTimeout(this.t); this.t = setTimeout(() => this.setState({ loading: false }), 450); } };
+      }),
+      refresh: () => { this.setState({ loading: true, turns: s.turns + 1 }); clearTimeout(this.t); this.t = setTimeout(() => this.setState({ loading: false, fresh: true, filter: 'Tous' }), 1100); }
+    };
+  }
+}
+</script>
+</body>
+</html>

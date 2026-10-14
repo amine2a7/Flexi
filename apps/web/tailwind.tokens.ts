@@ -9,9 +9,40 @@ export interface FocusTokens {
   readonly onDark: string;
 }
 
+/** Motion of animations.md: durations (ms), easings (CSS), distances (px), scales. */
+export interface MotionTokens {
+  readonly duration: Readonly<Record<string, number>>;
+  readonly easing: Readonly<Record<string, string>>;
+  readonly distance: Readonly<Record<string, number>>;
+  readonly scale: Readonly<Record<string, number>>;
+}
+
+/** Motion tokens used by name by the app (animations of animations.md). */
+export const REQUIRED_MOTION = {
+  duration: [
+    'fast',
+    'base',
+    'slow',
+    'emphasis',
+    'bars',
+    'shake',
+    'bounce',
+    'copied',
+    'success',
+    'flash',
+    'skeleton',
+    'toast',
+    'cascade-step',
+    'bars-step',
+  ],
+  easing: ['out', 'in', 'spring'],
+  distance: ['rise', 'shake'],
+  scale: ['press', 'modal', 'pulse', 'pop'],
+} as const;
+
 export interface TokenTheme {
   readonly size: Readonly<Record<string, string>>;
-  readonly motion: Readonly<Record<string, number>>;
+  readonly motion: MotionTokens;
   readonly focus: FocusTokens;
   readonly colors: Readonly<Record<string, unknown>>;
 }
@@ -50,6 +81,31 @@ function mapOf<T>(
   );
 }
 
+function readMotion(value: unknown): MotionTokens {
+  const motion = record(value, 'motion');
+  const numbers = (group: string) =>
+    mapOf(motion[group], `motion.${group}`, (entry, path) =>
+      typeof entry === 'number' && Number.isFinite(entry) ? entry : fail(path, 'a number'),
+    );
+  const tokens: MotionTokens = {
+    duration: numbers('duration'),
+    easing: mapOf(motion.easing, 'motion.easing', (entry, path) =>
+      typeof entry === 'string' && entry.startsWith('cubic-bezier(')
+        ? entry
+        : fail(path, 'a cubic-bezier()'),
+    ),
+    distance: numbers('distance'),
+    scale: numbers('scale'),
+  };
+  // Every token used by name by the app must exist.
+  for (const [group, names] of Object.entries(REQUIRED_MOTION)) {
+    const values = tokens[group as keyof MotionTokens] as Readonly<Record<string, unknown>>;
+    for (const name of names)
+      if (values[name] === undefined) fail(`motion.${group}.${name}`, 'a value');
+  }
+  return tokens;
+}
+
 /** Validates the `theme` object of the generated Tailwind preset. Throws on any missing token. */
 export function readTokens(theme: Record<string, unknown>): TokenTheme {
   const focus = record(theme.focus, 'focus');
@@ -58,9 +114,7 @@ export function readTokens(theme: Record<string, unknown>): TokenTheme {
     size: mapOf(theme.size, 'size', (entry, path) =>
       typeof entry === 'string' ? entry : fail(path, 'a CSS length string'),
     ),
-    motion: mapOf(theme.motion, 'motion', (entry, path) =>
-      typeof entry === 'number' ? entry : fail(path, 'a number of milliseconds'),
-    ),
+    motion: readMotion(theme.motion),
     focus: {
       width: numberAt(focus, 'width', 'focus'),
       offset: numberAt(focus, 'offset', 'focus'),
@@ -71,8 +125,6 @@ export function readTokens(theme: Record<string, unknown>): TokenTheme {
   };
   // The focus ring colours name colour tokens: they must exist.
   for (const name of [tokens.focus.onLight, tokens.focus.onDark]) stringAt(colors, name, 'colors');
-  // Tokens referenced by name elsewhere in this app.
-  if (tokens.motion.skeleton === undefined) fail('motion.skeleton', 'a number of milliseconds');
   return tokens;
 }
 

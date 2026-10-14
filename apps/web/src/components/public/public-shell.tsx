@@ -50,7 +50,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main id="main-content" tabIndex={-1} className="flex-1">
+      <main id="main-content" tabIndex={-1} className="fp-cascade flex-1">
         {children}
       </main>
       <footer className="border-t border-border bg-surface">

@@ -76,7 +76,8 @@ export function OnboardingTour({ role, onClose }: { role: TourRole; onClose: () 
       title={tRoot(messageKey(`${step}.title`))}
       description={t('progress', { current: index + 1, total: icons.length })}
     >
-      <div className="flex flex-col items-center gap-4 text-center">
+      {/* Animation 16: each step slides in (320 ms) when the tour moves on. */}
+      <div key={index} className="flex animate-rise flex-col items-center gap-4 text-center">
         <span
           aria-hidden="true"
           className="flex size-illustration items-center justify-center rounded-card-mobile bg-emerald-soft text-emerald-text"
@@ -89,7 +90,7 @@ export function OnboardingTour({ role, onClose }: { role: TourRole; onClose: () 
             <li
               key={position}
               className={cn(
-                'size-icon-sm rounded-badge',
+                'size-icon-sm rounded-badge transition-colors duration-slow ease-out',
                 position === index ? 'bg-navy' : 'bg-border',
               )}
             />

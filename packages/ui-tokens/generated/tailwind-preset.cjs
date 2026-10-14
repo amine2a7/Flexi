@@ -212,11 +212,37 @@ module.exports = {
       "viewport-min": "22.5rem"
     },
     "motion": {
-      "fast": 120,
-      "base": 200,
-      "slow": 320,
-      "toast-duration": 4000,
-      "skeleton": 1500
+      "duration": {
+        "fast": 120,
+        "base": 200,
+        "slow": 320,
+        "emphasis": 600,
+        "bars": 700,
+        "shake": 360,
+        "bounce": 380,
+        "copied": 1500,
+        "success": 1600,
+        "flash": 1600,
+        "skeleton": 1200,
+        "toast": 4000,
+        "cascade-step": 40,
+        "bars-step": 80
+      },
+      "easing": {
+        "out": "cubic-bezier(.2,0,0,1)",
+        "in": "cubic-bezier(.4,0,1,1)",
+        "spring": "cubic-bezier(.34,1.56,.64,1)"
+      },
+      "distance": {
+        "rise": 8,
+        "shake": 7
+      },
+      "scale": {
+        "press": 0.97,
+        "modal": 0.96,
+        "pulse": 1.08,
+        "pop": 0.6
+      }
     },
     "focus": {
       "width": 2,

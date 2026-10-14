@@ -1,3 +1,5 @@
+'use client';
+
 import {
   useId,
   type InputHTMLAttributes,
@@ -7,6 +9,12 @@ import {
   type TextareaHTMLAttributes,
 } from 'react';
 import { cn } from '@/lib/cn';
+import { useReplay } from '@/lib/motion';
+
+/** Animation 13: the field shakes when an error appears or changes (not when it goes away). */
+function useShakeOnError(error: string | undefined) {
+  return useReplay(error, error !== undefined);
+}
 
 const CONTROL =
   'h-input-height w-full rounded-input border bg-surface px-4 text-body text-text placeholder:text-text-faint focus-visible:focus-ring disabled:opacity-disabled';
@@ -32,7 +40,7 @@ function FieldFrame({ id, label, hint, error, children }: FieldFrameProps) {
         </p>
       ) : null}
       {error !== undefined ? (
-        <p id={`${id}-error`} className="text-caption text-danger-text">
+        <p id={`${id}-error`} className="animate-fade text-caption text-danger-text">
           {error}
         </p>
       ) : null}
@@ -56,6 +64,7 @@ export interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElemen
 /** Labelled input with hint and error message linked for screen readers. */
 export function TextField({ label, hint, error, className, ...rest }: TextFieldProps) {
   const id = useId();
+  const shake = useShakeOnError(error);
   return (
     <FieldFrame id={id} label={label} hint={hint} error={error}>
       <input
@@ -65,8 +74,10 @@ export function TextField({ label, hint, error, className, ...rest }: TextFieldP
         className={cn(
           CONTROL,
           error === undefined ? 'border-border-strong' : 'border-danger',
+          shake.active && 'animate-shake',
           className,
         )}
+        onAnimationEnd={shake.onAnimationEnd}
         {...rest}
       />
     </FieldFrame>
@@ -92,6 +103,7 @@ export function SelectField({
   ...rest
 }: SelectFieldProps) {
   const id = useId();
+  const shake = useShakeOnError(error);
   return (
     <FieldFrame id={id} label={label} hint={hint} error={error}>
       <select
@@ -101,8 +113,10 @@ export function SelectField({
         className={cn(
           CONTROL,
           error === undefined ? 'border-border-strong' : 'border-danger',
+          shake.active && 'animate-shake',
           className,
         )}
+        onAnimationEnd={shake.onAnimationEnd}
         {...rest}
       >
         {placeholder !== undefined ? <option value="">{placeholder}</option> : null}
@@ -135,6 +149,7 @@ export function TextAreaField({
   ...rest
 }: TextAreaFieldProps) {
   const id = useId();
+  const shake = useShakeOnError(error);
   return (
     <FieldFrame id={id} label={label} hint={hint} error={error}>
       <textarea
@@ -146,8 +161,10 @@ export function TextAreaField({
           CONTROL,
           'h-auto py-3',
           error === undefined ? 'border-border-strong' : 'border-danger',
+          shake.active && 'animate-shake',
           className,
         )}
+        onAnimationEnd={shake.onAnimationEnd}
         {...rest}
       />
     </FieldFrame>

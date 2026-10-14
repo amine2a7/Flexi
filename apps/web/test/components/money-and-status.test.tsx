@@ -8,6 +8,7 @@ import { routing, type Locale } from '@/i18n/routing';
 import { formatMillimesWithCurrency } from '@/lib/format/money';
 import { Amount } from '@/components/ui/amount';
 import { AmountField } from '@/components/ui/amount-field';
+import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 
 afterEach(cleanup);
@@ -99,6 +100,31 @@ function ControlledAmountField({ onRead }: { onRead: (millimes: number | undefin
     />
   );
 }
+
+describe('Amount counting up (main KPI)', () => {
+  it('always gives the final amount to screen readers while it counts', () => {
+    renderIn('fr', <Amount millimes={1_500_250} countUp />);
+    expect(plain(screen.getByRole('text').getAttribute('aria-label'))).toBe(
+      plain(formatMillimesWithCurrency(1_500_250, 'fr')),
+    );
+  });
+});
+
+describe('Button waiting and success', () => {
+  it('keeps its label while waiting, is disabled and says it is busy', () => {
+    render(<Button loading>Encaisser</Button>);
+    const button = screen.getByRole('button', { name: 'Encaisser' });
+    expect(button).toHaveProperty('disabled', true);
+    expect(button.getAttribute('aria-busy')).toBe('true');
+  });
+
+  it('turns green with its label after a success, and stays usable', () => {
+    render(<Button succeeded>Valider</Button>);
+    const button = screen.getByRole('button', { name: 'Valider' });
+    expect(button.className).toContain('bg-emerald');
+    expect(button).toHaveProperty('disabled', false);
+  });
+});
 
 describe('AmountField', () => {
   function setup(locale: Locale) {

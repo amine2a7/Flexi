@@ -10,6 +10,7 @@ import { useApiQuery } from '@/lib/api/use-api-query';
 import { getApi } from '@/lib/api/client';
 import { formatCalendarDate, formatDateTime } from '@/lib/format/date';
 import { formatMillimesWithCurrency } from '@/lib/format/money';
+import { useSuccessFlash } from '@/lib/motion';
 import { Amount } from '@/components/ui/amount';
 import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
@@ -97,20 +98,38 @@ export function OrderSummaryCard({ order, showCompany }: { order: Order; showCom
   );
 }
 
-/** FlexiPay bank account (server configuration) with a copy button on each value. */
-export function FundingAccountCard({ paymentReference }: { paymentReference: string }) {
+/** Copy button of a bank detail (animation 8): « ✓ Copié » springs in, back after 1,5 s. */
+function CopyButton({ label, value }: { label: string; value: string }) {
   const t = useTranslations('orders.bank');
   const toast = useToast();
-  const account = useApiQuery(() => getApi().GET('/v1/company/funding-account'), []);
-
-  async function copy(label: string, value: string) {
+  const [copied, flash] = useSuccessFlash('copied');
+  async function copy() {
     try {
       await navigator.clipboard.writeText(value);
+      flash();
       toast.notify('success', t('copied', { field: label }));
     } catch {
       toast.notify('error', t('copyFailed'));
     }
   }
+  return (
+    <Button
+      variant="secondary"
+      size="sm"
+      succeeded={copied}
+      icon={<Copy aria-hidden="true" className="size-icon-sm" />}
+      aria-label={t('copyLabel', { field: label })}
+      onClick={() => void copy()}
+    >
+      {copied ? t('copiedShort') : t('copy')}
+    </Button>
+  );
+}
+
+/** FlexiPay bank account (server configuration) with a copy button on each value. */
+export function FundingAccountCard({ paymentReference }: { paymentReference: string }) {
+  const t = useTranslations('orders.bank');
+  const account = useApiQuery(() => getApi().GET('/v1/company/funding-account'), []);
 
   const rows =
     account.status === 'success'
@@ -141,17 +160,7 @@ export function FundingAccountCard({ paymentReference }: { paymentReference: str
                 {row.value}
               </dd>
             </div>
-            {row.copy ? (
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={<Copy aria-hidden="true" className="size-icon-sm" />}
-                aria-label={t('copyLabel', { field: row.label })}
-                onClick={() => void copy(row.label, row.value)}
-              >
-                {t('copy')}
-              </Button>
-            ) : null}
+            {row.copy ? <CopyButton label={row.label} value={row.value} /> : null}
           </div>
         ))}
       </dl>

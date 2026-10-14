@@ -3,7 +3,7 @@
 import type { Schemas } from '@flexipay/api-client';
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { Button } from './button';
 import { EmptyState, ErrorState, LoadingBlock } from './states';
@@ -36,6 +36,8 @@ interface DataTableProps<Row> {
   readonly pageNumber?: number;
   readonly onPrevious?: () => void;
   readonly onNext?: () => void;
+  /** Lists to handle (admin): a row that appears when the list is refreshed is highlighted. */
+  readonly highlightNew?: boolean;
 }
 
 /**
@@ -55,6 +57,7 @@ export function DataTable<Row>({
   pageNumber = 1,
   onPrevious,
   onNext,
+  highlightNew = false,
 }: DataTableProps<Row>) {
   const t = useTranslations('ui.table');
   const [sort, setSort] = useState<Sort | undefined>(undefined);
@@ -76,13 +79,28 @@ export function DataTable<Row>({
         : { key, direction: 'ascending' },
     );
   };
+  // Animation 12: rows absent from the previous load of the same list get a fading pale green.
+  const previous = useRef<Set<string> | undefined>(undefined);
+  const [fresh, setFresh] = useState<ReadonlySet<string>>(new Set());
+  useEffect(() => {
+    if (rows === undefined) return;
+    const keys = new Set(rows.map(rowKey));
+    const before = previous.current;
+    previous.current = keys;
+    if (!highlightNew || before === undefined || ![...keys].some((key) => before.has(key))) return;
+    // Rows that came with this load of the server data.
+
+    setFresh(new Set([...keys].filter((key) => !before.has(key))));
+  }, [rows, rowKey, highlightNew]);
+
   if (loading) return <LoadingBlock lines={5} />;
   if (error !== undefined) return <ErrorState error={error} onRetry={onRetry} />;
   if (sortedRows === undefined || sortedRows.length === 0) return <EmptyState {...empty} />;
 
   const count = page?.count;
   return (
-    <div className="flex flex-col gap-4">
+    // Animation 4: the content replaces the skeleton with a fade (same layout).
+    <div className="flex animate-fade flex-col gap-4">
       {count !== undefined ? (
         <p className="text-caption text-text-muted" aria-live="polite">
           {count.isLowerBound
@@ -138,7 +156,10 @@ export function DataTable<Row>({
             {sortedRows.map((row) => (
               <tr
                 key={rowKey(row)}
-                className="h-table-row-height border-b border-border last:border-b-0 hover:bg-bg"
+                className={cn(
+                  'h-table-row-height border-b border-border last:border-b-0 hover:bg-bg',
+                  fresh.has(rowKey(row)) && 'fp-flash',
+                )}
               >
                 {columns.map((column) => (
                   <td
@@ -156,7 +177,13 @@ export function DataTable<Row>({
 
       <ul className="flex flex-col gap-3 md:hidden" aria-label={caption}>
         {sortedRows.map((row) => (
-          <li key={rowKey(row)} className="rounded-card-mobile border border-border bg-surface p-4">
+          <li
+            key={rowKey(row)}
+            className={cn(
+              'rounded-card-mobile border border-border bg-surface p-4',
+              fresh.has(rowKey(row)) && 'fp-flash',
+            )}
+          >
             <dl className="flex flex-col gap-2">
               {columns.map((column) => (
                 <div key={column.key} className="flex items-center justify-between gap-3">

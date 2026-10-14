@@ -102,7 +102,7 @@ export default function BeneficiaryHomePage() {
           <Card>
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <p className="text-label text-text-muted">{tTypes('total')}</p>
-              <Amount millimes={wallet.data.totalBalanceMillimes} size="title" />
+              <Amount millimes={wallet.data.totalBalanceMillimes} size="title" countUp />
             </div>
             <p className="mt-2 text-caption text-text-muted">
               {t('offeredBy', { company: wallet.data.companyName })}

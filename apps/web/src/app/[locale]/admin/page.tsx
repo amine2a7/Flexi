@@ -133,7 +133,7 @@ export default function AdminDashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
               label={t('volume')}
-              value={<Amount millimes={dashboard.data.todayVolumeMillimes} size="title" />}
+              value={<Amount millimes={dashboard.data.todayVolumeMillimes} size="title" countUp />}
               hint={t('volumeHint')}
               icon={<TrendingUp className="size-icon-md" />}
               tone="positive"

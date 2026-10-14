@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Admin · Validation d'une commande</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#087A4C}a:hover{color:#0B1D33}
+@keyframes fp-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fp-fade{from{opacity:0}to{opacity:1}}
+@keyframes fp-dialog{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+@keyframes fp-pulse{40%{transform:scale(1.08)}}
+@keyframes fp-toast{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+@keyframes fp-shrink{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+@keyframes fp-spin{to{transform:rotate(360deg)}}
+.fp-rise{animation:fp-rise 320ms cubic-bezier(.2,0,0,1) both}
+.fp-d1{animation-delay:60ms}.fp-d2{animation-delay:120ms}
+.fp-fade{animation:fp-fade 200ms cubic-bezier(.2,0,0,1) both}
+.fp-dialog{animation:fp-dialog 200ms cubic-bezier(.2,0,0,1) both}
+.fp-pulse{animation:fp-pulse 500ms cubic-bezier(.2,0,0,1)}
+@keyframes fp-pulse2{40%{transform:scale(1.08)}}
+.fp-pulse2{animation:fp-pulse2 500ms cubic-bezier(.2,0,0,1)}
+.fp-toast{animation:fp-toast 320ms cubic-bezier(.2,0,0,1) both}
+.fp-shrink{transform-origin:left;animation:fp-shrink 4s linear forwards}
+.fp-spin{animation:fp-spin .7s linear infinite}
+.fp-btn{transition:transform 120ms cubic-bezier(.2,0,0,1)}
+.fp-btn:active{transform:scale(.97)}
+@media (prefers-reduced-motion:reduce){.fp-rise,.fp-dialog,.fp-pulse,.fp-toast{animation:none}}
+</style>
+</helmet>
+<div style="font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: #0F1B2A; background: #F4F6F9; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 800px; font-size: 14px; position: relative">
+  <nav aria-label="Menu Administrateur" style="flex: 1 1 220px; max-width: 100%; background: #0B1D33; color: #C6D2E0; padding: 20px 14px; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box">
+    <div style="display: flex; align-items: center; gap: 10px; color: #FFFFFF; font-weight: 600; padding: 0 8px 22px">
+      <span style="width: 32px; height: 32px; border-radius: 9px; background: #12D68A; display: grid; place-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="#0B1D33" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg></span>
+      <span>FlexiPay<span style="display: block; font-size: 10px; letter-spacing: .12em; color: #8FA3BA; font-weight: 500">ADMINISTRATION</span></span>
+    </div>
+    <a href="#" style="color: #C6D2E0; text-decoration: none; padding: 10px; border-radius: 8px">Vue d'ensemble</a>
+    <a href="#" aria-current="page" style="color: #FFFFFF; text-decoration: none; padding: 10px; border-radius: 8px; background: #1A2D45; font-weight: 600; display: flex; justify-content: space-between; align-items: center">Commandes<span style="min-width: 20px; height: 20px; border-radius: 10px; background: #12D68A; color: #0B1D33; font-size: 11px; font-weight: 700; display: grid; place-items: center">{{pending}}</span></a>
+    <a href="#" style="color: #C6D2E0; text-decoration: none; padding: 10px; border-radius: 8px">Comptes et KYC</a>
+    <a href="#" style="color: #C6D2E0; text-decoration: none; padding: 10px; border-radius: 8px">Virements commerçants</a>
+    <a href="#" style="color: #C6D2E0; text-decoration: none; padding: 10px; border-radius: 8px">Transactions</a>
+    <a href="#" style="color: #C6D2E0; text-decoration: none; padding: 10px; border-radius: 8px">Messages</a>
+    <a href="#" style="color: #C6D2E0; text-decoration: none; padding: 10px; border-radius: 8px">Paramétrage</a>
+  </nav>
+  <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+    <header style="background: #FFFFFF; border-bottom: 1px solid #E1E6ED; padding: 14px 28px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center">
+      <div><div style="font-weight: 600">Pilotage de la plateforme</div><div style="font-size: 12px; color: #5B6878">Espace sécurisé</div></div>
+      <div style="display: flex; align-items: center; gap: 10px"><span style="background: #E3F8EF; color: #087A4C; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 3px 10px">Administrateur</span><span style="font-weight: 600">Nadia Ben Youssef</span></div>
+    </header>
+    <main style="padding: 28px; display: flex; flex-direction: column; gap: 18px; max-width: 1060px; width: 100%; box-sizing: border-box">
+      <div class="fp-rise" style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: flex-end">
+        <div>
+          <a href="#" style="font-size: 13px; text-decoration: none">← Toutes les commandes</a>
+          <h1 style="margin: 6px 0 6px; font-size: 26px">Commande CMD-1042 · Carthage Industries</h1>
+          <span class="{{badgeClass}}" style="display: inline-block; font-size: 12.5px; font-weight: 600; border-radius: 999px; padding: 4px 12px; background: {{badgeBg}}; color: {{badgeFg}}; transition: background-color 320ms, color 320ms">{{badgeText}}</span>
+        </div>
+        <div style="text-align: end"><div style="font-size: 13px; color: #5B6878">Montant commandé</div><div style="font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums">25 000,000 TND</div></div>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+        <div style="flex: 2 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+          <section class="fp-rise fp-d1" style="background: #FFFFFF; border: 1px solid #E1E6ED; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+            <h2 style="margin: 0; font-size: 16px">Virement déclaré par l'entreprise</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px">
+              <div><div style="font-size: 12px; color: #5B6878">Référence</div><div style="font-weight: 600">VIR-TN-778213</div></div>
+              <div><div style="font-size: 12px; color: #5B6878">Date du virement</div><div style="font-weight: 600">13/10/2026</div></div>
+              <div><div style="font-size: 12px; color: #5B6878">Montant déclaré</div><div style="font-weight: 600; font-variant-numeric: tabular-nums">25 000,000 TND</div></div>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
+              <a href="#" style="display: inline-flex; align-items: center; gap: 10px; border: 1px solid #E1E6ED; border-radius: 10px; padding: 10px 12px; text-decoration: none; color: #0F1B2A"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5B6878" stroke-width="1.8" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"></path><path d="M14 3v5h5"></path></svg><span><b style="display: block; font-size: 13px">justificatif-virement.pdf</b><span style="font-size: 12px; color: #5B6878">Ouvrir la capture · 412 Ko</span></span></a>
+              <span style="display: inline-flex; align-items: center; gap: 6px; color: #0B6E47; font-size: 13px; font-weight: 600"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B7F4F" stroke-width="2.6" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Montant identique à la commande</span>
+            </div>
+          </section>
+          <section class="fp-rise fp-d2" style="background: #FFFFFF; border: 1px solid #E1E6ED; border-radius: 12px; padding: 18px">
+            <h2 style="margin: 0 0 10px; font-size: 16px">Répartition par type</h2>
+            <sc-for list="{{lines}}" as="l" hint-placeholder-count="2">
+              <div style="display: flex; justify-content: space-between; padding: 9px 0; border-top: 1px solid #EEF1F5"><span style="display: inline-flex; align-items: center; gap: 8px"><span style="width: 10px; height: 10px; border-radius: 3px; background: {{l.color}}"></span>{{l.name}}</span><b style="font-variant-numeric: tabular-nums">{{l.amount}} TND</b></div>
+            </sc-for>
+          </section>
+          <sc-if value="{{canAct}}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; flex-wrap: wrap; gap: 10px">
+              <button class="fp-btn" onClick="{{openModal}}" style="height: 46px; padding: 0 20px; border: 0; border-radius: 10px; background: #0B1D33; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Valider le paiement</button>
+              <button class="fp-btn" style="height: 46px; padding: 0 18px; border: 1px solid #E1E6ED; border-radius: 10px; background: #FFFFFF; font: inherit; font-weight: 600; color: #B42318; cursor: pointer">Rejeter le justificatif</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{waiting2}}" hint-placeholder-val="{{ false }}">
+            <div class="fp-rise" style="background: #E6EEFB; border-radius: 10px; padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center">
+              <span style="color: #1F4FA8">Vous avez validé. Au-delà de 10 000,000 TND, un second administrateur doit confirmer.</span>
+              <button class="fp-btn" onClick="{{second}}" style="height: 38px; padding: 0 14px; border: 1px solid #B9CBEF; border-radius: 9px; background: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Voir la seconde validation</button>
+            </div>
+          </sc-if>
+        </div>
+
+        <section class="fp-rise fp-d2" style="flex: 1 1 260px; min-width: 0; background: #FFFFFF; border: 1px solid #E1E6ED; border-radius: 12px; padding: 18px">
+          <h2 style="margin: 0 0 14px; font-size: 16px">Historique</h2>
+          <sc-for list="{{steps}}" as="s" hint-placeholder-count="5">
+            <div style="display: flex; gap: 12px">
+              <div style="display: flex; flex-direction: column; align-items: center">
+                <span style="width: 14px; height: 14px; border-radius: 50%; box-sizing: border-box; border: 2px solid {{s.ring}}; background: {{s.fill}}; transition: background-color 320ms, border-color 320ms; flex: none"></span>
+                <sc-if value="{{s.hasLine}}" hint-placeholder-val="{{ true }}"><span style="width: 2px; flex: 1; min-height: 34px; background: #E1E6ED; position: relative; overflow: hidden"><span style="position: absolute; inset: 0; background: #0E9F63; transform-origin: top; transform: scaleY({{s.scale}}); transition: transform 320ms cubic-bezier(.2,0,0,1) 120ms"></span></span></sc-if>
+              </div>
+              <div style="padding-bottom: 14px; margin-top: -2px"><div style="font-weight: 600; font-size: 13.5px; color: {{s.color}}">{{s.label}}</div><div style="font-size: 12px; color: #5B6878">{{s.meta}}</div></div>
+            </div>
+          </sc-for>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <sc-if value="{{modal}}" hint-placeholder-val="{{ false }}">
+    <div class="fp-fade" onClick="{{closeModal}}" style="position: absolute; inset: 0; background: rgba(11,29,51,.4); backdrop-filter: blur(2px)"></div>
+    <div class="fp-dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-t" style="position: absolute; left: calc(50% - 200px); top: 240px; width: 400px; max-width: calc(100% - 32px); box-sizing: border-box; background: #FFFFFF; border-radius: 14px; padding: 22px; box-shadow: 0 20px 50px rgba(11,29,51,.25)">
+      <h3 id="dlg-t" style="margin: 0 0 8px; font-size: 18px">Valider le paiement de 25 000,000 TND ?</h3>
+      <p style="margin: 0 0 18px; color: #5B6878">Vérifiez que le virement VIR-TN-778213 est bien arrivé sur le compte FlexiPay. Les crédits seront ajoutés après la seconde validation.</p>
+      <div style="display: flex; justify-content: flex-end; gap: 10px">
+        <button class="fp-btn" onClick="{{closeModal}}" style="height: 42px; padding: 0 16px; border: 1px solid #E1E6ED; border-radius: 9px; background: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Annuler</button>
+        <button class="fp-btn" onClick="{{confirm}}" disabled="{{loading}}" style="height: 42px; padding: 0 16px; border: 0; border-radius: 9px; background: #0B1D33; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; min-width: 140px; justify-content: center">
+          <sc-if value="{{loading}}" hint-placeholder-val="{{ false }}"><span class="fp-spin" style="width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.35); border-top-color: #FFFFFF; border-radius: 50%; display: inline-block"></span></sc-if>
+          <span>{{confirmLabel}}</span>
+        </button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{toast}}" hint-placeholder-val="{{ false }}">
+    <div class="fp-toast" role="status" style="position: absolute; top: 72px; right: 24px; background: #FFFFFF; border: 1px solid #E1E6ED; border-radius: 12px; padding: 12px 16px 14px; display: flex; gap: 10px; align-items: center; box-shadow: 0 10px 28px rgba(11,29,51,.14); overflow: hidden; max-width: 360px">
+      <span style="width: 22px; height: 22px; border-radius: 50%; background: #0B7F4F; display: grid; place-items: center; flex: none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.5" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+      <span>{{toastText}}</span>
+      <span class="fp-shrink" style="position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: #0B7F4F"></span>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { phase: 0, modal: false, loading: false, toast: '', bump: 0 }; }
+  componentWillUnmount() { clearTimeout(this.a); clearTimeout(this.b); }
+  showToast(text) { clearTimeout(this.b); this.setState({ toast: text }); this.b = setTimeout(() => this.setState({ toast: '' }), 4200); }
+  renderVals() {
+    const s = this.state, p = s.phase;
+    const B = [
+      ['En attente de validation', '#E6EEFB', '#1F4FA8'],
+      ['Validation 1/2 · en attente d’un second administrateur', '#FFF1DB', '#8A5300'],
+      ['Validée · crédits ajoutés', '#E2F6EC', '#0B6E47']
+    ][p];
+    const doneUpTo = [2, 3, 4][p];
+    const raw = [
+      ['Commande créée', 'Carthage Industries · 10/10/2026 09:12'],
+      ['Commande confirmée', 'Nadia Ben Youssef · 10/10/2026 11:40'],
+      ['Virement déclaré', 'Carthage Industries · 13/10/2026 15:05'],
+      ['Validation 1/2', p >= 1 ? 'Nadia Ben Youssef · à l’instant' : 'En attente'],
+      ['Validation 2/2 · crédits ajoutés', p >= 2 ? 'Karim Trabelsi · à l’instant' : 'En attente']
+    ];
+    const steps = raw.map((r, i) => {
+      const done = i <= doneUpTo, current = i === doneUpTo + 1;
+      return { label: r[0], meta: r[1], hasLine: i < raw.length - 1,
+        scale: i < doneUpTo ? 1 : 0,
+        fill: done ? '#0E9F63' : '#FFFFFF', ring: done ? '#0E9F63' : (current ? '#2563C9' : '#C9D2DD'),
+        color: done || current ? '#0F1B2A' : '#5B6878' };
+    });
+    return {
+      badgeText: B[0], badgeBg: B[1], badgeFg: B[2], badgeClass: s.bump === 0 ? '' : (s.bump % 2 ? 'fp-pulse' : 'fp-pulse2'),
+      pending: p === 0 ? 3 : 2,
+      lines: [
+        { name: 'Restauration', color: '#14A06A', amount: '15 000,000' },
+        { name: 'Carburant', color: '#D9761A', amount: '10 000,000' }
+      ],
+      steps,
+      canAct: p === 0, waiting2: p === 1,
+      modal: s.modal, loading: s.loading,
+      confirmLabel: s.loading ? 'Validation…' : 'Valider',
+      toast: !!s.toast, toastText: s.toast,
+      openModal: () => this.setState({ modal: true }),
+      closeModal: () => { if (!this.state.loading) this.setState({ modal: false }); },
+      confirm: () => {
+        this.setState({ loading: true });
+        this.a = setTimeout(() => { this.setState({ loading: false, modal: false, phase: 1, bump: this.state.bump + 1 }); this.showToast('Première validation enregistrée.'); }, 900);
+      },
+      second: () => { this.setState({ phase: 2, bump: this.state.bump + 1 }); this.showToast('25 000,000 TND ajoutés au solde de Carthage Industries.'); }
+    };
+  }
+}
+</script>
+</body>
+</html>

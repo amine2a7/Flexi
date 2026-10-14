@@ -6,10 +6,144 @@ import { colorToken, readTokens } from './tailwind.tokens';
 // Every value comes from @flexipay/ui-tokens (source: docs/design/design-tokens.json).
 // This file only exposes token groups that Tailwind has no built-in key for.
 const tokens = readTokens(tokensPreset.theme);
+const { motion } = tokens;
 
+const ms = (value: number) => `${String(value)}ms`;
 const durations = Object.fromEntries(
-  Object.entries(tokens.motion).map(([name, ms]) => [name, `${String(ms)}ms`]),
+  Object.entries(motion.duration).map(([name, value]) => [name, ms(value)]),
 );
+const easings = { ...motion.easing };
+const scales = Object.fromEntries(
+  Object.entries(motion.scale).map(([name, value]) => [name, String(value)]),
+);
+
+// Animations (docs/design/animations/animations.md): only transform and opacity move. Every
+// distance and scale is a CSS variable from the tokens; "prefers-reduced-motion" sets them to
+// neutral values, so each animation becomes a plain fade (no movement, no bounce). In Arabic
+// (dir="rtl") --fp-dir is -1: horizontal movements are mirrored.
+const d = (name: string) => `var(--fp-d-${name})`;
+const e = (name: string) => `var(--fp-e-${name})`;
+const animation = {
+  rise: `fp-rise ${d('slow')} ${e('out')} both`,
+  fade: `fp-fade ${d('base')} ${e('out')} both`,
+  'fade-out': `fp-fade-out ${d('fast')} ${e('in')} both`,
+  'zoom-in': `fp-zoom-in ${d('base')} ${e('out')} both`,
+  'zoom-out': `fp-zoom-out ${d('fast')} ${e('in')} both`,
+  'sheet-in': `fp-sheet-in ${d('slow')} ${e('out')} both`,
+  'sheet-out': `fp-sheet-out ${d('fast')} ${e('in')} both`,
+  'toast-in': `fp-toast-in ${d('slow')} ${e('out')} both`,
+  'toast-timer': `fp-timer ${d('toast')} linear forwards`,
+  shake: `fp-shake ${d('shake')} ${e('out')}`,
+  pulse: `fp-pulse ${d('slow')} ${e('spring')}`,
+  bounce: `fp-pulse ${d('bounce')} ${e('spring')}`,
+  pop: `fp-pop ${d('emphasis')} ${e('spring')} both`,
+  'pop-fast': `fp-pop ${d('base')} ${e('spring')} both`,
+  'grow-x': `fp-grow-x ${d('bars')} ${e('out')} both`,
+  'grow-y': `fp-grow-y ${d('slow')} ${e('out')} both`,
+  shimmer: `fp-shimmer ${d('skeleton')} linear infinite`,
+  flash: `fp-flash ${d('flash')} ${e('out')} forwards`,
+};
+
+const motionPlugin = plugin((api) => {
+  const vars: Record<string, string> = { '--fp-dir': '1' };
+  for (const [name, value] of Object.entries(motion.duration)) vars[`--fp-d-${name}`] = ms(value);
+  for (const [name, value] of Object.entries(motion.easing)) vars[`--fp-e-${name}`] = value;
+  vars['--fp-rise'] = `${String(motion.distance.rise)}px`;
+  vars['--fp-shake'] = `${String(motion.distance.shake)}px`;
+  for (const [name, value] of Object.entries(motion.scale))
+    vars[`--fp-scale-${name}`] = String(value);
+  vars['--fp-slide'] = '100%';
+  vars['--fp-grow-from'] = '0';
+  vars['--fp-shimmer'] = '1';
+  const still: Record<string, string> = {
+    '--fp-rise': '0px',
+    '--fp-shake': '0px',
+    '--fp-slide': '0%',
+    '--fp-grow-from': '1',
+    '--fp-shimmer': '0',
+    '--fp-e-spring': motion.easing.out ?? 'ease-out',
+  };
+  for (const name of Object.keys(motion.scale)) still[`--fp-scale-${name}`] = '1';
+
+  const cascade: Record<string, Record<string, string>> = {
+    '.fp-cascade > *': { animation: animation.rise },
+  };
+  for (let index = 2; index <= 12; index += 1) {
+    cascade[`.fp-cascade > *:nth-child(${String(index)})`] = {
+      'animation-delay': `calc(${d('cascade-step')} * ${String(index - 1)})`,
+    };
+  }
+
+  api.addBase({
+    ':root': vars,
+    '[dir="rtl"]': { '--fp-dir': '-1' },
+    '@media (prefers-reduced-motion: reduce)': { ':root': still },
+    '@keyframes fp-rise': { from: { opacity: '0', transform: 'translateY(var(--fp-rise))' } },
+    '@keyframes fp-fade': { from: { opacity: '0' } },
+    '@keyframes fp-fade-out': { to: { opacity: '0' } },
+    '@keyframes fp-zoom-in': { from: { opacity: '0', transform: 'scale(var(--fp-scale-modal))' } },
+    '@keyframes fp-zoom-out': { to: { opacity: '0', transform: 'scale(var(--fp-scale-modal))' } },
+    '@keyframes fp-sheet-in': { from: { opacity: '0', transform: 'translateY(var(--fp-slide))' } },
+    '@keyframes fp-sheet-out': { to: { opacity: '0', transform: 'translateY(var(--fp-slide))' } },
+    '@keyframes fp-toast-in': {
+      from: { opacity: '0', transform: 'translateX(calc(var(--fp-slide) * var(--fp-dir)))' },
+    },
+    '@keyframes fp-timer': { from: { transform: 'scaleX(1)' }, to: { transform: 'scaleX(0)' } },
+    '@keyframes fp-shake': {
+      '20%': { transform: 'translateX(calc(var(--fp-shake) * -1 * var(--fp-dir)))' },
+      '40%': { transform: 'translateX(calc(var(--fp-shake) * 6 / 7 * var(--fp-dir)))' },
+      '60%': { transform: 'translateX(calc(var(--fp-shake) * -4 / 7 * var(--fp-dir)))' },
+      '80%': { transform: 'translateX(calc(var(--fp-shake) * 2 / 7 * var(--fp-dir)))' },
+    },
+    '@keyframes fp-pulse': { '40%': { transform: 'scale(var(--fp-scale-pulse))' } },
+    '@keyframes fp-pop': { from: { opacity: '0', transform: 'scale(var(--fp-scale-pop))' } },
+    '@keyframes fp-grow-x': { from: { transform: 'scaleX(var(--fp-grow-from))' } },
+    '@keyframes fp-grow-y': { from: { transform: 'scaleY(var(--fp-grow-from))' } },
+    '@keyframes fp-shimmer': {
+      from: { transform: 'translateX(calc(-100% * var(--fp-dir)))' },
+      to: { transform: 'translateX(calc(100% * var(--fp-dir)))' },
+    },
+    '@keyframes fp-flash': {
+      '0%': { opacity: '1' },
+      '70%': { opacity: '1' },
+      '100%': { opacity: '0' },
+    },
+    ...cascade,
+  });
+
+  // Open and close states of the Radix primitives (dialogs): state-open:animate-zoom-in.
+  api.addVariant('state-open', '&[data-state="open"]');
+  api.addVariant('state-closed', '&[data-state="closed"]');
+
+  api.addUtilities({
+    // SVG shapes transformed around their own box (bars that grow from their start).
+    '.fp-box-fill': { 'transform-box': 'fill-box' },
+  });
+
+  api.addComponents({
+    // Skeleton: grey shapes and a light reflection crossing them (hidden when motion is reduced).
+    '.fp-skeleton': { position: 'relative', overflow: 'hidden' },
+    '.fp-skeleton::after': {
+      content: '""',
+      position: 'absolute',
+      inset: '0',
+      opacity: 'var(--fp-shimmer)',
+      'background-image': `linear-gradient(90deg, transparent, ${colorToken(tokens, 'surface')}, transparent)`,
+      animation: animation.shimmer,
+    },
+    // New row of a list to handle: pale green background that fades out (opacity of an overlay).
+    '.fp-flash': { position: 'relative' },
+    '.fp-flash::after': {
+      content: '""',
+      position: 'absolute',
+      inset: '0',
+      'pointer-events': 'none',
+      'background-color': colorToken(tokens, 'emerald-soft'),
+      'mix-blend-mode': 'multiply',
+      animation: animation.flash,
+    },
+  });
+});
 
 // Status badges read their colours from the `status` token group at runtime (StatusBadge): the
 // matching classes are generated here so that Tailwind emits them.
@@ -49,20 +183,16 @@ const config: Config = {
       minWidth: tokens.size,
       width: tokens.size,
       maxWidth: tokens.size,
+      // duration-fast/base/slow/emphasis, ease-out/in/spring, scale-press/modal/pulse/pop.
       transitionDuration: durations,
-      keyframes: {
-        // Skeleton shimmer: moves from the start to the end of the reading direction.
-        shimmer: {
-          '0%': { backgroundPosition: '100% 0' },
-          '100%': { backgroundPosition: '-100% 0' },
-        },
-      },
-      animation: {
-        skeleton: `shimmer ${String(tokens.motion.skeleton)}ms linear infinite`,
-      },
+      transitionDelay: durations,
+      transitionTimingFunction: easings,
+      scale: scales,
+      animation,
     },
   },
   plugins: [
+    motionPlugin,
     plugin((api) => {
       const ring = (colorName: string) => ({
         outline: `${String(tokens.focus.width)}px solid ${colorToken(tokens, colorName)}`,

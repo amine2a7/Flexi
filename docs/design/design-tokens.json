@@ -1,6 +1,7 @@
 {
   "$description": "Source unique des tokens FlexiPay. Génère Tailwind (web) et ThemeData (Flutter). Ne jamais coder de valeur en dur.",
   "$changelog": [
+    "2026-10-14 (animations.md) : groupe motion structuré en duration (fast, base, slow, emphasis et les durées nommées des 16 animations), easing (out, in, spring), distance et scale ; toast-duration devient duration.toast, skeleton duration.skeleton (1 200 ms).",
     "2026-10-13 (décision) : 4 types de crédit (Restauration, Habillement, Carburant, Cadeaux). Couleurs type-* (plein pour barres et graphiques, -soft fond de pastille, -text texte AA sur -soft : 6,4 / 7,6 / 6,5 / 6,7:1 ; plein sur blanc ≥ 3:1) et groupe credit-type (icône Lucide, clé i18n, couleurs).",
     "2026-10-11 (design, WD2) : ajout des tailles table-row-height (56), chip-height (32, zone tactile étendue à 44), modal-max-width (480), modal-max-width-lg (720), auth-card-max-width (440), form-max-width (640), qr-code (192), viewport-min (360, largeur minimale supportée) pour les composants tableau, filtre actif, modale, écrans d'authentification, formulaires et QR d'enrôlement MFA. Aucune couleur modifiée.",
     "2026-10-09 (design, P0-D2/D3) : ajout des couleurs danger-text, info-text, neutral-text, on-danger, on-navy-muted, border-strong, overlay ; des groupes focus, breakpoint, opacity ; des tailles (touch-target-mobile, icônes, avatars, en-tête, barre basse, toast, illustration, border-width) ; des durées motion (toast-duration, skeleton) ; de icon + labelKey sur chaque statut ; des statuts du glossaire (EN_ATTENTE_KYC, REJETE, CREEE, PAYEE, RAPPROCHEE, CREDITEE, ANNULEE, INITIE, CONFIRME, DEMANDEE, CONTROLEE, ENVOYEE, EXECUTEE, REJETEE, APPROUVEE, REFUSEE) et du repli INCONNU (valeur d'enum API inconnue).",
@@ -121,7 +122,12 @@
     "card": "0 1px 2px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.04)",
     "raised": "0 4px 12px rgba(15,23,42,0.08)"
   },
-  "motion": { "fast": 120, "base": 200, "slow": 320, "toast-duration": 4000, "skeleton": 1500 },
+  "motion": {
+    "duration": { "fast": 120, "base": 200, "slow": 320, "emphasis": 600, "bars": 700, "shake": 360, "bounce": 380, "copied": 1500, "success": 1600, "flash": 1600, "skeleton": 1200, "toast": 4000, "cascade-step": 40, "bars-step": 80 },
+    "easing": { "out": "cubic-bezier(.2,0,0,1)", "in": "cubic-bezier(.4,0,1,1)", "spring": "cubic-bezier(.34,1.56,.64,1)" },
+    "distance": { "rise": 8, "shake": 7 },
+    "scale": { "press": 0.97, "modal": 0.96, "pulse": 1.08, "pop": 0.6 }
+  },
   "status": {
     "EN_ATTENTE":     { "label": "En attente",     "labelKey": "status.EN_ATTENTE",     "icon": "Clock",         "bg": "warning-soft", "fg": "warning-text" },
     "VALIDE":         { "label": "Validé",         "labelKey": "status.VALIDE",         "icon": "CircleCheck",   "bg": "emerald-soft", "fg": "emerald-text" },

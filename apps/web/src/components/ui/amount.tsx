@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/cn';
+import { useCountUp } from '@/lib/motion';
 import {
   CURRENCY_CODE,
   formatMillimes,
@@ -16,6 +17,8 @@ interface AmountProps {
   /** Sign written as text, never conveyed by colour only (charte A.5). */
   readonly sign?: 'credit' | 'debit';
   readonly className?: string;
+  /** Counts from 0 to the amount at the first display (main KPI of a dashboard only). */
+  readonly countUp?: boolean;
 }
 
 const SIZES = {
@@ -26,9 +29,12 @@ const SIZES = {
 };
 
 /** Amount in TND with 3 decimals; the accessible name includes the currency and the sign. */
-export function Amount({ millimes, size = 'body', sign, className }: AmountProps) {
+export function Amount({ millimes, size = 'body', sign, className, countUp = false }: AmountProps) {
   const locale = useLocale();
   const t = useTranslations('ui.amount');
+  // Main KPI of a dashboard: counts up at the first display only (animation 2). The accessible
+  // name always carries the final amount.
+  const shown = useCountUp(millimes, countUp);
   const text = formatMillimesWithCurrency(millimes, locale);
   const label = sign === undefined ? text : t(sign, { amount: text });
   const prefix = sign === 'debit' ? '−' : sign === 'credit' ? '+' : '';
@@ -44,7 +50,7 @@ export function Amount({ millimes, size = 'body', sign, className }: AmountProps
     >
       <span aria-hidden="true">
         {prefix}
-        {formatMillimes(millimes, locale)}
+        {formatMillimes(shown, locale)}
       </span>
       <span aria-hidden="true" className="text-currency text-text-muted">
         {CURRENCY_CODE}

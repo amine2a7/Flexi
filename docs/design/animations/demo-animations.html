@@ -1,0 +1,357 @@
+<title>Animations FlexiPay</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout : bandeau bleu nuit (comme la barre latérale du produit), puis grille de démos jouables, une carte par animation. */
+:root{
+  --navy:#0B1D33; --on-navy:#E9EEF5; --navy-soft:#1A2D45;
+  --bg:#F4F6F9; --surface:#FFFFFF; --stage:#F7F9FB; --fg:#0F1B2A; --muted:#5B6878; --border:#E1E6ED;
+  --accent:#12D68A; --accent-ink:#087A4C; --accent-wash:#E3F8EF;
+  --ok:#0E9F63; --ok-wash:#E2F6EC; --err:#C8352B; --err-wash:#FBE7E5; --warn:#C27A0A; --info:#2563C9; --info-wash:#E6EEFB;
+  --c-resto:#14A06A; --c-habit:#2F6FE0; --c-cadeau:#8A4FD6; --c-carbu:#E0861A;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --d-fast:120ms; --d-base:200ms; --d-slow:320ms; --d-emph:600ms;
+  --e-out:cubic-bezier(.2,0,0,1); --e-in:cubic-bezier(.4,0,1,1); --e-spring:cubic-bezier(.34,1.56,.64,1);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0C1520; --surface:#132031; --stage:#0F1A28; --fg:#E6ECF3; --muted:#93A3B6; --border:#22344B;
+  --accent-ink:#45E3A4; --accent-wash:#123A2C; --ok:#36C98A; --ok-wash:#123526; --err:#F0776D; --err-wash:#3A1B1A; --info:#7EA8F2; --info-wash:#17284A;
+  --navy-soft:#1E3350; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C1520; --surface:#132031; --stage:#0F1A28; --fg:#E6ECF3; --muted:#93A3B6; --border:#22344B;
+  --accent-ink:#45E3A4; --accent-wash:#123A2C; --ok:#36C98A; --ok-wash:#123526; --err:#F0776D; --err-wash:#3A1B1A; --info:#7EA8F2; --info-wash:#17284A;
+  --navy-soft:#1E3350; color-scheme:dark}
+html.reduce{--d-fast:1ms;--d-base:1ms;--d-slow:1ms;--d-emph:1ms}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.5}
+.band{background:var(--navy);color:var(--on-navy);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 32px}
+.wrap{max-width:1180px;margin:0 auto}
+.main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600}
+.logo{width:30px;height:30px;border-radius:8px;background:var(--accent);display:grid;place-items:center}
+.logo svg{width:16px;height:16px}
+.eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--accent)}
+h1{font-size:28px;line-height:1.2;margin:18px 0 8px;text-wrap:balance;font-weight:700}
+.lead{max-width:64ch;color:#B9C6D6;margin:0}
+.rules{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.rule{background:var(--navy-soft);border-radius:999px;padding:6px 12px;font-size:12.5px;color:var(--on-navy)}
+.toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:20px}
+.toolbar h2{font-size:18px;margin:0}
+.switch{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);cursor:pointer}
+.switch input{width:16px;height:16px;accent-color:var(--navy)}
+.tokens{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:28px}
+.tok{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.tok b{display:block;font-size:13px}
+.tok code{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.tok span{font-size:12px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.stage{background:var(--stage);border-bottom:1px solid var(--border);height:230px;position:relative;overflow:hidden;display:grid;place-items:center;padding:14px}
+.meta{padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.meta h3{margin:0;font-size:15px}
+.meta p{margin:0;color:var(--muted);font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:var(--mono);font-size:11.5px;background:var(--stage);border:1px solid var(--border);border-radius:6px;padding:2px 7px;color:var(--muted)}
+.where{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-ink);font-weight:600}
+.actions{display:flex;gap:8px;margin-top:auto;padding-top:6px;flex-wrap:wrap}
+button{font:inherit;cursor:pointer}
+.btn{border:0;border-radius:8px;padding:8px 14px;font-weight:600;font-size:13px;background:var(--navy);color:var(--on-navy);min-height:36px;transition:transform var(--d-fast) var(--e-out),background var(--d-fast)}
+
+.btn:active{transform:scale(.97)}
+.btn.sec{background:transparent;color:var(--fg);border:1px solid var(--border)}
+.btn:focus-visible,.icon-btn:focus-visible,input:focus-visible,.tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+/* mini UI pieces */
+.mini{width:100%;max-width:300px}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:9px 10px}
+.kpi small{color:var(--muted);font-size:11px;display:block}
+.kpi strong{font-size:14px}
+.ph{height:10px;border-radius:5px;background:var(--border)}
+.enter{opacity:0;transform:translateY(8px)}
+.enter.on{opacity:1;transform:none;transition:opacity var(--d-slow) var(--e-out),transform var(--d-slow) var(--e-out)}
+.big{font-size:30px;font-weight:700;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:12px}
+.cat{display:grid;grid-template-columns:10px 1fr auto;gap:8px;align-items:center;margin:9px 0 3px;font-size:13px}
+.dot{width:10px;height:10px;border-radius:3px}
+.bar{height:7px;border-radius:4px;background:var(--border);overflow:hidden}
+.bar i{display:block;height:100%;width:0;border-radius:4px;transition:width 700ms var(--e-out)}
+html.reduce .bar i{transition:none}
+.sk{position:relative;overflow:hidden;background:var(--border);border-radius:8px}
+.sk::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);animation:shim 1.2s infinite}
+:root[data-theme="dark"] .sk::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .sk::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent)}}
+html.reduce .sk::after{animation:none}
+@keyframes shim{to{transform:translateX(100%)}}
+.toast{position:absolute;top:12px;inset-inline-end:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px 12px;display:flex;gap:8px;align-items:center;font-size:13px;box-shadow:0 8px 24px rgba(11,29,51,.12);transform:translateX(calc(100% + 24px));opacity:0;transition:transform var(--d-slow) var(--e-out),opacity var(--d-base);overflow:hidden;max-width:calc(100% - 24px)}
+[dir="rtl"] .toast{transform:translateX(calc(-100% - 24px))}
+.toast.on{transform:none;opacity:1}
+.toast .tk{width:18px;height:18px;border-radius:50%;background:var(--ok);display:grid;place-items:center;flex:none}
+.toast .prog{position:absolute;left:0;bottom:0;height:3px;background:var(--ok);width:100%;transform-origin:left;transform:scaleX(1)}
+.scrim{position:absolute;inset:0;background:rgba(11,29,51,.35);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity var(--d-base) var(--e-out)}
+.scrim.on{opacity:1;pointer-events:auto}
+.dialog{position:absolute;left:50%;top:50%;width:min(260px,88%);background:var(--surface);border-radius:12px;padding:14px;border:1px solid var(--border);transform:translate(-50%,-50%) scale(.96);opacity:0;transition:transform var(--d-base) var(--e-out),opacity var(--d-base) var(--e-out);pointer-events:none}
+.dialog.on{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
+.dialog h4{margin:0 0 6px;font-size:14px}
+.dialog p{margin:0 0 12px;font-size:12.5px;color:var(--muted)}
+.row{display:flex;gap:8px;justify-content:flex-end}
+.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:rot .7s linear infinite;display:inline-block;vertical-align:-2px}
+@keyframes rot{to{transform:rotate(360deg)}}
+.btn.ok{background:var(--ok)}
+.wide{min-width:150px;display:inline-flex;justify-content:center;align-items:center;gap:8px}
+.rib{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;width:100%;max-width:290px}
+.rib small{color:var(--muted);font-size:11px}
+.rib .line{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.rib code{font-family:var(--mono);font-size:12.5px;overflow-wrap:anywhere}
+.icon-btn{border:1px solid var(--border);background:var(--surface);color:var(--fg);border-radius:8px;height:32px;padding:0 10px;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;flex:none}
+.swap{display:inline-grid}
+.swap>*{grid-area:1/1;transition:opacity var(--d-base),transform var(--d-base) var(--e-spring)}
+.swap .b{opacity:0;transform:scale(.6)}
+.swap.done .a{opacity:0;transform:scale(.6)}
+.swap.done .b{opacity:1;transform:none}
+.result{display:grid;place-items:center;gap:8px;text-align:center}
+.circle{width:74px;height:74px;border-radius:50%;display:grid;place-items:center;transform:scale(.4);opacity:0}
+.circle.on{transform:none;opacity:1;transition:transform 420ms var(--e-spring),opacity var(--d-base)}
+.circle svg path{stroke-dasharray:40;stroke-dashoffset:40}
+.circle.on svg path{stroke-dashoffset:0;transition:stroke-dashoffset 360ms var(--e-out) 220ms}
+html.reduce .circle.on svg path{transition:none}
+.shake{animation:shake 360ms var(--e-out)}
+html.reduce .shake{animation:none}
+@keyframes shake{20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(2px)}}
+.ring text{font-family:var(--font);font-weight:700}
+.badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;transition:background var(--d-slow),color var(--d-slow)}
+.badge.pulse{animation:pulse 500ms var(--e-out)}
+html.reduce .badge.pulse{animation:none}
+@keyframes pulse{40%{transform:scale(1.08)}}
+.steps{display:flex;align-items:center;margin-top:16px;width:100%;max-width:290px}
+.st{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);background:var(--surface);flex:none;transition:background var(--d-slow),border-color var(--d-slow)}
+.st.done{background:var(--ok);border-color:var(--ok)}
+.ln{flex:1;height:2px;background:var(--border);position:relative}
+.ln i{position:absolute;inset:0;background:var(--ok);transform:scaleX(0);transform-origin:left;transition:transform var(--d-slow) var(--e-out)}
+.ln.done i{transform:scaleX(1)}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th{text-align:start;color:var(--muted);font-weight:500;font-size:11.5px;padding:5px 6px;border-bottom:1px solid var(--border)}
+td{padding:6px;border-bottom:1px solid var(--border)}
+td.r,th.r{text-align:end}
+tr.new td{animation:flash 1600ms var(--e-out)}
+html.reduce tr.new td{animation:none}
+@keyframes flash{0%{background:var(--accent-wash)}70%{background:var(--accent-wash)}100%{background:transparent}}
+.tbl{width:100%;max-width:320px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.field{width:100%;max-width:260px}
+.field label{font-size:12px;font-weight:600;display:block;margin-bottom:4px}
+.field input{width:100%;height:38px;border:1px solid var(--border);border-radius:8px;padding:0 10px;font:inherit;background:var(--surface);color:var(--fg);transition:border-color var(--d-base)}
+.field.err input{border-color:var(--err)}
+.msg{font-size:12px;color:var(--err);display:grid;grid-template-rows:0fr;transition:grid-template-rows var(--d-base) var(--e-out)}
+.msg>span{overflow:hidden}
+.field.err .msg{grid-template-rows:1fr}
+.side{background:var(--navy);border-radius:10px;padding:10px;width:200px;color:#C6D2E0}
+.it{display:flex;justify-content:space-between;align-items:center;padding:7px 8px;border-radius:7px;font-size:12.5px}
+.it.act{background:var(--navy-soft);color:#fff}
+.cnt{min-width:20px;height:20px;border-radius:10px;background:var(--accent);color:var(--navy);font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 6px}
+.cnt.pop{animation:pop 380ms var(--e-spring)}
+html.reduce .cnt.pop{animation:none}
+@keyframes pop{0%{transform:scale(.6)}100%{transform:scale(1)}}
+.phone{width:150px;height:208px;border-radius:22px;border:6px solid var(--navy);background:var(--surface);position:relative;overflow:hidden}
+.ph-body{padding:12px 10px}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:40px;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface)}
+.tab{border:0;background:none;color:var(--muted);font-size:10px;font-weight:600}
+.tab[aria-selected="true"]{color:var(--navy)}
+:root[data-theme="dark"] .tab[aria-selected="true"]{color:var(--accent-ink)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tab[aria-selected="true"]{color:var(--accent-ink)}}
+.ind{position:absolute;top:0;height:3px;width:33.33%;background:var(--accent);border-radius:0 0 3px 3px;transition:transform var(--d-slow) var(--e-out)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:14px 14px 0 0;padding:10px;transform:translateY(105%);transition:transform var(--d-slow) var(--e-out);z-index:2;border-top:1px solid var(--border)}
+.sheet.on{transform:none}
+.grab{width:30px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 8px}
+.ph-scrim{position:absolute;inset:0;background:rgba(11,29,51,.35);opacity:0;pointer-events:none;transition:opacity var(--d-slow);z-index:1}
+.ph-scrim.on{opacity:1;pointer-events:auto}
+.spot{position:absolute;border-radius:10px;box-shadow:0 0 0 999px rgba(11,29,51,.55);transition:all var(--d-slow) var(--e-out);pointer-events:none}
+.tip{position:absolute;background:var(--surface);color:var(--fg);border-radius:9px;padding:8px 10px;font-size:12px;width:170px;box-shadow:0 6px 18px rgba(0,0,0,.2);transition:all var(--d-slow) var(--e-out)}
+.tip b{display:block;font-size:12.5px}
+.foot{margin-top:36px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.foot section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.foot h3{margin:0 0 8px;font-size:15px}
+.foot ul{margin:0;padding-inline-start:18px;color:var(--muted);font-size:13px;display:grid;gap:4px}
+@media (max-width:420px){h1{font-size:23px}.grid{grid-template-columns:1fr}}
+</style>
+
+<header class="band">
+  <div class="wrap">
+    <div class="brand"><span class="logo"><svg viewBox="0 0 24 24" fill="#0B1D33"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span>FlexiPay</div>
+    <h1>Animations de l'interface</h1>
+    <p class="lead">Le design actuel reste tel quel. Ces 16 animations le rendent plus vivant et plus clair : chaque mouvement confirme une action, montre un changement d'état ou guide le regard. Cliquez sur « Rejouer » pour voir chacune.</p>
+    <div class="rules">
+      <span class="rule">Moins de 320 ms, sauf les célébrations</span>
+      <span class="rule">Une raison par animation</span>
+      <span class="rule">Jamais de retard sur une action d'argent</span>
+      <span class="rule">Inversées en arabe (RTL)</span>
+      <span class="rule">Coupées si « réduire les animations »</span>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+<div class="wrap">
+  <div class="toolbar">
+    <h2>Jetons de mouvement</h2>
+    <label class="switch" for="reduce"><input type="checkbox" id="reduce"> Simuler « réduire les animations »</label>
+  </div>
+  <div class="tokens">
+    <div class="tok"><b>Rapide · 120 ms</b><code>motion.duration.fast</code><br><span>Pression, survol, icône</span></div>
+    <div class="tok"><b>Normal · 200 ms</b><code>motion.duration.base</code><br><span>Modale, champ, badge</span></div>
+    <div class="tok"><b>Lent · 320 ms</b><code>motion.duration.slow</code><br><span>Page, toast, panneau</span></div>
+    <div class="tok"><b>Accent · 600 ms</b><code>motion.duration.emphasis</code><br><span>Compteur, succès de paiement</span></div>
+    <div class="tok"><b>Sortie douce</b><code>cubic-bezier(.2,0,0,1)</code><br><span>Tout ce qui entre</span></div>
+    <div class="tok"><b>Ressort</b><code>cubic-bezier(.34,1.56,.64,1)</code><br><span>Succès, compteur, copie</span></div>
+  </div>
+
+  <div class="grid">
+
+    <article class="card"><div class="stage"><div class="mini" id="s1">
+      <div class="enter"><div class="ph" style="width:45%"></div><div class="ph" style="width:70%;margin-top:6px;height:14px"></div></div>
+      <div class="kpis"><div class="kpi enter"><small>Ventes du jour</small><strong class="num">1 840,000</strong></div><div class="kpi enter"><small>À virer</small><strong class="num">4 920,000</strong></div><div class="kpi enter"><small>Virements</small><strong class="num">2</strong></div><div class="kpi enter"><small>Panier moyen</small><strong class="num">76,667</strong></div></div>
+    </div></div>
+    <div class="meta"><span class="where">Tous les espaces · arrivée sur une page</span><h3>Entrée de page en cascade</h3><p>Le titre puis les cartes montent de 8 px en apparaissant, l'une après l'autre. La barre latérale ne bouge jamais.</p><div class="chips"><span class="chip">320 ms</span><span class="chip">décalage 40 ms</span><span class="chip">sortie douce</span></div><div class="actions"><button class="btn sec" data-play="1">Rejouer</button></div></div></article>
+
+    <article class="card"><div class="stage"><div style="text-align:center"><div class="sub">Wallet disponible</div><div class="big num" id="count">217 800,000 TND</div><div class="sub">Entreprise · Carthage Industries</div></div></div>
+    <div class="meta"><span class="where">Tableaux de bord · soldes</span><h3>Compteur de montant</h3><p>Le montant principal défile jusqu'à sa valeur au premier affichage. Seulement au chargement, jamais à chaque rafraîchissement.</p><div class="chips"><span class="chip">600 ms</span><span class="chip">décélération</span><span class="chip">chiffres tabulaires</span></div><div class="actions"><button class="btn sec" data-play="2">Rejouer</button></div></div></article>
+
+    <article class="card"><div class="stage"><div class="mini" id="s3"></div></div>
+    <div class="meta"><span class="where">Entreprise · Bénéficiaire</span><h3>Soldes par type de crédit</h3><p>Les 4 barres se remplissent en décalé, chacune dans la couleur de son type. On voit d'un coup d'œil quel crédit est presque épuisé.</p><div class="chips"><span class="chip">700 ms</span><span class="chip">décalage 80 ms</span></div><div class="actions"><button class="btn sec" data-play="3">Rejouer</button></div></div></article>
+
+    <article class="card"><div class="stage"><div class="mini" id="s4"></div></div>
+    <div class="meta"><span class="where">Toutes les listes et tableaux</span><h3>Squelette de chargement</h3><p>Pendant le chargement, des formes grises reprennent la mise en page avec un reflet qui passe. Puis le vrai contenu apparaît en fondu, sans saut.</p><div class="chips"><span class="chip">reflet 1,2 s</span><span class="chip">fondu 200 ms</span></div><div class="actions"><button class="btn sec" data-play="4">Rejouer</button></div></div></article>
+
+    <article class="card"><div class="stage" id="s5"><div class="sub">Zone de contenu</div><div class="toast" role="status"><span class="tk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 12l5 5 9-10"/></svg></span><span>Commande confirmée</span><span class="prog"></span></div></div>
+    <div class="meta"><span class="where">Après chaque action</span><h3>Toast de confirmation</h3><p>Il glisse depuis le bord, une barre indique le temps restant, puis il repart. En arabe, il arrive depuis la gauche.</p><div class="chips"><span class="chip">entrée 320 ms</span><span class="chip">visible 4 s</span></div><div class="actions"><button class="btn sec" data-play="5">Rejouer</button></div></div></article>
+
+    <article class="card"><div class="stage" id="s6"><button class="btn" id="open6">Valider la commande</button><div class="scrim"></div><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="d6t"><h4 id="d6t">Valider cette commande ?</h4><p>Les crédits seront ajoutés au solde de Carthage Industries.<br><strong class="num" style="color:var(--fg)">25 000,000 TND</strong></p><div class="row"><button class="btn sec" id="no6">Annuler</button><button class="btn" id="yes6">Valider</button></div></div></div>
+    <div class="meta"><span class="where">Toute action d'argent</span><h3>Modale de confirmation</h3><p>Le fond se voile, la fenêtre grandit légèrement de 96 % à 100 %. Elle se ferme plus vite qu'elle ne s'ouvre.</p><div class="chips"><span class="chip">ouverture 200 ms</span><span class="chip">fermeture 120 ms</span></div><div class="actions"><button class="btn sec" data-play="6">Rejouer</button></div></div></article>
+
+    <article class="card"><div class="stage"><button class="btn wide" id="b7">Encaisser 42,500 TND</button></div>
+    <div class="meta"><span class="where">Commerçant · formulaires</span><h3>Bouton : pression, attente, succès</h3><p>Le bouton s'enfonce au clic, affiche un indicateur sans changer de largeur, puis passe au vert avec une coche. Pas de double clic possible pendant l'attente.</p><div class="chips"><span class="chip">pression 120 ms</span><span class="chip">largeur fixe</span></div><div class="actions"><button class="btn sec" data-play="7">Rejouer</button></div></div></article>
+
+    <article class="card"><div class="stage"><div class="rib"><small>RIB FlexiPay</small><div class="line"><code class="num">08 006 0001234567890 12</code><button class="icon-btn" id="b8" aria-live="polite"><span class="swap" id="sw8"><span class="a">Copier</span><span class="b" style="color:var(--ok)">✓ Copié</span></span></button></div></div></div>
+    <div class="meta"><span class="where">Entreprise · commande en attente de paiement</span><h3>Copier le RIB</h3><p>Le libellé se change en « Copié » avec une coche verte, puis revient au bout de 1,5 s.</p><div class="chips"><span class="chip">200 ms ressort</span><span class="chip">retour 1,5 s</span></div><div class="actions"><button class="btn sec" data-play="8">Rejouer</button></div></div></article>
+
+    <article class="card"><div class="stage"><div class="result" id="r9"><div class="circle" id="c9"></div><div><div class="big num" style="font-size:22px" id="a9">42,500 TND</div><div class="sub" id="m9">Paiement accepté · Restauration</div></div></div></div>
+    <div class="meta"><span class="where">Commerçant · Bénéficiaire · résultat plein écran</span><h3>Paiement accepté ou refusé</h3><p>Accepté : le cercle vert rebondit et la coche se dessine. Refusé : croix rouge et léger tremblement, avec la raison. Lisible même à un mètre de la caisse.</p><div class="chips"><span class="chip">600 ms</span><span class="chip">ressort</span></div><div class="actions"><button class="btn sec" data-play="9">Accepté</button><button class="btn sec" id="p9b">Refusé</button></div></div></article>
+
+    <article class="card"><div class="stage"><div style="display:grid;place-items:center;gap:6px"><svg class="ring" width="120" height="120" viewBox="0 0 120 120" aria-label="Temps restant"><circle cx="60" cy="60" r="50" fill="none" stroke="var(--border)" stroke-width="8"/><circle id="ring" cx="60" cy="60" r="50" fill="none" stroke="var(--ok)" stroke-width="8" stroke-linecap="round" transform="rotate(-90 60 60)" stroke-dasharray="314.16" stroke-dashoffset="0"/><text id="rt" x="60" y="67" text-anchor="middle" font-size="22" fill="var(--fg)">60 s</text></svg><div class="sub">Code 4829 1573 · démo accélérée</div></div></div>
+    <div class="meta"><span class="where">Bénéficiaire · « Mon code »</span><h3>Compte à rebours du QR</h3><p>L'anneau se vide pendant les 60 secondes de validité et passe à l'orange sur les 10 dernières. Le temps restant se lit sans calcul.</p><div class="chips"><span class="chip">linéaire</span><span class="chip">alerte à 10 s</span></div><div class="actions"><button class="btn sec" data-play="10">Rejouer</button></div></div></article>
+
+    <article class="card"><div class="stage"><div style="display:grid;justify-items:center;width:100%"><span class="badge" id="bd">En attente de confirmation</span><div class="steps" id="steps"></div><div class="sub" style="margin-top:8px" id="sl">Commande CMD-1042 · 25 000,000 TND</div></div></div>
+    <div class="meta"><span class="where">Commandes · virements · KYC</span><h3>Changement de statut</h3><p>Le badge change de couleur avec une petite pulsation, et le trait de l'historique se dessine jusqu'à l'étape suivante.</p><div class="chips"><span class="chip">320 ms</span><span class="chip">pulsation 500 ms</span></div><div class="actions"><button class="btn sec" data-play="11">Étape suivante</button></div></div></article>
+
+    <article class="card"><div class="stage"><div class="tbl"><table><thead><tr><th>Commande</th><th>Type</th><th class="r">Montant</th></tr></thead><tbody id="tb"><tr><td>CMD-1041</td><td>Carburant</td><td class="r num">12 000,000</td></tr><tr><td>CMD-1040</td><td>Cadeaux</td><td class="r num">8 500,000</td></tr><tr><td>CMD-1039</td><td>Restauration</td><td class="r num">15 000,000</td></tr></tbody></table></div></div>
+    <div class="meta"><span class="where">Admin · listes à traiter</span><h3>Nouvelle ligne en surbrillance</h3><p>Une ligne qui vient d'arriver s'éclaire en vert pâle, puis s'estompe en 1,6 s. L'admin voit ce qui est nouveau sans chercher.</p><div class="chips"><span class="chip">1,6 s</span><span class="chip">fond seulement</span></div><div class="actions"><button class="btn sec" data-play="12">Ajouter une ligne</button></div></div></article>
+
+    <article class="card"><div class="stage"><div class="field" id="f13"><label for="amt">Montant viré (TND)</label><input id="amt" inputmode="decimal" value="25 000,00"><div class="msg"><span>Indiquez le montant avec 3 décimales, par exemple 25 000,000.</span></div><button class="btn" style="margin-top:10px" id="b13">Déclarer le virement</button></div></div>
+    <div class="meta"><span class="where">Tous les formulaires</span><h3>Erreur de saisie</h3><p>Le champ tremble brièvement, sa bordure passe au rouge et le message se déplie en dessous. Il disparaît dès qu'on corrige.</p><div class="chips"><span class="chip">tremblement 360 ms</span><span class="chip">dépliage 200 ms</span></div><div class="actions"><button class="btn sec" data-play="13">Rejouer</button></div></div></article>
+
+    <article class="card"><div class="stage"><div class="side"><div class="it act"><span>Vue d'ensemble</span></div><div class="it"><span>Commandes</span><span class="cnt num" id="cnt">3</span></div><div class="it"><span>KYC</span><span class="cnt num">1</span></div><div class="it"><span>Messages</span></div></div></div>
+    <div class="meta"><span class="where">Barre latérale · Admin</span><h3>Compteur « à traiter »</h3><p>Quand un nouvel élément attend une action, le compteur se met à jour avec un petit rebond, une seule fois.</p><div class="chips"><span class="chip">380 ms ressort</span></div><div class="actions"><button class="btn sec" data-play="14">Nouvelle commande</button></div></div></article>
+
+    <article class="card"><div class="stage"><div class="phone" id="ph"><div class="ph-body"><div class="sub">Solde Restauration</div><div style="font-weight:700;font-size:16px" class="num">24 850,000</div><button class="btn" style="margin-top:12px;width:100%;min-height:32px;font-size:12px" id="pay15">Payer</button></div><div class="ph-scrim" id="phs"></div><div class="sheet" id="sh"><div class="grab"></div><div style="font-size:12px;font-weight:600">Payer un commerçant</div><div class="sub" style="font-size:11px">Scannez son QR ou tapez son code</div></div><div class="tabs" role="tablist"><span class="ind" id="ind"></span><button class="tab" role="tab" aria-selected="true">Accueil</button><button class="tab" role="tab" aria-selected="false">Historique</button><button class="tab" role="tab" aria-selected="false">Profil</button></div></div></div>
+    <div class="meta"><span class="where">Bénéficiaire · futur mobile</span><h3>Panneau du bas et onglets</h3><p>Le panneau monte depuis le bas de l'écran, à portée du pouce. L'indicateur d'onglet glisse vers l'onglet choisi.</p><div class="chips"><span class="chip">320 ms</span><span class="chip">glissement</span></div><div class="actions"><button class="btn sec" data-play="15">Ouvrir le panneau</button></div></div></article>
+
+    <article class="card"><div class="stage" id="s16" style="display:block;padding:16px"><div style="font-size:13px;font-weight:600">Bonjour, Restaurant Le Jasmin</div><div class="kpis"><div class="kpi" id="t1"><small>Ventes du jour</small><strong class="num">1 840,000</strong></div><div class="kpi" id="t2"><small>Disponible à virer</small><strong class="num">4 920,000</strong></div></div><button class="btn" style="margin-top:10px" id="t3">Encaisser</button><div class="spot" id="spot"></div><div class="tip" id="tip"><b id="tipt"></b><span id="tipx"></span></div></div>
+    <div class="meta"><span class="where">Première connexion · Commerçant, Entreprise, Bénéficiaire</span><h3>Visite guidée</h3><p>Le projecteur glisse d'un élément à l'autre au lieu de clignoter, avec une bulle d'explication qui le suit.</p><div class="chips"><span class="chip">320 ms</span><span class="chip">4 étapes</span></div><div class="actions"><button class="btn sec" data-play="16">Étape suivante</button></div></div></article>
+
+  </div>
+
+  <div class="foot">
+    <section><h3>Pour l'équipe de développement</h3><ul><li>Transitions CSS et classes Tailwind pour les cas simples.</li><li>Une bibliothèque d'animation seulement pour modales, toasts et panneaux.</li><li>Durées et courbes ajoutées dans design-tokens.json.</li><li>Uniquement <code>transform</code> et <code>opacity</code> : fluide sur les téléphones modestes.</li></ul></section>
+    <section><h3>Accessibilité</h3><ul><li>« Réduire les animations » coupe tout déplacement ; les fondus et les changements de couleur restent.</li><li>Jamais d'information portée par le mouvement seul.</li><li>Le focus va dans la modale à l'ouverture et revient au bouton à la fermeture.</li></ul></section>
+    <section><h3>À ne pas faire</h3><ul><li>Animer un montant à chaque rafraîchissement des données.</li><li>Faire attendre l'utilisateur pour voir une animation.</li><li>Faire bouger la barre latérale ou l'en-tête entre deux pages.</li></ul></section>
+  </div>
+</div>
+</main>
+
+<script>
+(function(){
+const R=()=>document.documentElement.classList.contains('reduce');
+const $=s=>document.querySelector(s);
+const fmt=n=>new Intl.NumberFormat('fr-FR',{minimumFractionDigits:3,maximumFractionDigits:3}).format(n);
+const reduceBox=$('#reduce');
+try{ if(matchMedia('(prefers-reduced-motion: reduce)').matches){reduceBox.checked=true;document.documentElement.classList.add('reduce');} }catch(e){}
+reduceBox.addEventListener('change',()=>document.documentElement.classList.toggle('reduce',reduceBox.checked));
+const T={}; const later=(k,f,ms)=>{clearTimeout(T[k]);T[k]=setTimeout(f,R()?0:ms);};
+
+// 1 entrée
+function p1(){const els=[...document.querySelectorAll('#s1 .enter')];els.forEach(e=>{e.classList.remove('on');void e.offsetWidth;});els.forEach((e,i)=>setTimeout(()=>e.classList.add('on'),R()?0:80+i*40));}
+// 2 compteur
+function p2(){const el=$('#count'),target=217800,t0=performance.now(),d=R()?0:600;cancelAnimationFrame(T.c);
+  const step=t=>{const k=d?Math.min(1,(t-t0)/d):1,e=1-Math.pow(1-k,3);el.textContent=fmt(target*e)+' TND';if(k<1)T.c=requestAnimationFrame(step);};T.c=requestAnimationFrame(step);}
+// 3 barres
+const cats=[['Restauration','--c-resto',84250,72],['Habillement','--c-habit',41600,48],['Carburant','--c-carbu',63200,64],['Cadeaux','--c-cadeau',28750,18]];
+$('#s3').innerHTML=cats.map(c=>`<div class="cat"><span class="dot" style="background:var(${c[1]})"></span><span>${c[0]}</span><b class="num">${fmt(c[2])}</b></div><div class="bar"><i style="background:var(${c[1]})" data-w="${c[3]}"></i></div>`).join('');
+function p3(){const bars=[...document.querySelectorAll('#s3 .bar i')];bars.forEach(b=>{b.style.transition='none';b.style.width='0';void b.offsetWidth;b.style.transition='';});bars.forEach((b,i)=>setTimeout(()=>b.style.width=b.dataset.w+'%',R()?0:60+i*80));}
+// 4 squelette
+function p4(){const s=$('#s4');s.innerHTML='<div class="sk" style="height:14px;width:50%"></div>'+'<div style="display:flex;gap:8px;align-items:center;margin-top:12px"><div class="sk" style="width:30px;height:30px;border-radius:50%"></div><div style="flex:1;display:grid;gap:6px"><div class="sk" style="height:10px;width:80%"></div><div class="sk" style="height:10px;width:50%"></div></div></div>'.repeat(3);
+  later('4',()=>{s.innerHTML='<div style="font-weight:600;font-size:13px" class="enter">Dernières opérations</div>'+[['Restaurant Le Jasmin','42,500'],['Station Afriquia Centre','85,000'],['Mode & Vous','125,000']].map(r=>`<div class="enter" style="display:flex;justify-content:space-between;margin-top:12px;font-size:13px"><span>${r[0]}</span><b class="num">${r[1]} TND</b></div>`).join('');requestAnimationFrame(()=>requestAnimationFrame(()=>s.querySelectorAll('.enter').forEach(e=>e.classList.add('on'))));},1600);}
+// 5 toast
+function p5(){const t=$('#s5 .toast'),p=t.querySelector('.prog');t.classList.remove('on');p.style.transition='none';p.style.transform='scaleX(1)';void t.offsetWidth;t.classList.add('on');
+  requestAnimationFrame(()=>{p.style.transition=R()?'none':'transform 4000ms linear';p.style.transform='scaleX(0)';});later('5',()=>t.classList.remove('on'),4000);}
+// 6 modale
+const sc6=$('#s6 .scrim'),dl6=$('#s6 .dialog');
+function open6(){sc6.classList.add('on');dl6.classList.add('on');setTimeout(()=>$('#yes6').focus(),R()?0:200);}
+function close6(){dl6.style.transitionDuration='120ms';sc6.classList.remove('on');dl6.classList.remove('on');setTimeout(()=>{dl6.style.transitionDuration='';$('#open6').focus();},140);}
+$('#open6').onclick=open6;$('#no6').onclick=close6;$('#yes6').onclick=close6;sc6.onclick=close6;
+function p6(){open6();}
+// 7 bouton
+const b7=$('#b7');let busy7=false;
+function p7(){if(busy7)return;busy7=true;b7.disabled=true;b7.innerHTML='<span class="spin"></span> Encaissement…';
+  later('7a',()=>{b7.classList.add('ok');b7.innerHTML='✓ Encaissé';later('7b',()=>{b7.classList.remove('ok');b7.textContent='Encaisser 42,500 TND';b7.disabled=false;busy7=false;},1600);},1100);}
+b7.onclick=p7;
+// 8 copie
+function p8(){const sw=$('#sw8');try{navigator.clipboard.writeText('08 006 0001234567890 12').catch(()=>{});}catch(e){}sw.classList.add('done');later('8',()=>sw.classList.remove('done'),1500);}
+$('#b8').onclick=p8;
+// 9 résultat
+function p9(ok){const c=$('#c9'),r=$('#r9');c.classList.remove('on');r.classList.remove('shake');
+  c.style.background=ok?'var(--ok-wash)':'var(--err-wash)';
+  c.innerHTML=ok?'<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>':'<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--err)" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  $('#m9').textContent=ok?'Paiement accepté · Restauration':'Refusé · solde Carburant insuffisant';$('#m9').style.color=ok?'':'var(--err)';
+  void c.offsetWidth;c.classList.add('on');if(!ok)setTimeout(()=>r.classList.add('shake'),R()?0:300);}
+$('#p9b').onclick=()=>p9(false);
+// 10 QR
+function p10(){cancelAnimationFrame(T.q);const ring=$('#ring'),txt=$('#rt'),L=314.16,t0=performance.now(),dur=10000;
+  const step=t=>{const k=R()?1:Math.min(1,(t-t0)/dur),left=Math.ceil(60*(1-k));ring.setAttribute('stroke-dashoffset',L*k);txt.textContent=left+' s';ring.setAttribute('stroke',left<=10?'var(--warn)':'var(--ok)');if(k<1)T.q=requestAnimationFrame(step);else txt.textContent='Expiré';};T.q=requestAnimationFrame(step);}
+// 11 statut
+const ST=[['En attente de confirmation','var(--info-wash)','var(--info)'],['En attente de paiement','#FFF1DB','#9A5B00'],['En attente de validation','var(--info-wash)','var(--info)'],['Validée','var(--ok-wash)','var(--ok)']];
+let s11=0;$('#steps').innerHTML=ST.map((s,i)=>(i?'<div class="ln"><i></i></div>':'')+'<span class="st"></span>').join('');
+function draw11(){const b=$('#bd');b.textContent=ST[s11][0];b.style.background=ST[s11][1];b.style.color=ST[s11][2];b.classList.remove('pulse');void b.offsetWidth;b.classList.add('pulse');
+  document.querySelectorAll('#steps .st').forEach((e,i)=>e.classList.toggle('done',i<=s11));document.querySelectorAll('#steps .ln').forEach((e,i)=>e.classList.toggle('done',i<s11));}
+function p11(){s11=(s11+1)%ST.length;draw11();}draw11();
+// 12 ligne
+let n12=1042;const types=['Restauration','Habillement','Carburant','Cadeaux'];
+function p12(){const tb=$('#tb'),tr=document.createElement('tr');tr.className='new';tr.innerHTML=`<td>CMD-${n12}</td><td>${types[n12%4]}</td><td class="r num">${fmt(5000+(n12%7)*2500)}</td>`;n12++;tb.prepend(tr);while(tb.children.length>3)tb.lastChild.remove();}
+// 13 erreur
+const f13=$('#f13'),amt=$('#amt');
+function p13(){f13.classList.remove('err','shake');void f13.offsetWidth;if(/^\d{1,3}( \d{3})*,\d{3}$/.test(amt.value.trim()))return;f13.classList.add('err','shake');}
+$('#b13').onclick=p13;amt.oninput=()=>f13.classList.remove('err');
+// 14 compteur
+function p14(){const c=$('#cnt');c.textContent=+c.textContent+1;c.classList.remove('pop');void c.offsetWidth;c.classList.add('pop');}
+// 15 mobile
+const sh=$('#sh'),phs=$('#phs');
+function p15(){const on=!sh.classList.contains('on');sh.classList.toggle('on',on);phs.classList.toggle('on',on);}
+$('#pay15').onclick=p15;phs.onclick=p15;
+document.querySelectorAll('#ph .tab').forEach((t,i)=>t.onclick=()=>{document.querySelectorAll('#ph .tab').forEach(x=>x.setAttribute('aria-selected',x===t));$('#ind').style.transform=`translateX(${i*100}%)`;});
+// 16 visite
+const tour=[['#t1','Vos ventes','Le total encaissé aujourd’hui.'],['#t2','Votre argent','Ce que vous pouvez demander en virement.'],['#t3','Encaisser','Le bouton à utiliser devant le client.']];let s16=-1;
+function p16(){s16=(s16+1)%tour.length;const st=$('#s16'),el=$(tour[s16][0]),a=st.getBoundingClientRect(),b=el.getBoundingClientRect(),sp=$('#spot'),tp=$('#tip');
+  sp.style.left=(b.left-a.left-4)+'px';sp.style.top=(b.top-a.top-4)+'px';sp.style.width=(b.width+8)+'px';sp.style.height=(b.height+8)+'px';
+  $('#tipt').textContent=`${s16+1}/3 · ${tour[s16][1]}`;$('#tipx').textContent=tour[s16][2];
+  const below=b.bottom-a.top+10;tp.style.top=(below+70>a.height?b.top-a.top-74:below)+'px';tp.style.left=Math.max(8,Math.min(b.left-a.left,a.width-180))+'px';}
+
+const map={1:p1,2:p2,3:p3,4:p4,5:p5,6:p6,7:p7,8:p8,9:()=>p9(true),10:p10,11:p11,12:p12,13:p13,14:p14,15:p15,16:p16};
+document.querySelectorAll('[data-play]').forEach(b=>b.addEventListener('click',()=>map[b.dataset.play]()));
+// premier rendu : état final visible, puis on joue les entrées
+document.querySelectorAll('#s1 .enter').forEach(e=>e.classList.add('on'));
+cats&&document.querySelectorAll('#s3 .bar i').forEach(b=>b.style.width=b.dataset.w+'%');
+p4();p9(true);p16();
+setTimeout(()=>{p1();p2();p3();p10();},300);
+})();
+</script>

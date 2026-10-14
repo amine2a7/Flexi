@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Commerçant · Encaisser</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#087A4C}a:hover{color:#0B1D33}
+@keyframes fp-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fp-spin{to{transform:rotate(360deg)}}
+@keyframes fp-pop{0%{opacity:0;transform:scale(.4)}100%{opacity:1;transform:scale(1)}}
+@keyframes fp-draw{to{stroke-dashoffset:0}}
+@keyframes fp-shake{20%{transform:translateX(-8px)}40%{transform:translateX(7px)}60%{transform:translateX(-4px)}80%{transform:translateX(2px)}}
+@keyframes fp-ring{from{stroke-dashoffset:0}to{stroke-dashoffset:126}}
+.fp-rise{animation:fp-rise 320ms cubic-bezier(.2,0,0,1) both}
+.fp-d1{animation-delay:60ms}.fp-d2{animation-delay:120ms}.fp-d3{animation-delay:180ms}
+.fp-spin{animation:fp-spin .7s linear infinite}
+.fp-pop{animation:fp-pop 420ms cubic-bezier(.34,1.56,.64,1) both}
+.fp-draw{stroke-dasharray:40;stroke-dashoffset:40;animation:fp-draw 360ms cubic-bezier(.2,0,0,1) 260ms forwards}
+.fp-shake{animation:fp-shake 360ms cubic-bezier(.2,0,0,1) 320ms}
+.fp-ring{animation:fp-ring 60s linear infinite}
+.fp-btn{transition:transform 120ms cubic-bezier(.2,0,0,1),background-color 200ms}
+.fp-btn:active{transform:scale(.97)}
+@media (prefers-reduced-motion:reduce){.fp-rise,.fp-pop,.fp-shake,.fp-ring{animation:none}.fp-draw{animation:none;stroke-dashoffset:0}}
+</style>
+</helmet>
+<div style="font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: #0F1B2A; background: #F4F6F9; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 800px; font-size: 14px">
+  <nav aria-label="Menu Commerçant" style="flex: 1 1 220px; max-width: 100%; background: #0B1D33; color: #C6D2E0; padding: 20px 14px; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box">
+    <div style="display: flex; align-items: center; gap: 10px; color: #FFFFFF; font-weight: 600; padding: 0 8px 22px">
+      <span style="width: 32px; height: 32px; border-radius: 9px; background: #12D68A; display: grid; place-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="#0B1D33" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg></span>
+      <span>FlexiPay<span style="display: block; font-size: 10px; letter-spacing: .12em; color: #8FA3BA; font-weight: 500">ESPACE COMMERÇANT</span></span>
+    </div>
+    <a href="#" style="color: #C6D2E0; text-decoration: none; padding: 10px; border-radius: 8px">Vue d'ensemble</a>
+    <a href="#" aria-current="page" style="color: #FFFFFF; text-decoration: none; padding: 10px; border-radius: 8px; background: #1A2D45; font-weight: 600">Encaisser</a>
+    <a href="#" style="color: #C6D2E0; text-decoration: none; padding: 10px; border-radius: 8px">Demander un virement</a>
+    <a href="#" style="color: #C6D2E0; text-decoration: none; padding: 10px; border-radius: 8px">Mes virements</a>
+    <a href="#" style="color: #C6D2E0; text-decoration: none; padding: 10px; border-radius: 8px">Transactions</a>
+  </nav>
+  <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+    <header style="background: #FFFFFF; border-bottom: 1px solid #E1E6ED; padding: 14px 28px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center">
+      <div><div style="font-weight: 600">Bonjour, Restaurant Le Jasmin</div><div style="font-size: 12px; color: #5B6878">Espace sécurisé</div></div>
+      <div style="display: flex; align-items: center; gap: 10px"><span style="background: #E3F8EF; color: #087A4C; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 3px 10px">Commerçant</span><span style="font-weight: 600">Restaurant Le Jasmin</span></div>
+    </header>
+    <main style="padding: 28px; display: flex; flex-direction: column; gap: 20px; max-width: 1040px; width: 100%; box-sizing: border-box">
+      <div class="fp-rise" style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: flex-end">
+        <div>
+          <div style="font-size: 11px; letter-spacing: .12em; font-weight: 600; color: #087A4C">GESTION OPÉRATIONNELLE</div>
+          <h1 style="margin: 6px 0 4px; font-size: 26px">Encaisser un paiement</h1>
+          <p style="margin: 0; color: #5B6878">Montrez votre QR au client ou saisissez le code qu'il vous donne.</p>
+        </div>
+      </div>
+
+      <sc-if value="{{showForm}}" hint-placeholder-val="{{ true }}">
+        <section class="fp-rise fp-d1" style="background: #FFFFFF; border: 1px solid #E1E6ED; border-radius: 14px; padding: 24px; display: flex; flex-wrap: wrap; gap: 28px">
+          <div style="flex: 1 1 260px; background: #F7F9FB; border-radius: 12px; padding: 22px; display: flex; flex-direction: column; align-items: center; gap: 14px">
+            <div style="display: grid; grid-template-columns: repeat(17, 9px); gap: 1px" role="img" aria-label="QR code FlexiPay du commerçant">
+              <sc-for list="{{qr}}" as="c" hint-placeholder-count="289"><span style="width: 9px; height: 9px; background: {{c.color}}"></span></sc-for>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px">
+              <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="20" fill="none" stroke="#E1E6ED" stroke-width="4"></circle><circle class="fp-ring" cx="22" cy="22" r="20" fill="none" stroke="{{ringColor}}" stroke-width="4" stroke-linecap="round" stroke-dasharray="126" transform="rotate(-90 22 22)"></circle></svg>
+              <div><div style="font-weight: 700; font-variant-numeric: tabular-nums">{{timeLeft}}</div><div style="font-size: 12px; color: #5B6878">QR valable encore</div></div>
+            </div>
+          </div>
+          <div style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 14px">
+            <div style="display: flex; flex-direction: column; gap: 6px"><label for="code" style="font-weight: 600; font-size: 13px">Code de paiement du client</label><input id="code" placeholder="Ex. 4829 1573" style="height: 44px; border: 1px solid #E1E6ED; border-radius: 9px; padding: 0 12px; font: inherit"></div>
+            <div style="display: flex; flex-direction: column; gap: 6px"><label for="mt" style="font-weight: 600; font-size: 13px">Montant à encaisser (TND)</label><input id="mt" value="125,000" style="height: 44px; border: 1px solid #E1E6ED; border-radius: 9px; padding: 0 12px; font: inherit; font-variant-numeric: tabular-nums"></div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: #5B6878">Types acceptés :<span style="display: inline-flex; align-items: center; gap: 6px; background: #E5F5EE; color: #0B6E47; border-radius: 999px; padding: 3px 10px; font-weight: 600"><span style="width: 8px; height: 8px; border-radius: 2px; background: #14A06A"></span>Restauration</span></div>
+            <button class="fp-btn" onClick="{{validate}}" disabled="{{loading}}" style="height: 48px; border: 0; border-radius: 10px; background: #0B1D33; color: #FFFFFF; font: inherit; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer">
+              <sc-if value="{{loading}}" hint-placeholder-val="{{ false }}"><span class="fp-spin" style="width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.35); border-top-color: #FFFFFF; border-radius: 50%; display: inline-block"></span></sc-if>
+              <span>{{btnLabel}}</span>
+            </button>
+            <button onClick="{{refuse}}" disabled="{{loading}}" style="height: 40px; border: 1px solid #E1E6ED; background: #FFFFFF; border-radius: 10px; font: inherit; color: #5B6878; cursor: pointer">Simuler un paiement refusé</button>
+            <p style="margin: 0; font-size: 12px; color: #5B6878">Le montant sera réglé à J+2, commission de 2 % déduite.</p>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ok}}" hint-placeholder-val="{{ false }}">
+        <section style="background: #FFFFFF; border: 1px solid #E1E6ED; border-radius: 14px; padding: 48px 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center" aria-live="polite">
+          <div class="fp-pop" style="width: 104px; height: 104px; border-radius: 50%; background: #E2F6EC; display: grid; place-items: center"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#0B7F4F" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="fp-draw" d="M5 12.5l4.5 4.5L19 7.5"></path></svg></div>
+          <div class="fp-rise fp-d2" style="font-size: 40px; font-weight: 700; font-variant-numeric: tabular-nums">125,000 TND</div>
+          <div class="fp-rise fp-d2" style="font-size: 18px; font-weight: 600; color: #0B7F4F">Paiement accepté · Restauration</div>
+          <div class="fp-rise fp-d3" style="color: #5B6878">Réf. PAY-88412 · réglé à J+2 · net 122,500 TND</div>
+          <button class="fp-btn fp-rise fp-d3" onClick="{{reset}}" style="margin-top: 8px; height: 48px; padding: 0 22px; border: 0; border-radius: 10px; background: #0B1D33; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Nouvel encaissement</button>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ko}}" hint-placeholder-val="{{ false }}">
+        <section class="fp-shake" style="background: #FFFFFF; border: 1px solid #E1E6ED; border-radius: 14px; padding: 48px 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center" aria-live="assertive">
+          <div class="fp-pop" style="width: 104px; height: 104px; border-radius: 50%; background: #FBE7E5; display: grid; place-items: center"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#B42318" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path class="fp-draw" d="M6 6l12 12M18 6L6 18"></path></svg></div>
+          <div style="font-size: 26px; font-weight: 700; color: #B42318">Paiement refusé</div>
+          <div style="font-size: 16px; font-weight: 600">Solde Restauration insuffisant chez le client</div>
+          <div style="color: #5B6878; max-width: 46ch">Proposez au client un montant plus faible ou un autre moyen de paiement.</div>
+          <button class="fp-btn" onClick="{{reset}}" style="margin-top: 8px; height: 48px; padding: 0 22px; border: 0; border-radius: 10px; background: #0B1D33; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Réessayer</button>
+        </section>
+      </sc-if>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { phase: 0, secs: 60 }; }
+  componentDidMount() { this.iv = setInterval(() => { this.setState({ secs: this.state.secs > 0 ? this.state.secs - 1 : 60 }); }, 1000); }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.t); }
+  run(next) { this.setState({ phase: 1 }); clearTimeout(this.t); this.t = setTimeout(() => this.setState({ phase: next }), 1100); }
+  qrCells() {
+    const n = 17, out = [];
+    const finder = (r, c, R, C) => { const y = r - R, x = c - C; if (y < 0 || x < 0 || y > 6 || x > 6) return null; return (y === 0 || y === 6 || x === 0 || x === 6 || (y > 1 && y < 5 && x > 1 && x < 5)); };
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      let f = finder(r, c, 0, 0); if (f === null) f = finder(r, c, 0, 10); if (f === null) f = finder(r, c, 10, 0);
+      const on = f === null ? ((r * 7 + c * 13 + r * c) % 5 < 2) : f;
+      out.push({ color: on ? '#0B1D33' : 'transparent' });
+    }
+    return out;
+  }
+  renderVals() {
+    const p = this.state.phase, s = this.state.secs;
+    if (!this.qr) this.qr = this.qrCells();
+    return {
+      qr: this.qr,
+      showForm: p <= 1, loading: p === 1, ok: p === 2, ko: p === 3,
+      btnLabel: p === 1 ? 'Validation…' : "Valider l'encaissement",
+      timeLeft: '0:' + String(s).padStart(2, '0'),
+      ringColor: s <= 10 ? '#D9761A' : '#0E9F63',
+      validate: () => this.run(2), refuse: () => this.run(3), reset: () => this.setState({ phase: 0 })
+    };
+  }
+}
+</script>
+</body>
+</html>

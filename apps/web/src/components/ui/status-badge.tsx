@@ -24,6 +24,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { messageKey } from '@/i18n/keys';
 import { cn } from '@/lib/cn';
+import { useReplay } from '@/lib/motion';
 
 interface StatusToken {
   readonly labelKey: string;
@@ -117,6 +118,8 @@ interface StatusBadgeProps {
 
 export function StatusBadge({ status, context, labelKey }: StatusBadgeProps) {
   const t = useTranslations();
+  // Animation 11: when the status changes, the colours cross-fade (320 ms) and the badge pulses.
+  const pulse = useReplay(status);
   const orderToken = context === 'order' ? ORDER_TOKENS[status] : undefined;
   const tokenKey =
     orderToken ??
@@ -129,10 +132,12 @@ export function StatusBadge({ status, context, labelKey }: StatusBadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex min-h-chip-height items-center gap-1 whitespace-nowrap rounded-badge px-2 text-caption font-label',
+        'inline-flex min-h-chip-height items-center gap-1 whitespace-nowrap rounded-badge px-2 text-caption font-label transition-colors duration-slow ease-out',
+        pulse.active && 'animate-pulse',
         `bg-${token.bg}`,
         `text-${token.fg}`,
       )}
+      onAnimationEnd={pulse.onAnimationEnd}
     >
       <Icon aria-hidden="true" className="size-icon-sm" />
       {t(

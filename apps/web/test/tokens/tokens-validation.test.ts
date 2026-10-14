@@ -10,7 +10,8 @@ describe('readTokens', () => {
     expect(tokens.focus.width).toBeGreaterThan(0);
     expect(colorToken(tokens, tokens.focus.onLight)).toMatch(/^#/);
     expect(tokens.size['touch-target-min']).toBe('2.75rem');
-    expect(tokens.motion.fast).toBe(120);
+    expect(tokens.motion.duration.fast).toBe(120);
+    expect(tokens.motion.easing.spring).toBe('cubic-bezier(.34,1.56,.64,1)');
   });
 
   it.each([
@@ -34,9 +35,10 @@ describe('readTokens', () => {
     [
       'a non-numeric duration',
       (theme: Record<string, unknown>) => {
-        (theme.motion as Record<string, unknown>).fast = '120ms';
+        ((theme.motion as Record<string, unknown>).duration as Record<string, unknown>).fast =
+          '120ms';
       },
-      'motion.fast',
+      'motion.duration.fast',
     ],
     [
       'a numeric size',
@@ -48,9 +50,10 @@ describe('readTokens', () => {
     [
       'a missing skeleton duration',
       (theme: Record<string, unknown>) => {
-        delete (theme.motion as Record<string, unknown>).skeleton;
+        delete ((theme.motion as Record<string, unknown>).duration as Record<string, unknown>)
+          .skeleton;
       },
-      'motion.skeleton',
+      'motion.duration.skeleton',
     ],
   ])('throws on %s', (_name, mutate, path) => {
     const theme = valid();

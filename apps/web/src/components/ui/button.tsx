@@ -1,4 +1,4 @@
-import { Loader2 } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';
 import { cn } from '@/lib/cn';
 
@@ -19,15 +19,15 @@ const SIZES: Record<ButtonSize, string> = {
   sm: 'min-h-touch-target-mobile px-3 text-label lg:min-h-touch-target-min',
 };
 
-/** Shared look of buttons and button-like links. */
+/** Shared look of buttons and button-like links (animation 7: pressed at .97). */
 export function buttonClasses(
   variant: ButtonVariant = 'primary',
   size: ButtonSize = 'md',
   extra?: string,
 ): string {
   return cn(
-    'inline-flex items-center justify-center gap-2 rounded-button font-title transition-colors duration-fast',
-    'disabled:cursor-not-allowed disabled:opacity-disabled',
+    'inline-flex items-center justify-center gap-2 rounded-button font-title transition duration-fast ease-out',
+    'active:scale-press disabled:cursor-not-allowed disabled:opacity-disabled disabled:active:scale-100',
     VARIANTS[variant],
     SIZES[size],
     extra,
@@ -39,14 +39,22 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   readonly size?: ButtonSize;
   /** Shows a spinner, disables the button and keeps its label (screen readers hear aria-busy). */
   readonly loading?: boolean;
+  /** Success of the action just done: green with a check for 1,6 s (useSuccessFlash). */
+  readonly succeeded?: boolean;
   readonly icon?: ReactNode;
   readonly ref?: Ref<HTMLButtonElement>;
 }
 
+/**
+ * Button. Waiting (spinner) and success (check) never change its width: they take the place of
+ * the icon, or sit over the hidden label when there is no icon. A money action never waits for
+ * the success animation: it only follows the answer.
+ */
 export function Button({
   variant = 'primary',
   size = 'md',
   loading = false,
+  succeeded = false,
   icon,
   className,
   children,
@@ -54,16 +62,32 @@ export function Button({
   type = 'button',
   ...rest
 }: ButtonProps) {
+  const indicator = loading ? (
+    <Loader2 aria-hidden="true" className="size-icon-sm animate-spin motion-reduce:animate-none" />
+  ) : succeeded ? (
+    <Check aria-hidden="true" className="size-icon-sm animate-pop-fast" />
+  ) : undefined;
+  const overlay = indicator !== undefined && icon === undefined;
   return (
     <button
       type={type}
-      className={buttonClasses(variant, size, className)}
+      className={buttonClasses(
+        succeeded && !loading ? 'success' : variant,
+        size,
+        cn('relative', className),
+      )}
       disabled={disabled === true || loading}
       aria-busy={loading || undefined}
       {...rest}
     >
-      {loading ? <Loader2 aria-hidden="true" className="size-icon-sm animate-spin" /> : icon}
-      {children}
+      {overlay ? (
+        <span aria-hidden="true" className="absolute inset-0 flex items-center justify-center">
+          {indicator}
+        </span>
+      ) : (
+        (indicator ?? icon)
+      )}
+      {overlay ? <span className="text-transparent">{children}</span> : children}
     </button>
   );
 }

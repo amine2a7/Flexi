@@ -134,6 +134,7 @@ export default function ApprovalsPage() {
           onChange={setTab}
         />
         <DataTable
+          highlightNew
           caption={tab === 'pending' ? t('tabPending') : t('tabHistory')}
           columns={columns}
           rows={rows}

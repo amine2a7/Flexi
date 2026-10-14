@@ -166,7 +166,10 @@ export default function CollectPage() {
           </div>
 
           {result === 'INITIATED' && payment !== undefined ? (
-            <div aria-live="polite" className="flex flex-col items-center gap-4 py-4 text-center">
+            <div
+              aria-live="polite"
+              className="flex animate-fade flex-col items-center gap-4 py-4 text-center"
+            >
               <Hourglass aria-hidden="true" className="size-icon-lg text-info" />
               <h2 className="text-title text-text">{t('waitingTitle')}</h2>
               <p className="text-body text-text-muted">{t('waitingMessage')}</p>

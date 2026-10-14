@@ -17,14 +17,14 @@
     @apply focus-ring;
   }
 
-  /* "Réduire les animations": every animation and transition is disabled (charte A.6). */
+  /*
+   * "Réduire les animations" (animations.md): no movement and no bounce. The motion tokens of
+   * tailwind.config.ts set every distance and scale to neutral values, so the animations become
+   * plain fades; colour changes stay. Smooth scrolling is a movement too.
+   */
   @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation: none !important;
-      transition: none !important;
-      scroll-behavior: auto !important;
+    html {
+      scroll-behavior: auto;
     }
   }
 }

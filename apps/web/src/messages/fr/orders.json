@@ -51,6 +51,7 @@
     "rib": "RIB",
     "iban": "IBAN",
     "copy": "Copier",
+    "copiedShort": "Copié",
     "copyLabel": "Copier : {field}",
     "copied": "{field} copié.",
     "copyFailed": "Copie impossible : sélectionnez le texte et copiez-le."

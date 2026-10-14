@@ -179,6 +179,7 @@ export default function KycFilesPage() {
           </div>
         </form>
         <DataTable
+          highlightNew
           caption={t('title')}
           columns={columns}
           rows={list.rows}

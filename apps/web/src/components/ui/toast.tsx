@@ -25,9 +25,8 @@ const TONE_CLASSES: Record<ToastTone, string> = {
 };
 
 const ToastContext = createContext<ToastApi | null>(null);
-const DURATION = (tokensPreset.theme as { motion: { 'toast-duration': number } }).motion[
-  'toast-duration'
-];
+const DURATION = (tokensPreset.theme as { motion: { duration: { toast: number } } }).motion.duration
+  .toast;
 
 /**
  * Success toasts close by themselves; error toasts stay until closed (WCAG 2.2.1, decision of
@@ -43,7 +42,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     (tone: ToastTone, message: string) => {
       const id = Date.now() + Math.floor(Math.random() * 1000);
       setItems((current) => [...current, { id, tone, message }]);
-      if (tone !== 'error') setTimeout(() => { dismiss(id); }, DURATION);
+      if (tone !== 'error')
+        setTimeout(() => {
+          dismiss(id);
+        }, DURATION);
     },
     [dismiss],
   );
@@ -61,7 +63,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             key={item.id}
             role={item.tone === 'error' ? 'alert' : 'status'}
             className={cn(
-              'flex items-center gap-3 rounded-card-desktop border p-4 shadow-raised',
+              // Animation 5: slides in from the edge (mirrored in Arabic), time bar for auto-close.
+              'relative flex animate-toast-in items-center gap-3 overflow-hidden rounded-card-desktop border p-4 shadow-raised',
               TONE_CLASSES[item.tone],
             )}
           >
@@ -75,12 +78,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <p className="flex-1 text-label">{item.message}</p>
             <button
               type="button"
-              onClick={() => { dismiss(item.id); }}
+              onClick={() => {
+                dismiss(item.id);
+              }}
               aria-label={t('close')}
               className="flex size-touch-target-min items-center justify-center rounded-button"
             >
               <X aria-hidden="true" className="size-icon-sm" />
             </button>
+            {item.tone === 'error' ? null : (
+              <span
+                aria-hidden="true"
+                className="absolute inset-x-0 bottom-0 h-1 origin-left animate-toast-timer bg-current opacity-disabled rtl:origin-right"
+              />
+            )}
           </div>
         ))}
       </div>

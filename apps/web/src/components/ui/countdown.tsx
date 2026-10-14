@@ -2,6 +2,10 @@
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { cn } from '@/lib/cn';
+
+/** Last seconds shown in orange (animation 10). */
+const LAST_SECONDS = 10;
 
 function secondsLeft(expiresAt: string): number {
   return Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 1000));
@@ -16,8 +20,12 @@ export function Countdown({ expiresAt, total }: { expiresAt: string; total: numb
   const [left, setLeft] = useState(() => secondsLeft(expiresAt));
 
   useEffect(() => {
-    const timer = setInterval(() => { setLeft(secondsLeft(expiresAt)); }, 1000);
-    return () => { clearInterval(timer); };
+    const timer = setInterval(() => {
+      setLeft(secondsLeft(expiresAt));
+    }, 1000);
+    return () => {
+      clearInterval(timer);
+    };
   }, [expiresAt]);
 
   const ratio = total <= 0 ? 0 : Math.min(left / total, 1);
@@ -31,9 +39,13 @@ export function Countdown({ expiresAt, total }: { expiresAt: string; total: numb
         aria-label={t('label')}
         className="h-1 w-full overflow-hidden rounded-badge bg-border"
       >
+        {/* Animation 10: the bar empties (transform only), orange during the last 10 seconds. */}
         <div
-          className="h-full bg-emerald transition-all duration-base"
-          style={{ width: `${String(Math.round(ratio * 100))}%` }}
+          className={cn(
+            'h-full w-full origin-left transition-transform duration-slow ease-out rtl:origin-right',
+            left <= LAST_SECONDS ? 'bg-warning' : 'bg-emerald',
+          )}
+          style={{ transform: `scaleX(${String(ratio)})` }}
         />
       </div>
       <p className="text-caption text-text-muted">

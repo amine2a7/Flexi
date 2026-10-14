@@ -17,6 +17,7 @@ import { buttonClasses } from '@/components/ui/button';
 import { PageEyebrowContext } from '@/components/ui/layout-blocks';
 import { LoadingBlock } from '@/components/ui/states';
 import { ToastProvider } from '@/components/ui/toast';
+import { CounterBadge } from './counter-badge';
 import { LocaleSwitcher } from './locale-switcher';
 import { HELP_ANCHORS } from '@/components/public/help-topics';
 import { NAVIGATION, isActive } from './nav-config';
@@ -160,12 +161,11 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
               <Icon aria-hidden="true" className="size-icon-md shrink-0" />
               <span className="flex-1">{label}</span>
               {count > 0 ? (
-                <span
+                <CounterBadge
+                  count={count}
+                  label={t('layout.counter', { label, count })}
                   className="flex min-w-icon-lg items-center justify-center rounded-badge bg-emerald px-2 text-micro font-label text-on-emerald"
-                  aria-label={t('layout.counter', { label, count })}
-                >
-                  {count}
-                </span>
+                />
               ) : null}
             </Link>
           </li>
@@ -301,7 +301,8 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
           className="mx-auto w-full max-w-desktop-max-width flex-1 px-4 py-6 lg:px-8 lg:py-8"
         >
           <PageEyebrowContext.Provider value={t(`layout.eyebrow.${role}`)}>
-            {children}
+            {/* Animation 1: page content enters in cascade; sidebar and header never move. */}
+            <div className="fp-cascade">{children}</div>
           </PageEyebrowContext.Provider>
           {role === 'EMPLOYEE' ? (
             <div aria-hidden="true" className="h-bottom-nav-height lg:hidden" />
@@ -331,9 +332,10 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
                     <Icon aria-hidden="true" className="size-icon-md" />
                     {t(messageKey(item.labelKey))}
                     {count > 0 ? (
-                      <span className="absolute end-1/4 top-2 flex min-w-icon-sm items-center justify-center rounded-badge bg-emerald px-1 text-micro text-on-emerald">
-                        {count}
-                      </span>
+                      <CounterBadge
+                        count={count}
+                        className="absolute end-1/4 top-2 flex min-w-icon-sm items-center justify-center rounded-badge bg-emerald px-1 text-micro text-on-emerald"
+                      />
                     ) : null}
                   </Link>
                 </li>

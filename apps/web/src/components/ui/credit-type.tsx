@@ -77,7 +77,19 @@ export function CreditTypeBadges({ types }: { types: readonly CreditType[] }) {
 }
 
 /** Thin progress bar in the type colour (SVG attributes only: strict CSP). */
-export function CreditTypeBar({ type, ratio }: { type: CreditType; ratio: number }) {
+/**
+ * Progress of a type. Animation 3: grows from 0 at the first display (700 ms), the n-th bar of a
+ * group starting 80 ms after the previous one.
+ */
+export function CreditTypeBar({
+  type,
+  ratio,
+  index = 0,
+}: {
+  type: CreditType;
+  ratio: number;
+  index?: number;
+}) {
   const width = Math.max(0, Math.min(1, ratio)) * 100;
   return (
     <svg
@@ -87,7 +99,12 @@ export function CreditTypeBar({ type, ratio }: { type: CreditType; ratio: number
       className="h-icon-sm w-full overflow-hidden rounded-badge"
     >
       <rect width={100} height={4} className="fill-border" />
-      <rect width={width} height={4} className={`fill-${token(type).solid}`} />
+      <rect
+        width={width}
+        height={4}
+        className={cn(`fill-${token(type).solid}`, 'fp-box-fill origin-left animate-grow-x')}
+        style={{ animationDelay: `calc(var(--fp-d-bars-step) * ${String(index)})` }}
+      />
     </svg>
   );
 }
@@ -114,7 +131,7 @@ export function CreditTypeBalanceCards({
   const max = Math.max(1, ...balances.map((item) => item.amountMillimes));
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {balances.map((item) => {
+      {balances.map((item, index) => {
         const style = token(item.creditType);
         return (
           <div
@@ -140,6 +157,7 @@ export function CreditTypeBalanceCards({
               <Amount millimes={item.amountMillimes} size="title" />
             </div>
             <CreditTypeBar
+              index={index}
               type={item.creditType}
               ratio={
                 progress === 'share' || item.ratio === undefined
@@ -178,7 +196,7 @@ export function CreditTypeBreakdown({
         viewBox="0 0 100 6"
         preserveAspectRatio="none"
         aria-hidden="true"
-        className="h-avatar-md w-full overflow-hidden rounded-button"
+        className="h-avatar-md w-full origin-left animate-grow-x overflow-hidden rounded-button"
       >
         {items.map((item, index) => {
           return (

@@ -30,7 +30,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
       <main
         id="main-content"
         tabIndex={-1}
-        className="mx-auto flex w-full max-w-auth-card-max-width flex-1 flex-col justify-center px-4 pb-10"
+        className="fp-cascade mx-auto flex w-full max-w-auth-card-max-width flex-1 flex-col justify-center px-4 pb-10"
       >
         {children}
       </main>

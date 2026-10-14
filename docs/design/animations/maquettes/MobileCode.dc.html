@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Bénéficiaire · Mon code</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#087A4C}a:hover{color:#0B1D33}
+@keyframes fp-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fp-fade{from{opacity:0}to{opacity:1}}
+@keyframes fp-sheet{from{transform:translateY(100%)}to{transform:none}}
+@keyframes fp-pop{0%{opacity:0;transform:scale(.4)}100%{opacity:1;transform:scale(1)}}
+@keyframes fp-dot{0%{transform:scale(.5)}100%{transform:scale(1)}}
+@keyframes fp-draw{to{stroke-dashoffset:0}}
+@keyframes fp-spin{to{transform:rotate(360deg)}}
+.fp-rise{animation:fp-rise 320ms cubic-bezier(.2,0,0,1) both}
+.fp-d1{animation-delay:80ms}.fp-d2{animation-delay:160ms}
+.fp-fade{animation:fp-fade 320ms cubic-bezier(.2,0,0,1) both}
+.fp-sheet{animation:fp-sheet 320ms cubic-bezier(.2,0,0,1) both}
+.fp-pop{animation:fp-pop 420ms cubic-bezier(.34,1.56,.64,1) both}
+.fp-dot{animation:fp-dot 200ms cubic-bezier(.34,1.56,.64,1)}
+.fp-draw{stroke-dasharray:40;stroke-dashoffset:40;animation:fp-draw 360ms cubic-bezier(.2,0,0,1) 260ms forwards}
+.fp-spin{animation:fp-spin .7s linear infinite}
+.fp-key{transition:background-color 120ms,transform 120ms}
+.fp-key:active{background:#E9EDF2;transform:scale(.96)}
+@media (prefers-reduced-motion:reduce){.fp-rise,.fp-sheet,.fp-pop,.fp-dot{animation:none}.fp-draw{animation:none;stroke-dashoffset:0}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #F4F6F9; font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: #0F1B2A; font-size: 14px">
+  <sc-if value="{{notDone}}" hint-placeholder-val="{{ true }}">
+    <div style="padding: 18px; display: flex; flex-direction: column; gap: 16px; align-items: stretch">
+      <div style="display: flex; align-items: center; gap: 10px"><a href="MobileAccueil.dc.html" aria-label="Retour" style="width: 44px; height: 44px; border-radius: 12px; background: #FFFFFF; border: 1px solid #E1E6ED; display: grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F1B2A" stroke-width="2.2" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></a><h1 style="margin: 0; font-size: 20px">Mon code de paiement</h1></div>
+
+      <section class="fp-rise" style="background: #FFFFFF; border: 1px solid #E1E6ED; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; align-items: center; gap: 16px">
+        <div style="position: relative; display: grid; place-items: center">
+          <div style="display: grid; grid-template-columns: repeat(21, 10px); gap: 0; opacity: {{qrOpacity}}; transition: opacity 320ms" role="img" aria-label="QR code de paiement">
+            <sc-for list="{{qr}}" as="c" hint-placeholder-count="441"><span style="width: 10px; height: 10px; background: {{c.color}}"></span></sc-for>
+          </div>
+          <sc-if value="{{expired}}" hint-placeholder-val="{{ false }}">
+            <div class="fp-fade" style="position: absolute; inset: 0; display: grid; place-items: center; background: rgba(255,255,255,.85)"><button onClick="{{regen}}" style="height: 48px; padding: 0 18px; border: 0; border-radius: 12px; background: #0B1D33; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Générer un nouveau code</button></div>
+          </sc-if>
+        </div>
+        <div style="font-size: 26px; font-weight: 700; letter-spacing: .08em; font-variant-numeric: tabular-nums">{{code}}</div>
+        <div style="display: flex; align-items: center; gap: 12px">
+          <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="22" fill="none" stroke="#E1E6ED" stroke-width="5"></circle><circle cx="26" cy="26" r="22" fill="none" stroke="{{ringColor}}" stroke-width="5" stroke-linecap="round" stroke-dasharray="138.2" stroke-dashoffset="{{ringOffset}}" transform="rotate(-90 26 26)" style="transition: stroke-dashoffset 1s linear, stroke 320ms"></circle></svg>
+          <div><div style="font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; color: {{ringText}}">{{secsLabel}}</div><div style="font-size: 12.5px; color: #5B6878">Le code change toutes les 60 s</div></div>
+        </div>
+      </section>
+
+      <p class="fp-rise fp-d1" style="margin: 0; text-align: center; color: #5B6878">Présentez ce code au commerçant. Vous confirmerez le paiement avec votre code PIN.</p>
+      <button class="fp-rise fp-d2" onClick="{{simulate}}" style="height: 48px; border: 1px dashed #B8C3D0; border-radius: 12px; background: transparent; font: inherit; font-weight: 600; color: #5B6878; cursor: pointer">Simuler une demande du commerçant</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{sheet}}" hint-placeholder-val="{{ false }}">
+    <div class="fp-fade" style="position: absolute; inset: 0; background: rgba(11,29,51,.45)"></div>
+    <div class="fp-sheet" role="dialog" aria-modal="true" aria-labelledby="pin-t" style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-radius: 22px 22px 0 0; padding: 12px 18px 22px; display: flex; flex-direction: column; gap: 14px; align-items: stretch">
+      <span style="width: 40px; height: 5px; border-radius: 3px; background: #D5DCE4; align-self: center"></span>
+      <div style="text-align: center"><div style="font-size: 13px; color: #5B6878">Restaurant Le Jasmin demande</div><div id="pin-t" style="font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums">42,500 TND</div><span style="display: inline-flex; align-items: center; gap: 6px; background: #E5F5EE; color: #0B6E47; border-radius: 999px; padding: 3px 10px; font-size: 12.5px; font-weight: 600"><span style="width: 8px; height: 8px; border-radius: 2px; background: #14A06A"></span>Crédit Restauration</span></div>
+      <div style="text-align: center; font-weight: 600">Entrez votre code PIN</div>
+      <div style="display: flex; justify-content: center; gap: 14px" aria-live="polite">
+        <sc-for list="{{dots}}" as="d" hint-placeholder-count="4"><span class="{{d.cls}}" style="width: 16px; height: 16px; border-radius: 50%; box-sizing: border-box; border: 2px solid #0B1D33; background: {{d.bg}}"></span></sc-for>
+      </div>
+      <sc-if value="{{checking}}" hint-placeholder-val="{{ false }}"><div style="display: flex; justify-content: center; align-items: center; gap: 8px; color: #5B6878"><span class="fp-spin" style="width: 16px; height: 16px; border: 2px solid #D5DCE4; border-top-color: #0B1D33; border-radius: 50%; display: inline-block"></span>Paiement en cours…</div></sc-if>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+        <sc-for list="{{keys}}" as="k" hint-placeholder-count="12"><button class="fp-key" onClick="{{k.press}}" aria-label="{{k.aria}}" style="height: 56px; border: 0; border-radius: 12px; background: {{k.bg}}; font: inherit; font-size: 22px; font-weight: 600; color: #0F1B2A; cursor: pointer">{{k.label}}</button></sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{done}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; background: #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center" aria-live="polite">
+      <div class="fp-pop" style="width: 120px; height: 120px; border-radius: 50%; background: #E2F6EC; display: grid; place-items: center"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#0B7F4F" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="fp-draw" d="M5 12.5l4.5 4.5L19 7.5"></path></svg></div>
+      <div class="fp-rise fp-d1" style="font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums">42,500 TND</div>
+      <div class="fp-rise fp-d1" style="font-size: 17px; font-weight: 600; color: #0B7F4F">Payé à Restaurant Le Jasmin</div>
+      <div class="fp-rise fp-d2" style="color: #5B6878">Nouveau solde Restauration : 206,000 TND</div>
+      <a class="fp-rise fp-d2" href="MobileAccueil.dc.html" style="margin-top: 10px; height: 52px; padding: 0 28px; border-radius: 14px; background: #0B1D33; color: #FFFFFF; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center">Terminé</a>
+      <button onClick="{{restart}}" style="border: 0; background: none; font: inherit; color: #5B6878; text-decoration: underline; cursor: pointer; min-height: 44px">Rejouer la démo</button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { secs: 60, seed: 1, sheet: false, pin: 0, checking: false, done: false }; }
+  componentDidMount() { this.iv = setInterval(() => { if (this.state.secs > 0 && !this.state.sheet && !this.state.done) this.setState({ secs: this.state.secs - 1 }); }, 1000); }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.t); }
+  cells(seed) {
+    const n = 21, out = [];
+    const fin = (r, c, R, C) => { const y = r - R, x = c - C; if (y < 0 || x < 0 || y > 6 || x > 6) return null; return (y === 0 || y === 6 || x === 0 || x === 6 || (y > 1 && y < 5 && x > 1 && x < 5)); };
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      let f = fin(r, c, 0, 0); if (f === null) f = fin(r, c, 0, 14); if (f === null) f = fin(r, c, 14, 0);
+      const on = f === null ? (((r + seed) * 7 + c * 11 + r * c * seed) % 5 < 2) : f;
+      out.push({ color: on ? '#0B1D33' : '#FFFFFF' });
+    }
+    return out;
+  }
+  press(d) {
+    if (this.state.checking) return;
+    const pin = Math.min(4, this.state.pin + 1);
+    this.setState({ pin });
+    if (pin === 4) { this.setState({ checking: true }); this.t = setTimeout(() => this.setState({ checking: false, sheet: false, done: true }), 1000); }
+  }
+  renderVals() {
+    const s = this.state;
+    if (this.qrSeed !== s.seed) { this.qr = this.cells(s.seed); this.qrSeed = s.seed; }
+    const codes = ['4829 1573', '7302 6648', '1956 0427'];
+    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map((l) => ({
+      label: l, aria: l === '⌫' ? 'Effacer' : (l || 'Vide'), bg: l ? '#F4F6F9' : 'transparent',
+      press: () => { if (!l) return; if (l === '⌫') this.setState({ pin: Math.max(0, this.state.pin - 1) }); else this.press(l); }
+    }));
+    return {
+      qr: this.qr, code: codes[s.seed % 3],
+      expired: s.secs === 0, qrOpacity: s.secs === 0 ? '0.15' : '1',
+      secsLabel: s.secs === 0 ? 'Expiré' : s.secs + ' s',
+      ringOffset: String(138.2 * (1 - s.secs / 60)),
+      ringColor: s.secs <= 10 ? '#D9761A' : '#0E9F63', ringText: s.secs <= 10 ? '#A3540A' : '#0F1B2A',
+      regen: () => this.setState({ secs: 60, seed: s.seed + 1 }),
+      simulate: () => this.setState({ sheet: true, pin: 0 }),
+      sheet: s.sheet, checking: s.checking, done: s.done, notDone: !s.done,
+      dots: [0, 1, 2, 3].map((i) => ({ bg: i < s.pin ? '#0B1D33' : 'transparent', cls: i < s.pin ? 'fp-dot' : '' })),
+      keys,
+      restart: () => this.setState({ done: false, sheet: false, pin: 0, secs: 60, seed: s.seed + 1 })
+    };
+  }
+}
+</script>
+</body>
+</html>

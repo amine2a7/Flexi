@@ -41,7 +41,12 @@ export interface Tokens {
   opacity: Record<string, number>;
   breakpoint: Record<string, number>;
   shadow: Record<string, string>;
-  motion: Record<string, number>;
+  motion: {
+    duration: Record<string, number>;
+    easing: Record<string, string>;
+    distance: Record<string, number>;
+    scale: Record<string, number>;
+  };
   status: Record<string, StatusToken>;
   'credit-type': Record<string, CreditTypeToken>;
 }

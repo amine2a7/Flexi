@@ -56,7 +56,7 @@ describe('tailwind preset', () => {
     }
     for (const [k, v] of Object.entries(tokens.breakpoint))
       expect(theme.screens?.[k]).toBe(`${v}px`);
-    for (const [k, v] of Object.entries(tokens.motion)) expect(theme.motion?.[k]).toBe(v);
+    expect(theme.motion).toEqual(tokens.motion);
     for (const [k, v] of Object.entries(tokens.opacity)) expect(theme.opacity?.[k]).toBe(v);
     for (const [k, v] of Object.entries(tokens.shadow)) expect(theme.boxShadow?.[k]).toBe(v);
     for (const [k, v] of Object.entries(tokens.font.weight))
@@ -119,9 +119,13 @@ describe('dart output', () => {
     for (const k of Object.keys(tokens['type-scale'])) {
       expect(dart).toContain(`static const TextStyle ${camel(k)} = TextStyle(`);
     }
-    for (const [k, v] of Object.entries(tokens.motion)) {
+    for (const [k, v] of Object.entries(tokens.motion.duration)) {
       expect(dart).toContain(`static const Duration ${camel(k)} = Duration(milliseconds: ${v});`);
     }
+    expect(dart).toContain('static const Cubic easeOut = Cubic(0.2, 0, 0, 1);');
+    expect(dart).toContain('static const Cubic easeSpring = Cubic(0.34, 1.56, 0.64, 1);');
+    expect(dart).toContain('static const double scalePress = 0.97;');
+    expect(dart).toContain('static const double distanceRise = 8;');
     for (const [k, v] of Object.entries(tokens.opacity)) {
       expect(dart).toContain(`static const double ${camel(k)} = ${v};`);
     }

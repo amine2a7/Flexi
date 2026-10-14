@@ -17,6 +17,8 @@ interface ModalProps {
   readonly size?: 'md' | 'lg';
   /** A modal that must be answered (e.g. an irreversible confirmation) hides the close button. */
   readonly dismissible?: boolean;
+  /** `sheet`: on a phone, a panel that slides up from the bottom (beneficiary, animation 15). */
+  readonly placement?: 'center' | 'sheet';
 }
 
 /** Accessible dialog (focus trapped, Escape closes, title announced) built on Radix. */
@@ -29,47 +31,58 @@ export function Modal({
   footer,
   size = 'md',
   dismissible = true,
+  placement = 'center',
 }: ModalProps) {
   const t = useTranslations('ui.modal');
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-overlay backdrop-blur-sm" />
-        <Dialog.Content
+        {/* Animation 6: the veil fades, the dialog scales from .96 (200 ms), closes in 120 ms. */}
+        <Dialog.Overlay
           className={cn(
-            'fixed start-1/2 top-1/2 z-50 flex max-h-screen w-full -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-y-auto rounded-card-desktop bg-surface p-6 shadow-raised rtl:translate-x-1/2',
-            size === 'lg' ? 'max-w-modal-max-width-lg' : 'max-w-modal-max-width',
+            'fixed inset-0 z-40 flex justify-center overflow-y-auto bg-overlay backdrop-blur-sm state-open:animate-fade state-closed:animate-fade-out',
+            placement === 'sheet' ? 'items-end sm:items-center sm:p-4' : 'items-center sm:p-4',
           )}
-          onEscapeKeyDown={(event) => {
-            if (!dismissible) event.preventDefault();
-          }}
-          onPointerDownOutside={(event) => {
-            if (!dismissible) event.preventDefault();
-          }}
         >
-          <div className="flex items-start justify-between gap-4">
-            <Dialog.Title className="text-title text-text">{title}</Dialog.Title>
-            {dismissible ? (
-              <Dialog.Close
-                aria-label={t('close')}
-                className="flex size-touch-target-min items-center justify-center rounded-button text-text-muted hover:bg-bg"
-              >
-                <X aria-hidden="true" className="size-icon-md" />
-              </Dialog.Close>
+          <Dialog.Content
+            className={cn(
+              'z-50 flex max-h-screen w-full flex-col gap-4 overflow-y-auto bg-surface p-6 shadow-raised',
+              placement === 'sheet'
+                ? 'rounded-t-card-mobile-lg state-open:animate-sheet-in state-closed:animate-sheet-out sm:rounded-card-desktop sm:state-open:animate-zoom-in sm:state-closed:animate-zoom-out'
+                : 'rounded-card-desktop state-open:animate-zoom-in state-closed:animate-zoom-out',
+              size === 'lg' ? 'max-w-modal-max-width-lg' : 'max-w-modal-max-width',
+            )}
+            onEscapeKeyDown={(event) => {
+              if (!dismissible) event.preventDefault();
+            }}
+            onPointerDownOutside={(event) => {
+              if (!dismissible) event.preventDefault();
+            }}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <Dialog.Title className="text-title text-text">{title}</Dialog.Title>
+              {dismissible ? (
+                <Dialog.Close
+                  aria-label={t('close')}
+                  className="flex size-touch-target-min items-center justify-center rounded-button text-text-muted hover:bg-bg"
+                >
+                  <X aria-hidden="true" className="size-icon-md" />
+                </Dialog.Close>
+              ) : null}
+            </div>
+            {description !== undefined ? (
+              <Dialog.Description className="text-body text-text-muted">
+                {description}
+              </Dialog.Description>
+            ) : (
+              <Dialog.Description className="sr-only">{title}</Dialog.Description>
+            )}
+            {children}
+            {footer !== undefined ? (
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">{footer}</div>
             ) : null}
-          </div>
-          {description !== undefined ? (
-            <Dialog.Description className="text-body text-text-muted">
-              {description}
-            </Dialog.Description>
-          ) : (
-            <Dialog.Description className="sr-only">{title}</Dialog.Description>
-          )}
-          {children}
-          {footer !== undefined ? (
-            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">{footer}</div>
-          ) : null}
-        </Dialog.Content>
+          </Dialog.Content>
+        </Dialog.Overlay>
       </Dialog.Portal>
     </Dialog.Root>
   );
@@ -112,7 +125,13 @@ export function ConfirmDialog({
       dismissible={!loading}
       footer={
         <>
-          <Button variant="secondary" onClick={() => { onOpenChange(false); }} disabled={loading}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              onOpenChange(false);
+            }}
+            disabled={loading}
+          >
             {t('cancel')}
           </Button>
           <Button variant={confirmVariant} onClick={onConfirm} loading={loading}>

@@ -1,7 +1,14 @@
 'use client';
 
 import { AlertTriangle, CircleCheck, Info, OctagonAlert } from 'lucide-react';
-import { createContext, useContext, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { cn } from '@/lib/cn';
 
 /** Default eyebrow of the page headers of a space (« Commerçant partenaire »), set by the shell. */
@@ -100,28 +107,52 @@ interface TabsProps<Key extends string> {
 
 /** Simple tabs (buttons with aria-pressed): content is rendered by the caller. */
 export function Tabs<Key extends string>({ label, tabs, value, onChange }: TabsProps<Key>) {
+  const group = useRef<HTMLDivElement>(null);
+  const [bar, setBar] = useState<{ offset: number; width: number } | undefined>(undefined);
+  // Animation 15: the indicator slides to the selected tab (transform only; its width is set at
+  // once). Measured from the start of the line, so that it also works right-to-left.
+  useLayoutEffect(() => {
+    const container = group.current;
+    const active = container?.querySelector<HTMLElement>('[aria-pressed="true"]');
+    if (container === null || active === null || active === undefined) return;
+    const rtl = getComputedStyle(container).direction === 'rtl';
+    const offset = rtl
+      ? container.clientWidth - active.offsetLeft - active.offsetWidth
+      : active.offsetLeft;
+    // Layout measurement of the DOM (external system), then one update.
+
+    setBar({ offset: rtl ? -offset : offset, width: active.offsetWidth });
+  }, [value, tabs.length]);
   return (
     <div
+      ref={group}
       role="group"
       aria-label={label}
-      className="mb-4 flex flex-wrap gap-2 border-b border-border"
+      className="relative mb-4 flex flex-wrap gap-2 border-b border-border"
     >
       {tabs.map((tab) => (
         <button
           key={tab.key}
           type="button"
           aria-pressed={tab.key === value}
-          onClick={() => { onChange(tab.key); }}
+          onClick={() => {
+            onChange(tab.key);
+          }}
           className={cn(
-            'min-h-touch-target-min border-b-2 px-4 text-label',
-            tab.key === value
-              ? 'border-navy text-navy'
-              : 'border-transparent text-text-muted hover:text-text',
+            'min-h-touch-target-min border-b-2 border-transparent px-4 text-label transition-colors duration-fast',
+            tab.key === value ? 'text-navy' : 'text-text-muted hover:text-text',
           )}
         >
           {tab.label}
         </button>
       ))}
+      {bar === undefined ? null : (
+        <span
+          aria-hidden="true"
+          className="absolute bottom-0 start-0 h-0 border-b-2 border-navy transition-transform duration-slow ease-out"
+          style={{ width: bar.width, transform: `translateX(${String(bar.offset)}px)` }}
+        />
+      )}
     </div>
   );
 }

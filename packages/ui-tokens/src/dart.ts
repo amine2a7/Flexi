@@ -13,6 +13,18 @@ export function dartColor(value: string): string {
   throw new Error(`unsupported colour value: ${value}`);
 }
 
+const CUBIC = /^cubic-bezier\(\s*([\d.-]+)\s*,\s*([\d.-]+)\s*,\s*([\d.-]+)\s*,\s*([\d.-]+)\s*\)$/;
+
+/** `cubic-bezier(.2,0,0,1)` -> `Cubic(0.2, 0, 0, 1)` (Flutter animation curve). */
+export function dartCubic(value: string): string {
+  const match = CUBIC.exec(value);
+  if (match === null) throw new Error(`unsupported easing value: ${value}`);
+  return `Cubic(${match
+    .slice(1)
+    .map((part) => String(Number(part)))
+    .join(', ')})`;
+}
+
 /** Split on commas that are not inside parentheses. */
 function splitTopLevel(value: string): string[] {
   const parts: string[] = [];
@@ -76,7 +88,10 @@ export function assertSafeTokens(t: Tokens): void {
     opacity: t.opacity,
     breakpoint: t.breakpoint,
     shadow: t.shadow,
-    motion: t.motion,
+    'motion.duration': t.motion.duration,
+    'motion.easing': t.motion.easing,
+    'motion.distance': t.motion.distance,
+    'motion.scale': t.motion.scale,
     'font.weight': t.font.weight,
   };
   for (const [group, entries] of Object.entries(groups)) {
@@ -96,7 +111,9 @@ export function assertSafeTokens(t: Tokens): void {
     check(ICON.test(v.icon), `credit-type.${k}.icon`);
     check(I18N_KEY.test(v.labelKey), `credit-type.${k}.labelKey`);
     check(
-      Object.hasOwn(t.color, v.bg) && Object.hasOwn(t.color, v.fg) && Object.hasOwn(t.color, v.solid),
+      Object.hasOwn(t.color, v.bg) &&
+        Object.hasOwn(t.color, v.fg) &&
+        Object.hasOwn(t.color, v.solid),
       `credit-type.${k} colour reference`,
     );
   }
@@ -223,8 +240,17 @@ export function renderDart(t: Tokens): string {
 
   w('/// Motion tokens (`motion.*`).');
   w('abstract final class FlexiMotion {');
-  for (const [k, v] of Object.entries(t.motion)) {
+  for (const [k, v] of Object.entries(t.motion.duration)) {
     w(`  static const Duration ${camel(k)} = Duration(milliseconds: ${num(v)});`);
+  }
+  for (const [k, v] of Object.entries(t.motion.easing)) {
+    w(`  static const Cubic ${camel(`ease-${k}`)} = ${dartCubic(v)};`);
+  }
+  for (const [k, v] of Object.entries(t.motion.distance)) {
+    w(`  static const double ${camel(`distance-${k}`)} = ${num(v)};`);
+  }
+  for (const [k, v] of Object.entries(t.motion.scale)) {
+    w(`  static const double ${camel(`scale-${k}`)} = ${num(v)};`);
   }
   w('}');
   w();
@@ -290,7 +316,9 @@ export function renderDart(t: Tokens): string {
   w('}');
   w();
 
-  w('/// Credit type style (`credit-type.*`): icon is a Lucide name, label an i18n key, solid for charts.');
+  w(
+    '/// Credit type style (`credit-type.*`): icon is a Lucide name, label an i18n key, solid for charts.',
+  );
   w('class FlexiCreditTypeStyle {');
   w(
     '  const FlexiCreditTypeStyle({required this.labelKey, required this.icon, required this.bg, required this.fg, required this.solid});',

@@ -148,6 +148,7 @@ export default function AdminPayoutsPage() {
           onApply={setFilters}
         />
         <DataTable
+          highlightNew
           caption={t('title')}
           columns={columns}
           rows={list.rows}

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Bénéficiaire · Accueil</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#087A4C}a:hover{color:#0B1D33}
+@keyframes fp-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fp-fade{from{opacity:0}to{opacity:1}}
+@keyframes fp-sheet{from{transform:translateY(100%)}to{transform:none}}
+.fp-rise{animation:fp-rise 320ms cubic-bezier(.2,0,0,1) both}
+.fp-d1{animation-delay:40ms}.fp-d2{animation-delay:80ms}.fp-d3{animation-delay:120ms}.fp-d4{animation-delay:160ms}
+.fp-fade{animation:fp-fade 320ms cubic-bezier(.2,0,0,1) both}
+.fp-sheet{animation:fp-sheet 320ms cubic-bezier(.2,0,0,1) both}
+.fp-btn{transition:transform 120ms cubic-bezier(.2,0,0,1)}
+.fp-btn:active{transform:scale(.97)}
+@media (prefers-reduced-motion:reduce){.fp-rise,.fp-sheet{animation:none}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #F4F6F9; font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: #0F1B2A; font-size: 14px">
+  <div style="padding: 20px 18px 90px; display: flex; flex-direction: column; gap: 14px">
+    <div class="fp-rise" style="display: flex; justify-content: space-between; align-items: center">
+      <div><div style="font-size: 13px; color: #5B6878">Bonjour,</div><div style="font-size: 20px; font-weight: 700">Amine Ben Salah</div></div>
+      <span style="width: 40px; height: 40px; border-radius: 50%; background: #0B1D33; color: #FFFFFF; display: grid; place-items: center; font-weight: 600">AB</span>
+    </div>
+
+    <section class="fp-rise fp-d1" style="background: #0B1D33; color: #FFFFFF; border-radius: 16px; padding: 18px">
+      <div style="font-size: 13px; color: #B9C6D6">Total de vos crédits</div>
+      <div style="font-size: 32px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums">{{total}} <span style="font-size: 16px; font-weight: 600">TND</span></div>
+      <div style="font-size: 12px; color: #B9C6D6; margin-top: 2px">Offerts par Carthage Industries</div>
+    </section>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <sc-for list="{{types}}" as="t" hint-placeholder-count="4">
+        <div class="{{t.cls}}" style="background: #FFFFFF; border: 1px solid #E1E6ED; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600"><span style="width: 10px; height: 10px; border-radius: 3px; background: {{t.color}}"></span>{{t.name}}</div>
+          <div style="font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums">{{t.amount}}</div>
+          <div style="height: 6px; border-radius: 3px; background: #E9EDF2; overflow: hidden"><div style="height: 100%; background: {{t.color}}; border-radius: 3px; width: {{t.width}}; transition: width 700ms cubic-bezier(.2,0,0,1) {{t.delay}}"></div></div>
+          <div style="font-size: 11px; color: #5B6878">{{t.cap}}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <button class="fp-btn fp-rise fp-d3" onClick="{{openSheet}}" style="height: 56px; border: 0; border-radius: 14px; background: #12D68A; color: #0B1D33; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B1D33" stroke-width="2.2" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"></path></svg>Payer</button>
+
+    <section class="fp-rise fp-d4" style="background: #FFFFFF; border: 1px solid #E1E6ED; border-radius: 14px; padding: 14px">
+      <div style="font-weight: 600; margin-bottom: 4px">Dernières opérations</div>
+      <div style="display: flex; justify-content: space-between; padding: 9px 0; border-top: 1px solid #EEF1F5"><span><b style="display: block; font-size: 13.5px">Restaurant Le Jasmin</b><span style="font-size: 12px; color: #5B6878">Restauration · aujourd'hui 12:41</span></span><b style="font-variant-numeric: tabular-nums">−42,500</b></div>
+      <div style="display: flex; justify-content: space-between; padding: 9px 0; border-top: 1px solid #EEF1F5"><span><b style="display: block; font-size: 13.5px">Station Afriquia Centre</b><span style="font-size: 12px; color: #5B6878">Carburant · hier 18:05</span></span><b style="font-variant-numeric: tabular-nums">−85,000</b></div>
+    </section>
+  </div>
+
+  <sc-if value="{{sheet}}" hint-placeholder-val="{{ false }}">
+    <div class="fp-fade" onClick="{{closeSheet}}" style="position: absolute; inset: 0; background: rgba(11,29,51,.4)"></div>
+    <div class="fp-sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t" style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-radius: 20px 20px 0 0; padding: 12px 18px 28px; display: flex; flex-direction: column; gap: 12px">
+      <span style="width: 40px; height: 5px; border-radius: 3px; background: #D5DCE4; align-self: center"></span>
+      <h2 id="sh-t" style="margin: 4px 0 0; font-size: 18px">Comment voulez-vous payer ?</h2>
+      <a href="MobileCode.dc.html" style="display: flex; gap: 12px; align-items: center; border: 1px solid #E1E6ED; border-radius: 14px; padding: 14px; text-decoration: none; color: #0F1B2A; min-height: 48px"><span style="width: 40px; height: 40px; border-radius: 10px; background: #E3F8EF; display: grid; place-items: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#087A4C" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span><span><b style="display: block">Montrer mon code</b><span style="font-size: 12.5px; color: #5B6878">Le commerçant scanne votre QR</span></span></a>
+      <a href="#" style="display: flex; gap: 12px; align-items: center; border: 1px solid #E1E6ED; border-radius: 14px; padding: 14px; text-decoration: none; color: #0F1B2A; min-height: 48px"><span style="width: 40px; height: 40px; border-radius: 10px; background: #E6EEFB; display: grid; place-items: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F4FA8" stroke-width="2" aria-hidden="true"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3M7 12h10"></path></svg></span><span><b style="display: block">Scanner un commerçant</b><span style="font-size: 12.5px; color: #5B6878">Ou tapez son code</span></span></a>
+    </div>
+  </sc-if>
+
+  <nav aria-label="Navigation" style="position: absolute; left: 0; right: 0; bottom: 0; height: 64px; background: #FFFFFF; border-top: 1px solid #E1E6ED; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))">
+    <span style="position: absolute; top: 0; left: 0; width: 33.333%; height: 3px; background: #12D68A; border-radius: 0 0 3px 3px; transform: translateX({{indX}}); transition: transform 320ms cubic-bezier(.2,0,0,1)"></span>
+    <sc-for list="{{tabs}}" as="tb" hint-placeholder-count="3">
+      <button onClick="{{tb.pick}}" aria-current="{{tb.current}}" style="border: 0; background: none; font: inherit; font-size: 12px; font-weight: 600; color: {{tb.color}}; cursor: pointer; transition: color 200ms">{{tb.label}}</button>
+    </sc-for>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { v: 0, filled: false, sheet: false, tab: 0 }; }
+  componentDidMount() {
+    const target = 508.5, t0 = performance.now(), d = 600;
+    const step = (t) => { const k = Math.min(1, (t - t0) / d); this.setState({ v: target * (1 - Math.pow(1 - k, 3)) }); if (k < 1) this.raf = requestAnimationFrame(step); };
+    this.raf = requestAnimationFrame(step);
+    this.t = setTimeout(() => this.setState({ filled: true }), 150);
+  }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); clearTimeout(this.t); }
+  renderVals() {
+    const s = this.state;
+    const f = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+    const types = [
+      { name: 'Restauration', color: '#14A06A', amount: '248,500', pct: 72, cap: "Aujourd'hui : 18 / 25 TND" },
+      { name: 'Habillement', color: '#2F6FE0', amount: '120,000', pct: 40, cap: 'Valable jusqu’au 31/12' },
+      { name: 'Carburant', color: '#D9761A', amount: '90,000', pct: 55, cap: 'Valable jusqu’au 31/12' },
+      { name: 'Cadeaux', color: '#8A4FD6', amount: '50,000', pct: 100, cap: 'Offert pour l’Aïd' }
+    ].map((t, i) => ({ ...t, width: s.filled ? t.pct + '%' : '0%', delay: (i * 80) + 'ms', cls: 'fp-rise fp-d' + (i % 4 + 1) }));
+    const labels = ['Accueil', 'Historique', 'Profil'];
+    return {
+      total: f.format(s.v), types, sheet: s.sheet,
+      openSheet: () => this.setState({ sheet: true }),
+      closeSheet: () => this.setState({ sheet: false }),
+      indX: (s.tab * 100) + '%',
+      tabs: labels.map((l, i) => ({ label: l, current: i === s.tab ? 'page' : 'false', color: i === s.tab ? '#0B1D33' : '#5B6878', pick: () => this.setState({ tab: i }) }))
+    };
+  }
+}
+</script>
+</body>
+</html>

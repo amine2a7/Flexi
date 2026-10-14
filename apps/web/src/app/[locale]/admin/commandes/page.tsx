@@ -243,6 +243,7 @@ export default function AdminOrdersPage() {
           </div>
         </form>
         <DataTable
+          highlightNew
           caption={t('admin.title')}
           columns={columns}
           rows={list.rows}

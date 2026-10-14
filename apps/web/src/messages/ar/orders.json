@@ -51,6 +51,7 @@
     "rib": "رقم الحساب البنكي (RIB)",
     "iban": "IBAN",
     "copy": "نسخ",
+    "copiedShort": "تم النسخ",
     "copyLabel": "نسخ: {field}",
     "copied": "تم نسخ {field}.",
     "copyFailed": "تعذّر النسخ: حدّد النص وانسخه."

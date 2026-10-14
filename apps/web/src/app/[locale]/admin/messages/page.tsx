@@ -172,6 +172,7 @@ export default function ContactMessagesPage() {
           </div>
         </form>
         <DataTable
+          highlightNew
           caption={t('title')}
           columns={columns}
           rows={list.rows}

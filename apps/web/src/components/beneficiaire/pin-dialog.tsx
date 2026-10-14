@@ -56,6 +56,7 @@ export function PinDialog({
 
   return (
     <Modal
+      placement="sheet"
       open
       onOpenChange={(open) => {
         if (!open && !saving) onClose();

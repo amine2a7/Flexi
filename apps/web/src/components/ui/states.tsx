@@ -12,7 +12,7 @@ export function Skeleton({ className }: { className?: string }) {
   return (
     <span
       aria-hidden="true"
-      className={cn('block animate-pulse rounded-input bg-border', className)}
+      className={cn('fp-skeleton block rounded-input bg-border', className)}
     />
   );
 }
@@ -60,7 +60,9 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
     <div role="alert" className="flex flex-col items-center gap-3 px-4 py-10 text-center">
       <AlertTriangle aria-hidden="true" className="size-icon-lg text-danger" />
       <p className="text-title-sm text-text">{t('common.state.error.title')}</p>
-      <p className="max-w-form-max-width text-body text-text-muted">{t(messageKey(errorMessageKey(error)))}</p>
+      <p className="max-w-form-max-width text-body text-text-muted">
+        {t(messageKey(errorMessageKey(error)))}
+      </p>
       {onRetry !== undefined ? (
         <Button variant="secondary" onClick={onRetry}>
           {t('common.button.retry')}

@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Entreprise · Tableau de bord</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#087A4C}a:hover{color:#0B1D33}
+@keyframes fp-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fp-toast{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+@keyframes fp-shrink{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+@keyframes fp-pop{0%{opacity:0;transform:scale(.6)}100%{opacity:1;transform:scale(1)}}
+.fp-rise{animation:fp-rise 320ms cubic-bezier(.2,0,0,1) both}
+.fp-d1{animation-delay:40ms}.fp-d2{animation-delay:80ms}.fp-d3{animation-delay:120ms}.fp-d4{animation-delay:160ms}.fp-d5{animation-delay:220ms}
+.fp-toast{animation:fp-toast 320ms cubic-bezier(.2,0,0,1) both}
+.fp-shrink{transform-origin:left;animation:fp-shrink 4s linear forwards}
+.fp-pop{animation:fp-pop 200ms cubic-bezier(.34,1.56,.64,1) both}
+.fp-btn{transition:transform 120ms cubic-bezier(.2,0,0,1)}
+.fp-btn:active{transform:scale(.97)}
+@media (prefers-reduced-motion:reduce){.fp-rise,.fp-toast,.fp-pop{animation:none}}
+</style>
+</helmet>
+<div style="font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: #0F1B2A; background: #F4F6F9; display: flex; flex-wrap: wrap; align-items: stretch; min-height: 800px; font-size: 14px; position: relative">
+  <nav aria-label="Menu Entreprise" style="flex: 1 1 220px; max-width: 100%; background: #0B1D33; color: #C6D2E0; padding: 20px 14px; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box">
+    <div style="display: flex; align-items: center; gap: 10px; color: #FFFFFF; font-weight: 600; padding: 0 8px 22px">
+      <span style="width: 32px; height: 32px; border-radius: 9px; background: #12D68A; display: grid; place-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="#0B1D33" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg></span>
+      <span>FlexiPay<span style="display: block; font-size: 10px; letter-spacing: .12em; color: #8FA3BA; font-weight: 500">ESPACE ENTREPRISE</span></span>
+    </div>
+    <a href="#" aria-current="page" style="color: #FFFFFF; text-decoration: none; padding: 10px; border-radius: 8px; background: #1A2D45; font-weight: 600">Vue d'ensemble</a>
+    <a href="#" style="color: #C6D2E0; text-decoration: none; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center">Commandes de crédits<span style="min-width: 20px; height: 20px; border-radius: 10px; background: #12D68A; color: #0B1D33; font-size: 11px; font-weight: 700; display: grid; place-items: center">1</span></a>
+    <a href="#" style="color: #C6D2E0; text-decoration: none; padding: 10px; border-radius: 8px">Mes employés</a>
+    <a href="#" style="color: #C6D2E0; text-decoration: none; padding: 10px; border-radius: 8px">Attribuer du crédit</a>
+    <a href="#" style="color: #C6D2E0; text-decoration: none; padding: 10px; border-radius: 8px">Factures</a>
+    <a href="#" style="color: #C6D2E0; text-decoration: none; padding: 10px; border-radius: 8px">Suivi de consommation</a>
+  </nav>
+  <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+    <header style="background: #FFFFFF; border-bottom: 1px solid #E1E6ED; padding: 14px 28px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center">
+      <div><div style="font-weight: 600">Bonjour, Carthage Industries</div><div style="font-size: 12px; color: #5B6878">Espace sécurisé</div></div>
+      <div style="display: flex; align-items: center; gap: 10px"><span style="background: #E3F8EF; color: #087A4C; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 3px 10px">Entreprise</span><span style="font-weight: 600">Carthage Industries</span></div>
+    </header>
+    <main style="padding: 28px; display: flex; flex-direction: column; gap: 20px; max-width: 1060px; width: 100%; box-sizing: border-box">
+      <div class="fp-rise">
+        <div style="font-size: 11px; letter-spacing: .12em; font-weight: 600; color: #087A4C">SOCIÉTÉ</div>
+        <h1 style="margin: 6px 0 4px; font-size: 26px">Votre portefeuille de crédits</h1>
+        <p style="margin: 0; color: #5B6878">Commandez, distribuez et suivez les crédits de vos collaborateurs.</p>
+      </div>
+
+      <section class="fp-rise fp-d1" style="background: #FFF6E5; border: 1px solid #F3DDB0; border-radius: 12px; padding: 16px 18px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between">
+        <div style="min-width: 0">
+          <div style="font-weight: 600">À faire : la commande CMD-1042 attend votre virement</div>
+          <div style="font-size: 13px; color: #6B4B10">25 000,000 TND · RIB FlexiPay <span style="font-variant-numeric: tabular-nums">TN59 08 006 0001234567890 12</span></div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap">
+          <button class="fp-btn" onClick="{{copy}}" style="height: 40px; padding: 0 14px; border: 1px solid #E1C98F; background: #FFFFFF; border-radius: 9px; font: inherit; font-weight: 600; cursor: pointer; min-width: 112px" aria-live="polite">
+            <sc-if value="{{copied}}" hint-placeholder-val="{{ false }}"><span class="fp-pop" style="display: inline-block; color: #0B7F4F">✓ Copié</span></sc-if>
+            <sc-if value="{{notCopied}}" hint-placeholder-val="{{ true }}"><span>Copier le RIB</span></sc-if>
+          </button>
+          <a href="#" class="fp-btn" style="height: 40px; padding: 0 16px; border-radius: 9px; background: #0B1D33; color: #FFFFFF; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center">Déclarer le virement</a>
+        </div>
+      </section>
+
+      <section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px">
+        <div class="fp-rise fp-d2" style="background: #FFFFFF; border: 1px solid #E1E6ED; border-radius: 12px; padding: 16px">
+          <div style="font-size: 13px; color: #5B6878">Crédits disponibles</div>
+          <div style="font-size: 26px; font-weight: 700; margin-top: 8px; font-variant-numeric: tabular-nums">{{total}} TND</div>
+          <div style="font-size: 12px; color: #5B6878">4 types de crédit</div>
+        </div>
+        <div class="fp-rise fp-d3" style="background: #FFFFFF; border: 1px solid #E1E6ED; border-radius: 12px; padding: 16px">
+          <div style="font-size: 13px; color: #5B6878">Consommé ce mois</div>
+          <div style="font-size: 26px; font-weight: 700; margin-top: 8px; font-variant-numeric: tabular-nums">74 650,000 TND</div>
+          <div style="font-size: 12px; color: #5B6878">34 % du budget</div>
+        </div>
+        <div class="fp-rise fp-d4" style="background: #FFFFFF; border: 1px solid #E1E6ED; border-radius: 12px; padding: 16px">
+          <div style="font-size: 13px; color: #5B6878">Bénéficiaires actifs</div>
+          <div style="font-size: 26px; font-weight: 700; margin-top: 8px">48</div>
+          <div style="font-size: 12px; color: #5B6878">2 invitations en attente</div>
+        </div>
+      </section>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 14px">
+        <section class="fp-rise fp-d5" style="flex: 1 1 340px; min-width: 0; background: #FFFFFF; border: 1px solid #E1E6ED; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 14px">
+          <h2 style="margin: 0; font-size: 16px">Solde par type de crédit</h2>
+          <sc-for list="{{types}}" as="t" hint-placeholder-count="4">
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <div style="display: flex; justify-content: space-between; gap: 10px"><span style="display: inline-flex; align-items: center; gap: 8px"><span style="width: 10px; height: 10px; border-radius: 3px; background: {{t.color}}"></span>{{t.name}}</span><b style="font-variant-numeric: tabular-nums">{{t.amount}} TND</b></div>
+              <div style="height: 8px; border-radius: 4px; background: #E9EDF2; overflow: hidden"><div style="height: 100%; border-radius: 4px; background: {{t.color}}; width: {{t.width}}; transition: width 700ms cubic-bezier(.2,0,0,1) {{t.delay}}"></div></div>
+            </div>
+          </sc-for>
+        </section>
+        <section class="fp-rise fp-d5" style="flex: 1 1 340px; min-width: 0; background: #FFFFFF; border: 1px solid #E1E6ED; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 4px">
+          <h2 style="margin: 0 0 8px; font-size: 16px">Dernières commandes</h2>
+          <sc-for list="{{orders}}" as="o" hint-placeholder-count="3">
+            <div style="display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid #EEF1F5">
+              <div style="min-width: 0"><div style="font-weight: 600">{{o.ref}}</div><div style="font-size: 12px; color: #5B6878">{{o.types}}</div></div>
+              <div style="text-align: end"><div style="font-weight: 600; font-variant-numeric: tabular-nums">{{o.amount}}</div><span style="font-size: 12px; font-weight: 600; border-radius: 999px; padding: 2px 9px; background: {{o.bg}}; color: {{o.fg}}">{{o.status}}</span></div>
+            </div>
+          </sc-for>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <sc-if value="{{toast}}" hint-placeholder-val="{{ false }}">
+    <div class="fp-toast" role="status" style="position: absolute; top: 72px; right: 24px; background: #FFFFFF; border: 1px solid #E1E6ED; border-radius: 12px; padding: 12px 16px 14px; display: flex; gap: 10px; align-items: center; box-shadow: 0 10px 28px rgba(11,29,51,.14); overflow: hidden; max-width: 340px">
+      <span style="width: 22px; height: 22px; border-radius: 50%; background: #0B7F4F; display: grid; place-items: center; flex: none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.5" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+      <span>FlexiPay a confirmé votre commande CMD-1042.</span>
+      <span class="fp-shrink" style="position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: #0B7F4F"></span>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { v: 0, filled: false, toast: false, copied: false }; }
+  componentDidMount() {
+    const target = 217800, t0 = performance.now(), d = 600;
+    const step = (t) => { const k = Math.min(1, (t - t0) / d); this.setState({ v: target * (1 - Math.pow(1 - k, 3)) }); if (k < 1) this.raf = requestAnimationFrame(step); };
+    this.raf = requestAnimationFrame(step);
+    this.t1 = setTimeout(() => this.setState({ filled: true }), 120);
+    this.t2 = setTimeout(() => this.setState({ toast: true }), 1000);
+    this.t3 = setTimeout(() => this.setState({ toast: false }), 5000);
+  }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); [this.t1, this.t2, this.t3, this.t4].forEach(clearTimeout); }
+  renderVals() {
+    const f = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+    const s = this.state;
+    const types = [
+      { name: 'Restauration', color: '#14A06A', amount: '84 250,000', pct: 72 },
+      { name: 'Habillement', color: '#2F6FE0', amount: '41 600,000', pct: 48 },
+      { name: 'Carburant', color: '#D9761A', amount: '63 200,000', pct: 64 },
+      { name: 'Cadeaux', color: '#8A4FD6', amount: '28 750,000', pct: 18 }
+    ].map((t, i) => ({ ...t, width: s.filled ? t.pct + '%' : '0%', delay: (i * 80) + 'ms' }));
+    return {
+      total: f.format(s.v),
+      types,
+      orders: [
+        { ref: 'CMD-1042', types: 'Restauration, Carburant', amount: '25 000,000', status: 'En attente de paiement', bg: '#FFF1DB', fg: '#8A5300' },
+        { ref: 'CMD-1038', types: 'Habillement', amount: '12 000,000', status: 'En attente de validation', bg: '#E6EEFB', fg: '#1F4FA8' },
+        { ref: 'CMD-1031', types: 'Restauration, Cadeaux', amount: '18 500,000', status: 'Validée', bg: '#E2F6EC', fg: '#0B6E47' }
+      ],
+      toast: s.toast,
+      copied: s.copied, notCopied: !s.copied,
+      copy: () => { this.setState({ copied: true }); clearTimeout(this.t4); this.t4 = setTimeout(() => this.setState({ copied: false }), 1500); }
+    };
+  }
+}
+</script>
+</body>
+</html>

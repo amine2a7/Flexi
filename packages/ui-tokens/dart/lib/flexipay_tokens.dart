@@ -129,8 +129,26 @@ abstract final class FlexiMotion {
   static const Duration fast = Duration(milliseconds: 120);
   static const Duration base = Duration(milliseconds: 200);
   static const Duration slow = Duration(milliseconds: 320);
-  static const Duration toastDuration = Duration(milliseconds: 4000);
-  static const Duration skeleton = Duration(milliseconds: 1500);
+  static const Duration emphasis = Duration(milliseconds: 600);
+  static const Duration bars = Duration(milliseconds: 700);
+  static const Duration shake = Duration(milliseconds: 360);
+  static const Duration bounce = Duration(milliseconds: 380);
+  static const Duration copied = Duration(milliseconds: 1500);
+  static const Duration success = Duration(milliseconds: 1600);
+  static const Duration flash = Duration(milliseconds: 1600);
+  static const Duration skeleton = Duration(milliseconds: 1200);
+  static const Duration toast = Duration(milliseconds: 4000);
+  static const Duration cascadeStep = Duration(milliseconds: 40);
+  static const Duration barsStep = Duration(milliseconds: 80);
+  static const Cubic easeOut = Cubic(0.2, 0, 0, 1);
+  static const Cubic easeIn = Cubic(0.4, 0, 1, 1);
+  static const Cubic easeSpring = Cubic(0.34, 1.56, 0.64, 1);
+  static const double distanceRise = 8;
+  static const double distanceShake = 7;
+  static const double scalePress = 0.97;
+  static const double scaleModal = 0.96;
+  static const double scalePulse = 1.08;
+  static const double scalePop = 0.6;
 }
 
 /// Shadow tokens (`shadow.*`).

@@ -67,7 +67,9 @@ export default function MerchantDashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
               label={t('today')}
-              value={<Amount millimes={dashboard.data.todayCollectedMillimes} size="title" />}
+              value={
+                <Amount millimes={dashboard.data.todayCollectedMillimes} size="title" countUp />
+              }
               hint={t('todayCount', { count: dashboard.data.todayPaymentsCount })}
               icon={<HandCoins className="size-icon-md" />}
               tone="positive"
