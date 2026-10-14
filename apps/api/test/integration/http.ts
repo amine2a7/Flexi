@@ -26,7 +26,12 @@ export class WebClient {
   async call(
     method: string,
     path: string,
-    options: { body?: unknown; headers?: Record<string, string>; csrf?: boolean } = {},
+    options: {
+      body?: unknown;
+      form?: FormData;
+      headers?: Record<string, string>;
+      csrf?: boolean;
+    } = {},
   ): Promise<{ status: number; body: Record<string, unknown>; headers: Headers }> {
     const cookieHeader = [...this.cookies.entries()]
       .filter(([, cookie]) => path.startsWith(cookie.path))
@@ -46,6 +51,7 @@ export class WebClient {
       method,
       headers,
       ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
+      ...(options.form === undefined ? {} : { body: options.form }),
     });
     for (const raw of response.headers.getSetCookie()) {
       const [pair = '', ...attributes] = raw.split(';').map((part) => part.trim());

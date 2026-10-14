@@ -174,10 +174,21 @@ function rateLimit() {
   };
 }
 
-/** JSON body parser: 64 KiB at most (`413`), malformed JSON is a validation error (`400`). */
+/** Routes receiving a CSV inside JSON (contract: 1 MiB for employees, 200 kB for allocations). */
+const LARGE_JSON_ROUTES = [
+  /^\/v1\/company\/employees\/import-previews$/,
+  /^\/v1\/company\/allocation-imports\/previews$/,
+];
+
+/**
+ * JSON body parser: 64 KiB at most (1.1 MiB on the CSV import routes), `413` beyond; malformed
+ * JSON is a validation error (`400`).
+ */
 function jsonBody() {
-  const parser = express.json({ limit: '64kb', strict: true, type: 'application/json' });
+  const small = express.json({ limit: '64kb', strict: true, type: 'application/json' });
+  const large = express.json({ limit: '1100kb', strict: true, type: 'application/json' });
   return (req: Request, res: Response, next: NextFunction): void => {
+    const parser = LARGE_JSON_ROUTES.some((route) => route.test(req.path)) ? large : small;
     parser(req, res, (error?: unknown) => {
       if (error === undefined) {
         next();

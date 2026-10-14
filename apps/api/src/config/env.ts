@@ -25,6 +25,21 @@ const schema = z.object({
    * Development only: a fixed MFA code accepted for every account (the demo accounts of the web
    * sign-in page). Refused in production.
    */
+  /** FlexiPay bank account shown on credit orders (configuration, never typed by a client). */
+  FUNDING_BANK_NAME: z
+    .string()
+    .min(1)
+    .max(120)
+    .default('Banque Internationale Arabe de Tunisie (BIAT)'),
+  FUNDING_HOLDER: z.string().min(1).max(120).default('FlexiPay SA'),
+  FUNDING_RIB: z
+    .string()
+    .regex(/^[0-9]{20}$/)
+    .default('08006000671234567891'),
+  FUNDING_IBAN: z
+    .string()
+    .regex(/^TN[0-9]{22}$/)
+    .default('TN5908006000671234567891'),
   DEMO_FIXED_MFA_CODE: z
     .string()
     .regex(/^[0-9]{6}$/)
