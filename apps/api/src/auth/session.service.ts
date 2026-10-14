@@ -186,20 +186,18 @@ export class SessionService {
    * Refresh token rotation: a live refresh token gives a renewed session; the reuse of a rotated
    * or revoked one revokes the whole family (theft detection, spec 01 §3).
    */
-  async refresh(tx: Tx, refreshToken: string): Promise<{ session: Session; role: Role }> {
+  async refresh(
+    tx: Tx,
+    refreshToken: string,
+  ): Promise<{ session: Session; role: Role } | { reusedFamilyId: string }> {
     const session = await tx.session.findUnique({
       where: { refreshTokenHash: sha256(refreshToken) },
       include: { user: { select: { role: true, status: true } } },
     });
     const now = Date.now();
     if (session === null) throw problems.unauthenticated();
-    if (session.revokedAt !== null || session.rotatedAt !== null) {
-      await tx.session.updateMany({
-        where: { familyId: session.familyId, revokedAt: null },
-        data: { revokedAt: new Date(now) },
-      });
-      throw problems.unauthenticated();
-    }
+    // Reuse of a rotated or revoked token: the caller revokes the family (committed), then refuses.
+    if (session.revokedAt !== null || session.rotatedAt !== null) return { reusedFamilyId: session.familyId };
     const expired =
       session.absoluteExpiresAt.getTime() <= now ||
       (session.restrictedUntil !== null && session.restrictedUntil.getTime() <= now) ||

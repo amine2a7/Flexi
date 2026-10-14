@@ -33,6 +33,11 @@ export function randomDigits(length: number): string {
   return Array.from({ length }, () => String(randomInt(0, 10))).join('');
 }
 
+/** Random string of `length` characters drawn uniformly from `alphabet`. */
+export function randomFrom(alphabet: string, length: number): string {
+  return Array.from({ length }, () => alphabet.charAt(randomInt(0, alphabet.length))).join('');
+}
+
 /** AES-256-GCM encryption of a secret at rest (TOTP secrets): iv.tag.ciphertext, base64url. */
 export function encryptSecret(key: Buffer, plain: string): string {
   const iv = randomBytes(12);

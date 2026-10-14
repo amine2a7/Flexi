@@ -53,7 +53,7 @@ export class DbService implements OnModuleDestroy {
   ): Promise<T> {
     return this.prisma.$transaction(
       async (tx) => {
-        await tx.$queryRaw`SELECT
+        await tx.$executeRaw`SELECT
           set_config('app.role', ${scope.role}, true),
           set_config('app.user_id', ${scope.userId ?? ''}, true),
           set_config('app.company_id', ${scope.companyId ?? ''}, true),
