@@ -242,6 +242,14 @@ export interface paths {
      *     rafraîchissement, nouveau `csrfToken`, état courant (`nextStep`). Jeton absent, invalide,
      *     expiré ou **réutilisé** (toute la famille est alors révoquée, SEC-A3) :
      *     `401 UNAUTHENTICATED` et cookies effacés.
+     *     **Deux onglets** du même navigateur (cookies partagés) qui renouvellent en même temps : les
+     *     demandes sont traitées l'une après l'autre ; un jeton tourné depuis moins de 30 s (famille
+     *     non révoquée) reçoit `409 RESOURCE_STATE_CONFLICT`, sans nouveau jeton, sans révocation et
+     *     sans toucher aux cookies : le client réessaie une fois, avec le cookie reçu par l'autre
+     *     onglet. Au-delà de 30 s, la réutilisation reste une détection de vol (révocation).
+     *     Le jeton CSRF étant lié à la session, un onglet dont le jeton est devenu invalide (`403
+     *     CSRF_TOKEN_INVALID`) après le renouvellement d'un autre onglet le récupère par cette route
+     *     et rejoue une fois sa requête.
      */
     post: operations['refreshSession'];
     delete?: never;
@@ -885,7 +893,15 @@ export interface paths {
     /** Employés */
     get: operations['listEmployees'];
     put?: never;
-    /** Créer un employé (mot de passe temporaire envoyé, RG-2.2) */
+    /**
+     * Créer un employé (mot de passe temporaire envoyé, RG-2.2)
+     * @description Crée aussi le compte de connexion de l'employé (rôle EMPLOYEE) et envoie l'invitation (décision du 2026-10-14) :
+     *     identifiant = e-mail, mot de passe temporaire valable 72 h, changement obligatoire à la
+     *     première connexion puis enrôlement MFA. Le mot de passe temporaire n'est jamais renvoyé
+     *     dans la réponse ni journalisé ; il ne part que dans l'invitation (boîte d'envoi locale en
+     *     développement, aucun fournisseur d'e-mail en production pour l'instant). Un e-mail déjà
+     *     utilisé pour se connecter : `409 RESOURCE_STATE_CONFLICT`, rien n'est créé.
+     */
     post: operations['createEmployee'];
     delete?: never;
     options?: never;
@@ -922,7 +938,13 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Confirmer un import (lignes valides de l'aperçu) */
+    /**
+     * Confirmer un import (lignes valides de l'aperçu)
+     * @description Crée les employés des lignes valides, chacun avec son compte de connexion et son invitation
+     *     (mot de passe temporaire de 72 h, comme `createEmployee`). L'aperçu signale par
+     *     `ALREADY_EXISTS` sur `email` une adresse qui sert déjà à se connecter : la ligne est
+     *     écartée.
+     */
     post: operations['confirmEmployeeImport'];
     delete?: never;
     options?: never;
@@ -1152,7 +1174,15 @@ export interface paths {
     /** Commerçants */
     get: operations['listMerchantAccounts'];
     put?: never;
-    /** Créer un commerçant (profil de commission obligatoire) */
+    /**
+     * Créer un commerçant (profil de commission facultatif)
+     * @description Crée aussi le compte de connexion du responsable du commerce (rôle MERCHANT, OWNER) et envoie l'invitation (décision du 2026-10-14) :
+     *     identifiant = e-mail, mot de passe temporaire valable 72 h, changement obligatoire à la
+     *     première connexion puis enrôlement MFA. Le mot de passe temporaire n'est jamais renvoyé
+     *     dans la réponse ni journalisé ; il ne part que dans l'invitation (boîte d'envoi locale en
+     *     développement, aucun fournisseur d'e-mail en production pour l'instant). Un e-mail déjà
+     *     utilisé pour se connecter : `409 RESOURCE_STATE_CONFLICT`, rien n'est créé.
+     */
     post: operations['createMerchantAccount'];
     delete?: never;
     options?: never;
@@ -1204,7 +1234,15 @@ export interface paths {
     /** Entreprises */
     get: operations['listCompanyAccounts'];
     put?: never;
-    /** Créer une entreprise */
+    /**
+     * Créer une entreprise
+     * @description Crée aussi le compte de connexion du responsable de l'entreprise (rôle COMPANY, OWNER) et envoie l'invitation (décision du 2026-10-14) :
+     *     identifiant = e-mail, mot de passe temporaire valable 72 h, changement obligatoire à la
+     *     première connexion puis enrôlement MFA. Le mot de passe temporaire n'est jamais renvoyé
+     *     dans la réponse ni journalisé ; il ne part que dans l'invitation (boîte d'envoi locale en
+     *     développement, aucun fournisseur d'e-mail en production pour l'instant). Un e-mail déjà
+     *     utilisé pour se connecter : `409 RESOURCE_STATE_CONFLICT`, rien n'est créé.
+     */
     post: operations['createCompanyAccount'];
     delete?: never;
     options?: never;
@@ -4106,6 +4144,7 @@ export interface operations {
       200: components['responses']['SessionEstablished'];
       401: components['responses']['Unauthorized'];
       403: components['responses']['Forbidden'];
+      409: components['responses']['Conflict'];
       429: components['responses']['TooManyRequests'];
       500: components['responses']['InternalError'];
       503: components['responses']['ServiceUnavailable'];

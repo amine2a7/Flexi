@@ -20,6 +20,11 @@ const ABSOLUTE_HOURS: Record<Role, number> = {
 /** Restricted PASSWORD_CHANGE session: 10 min at most, absolute (contract §10). */
 const RESTRICTED_MINUTES = 10;
 const TOUCH_EVERY_MS = 30_000;
+/**
+ * Window in which the reuse of a just-rotated refresh token is another tab of the same browser
+ * refreshing at the same time (shared cookies), not a theft: answered 409, nothing issued.
+ */
+const CONCURRENT_REFRESH_MS = 30_000;
 
 export interface IssuedSession {
   readonly session: Session;
@@ -189,15 +194,28 @@ export class SessionService {
   async refresh(
     tx: Tx,
     refreshToken: string,
-  ): Promise<{ session: Session; role: Role } | { reusedFamilyId: string }> {
+  ): Promise<{ session: Session; role: Role } | { reusedFamilyId: string } | { concurrent: true }> {
+    const hash = sha256(refreshToken);
+    // Two tabs refreshing at once are served one after the other.
+    await tx.$queryRaw`SELECT id FROM sessions WHERE refresh_token_hash = ${hash} FOR UPDATE`;
     const session = await tx.session.findUnique({
-      where: { refreshTokenHash: sha256(refreshToken) },
+      where: { refreshTokenHash: hash },
       include: { user: { select: { role: true, status: true } } },
     });
     const now = Date.now();
     if (session === null) throw problems.unauthenticated();
+    // Token rotated a moment ago by another tab of the same browser (cookies are shared): no new
+    // token for it, no revocation either; the tab retries with the cookie the other one received.
+    if (
+      session.revokedAt === null &&
+      session.rotatedAt !== null &&
+      now - session.rotatedAt.getTime() <= CONCURRENT_REFRESH_MS
+    ) {
+      return { concurrent: true };
+    }
     // Reuse of a rotated or revoked token: the caller revokes the family (committed), then refuses.
-    if (session.revokedAt !== null || session.rotatedAt !== null) return { reusedFamilyId: session.familyId };
+    if (session.revokedAt !== null || session.rotatedAt !== null)
+      return { reusedFamilyId: session.familyId };
     const expired =
       session.absoluteExpiresAt.getTime() <= now ||
       (session.restrictedUntil !== null && session.restrictedUntil.getTime() <= now) ||

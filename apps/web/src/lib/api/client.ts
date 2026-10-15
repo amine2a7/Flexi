@@ -16,23 +16,35 @@ const PUBLIC_ROUTES = new Set([
   '/v1/auth/password/reset',
   '/v1/public/contact-messages',
 ]);
+/** Pause before retrying a refresh that another tab of the browser was doing (409). */
+const CONCURRENT_REFRESH_RETRY_MS = 300;
 
 export function setCsrfToken(token: string | undefined): void {
   csrfToken = token;
 }
 
+async function refreshSession(baseUrl: string): Promise<Response> {
+  return fetch(`${baseUrl}/v1/auth/refresh`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: WEB_CHANNEL_HEADER,
+  });
+}
+
 /**
- * After a page reload the in-memory token is gone: the session refresh hands a new one (contract
- * §6). One refresh at a time; without a session nothing is set and the request gets its 401/403.
+ * A new CSRF token through the session refresh (contract §6): after a page reload (the token in
+ * memory is gone) or after another tab renewed the session (the token is tied to it). One refresh
+ * at a time; a 409 (another tab is renewing) is retried once, with the cookie it received.
+ * Without a session nothing is set and the request gets its own 401/403.
  */
 async function recoverCsrfToken(baseUrl: string): Promise<string | undefined> {
   recovering ??= (async () => {
     try {
-      const response = await fetch(`${baseUrl}/v1/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: WEB_CHANNEL_HEADER,
-      });
+      let response = await refreshSession(baseUrl);
+      if (response.status === 409) {
+        await new Promise((resolve) => setTimeout(resolve, CONCURRENT_REFRESH_RETRY_MS));
+        response = await refreshSession(baseUrl);
+      }
       if (!response.ok) return undefined;
       const body = (await response.json()) as { csrfToken?: unknown };
       if (typeof body.csrfToken === 'string') csrfToken = body.csrfToken;
@@ -47,6 +59,17 @@ async function recoverCsrfToken(baseUrl: string): Promise<string | undefined> {
   return recovering;
 }
 
+/** True for `403 CSRF_TOKEN_INVALID` (read on a copy: the caller still gets the body). */
+async function isCsrfRefusal(response: Response): Promise<boolean> {
+  if (response.status !== 403) return false;
+  try {
+    const body = (await response.clone().json()) as { code?: unknown };
+    return body.code === 'CSRF_TOKEN_INVALID';
+  } catch {
+    return false;
+  }
+}
+
 /**
  * The single API client of the web app. The origin is a build-time constant (getApiOrigin);
  * without a valid one the app refuses to call anything (fail closed, securite F1/F3 note).
@@ -55,16 +78,32 @@ export function getApi(): ApiClient {
   if (client !== undefined) return client;
   const baseUrl = getApiOrigin();
   if (baseUrl === undefined) throw new Error('API origin is not configured');
+  // Copies of the requests that change something, to replay one once after a CSRF refusal (the
+  // API refuses before doing anything, so the replay is safe).
+  const copies = new Map<string, Request>();
   client = createApiClient({ baseUrl, getCsrfToken: () => csrfToken });
   client.use({
-    async onRequest({ request }) {
+    async onRequest({ request, id }) {
       const unsafe = UNSAFE_METHODS.has(request.method.toUpperCase());
-      if (!unsafe || csrfToken !== undefined || PUBLIC_ROUTES.has(new URL(request.url).pathname))
-        return undefined;
+      if (!unsafe || PUBLIC_ROUTES.has(new URL(request.url).pathname)) return undefined;
+      if (csrfToken === undefined) {
+        const token = await recoverCsrfToken(baseUrl);
+        if (token !== undefined) request.headers.set('X-CSRF-Token', token);
+      }
+      copies.set(id, request.clone());
+      return request;
+    },
+    async onResponse({ response, id }) {
+      const copy = copies.get(id);
+      copies.delete(id);
+      if (copy === undefined || !(await isCsrfRefusal(response))) return undefined;
+      // Another tab renewed the session: new token, then the same request once more.
+      csrfToken = undefined;
       const token = await recoverCsrfToken(baseUrl);
       if (token === undefined) return undefined;
-      request.headers.set('X-CSRF-Token', token);
-      return request;
+      const replay = new Request(copy);
+      replay.headers.set('X-CSRF-Token', token);
+      return fetch(replay);
     },
   });
   return client;

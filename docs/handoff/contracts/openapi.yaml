@@ -871,6 +871,14 @@ paths:
         rafraîchissement, nouveau `csrfToken`, état courant (`nextStep`). Jeton absent, invalide,
         expiré ou **réutilisé** (toute la famille est alors révoquée, SEC-A3) :
         `401 UNAUTHENTICATED` et cookies effacés.
+        **Deux onglets** du même navigateur (cookies partagés) qui renouvellent en même temps : les
+        demandes sont traitées l'une après l'autre ; un jeton tourné depuis moins de 30 s (famille
+        non révoquée) reçoit `409 RESOURCE_STATE_CONFLICT`, sans nouveau jeton, sans révocation et
+        sans toucher aux cookies : le client réessaie une fois, avec le cookie reçu par l'autre
+        onglet. Au-delà de 30 s, la réutilisation reste une détection de vol (révocation).
+        Le jeton CSRF étant lié à la session, un onglet dont le jeton est devenu invalide (`403
+        CSRF_TOKEN_INVALID`) après le renouvellement d'un autre onglet le récupère par cette route
+        et rejoue une fois sa requête.
       security: []
       x-public: true
       parameters:
@@ -880,6 +888,8 @@ paths:
           $ref: '#/components/responses/SessionEstablished'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '403':
           $ref: '#/components/responses/Forbidden'
         '429':

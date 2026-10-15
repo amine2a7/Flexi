@@ -102,26 +102,28 @@ export class PaymentsService {
       );
       const spent = await this.spentToday(tx, employeeId);
       const horizon = new Date(Date.now() + EXPIRY_ALERT_DAYS * 86_400_000);
-      const rows = await Promise.all(
-        CREDIT_TYPES.map(async (type) => {
-          const lots = (
-            await this.ledger.lots(tx, accounts.employeeWallet(employeeId, type))
-          ).filter((lot) => lot.remaining > 0n && lot.expiresAt > new Date());
-          const expiring = lots.filter((lot) => lot.expiresAt <= horizon);
-          const setting = types.find((row) => row.creditType === type);
-          return {
-            creditType: type,
-            balanceMillimes: toMillimes(
-              balances.get(accounts.employeeWallet(employeeId, type).code) ?? 0n,
-            ),
-            expiringMillimes: toMillimes(expiring.reduce((sum, lot) => sum + lot.remaining, 0n)),
-            nextExpiryDate: expiring[0] === undefined ? null : businessDay(expiring[0].expiresAt),
-            dailyLimitMillimes: toMillimes(setting?.dailyLimitMillimes ?? 0n),
-            todaySpentMillimes: toMillimes(spent.get(type) ?? 0n),
-            enabled: setting?.enabled ?? false,
-          };
-        }),
-      );
+      // One transaction = one connection: the lots of each type are read one after the other.
+      const lotsByType = new Map<CreditType, Awaited<ReturnType<LedgerService['lots']>>>();
+      for (const type of CREDIT_TYPES)
+        lotsByType.set(type, await this.ledger.lots(tx, accounts.employeeWallet(employeeId, type)));
+      const rows = CREDIT_TYPES.map((type) => {
+        const lots = (lotsByType.get(type) ?? []).filter(
+          (lot) => lot.remaining > 0n && lot.expiresAt > new Date(),
+        );
+        const expiring = lots.filter((lot) => lot.expiresAt <= horizon);
+        const setting = types.find((row) => row.creditType === type);
+        return {
+          creditType: type,
+          balanceMillimes: toMillimes(
+            balances.get(accounts.employeeWallet(employeeId, type).code) ?? 0n,
+          ),
+          expiringMillimes: toMillimes(expiring.reduce((sum, lot) => sum + lot.remaining, 0n)),
+          nextExpiryDate: expiring[0] === undefined ? null : businessDay(expiring[0].expiresAt),
+          dailyLimitMillimes: toMillimes(setting?.dailyLimitMillimes ?? 0n),
+          todaySpentMillimes: toMillimes(spent.get(type) ?? 0n),
+          enabled: setting?.enabled ?? false,
+        };
+      });
       return {
         companyName: employee.company.name,
         totalBalanceMillimes: rows.reduce((sum, row) => sum + row.balanceMillimes, 0),

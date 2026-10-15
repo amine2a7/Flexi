@@ -1,7 +1,7 @@
 // Authentication end to end over HTTP (spec 01 §8 tests 1-4, 7; contract §6, §10).
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { loadTestEnv } from './setup.js';
+import { loadTestEnv, ownerClient } from './setup.js';
 import { WebClient, listen } from './http.js';
 
 loadTestEnv();
@@ -173,7 +173,9 @@ describe('session', () => {
     expect(refreshed.status).toBe(200);
     expect(client.cookie('__Secure-fp_rt')).not.toBe(oldRefresh);
     expect((await client.call('GET', '/v1/me')).status).toBe(200);
-    // A thief replays the old refresh token: refused, and the whole family is revoked.
+    // A thief replays the old refresh token after the concurrency window (30 s): refused, and the
+    // whole family is revoked.
+    await rotatedLongAgo(oldRefresh);
     const thief = new WebClient(base);
     const stolen = await fetch(`${base}/v1/auth/refresh`, {
       method: 'POST',
@@ -187,6 +189,32 @@ describe('session', () => {
     expect(thief).toBeDefined();
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect((await client.call('POST', '/v1/auth/refresh')).status).toBe(401);
+  });
+
+  it('answers 409 to a second tab refreshing with the token just rotated, without logging out', async () => {
+    const { email, secret } = await createUser();
+    const tabA = new WebClient(base);
+    await signIn(tabA, email, secret);
+    const shared = tabA.cookie('__Secure-fp_rt') ?? '';
+    const refreshWith = (token: string) =>
+      fetch(`${base}/v1/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          Origin: 'http://localhost:3001',
+          'X-FlexiPay-Client': 'web',
+          Cookie: `__Secure-fp_rt=${token}`,
+        },
+      });
+    // Both tabs send the same refresh token at the same time: one renews, the other waits (409).
+    const [first, second] = await Promise.all([refreshWith(shared), refreshWith(shared)]);
+    expect([first.status, second.status].sort()).toEqual([200, 409]);
+    const loser = first.status === 409 ? first : second;
+    // The 409 neither issues nor clears a cookie: the browser keeps the winner's ones.
+    expect(loser.headers.getSetCookie()).toEqual([]);
+    const winner = first.status === 200 ? first : second;
+    const fresh = /__Secure-fp_rt=([^;]+)/.exec(winner.headers.getSetCookie().join(' '))?.[1] ?? '';
+    // The family is still alive: the renewed refresh token works.
+    expect((await refreshWith(fresh)).status).toBe(200);
   });
 
   it('closes the session at logout', async () => {
@@ -271,3 +299,14 @@ describe('first sign-in (temporary password, MFA enrolment)', () => {
     ).toBe('MFA_CODE_INVALID');
   });
 });
+
+/** Moves the rotation of the session of `refreshToken` 60 s back (outside the concurrency window). */
+async function rotatedLongAgo(refreshToken: string): Promise<void> {
+  const { createHash } = await import('node:crypto');
+  const owner = await ownerClient();
+  await owner.query(
+    `UPDATE sessions SET rotated_at = rotated_at - interval '60 seconds' WHERE refresh_token_hash = $1`,
+    [createHash('sha256').update(refreshToken).digest('hex')],
+  );
+  await owner.end();
+}

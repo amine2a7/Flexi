@@ -127,11 +127,12 @@ export class CompanyService {
     return this.db.user(async (tx) => {
       const balances = await this.balances(tx, companyId);
       const total = [...balances.values()].reduce((sum, value) => sum + value, 0n);
-      const [employeesCount, activeEmployeesCount, pendingOrdersCount] = await Promise.all([
-        tx.employee.count(),
-        tx.employee.count({ where: { status: 'ACTIVE' } }),
-        tx.creditOrder.count({ where: { status: { in: [...OPEN_ORDER_STATUSES] } } }),
-      ]);
+      // One transaction = one connection: its queries run one after the other.
+      const employeesCount = await tx.employee.count();
+      const activeEmployeesCount = await tx.employee.count({ where: { status: 'ACTIVE' } });
+      const pendingOrdersCount = await tx.creditOrder.count({
+        where: { status: { in: [...OPEN_ORDER_STATUSES] } },
+      });
       const recent = await tx.creditOrder.findMany({
         include: { lines: true, events: true, company: { select: { name: true } } },
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],

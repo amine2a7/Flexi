@@ -568,6 +568,7 @@ export class AuthService {
     if (refreshToken === undefined || refreshToken === '') throw problems.unauthenticated();
     const outcome = await this.db.system(async (tx) => {
       const found = await this.sessions.refresh(tx, refreshToken);
+      if ('concurrent' in found) return 'CONCURRENT' as const;
       if ('reusedFamilyId' in found) {
         // Theft detection: the whole family is revoked, and this revocation is committed.
         await tx.session.updateMany({
@@ -580,6 +581,8 @@ export class AuthService {
       return this.sessions.renew(tx, found.session, found.role);
     });
     if (outcome === undefined) throw problems.unauthenticated();
+    // Another tab renewed the session a moment ago: retry with its cookie (contract §6).
+    if (outcome === 'CONCURRENT') throw problems.conflict();
     return outcome;
   }
 

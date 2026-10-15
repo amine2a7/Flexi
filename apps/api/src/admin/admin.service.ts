@@ -118,13 +118,11 @@ export class AdminService {
   async dashboard() {
     return this.db.user(async (tx) => {
       const collected = { status: { in: ['CONFIRMED' as const, 'SETTLED' as const] } };
-      const [merchantsCount, companiesCount, pendingApprovalsCount, pendingKycCount] =
-        await Promise.all([
-          tx.merchant.count(),
-          tx.company.count(),
-          tx.approval.count({ where: { status: 'PENDING' } }),
-          tx.kycFile.count({ where: { status: 'PENDING' } }),
-        ]);
+      // One transaction = one connection: its queries run one after the other.
+      const merchantsCount = await tx.merchant.count();
+      const companiesCount = await tx.company.count();
+      const pendingApprovalsCount = await tx.approval.count({ where: { status: 'PENDING' } });
+      const pendingKycCount = await tx.kycFile.count({ where: { status: 'PENDING' } });
       const today = await tx.payment.aggregate({
         where: { ...collected, confirmedAt: { gte: startOfBusinessDay(businessDay()) } },
         _sum: { amountMillimes: true },

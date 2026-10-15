@@ -93,3 +93,99 @@ describe('API client: CSRF token after a page reload', () => {
     ]);
   });
 });
+
+describe('API client: two tabs of one browser renew the session', () => {
+  beforeEach(() => {
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', API);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  /** Scripted answers, in order, for each path; records every call with its body. */
+  function script(answers: Record<string, (() => Response)[]>) {
+    const seen: { url: string; csrf: string | null; body: string }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const request = new Request(input, init);
+        const url = request.url.replace(API, '');
+        seen.push({ url, csrf: request.headers.get('X-CSRF-Token'), body: await request.text() });
+        const next = answers[url]?.shift();
+        return next === undefined ? new Response(null, { status: 204 }) : next();
+      }),
+    );
+    return seen;
+  }
+  const problem = (status: number, code: string) => () =>
+    Response.json(
+      {
+        type: 'urn:flexipay:problem:x',
+        title: code,
+        status,
+        code,
+        messageKey: 'x',
+        requestId: 'r',
+      },
+      { status },
+    );
+  const session = (token: string) => () => Response.json({ nextStep: 'NONE', csrfToken: token });
+
+  it('retries the refresh once when another tab renewed the session (409)', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    const seen = script({
+      '/v1/auth/refresh': [problem(409, 'RESOURCE_STATE_CONFLICT'), session('second-try')],
+    });
+    const { getApi } = await freshClient();
+    const done = getApi().POST('/v1/me/onboarding-tour');
+    await vi.runAllTimersAsync();
+    await done;
+    vi.useRealTimers();
+    expect(seen.map((call) => call.url)).toEqual([
+      '/v1/auth/refresh',
+      '/v1/auth/refresh',
+      '/v1/me/onboarding-tour',
+    ]);
+    expect(seen.at(-1)?.csrf).toBe('second-try');
+  });
+
+  it('recovers the token and replays the request once, with its body, after a CSRF refusal', async () => {
+    const seen = script({
+      '/v1/company/employees': [problem(403, 'CSRF_TOKEN_INVALID')],
+      '/v1/auth/refresh': [session('renewed')],
+    });
+    const { getApi, setCsrfToken } = await freshClient();
+    setCsrfToken('stale');
+    const body = {
+      employeeNumber: 'E-1',
+      firstName: 'Nour',
+      lastName: 'Trabelsi',
+      email: 'nour@exemple.tn',
+      phone: '+21698111222',
+    };
+    const result = await getApi().POST('/v1/company/employees', { body });
+    expect(result.response.status).toBe(204);
+    expect(seen.map((call) => [call.url, call.csrf])).toEqual([
+      ['/v1/company/employees', 'stale'],
+      ['/v1/auth/refresh', null],
+      ['/v1/company/employees', 'renewed'],
+    ]);
+    expect(JSON.parse(seen[2]?.body ?? '{}')).toEqual(body);
+  });
+
+  it('does not loop: a second CSRF refusal is returned as is', async () => {
+    const seen = script({
+      '/v1/me/onboarding-tour': [
+        problem(403, 'CSRF_TOKEN_INVALID'),
+        problem(403, 'CSRF_TOKEN_INVALID'),
+      ],
+      '/v1/auth/refresh': [session('renewed')],
+    });
+    const { getApi, setCsrfToken } = await freshClient();
+    setCsrfToken('stale');
+    const result = await getApi().POST('/v1/me/onboarding-tour');
+    expect(result.response.status).toBe(403);
+    expect(seen.filter((call) => call.url === '/v1/me/onboarding-tour')).toHaveLength(2);
+  });
+});
