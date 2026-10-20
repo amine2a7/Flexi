@@ -24,7 +24,7 @@ import {
   dateOnly,
   startOfBusinessMonth,
 } from '../src/common/tunis.js';
-import { databaseUrls } from '../src/config/database-urls.js';
+import { databaseUrls, PG_SESSION_OPTIONS } from '../src/config/database-urls.js';
 import { loadEnv } from '../src/config/env.js';
 import { PrismaClient } from '../src/generated/prisma/client.js';
 import type { CreditType, PaymentStatus, Role } from '../src/generated/prisma/enums.js';
@@ -196,7 +196,9 @@ const at = (iso: string) => new Date(iso);
 const snap = readSnapshot();
 const now = new Date(snap.now);
 const demo = snap.demo;
-const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: urls.migrationUrl }) });
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: urls.migrationUrl, options: PG_SESSION_OPTIONS }),
+});
 const storage = new LocalDiskStorage(env.uploadDir);
 const ledger = new LedgerService();
 

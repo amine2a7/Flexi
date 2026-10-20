@@ -56,4 +56,24 @@ describe('one query at a time on a transaction', () => {
     await new Promise((resolve) => setImmediate(resolve));
     expect(warnings.filter((message) => message.includes('already executing a query'))).toEqual([]);
   });
+
+  it('reads and writes timestamps in UTC, whatever the time zone of the server', async () => {
+    const company = await createCompany(db, `Société ${randomUUID().slice(0, 6)}`);
+    const employee = await createEmployee(db, company.id);
+    const written = new Date();
+    const [row] = await db.system(async (tx) => {
+      await tx.employee.update({ where: { id: employee.id }, data: { pinLockedUntil: written } });
+      return tx.$queryRaw<{ zone: string; gap: number }[]>`
+        SELECT current_setting('TimeZone') AS zone,
+               extract(epoch FROM (now() - pin_locked_until))::float8 AS gap
+          FROM employees WHERE id = ${employee.id}::uuid`;
+    });
+    expect(row?.zone).toBe('UTC');
+    // The same instant on both sides (JS Date written by Prisma, now() of PostgreSQL).
+    expect(Math.abs(row?.gap ?? 999)).toBeLessThan(5);
+    const read = await db.system((tx) =>
+      tx.employee.findUniqueOrThrow({ where: { id: employee.id } }),
+    );
+    expect(read.pinLockedUntil?.toISOString()).toBe(written.toISOString());
+  });
 });

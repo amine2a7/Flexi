@@ -65,6 +65,8 @@ try {
   await owner.query(
     `ALTER DATABASE ${owner.escapeIdentifier(urls.dbName)} SET app.environment = 'development'`,
   );
+  // Every session in UTC (the API also sets it per connection: PG_SESSION_OPTIONS).
+  await owner.query(`ALTER DATABASE ${owner.escapeIdentifier(urls.dbName)} SET timezone = 'UTC'`);
 } finally {
   await owner.end();
 }

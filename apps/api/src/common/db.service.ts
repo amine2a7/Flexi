@@ -1,6 +1,7 @@
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient, type Prisma } from '../generated/prisma/client.js';
+import { PG_SESSION_OPTIONS } from '../config/database-urls.js';
 import { ENV } from '../config/env.provider.js';
 import type { Env } from '../config/env.js';
 import { currentContext, type Principal } from './request-context.js';
@@ -37,7 +38,7 @@ export class DbService implements OnModuleDestroy {
 
   constructor(@Inject(ENV) env: Env) {
     this.prisma = new PrismaClient({
-      adapter: new PrismaPg({ connectionString: env.databaseUrl }),
+      adapter: new PrismaPg({ connectionString: env.databaseUrl, options: PG_SESSION_OPTIONS }),
     });
   }
 

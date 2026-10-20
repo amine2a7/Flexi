@@ -4,7 +4,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import pg from 'pg';
-import { databaseUrls } from '../../src/config/database-urls.js';
+import { databaseUrls, PG_SESSION_OPTIONS } from '../../src/config/database-urls.js';
 
 const ENV_FILE = join(import.meta.dirname, '..', '..', '..', '..', 'infra', '.env');
 
@@ -16,14 +16,20 @@ export function loadTestEnv(): void {
 
 /** Owner connection (superuser on the test database): to check what the app role cannot do. */
 export async function ownerClient(): Promise<pg.Client> {
-  const client = new pg.Client({ connectionString: databaseUrls(process.env).migrationUrl });
+  const client = new pg.Client({
+    connectionString: databaseUrls(process.env).migrationUrl,
+    options: PG_SESSION_OPTIONS,
+  });
   await client.connect();
   return client;
 }
 
 /** Application role connection (RLS applies, no UPDATE/DELETE on the ledger). */
 export async function appClient(): Promise<pg.Client> {
-  const client = new pg.Client({ connectionString: databaseUrls(process.env).appUrl });
+  const client = new pg.Client({
+    connectionString: databaseUrls(process.env).appUrl,
+    options: PG_SESSION_OPTIONS,
+  });
   await client.connect();
   return client;
 }

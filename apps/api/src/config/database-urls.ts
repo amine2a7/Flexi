@@ -6,6 +6,13 @@
  */
 export const APP_DB_ROLE = 'flexipay_app';
 
+/**
+ * Startup options of every connection: the Prisma pg adapter reads and writes timestamptz values
+ * without their offset, so the session must be in UTC (otherwise a server in another time zone
+ * shifts every comparison between JS dates and now() by its offset).
+ */
+export const PG_SESSION_OPTIONS = '-c TimeZone=UTC';
+
 export interface DatabaseUrls {
   /** Superuser, maintenance database (CREATE DATABASE, roles). */
   readonly adminUrl: string;
