@@ -238,6 +238,26 @@ describe('balances never negative', () => {
   });
 });
 
+describe('one validation, one payout request, one execution per reference (migration 0010)', () => {
+  it('refuses a second ORDER_VALIDATED of the same order, even with another key', async () => {
+    const reference = `CMD-TEST-${randomUUID().slice(0, 8)}`;
+    const post = () =>
+      system((tx) =>
+        ledger.post(tx, {
+          type: 'ORDER_VALIDATED',
+          reference,
+          idempotencyKey: randomUUID(),
+          entries: [
+            { account: accounts.bankEscrow(), direction: 'D', amount: 100n },
+            { account: accounts.companyFees(), direction: 'C', amount: 100n },
+          ],
+        }),
+      );
+    await post();
+    await expect(post()).rejects.toThrow(/ledger_transactions_once_per_reference/);
+  });
+});
+
 describe('idempotency safety net', () => {
   it('refuses a second ledger transaction with the same (tenant, user, key)', async () => {
     const key = randomUUID();
@@ -246,7 +266,7 @@ describe('idempotency safety net', () => {
     const post = () =>
       system((tx) =>
         ledger.post(tx, {
-          type: 'ORDER_VALIDATED',
+          type: 'TEST_IDEMPOTENCY',
           reference: 'IDEM',
           tenantId: tenant,
           userId: user,
@@ -263,7 +283,7 @@ describe('idempotency safety net', () => {
     await expect(
       system((tx) =>
         ledger.post(tx, {
-          type: 'ORDER_VALIDATED',
+          type: 'TEST_IDEMPOTENCY',
           reference: 'IDEM',
           tenantId: tenant,
           userId: randomUUID(),
@@ -383,6 +403,20 @@ describe('opening balances (development seed only, decision of 2026-10-14)', () 
   });
 });
 
+describe('reversal and lots (ledger-auditor C9)', () => {
+  it('refuses to reverse a transaction that moved credit lots', async () => {
+    const company = randomUUID();
+    const employee = randomUUID();
+    await fundCompany(company, 10_000n);
+    await allocate(company, employee, 10_000n, inAYear());
+    const merchant = randomUUID();
+    const paid = await pay(employee, merchant, 4_000n);
+    await expect(
+      system((tx) => ledger.reverse(tx, paid.transactionId, 'REV-TEST')),
+    ).rejects.toThrow(/lots/);
+  });
+});
+
 describe('reconciliation', () => {
   it('finds the books balanced, then detects an injected gap', async () => {
     const clean = await system((tx) => ledger.reconcile(tx));
@@ -401,5 +435,36 @@ describe('reconciliation', () => {
     const broken = await system((tx) => ledger.reconcile(tx));
     expect(broken.ok).toBe(false);
     expect(broken.mismatches).toContain(accounts.companyWallet(company, 'RESTAURATION').code);
+    // The gap is removed: the other test files check that the books reconcile.
+    const repair = await ownerClient();
+    await repair.query(
+      `UPDATE account_balances SET balance_millimes = balance_millimes - 1
+        WHERE account_id = (SELECT id FROM ledger_accounts WHERE code = $1)`,
+      [accounts.companyWallet(company, 'RESTAURATION').code],
+    );
+    await repair.end();
+    expect((await system((tx) => ledger.reconcile(tx))).ok).toBe(true);
+  });
+
+  it('checks that the lots of an employee wallet add up to its balance (C8)', async () => {
+    const company = randomUUID();
+    const employee = randomUUID();
+    await fundCompany(company, 8_000n);
+    await allocate(company, employee, 8_000n, inAYear());
+    const wallet = accounts.employeeWallet(employee, 'RESTAURATION').code;
+    const owner = await ownerClient();
+    const shift = (delta: number) =>
+      owner.query(
+        `UPDATE credit_lots SET remaining_millimes = remaining_millimes + $2
+          WHERE account_id = (SELECT id FROM ledger_accounts WHERE code = $1)`,
+        [wallet, delta],
+      );
+    await shift(-1);
+    const broken = await system((tx) => ledger.reconcile(tx));
+    expect(broken.ok).toBe(false);
+    expect(broken.lotMismatches).toContain(wallet);
+    await shift(1);
+    await owner.end();
+    expect((await system((tx) => ledger.reconcile(tx))).ok).toBe(true);
   });
 });

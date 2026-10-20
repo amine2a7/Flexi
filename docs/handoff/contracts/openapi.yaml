@@ -3825,12 +3825,18 @@ paths:
       tags: [admin]
       operationId: rejectAdminPayoutRequest
       summary: Refuser une demande de virement avec un motif (`REQUESTED` → `REJECTED`)
+      description: |
+        Financier : l'écriture de la demande est contre-passée (le commerçant retrouve son solde),
+        d'où l'`Idempotency-Key` obligatoire (règle 4). Validation et refus d'une même demande
+        sont traités l'un après l'autre (verrou de ligne) : le second reçoit `409`.
+      x-financial: true
       parameters:
         - name: payoutId
           in: path
           required: true
           schema:
             $ref: '#/components/schemas/Uuid'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:

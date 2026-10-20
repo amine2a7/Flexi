@@ -166,6 +166,14 @@ export class OrdersService {
     });
   }
 
+  /**
+   * Locks the order for the rest of the SQL transaction (ledger-auditor C1): two decisions on the
+   * same order are served one after the other, the second one sees the new status (409).
+   */
+  private async lock(tx: Tx, id: string): Promise<void> {
+    await tx.$queryRaw`SELECT id FROM credit_orders WHERE id = ${id}::uuid FOR UPDATE`;
+  }
+
   private async load(tx: Tx, id: string): Promise<OrderRow> {
     const order = await tx.creditOrder.findUnique({ where: { id }, include: INCLUDE });
     if (order === null) throw problems.notFound();
@@ -332,6 +340,7 @@ export class OrdersService {
 
   async cancel(id: string) {
     return this.db.user(async (tx) => {
+      await this.lock(tx, id);
       const order = await this.load(tx, id);
       if (order.status !== 'AWAITING_CONFIRMATION' && order.status !== 'AWAITING_PAYMENT')
         throw problems.conflict();
@@ -347,8 +356,7 @@ export class OrdersService {
     fields: Record<string, unknown>,
     file: { size: number; buffer: Buffer; originalname: string } | undefined,
   ) {
-    const text = (name: string) =>
-      typeof fields[name] === 'string' ? (fields[name]).trim() : '';
+    const text = (name: string) => (typeof fields[name] === 'string' ? fields[name].trim() : '');
     const reference = text('transferReference');
     const date = text('transferDate');
     const amount = text('amountMillimes');
@@ -386,6 +394,7 @@ export class OrdersService {
   }
 
   async declareTransfer(tx: Tx, id: string, input: ReturnType<OrdersService['checkDeclaration']>) {
+    await this.lock(tx, id);
     const order = await this.load(tx, id);
     if (order.status !== 'AWAITING_PAYMENT') throw problems.conflict();
     const key = await this.storage.put(input.file.buffer);
@@ -424,6 +433,7 @@ export class OrdersService {
 
   async confirm(id: string) {
     return this.db.user(async (tx) => {
+      await this.lock(tx, id);
       const order = await this.load(tx, id);
       if (order.status !== 'AWAITING_CONFIRMATION') throw problems.conflict();
       await tx.creditOrder.update({ where: { id }, data: { status: 'AWAITING_PAYMENT' } });
@@ -449,6 +459,7 @@ export class OrdersService {
 
   async refuse(id: string, reason: string) {
     return this.db.user(async (tx) => {
+      await this.lock(tx, id);
       const order = await this.load(tx, id);
       if (order.status !== 'AWAITING_CONFIRMATION') throw problems.conflict();
       await tx.creditOrder.update({
@@ -463,6 +474,7 @@ export class OrdersService {
 
   async rejectProof(id: string, reason: string) {
     return this.db.user(async (tx) => {
+      await this.lock(tx, id);
       const order = await this.load(tx, id);
       if (order.status !== 'AWAITING_VALIDATION') throw problems.conflict();
       await tx.creditOrder.update({
@@ -496,6 +508,7 @@ export class OrdersService {
    */
   async validate(tx: Tx, id: string, key: string) {
     const who = principal();
+    await this.lock(tx, id);
     const order = await this.load(tx, id);
     if (order.status !== 'AWAITING_VALIDATION') throw problems.conflict();
     if (order.amountMillimes > SECOND_VALIDATION_THRESHOLD) {

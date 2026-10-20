@@ -421,7 +421,7 @@ describe('payout and settlement', () => {
     const rejected = await admin.call(
       'POST',
       `/v1/admin/payout-requests/${String(requested.body.id)}/reject`,
-      { body: { reason: 'IBAN non conforme au KYC' } },
+      { body: { reason: 'IBAN non conforme au KYC' }, headers: key() },
     );
     expect(rejected.body.status).toBe('REJECTED');
     expect(await db.system((tx) => ledger.balance(tx, wallet))).toBe(30_000n);
@@ -507,5 +507,36 @@ describe('expired credits (destination set by the administrator, decision of 202
     expect(await balanceOf(accounts.companyWallet(company.id, 'RESTAURATION'))).toBe(0n);
     expect((await balanceOf(accounts.expiredCredits())) - before).toBe(3_000n);
     expect((await db.system((tx) => ledger.reconcile(tx))).ok).toBe(true);
+  });
+});
+
+describe('daily reconciliation (ledger-auditor C8)', () => {
+  it('raises an audited alert naming the account when the books do not reconcile', async () => {
+    const jobs = app.get(JobsService);
+    expect(await jobs.reconcileBooks()).toBe(true);
+    const { employee } = await fundedEmployee(5_000n);
+    const wallet = accounts.employeeWallet(employee.id, 'RESTAURATION').code;
+    const owner = await ownerClient();
+    const shift = (delta: number) =>
+      owner.query(
+        `UPDATE credit_lots SET remaining_millimes = remaining_millimes + $2
+          WHERE account_id = (SELECT id FROM ledger_accounts WHERE code = $1)`,
+        [wallet, delta],
+      );
+    await shift(-1);
+    try {
+      expect(await jobs.reconcileBooks()).toBe(false);
+      const alert = await db.system((tx) =>
+        tx.auditLog.findFirst({
+          where: { action: 'ledger.reconcileFailed' },
+          orderBy: { occurredAt: 'desc' },
+        }),
+      );
+      expect(alert?.target).toContain(wallet);
+    } finally {
+      await shift(1);
+      await owner.end();
+    }
+    expect(await jobs.reconcileBooks()).toBe(true);
   });
 });

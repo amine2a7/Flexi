@@ -203,8 +203,8 @@ const ledger = new LedgerService();
 const [marked] = await prisma.$queryRaw<
   { environment: string | null }[]
 >`SELECT current_setting('app.environment', true) AS environment`;
-if (marked?.environment === 'production') {
-  console.error('This database is marked as a production database: no seed.');
+if (marked?.environment !== 'development') {
+  console.error('This database is not marked as a development one (run db:setup): no seed.');
   await prisma.$disconnect();
   process.exit(1);
 }

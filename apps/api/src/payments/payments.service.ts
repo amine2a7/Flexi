@@ -75,11 +75,12 @@ export class PaymentsService {
         take: 500,
       });
       if (stale.length === 0) return;
-      const ids = stale.map((row) => row.id);
-      await tx.payment.updateMany({
-        where: { id: { in: ids }, status: 'INITIATED' },
-        data: { status: 'REFUSED' },
-      });
+      // Only the requests actually moved get a REFUSED event (a confirmation may have won).
+      const moved = await tx.$queryRaw<{ id: string }[]>`
+        UPDATE payments SET status = 'REFUSED'
+         WHERE id = ANY(${stale.map((row) => row.id)}::uuid[]) AND status = 'INITIATED'
+        RETURNING id`;
+      const ids = moved.map((row) => row.id);
       await tx.paymentEvent.createMany({
         data: ids.map((paymentId) => ({ id: uuidv7(), paymentId, status: 'REFUSED' as const })),
       });
@@ -211,7 +212,10 @@ export class PaymentsService {
       throw validationFailed([{ in: 'body', pointer: '/creditType', code: 'INVALID_ENUM' }]);
     const wallet = accounts.employeeWallet(payment.employeeId, payment.creditType);
     // Lock the wallet first: the daily limit and the lots are read under the same lock.
-    await this.ledger.lockAccount(tx, wallet);
+    await this.ledger.lockAccounts(tx, [
+      wallet,
+      accounts.merchantWallet(payment.merchantId, payment.creditType),
+    ]);
     const spent = (await this.spentToday(tx, payment.employeeId)).get(payment.creditType) ?? 0n;
     if (spent + payment.amount > setting.dailyLimitMillimes) {
       const remaining = setting.dailyLimitMillimes - spent;
@@ -306,8 +310,12 @@ export class PaymentsService {
     await this.db.user(async (tx) => {
       const payment = await tx.payment.findUnique({ where: { id: paymentId } });
       if (payment?.employeeId !== employeeId) throw problems.notFound();
-      if (payment.status !== 'INITIATED') throw problems.conflict();
-      await tx.payment.update({ where: { id: paymentId }, data: { status: 'REFUSED' } });
+      // Conditional: a confirmation that won the race is never turned into a refusal (C4).
+      const moved = await tx.payment.updateMany({
+        where: { id: paymentId, status: 'INITIATED' },
+        data: { status: 'REFUSED' },
+      });
+      if (moved.count !== 1) throw problems.conflict();
       await tx.paymentEvent.create({ data: { id: uuidv7(), paymentId, status: 'REFUSED' } });
     });
   }
@@ -628,13 +636,14 @@ export class PaymentsService {
     return this.db.user(async (tx) => {
       const payment = await tx.payment.findUnique({ where: { id: paymentId } });
       if (payment === null) throw problems.notFound();
-      if (payment.status !== 'INITIATED') throw problems.conflict();
-      const updated = await tx.payment.update({
-        where: { id: paymentId },
+      // Conditional: a confirmation that won the race is never turned into a refusal (C4).
+      const moved = await tx.payment.updateMany({
+        where: { id: paymentId, status: 'INITIATED' },
         data: { status: 'REFUSED' },
       });
+      if (moved.count !== 1) throw problems.conflict();
       await tx.paymentEvent.create({ data: { id: uuidv7(), paymentId, status: 'REFUSED' } });
-      return merchantPayment(updated);
+      return merchantPayment(await tx.payment.findUniqueOrThrow({ where: { id: paymentId } }));
     });
   }
 

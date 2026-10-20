@@ -1631,7 +1631,12 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Refuser une demande de virement avec un motif (`REQUESTED` → `REJECTED`) */
+    /**
+     * Refuser une demande de virement avec un motif (`REQUESTED` → `REJECTED`)
+     * @description Financier : l'écriture de la demande est contre-passée (le commerçant retrouve son solde),
+     *     d'où l'`Idempotency-Key` obligatoire (règle 4). Validation et refus d'une même demande
+     *     sont traités l'un après l'autre (verrou de ligne) : le second reçoit `409`.
+     */
     post: operations['rejectAdminPayoutRequest'];
     delete?: never;
     options?: never;
@@ -6800,7 +6805,15 @@ export interface operations {
   rejectAdminPayoutRequest: {
     parameters: {
       query?: never;
-      header?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
       path: {
         payoutId: components['schemas']['Uuid'];
       };

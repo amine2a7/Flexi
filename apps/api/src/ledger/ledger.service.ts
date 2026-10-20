@@ -196,12 +196,31 @@ export class LedgerService {
    * Checks made under this lock (daily limit, payout available) cannot race with another payment.
    */
   async lockAccount(tx: Tx, account: AccountRef): Promise<void> {
-    const accountId = await this.ensureAccount(tx, account);
-    await tx.$queryRaw`SELECT account_id FROM account_balances WHERE account_id = ${accountId}::uuid FOR UPDATE`;
+    await this.lockAccounts(tx, [account]);
+  }
+
+  /**
+   * Locks every account of an operation at once, in the fixed order of post() (by id), before
+   * any check: two operations on the same accounts never wait for each other in a cycle
+   * (ledger-auditor C5).
+   */
+  async lockAccounts(tx: Tx, refs: readonly AccountRef[]): Promise<void> {
+    const ids: string[] = [];
+    for (const ref of refs) ids.push(await this.ensureAccount(tx, ref));
+    const ordered = [...new Set(ids)].sort();
+    await tx.$queryRaw`SELECT account_id FROM account_balances
+       WHERE account_id = ANY(${ordered}::uuid[]) ORDER BY account_id FOR UPDATE`;
   }
 
   /** Correction: a new transaction with the opposite entries, pointing to the original. */
   async reverse(tx: Tx, transactionId: string, reference: string): Promise<Posted> {
+    // Entries that moved credit lots cannot be reversed blindly: the lots would no longer match
+    // the wallet (ledger-auditor C9). No flow needs it today (only payout requests are reversed).
+    const withLots = await tx.$queryRaw<{ count: bigint }[]>`
+      SELECT count(*)::bigint AS count FROM ledger_entries
+       WHERE transaction_id = ${transactionId}::uuid AND lot_id IS NOT NULL`;
+    if ((withLots[0]?.count ?? 0n) > 0n)
+      throw new Error('cannot reverse a transaction that moved credit lots');
     const rows = await tx.$queryRaw<
       {
         code: string;
@@ -348,9 +367,13 @@ export class LedgerService {
    * Daily reconciliation (spec 02 §5): every materialized balance equals the sum of its entries,
    * and the books are balanced (total debits = total credits). Lists the accounts in error.
    */
-  async reconcile(
-    tx: Tx,
-  ): Promise<{ ok: boolean; mismatches: string[]; totalDebits: bigint; totalCredits: bigint }> {
+  async reconcile(tx: Tx): Promise<{
+    ok: boolean;
+    mismatches: string[];
+    lotMismatches: string[];
+    totalDebits: bigint;
+    totalCredits: bigint;
+  }> {
     const mismatches = await tx.$queryRaw<{ code: string }[]>`
       SELECT a.code FROM ledger_accounts a
         JOIN account_balances b ON b.account_id = a.id
@@ -367,9 +390,20 @@ export class LedgerService {
              (sum(amount_millimes) FILTER (WHERE direction = 'C'))::bigint AS c FROM ledger_entries`;
     const totalDebits = totals[0]?.d ?? 0n;
     const totalCredits = totals[0]?.c ?? 0n;
+    // Employee wallets: the remainders of their lots add up to the balance (FEFO consistency, C8).
+    const lotMismatches = await tx.$queryRaw<{ code: string }[]>`
+      SELECT a.code FROM ledger_accounts a
+        JOIN account_balances b ON b.account_id = a.id
+        LEFT JOIN LATERAL (
+          SELECT coalesce(sum(l.remaining_millimes), 0)::bigint AS lots
+            FROM credit_lots l WHERE l.account_id = a.id
+        ) s ON true
+       WHERE a.owner_type = 'EMPLOYEE' AND s.lots <> b.balance_millimes
+       ORDER BY a.code`;
     return {
-      ok: mismatches.length === 0 && totalDebits === totalCredits,
+      ok: mismatches.length === 0 && lotMismatches.length === 0 && totalDebits === totalCredits,
       mismatches: mismatches.map((row) => row.code),
+      lotMismatches: lotMismatches.map((row) => row.code),
       totalDebits,
       totalCredits,
     };

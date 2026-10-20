@@ -60,6 +60,11 @@ try {
     `GRANT CONNECT ON DATABASE ${owner.escapeIdentifier(urls.dbName)} TO ${owner.escapeIdentifier(APP_DB_ROLE)}`,
   );
   console.log(`role ${APP_DB_ROLE} ready (LOGIN, NOSUPERUSER, NOBYPASSRLS)`);
+  // Local database (this script refuses any other host): marked as a development one, the only
+  // kind where the seed may write opening balances (migration 0010). Never done in production.
+  await owner.query(
+    `ALTER DATABASE ${owner.escapeIdentifier(urls.dbName)} SET app.environment = 'development'`,
+  );
 } finally {
   await owner.end();
 }

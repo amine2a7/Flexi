@@ -279,12 +279,14 @@ export class PayoutsService {
     const merchantId = this.merchantId();
     const quote = await tx.payoutQuote.findUnique({ where: { id: quoteId } });
     if (quote?.merchantId !== merchantId) throw problems.notFound();
+    // A quote is used once, even by two requests at the same time (ledger-auditor C6).
+    const taken = await tx.payoutQuote.updateMany({
+      where: { id: quoteId, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+    if (taken.count !== 1) throw problems.conflict();
     const rate = await this.settings.commissionRate(tx, merchantId, quote.creditType);
-    if (
-      quote.usedAt !== null ||
-      quote.expiresAt.getTime() < Date.now() ||
-      quote.commissionRateBps !== rate
-    )
+    if (quote.expiresAt.getTime() < Date.now() || quote.commissionRateBps !== rate)
       throw problems.conflict();
     const found = await tx.merchant.findUniqueOrThrow({ where: { id: merchantId } });
     // No IBAN checked yet (KYC): no payout.
@@ -330,7 +332,6 @@ export class PayoutsService {
         });
       throw error;
     }
-    await tx.payoutQuote.update({ where: { id: quoteId }, data: { usedAt: new Date() } });
     const id = uuidv7();
     const payout = await tx.payoutRequest.create({
       data: {
@@ -545,7 +546,13 @@ export class PayoutsService {
   }
 
   /** Controlled (CHECKED): the request joins the next scheduled settlement batch (J+2). */
+  /** Locks the payout request (ledger-auditor C2): approve and reject never both apply. */
+  private async lockPayout(tx: Tx, id: string): Promise<void> {
+    await tx.$queryRaw`SELECT id FROM payout_requests WHERE id = ${id}::uuid FOR UPDATE`;
+  }
+
   async approve(tx: Tx, id: string) {
+    await this.lockPayout(tx, id);
     const payout = await this.loadAdmin(tx, id);
     if (payout.status !== 'REQUESTED') throw problems.conflict();
     const today = businessDay();
@@ -578,8 +585,9 @@ export class PayoutsService {
   }
 
   /** Rejected with a reason: the request entry is reversed (the merchant gets its balance back). */
-  async reject(id: string, reason: string) {
-    return this.db.user(async (tx) => {
+  async reject(tx: Tx, id: string, reason: string) {
+    {
+      await this.lockPayout(tx, id);
       const payout = await this.loadAdmin(tx, id);
       if (payout.status !== 'REQUESTED') throw problems.conflict();
       if (payout.transactionId !== null)
@@ -598,7 +606,7 @@ export class PayoutsService {
       await this.audit.record(tx, 'payouts.reject', payout.reference);
       const updated = await this.loadAdmin(tx, id);
       return { ...adminPayout(updated), history: history(updated.events) };
-    });
+    }
   }
 
   private batchTotals(payouts: readonly PayoutRequest[]) {
@@ -672,10 +680,21 @@ export class PayoutsService {
     );
     for (const { id } of due) {
       await this.db.system(async (tx) => {
+        // Executed once, even if the job runs twice at the same time (ledger-auditor C3): the
+        // batch is locked while still scheduled, or skipped.
+        const claimed = await tx.$queryRaw<{ id: string }[]>`
+          SELECT id FROM settlement_batches WHERE id = ${id}::uuid AND status = 'SCHEDULED'
+             FOR UPDATE SKIP LOCKED`;
+        if (claimed.length === 0) return;
         const payouts = await tx.payoutRequest.findMany({
           where: { batchId: id, status: { in: ['CHECKED', 'SENT'] } },
         });
         for (const payout of payouts) {
+          const moved = await tx.payoutRequest.updateMany({
+            where: { id: payout.id, status: { in: ['CHECKED', 'SENT'] } },
+            data: { status: 'EXECUTED' },
+          });
+          if (moved.count !== 1) continue;
           await this.ledger.post(tx, {
             type: 'PAYOUT_EXECUTED',
             reference: payout.reference,
@@ -685,7 +704,6 @@ export class PayoutsService {
             ],
           });
           const now = new Date();
-          await tx.payoutRequest.update({ where: { id: payout.id }, data: { status: 'EXECUTED' } });
           await tx.payoutEvent.createMany({
             data: [
               { id: uuidv7(), payoutId: payout.id, status: 'SENT', occurredAt: now },

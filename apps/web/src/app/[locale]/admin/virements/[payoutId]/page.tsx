@@ -148,6 +148,7 @@ function PayoutView({
                   variant="secondary"
                   icon={<X aria-hidden="true" className="size-icon-sm" />}
                   onClick={() => {
+                    setIntentKey(newIdempotencyKey());
                     setDialog('reject');
                   }}
                 >
@@ -243,7 +244,7 @@ function PayoutView({
           onSubmit={async (reason) =>
             settle(
               await getApi().POST('/v1/admin/payout-requests/{payoutId}/reject', {
-                params: { path: { payoutId: payout.id } },
+                params: { path: { payoutId: payout.id }, header: { 'Idempotency-Key': intentKey } },
                 body: { reason },
               }),
               t('rejectedToast'),

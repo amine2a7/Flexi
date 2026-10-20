@@ -16,6 +16,7 @@ import { PaymentsService } from '../payments/payments.service.js';
 import { PayoutsService } from '../payouts/payouts.service.js';
 
 const EVERY_MS = 10 * 60_000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Periodic jobs of the API process (one process in local development; BullMQ will run them when
@@ -25,6 +26,7 @@ const EVERY_MS = 10 * 60_000;
 export class JobsService implements OnApplicationBootstrap, OnApplicationShutdown {
   private readonly logger = new Logger('Jobs');
   private timer: NodeJS.Timeout | undefined;
+  private daily: NodeJS.Timeout | undefined;
 
   constructor(
     @Inject(ENV) private readonly env: Env,
@@ -40,10 +42,38 @@ export class JobsService implements OnApplicationBootstrap, OnApplicationShutdow
     void this.runAll();
     this.timer = setInterval(() => void this.runAll(), EVERY_MS);
     this.timer.unref();
+    // Daily reconciliation of the books (spec 02 §5, ledger-auditor C8), at start-up then every day.
+    void this.reconcileBooks();
+    this.daily = setInterval(() => void this.reconcileBooks(), DAY_MS);
+    this.daily.unref();
   }
 
   onApplicationShutdown(): void {
     if (this.timer !== undefined) clearInterval(this.timer);
+    if (this.daily !== undefined) clearInterval(this.daily);
+  }
+
+  /**
+   * Reconciliation (spec 02 §5): every balance equals its entries, the books are balanced, the
+   * lots of each employee wallet add up to its balance. A gap is a critical alert: audit entry and
+   * error log naming the accounts, never an amount.
+   */
+  async reconcileBooks(): Promise<boolean> {
+    const result = await this.db.system((tx) => this.ledger.reconcile(tx));
+    if (result.ok) return true;
+    const accountsInError = [...result.mismatches, ...result.lotMismatches];
+    this.logger.error(
+      `ledger reconciliation failed: ${String(accountsInError.length)} account(s), books balanced: ${String(result.totalDebits === result.totalCredits)}`,
+    );
+    await this.db.system((tx) =>
+      this.audit.record(
+        tx,
+        'ledger.reconcileFailed',
+        accountsInError.join(', ').slice(0, 200) || 'débits ≠ crédits',
+        'Système',
+      ),
+    );
+    return false;
   }
 
   async runAll(): Promise<void> {
@@ -78,12 +108,6 @@ export class JobsService implements OnApplicationBootstrap, OnApplicationShutdow
     for (const row of due) {
       await this.db.system(async (tx) => {
         const wallet = accounts.employeeWallet(row.owner_id, row.credit_type);
-        await this.ledger.lockAccount(tx, wallet);
-        const lots = await tx.$queryRaw<{ id: string; remaining_millimes: bigint }[]>`
-          SELECT id, remaining_millimes FROM credit_lots
-           WHERE account_id = ${row.account_id}::uuid AND expires_at <= ${now} AND remaining_millimes > 0 FOR UPDATE`;
-        const total = lots.reduce((sum, lot) => sum + lot.remaining_millimes, 0n);
-        if (total === 0n) return;
         const employee = await tx.employee.findUnique({ where: { id: row.owner_id } });
         const destination = (await tx.platformSettings.findUnique({ where: { id: 1 } }))
           ?.expiredCreditsDestination;
@@ -91,6 +115,13 @@ export class JobsService implements OnApplicationBootstrap, OnApplicationShutdow
           destination === 'COMPANY_RETURN' && employee !== null
             ? accounts.companyWallet(employee.companyId, row.credit_type)
             : accounts.expiredCredits();
+        // Both accounts locked together, in the order of every other posting (C5).
+        await this.ledger.lockAccounts(tx, [wallet, target]);
+        const lots = await tx.$queryRaw<{ id: string; remaining_millimes: bigint }[]>`
+          SELECT id, remaining_millimes FROM credit_lots
+           WHERE account_id = ${row.account_id}::uuid AND expires_at <= ${now} AND remaining_millimes > 0 FOR UPDATE`;
+        const total = lots.reduce((sum, lot) => sum + lot.remaining_millimes, 0n);
+        if (total === 0n) return;
         const posted = await this.ledger.post(tx, {
           type: 'CREDIT_EXPIRY',
           reference: `EXP-${row.owner_id.slice(0, 8)}`,

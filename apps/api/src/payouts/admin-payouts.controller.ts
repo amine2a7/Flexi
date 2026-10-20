@@ -59,13 +59,22 @@ export class AdminPayoutsController {
     return sendOutcome(res, outcome);
   }
 
+  /** Financial (reversal of the request entry): Idempotency-Key required (rule 4). */
   @Post('payout-requests/:payoutId/reject')
   @HttpCode(200)
-  reject(@Param('payoutId') payoutId: string, @Body() body: unknown) {
-    return this.payouts.reject(
-      pathId('payoutId', payoutId),
-      parse(z.strictObject({ reason }), body).reason,
-    );
+  async reject(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @Param('payoutId') payoutId: string,
+    @Body() body: unknown,
+  ) {
+    const id = pathId('payoutId', payoutId);
+    const input = parse(z.strictObject({ reason }), body);
+    const outcome = await this.idempotency.run(req, async (tx) => ({
+      status: 200,
+      body: await this.payouts.reject(tx, id, input.reason),
+    }));
+    return sendOutcome(res, outcome);
   }
 
   @Get('settlements')
