@@ -3531,6 +3531,18 @@ export interface components {
         remainingMillimes: components['schemas']['AmountMillimes'];
       };
     };
+    /**
+     * PinRefusedProblem
+     * @description PIN refusé pendant un blocage (`PIN_LOCKED` n'est plus émis, même réponse que PIN faux).
+     */
+    PinRefusedProblem: components['schemas']['ProblemBase'] & {
+      /** @constant */
+      code?: 'PIN_INVALID';
+      details: {
+        retryAfterSeconds?: number;
+        reauthenticationRequired?: boolean;
+      };
+    };
     /** RetryAfterDetails */
     RetryAfterDetails: {
       retryAfterSeconds: number;
@@ -4373,13 +4385,19 @@ export interface operations {
       };
       400: components['responses']['BadRequest'];
       401: components['responses']['Unauthorized'];
-      /** @description `PIN_INVALID` (PIN faux, compté : 3 échecs → `PIN_LOCKED` 15 min) ou `PIN_LOCKED`. */
+      /**
+       * @description `PIN_INVALID` : PIN refusé, qu'il soit faux ou bloqué (même réponse, securite S01).
+       *     3 PIN faux bloquent 15 min, puis 30, puis 60, puis jusqu'à une reconnexion complète
+       *     (mot de passe + MFA). Pendant un blocage, `details.retryAfterSeconds` donne le délai
+       *     restant ; après le 4e blocage, `details.reauthenticationRequired = true`.
+       */
       403: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/problem+json': components['schemas']['Problem'];
+          'application/problem+json':
+            components['schemas']['PinRefusedProblem'] | components['schemas']['Problem'];
         };
       };
       404: components['responses']['NotFound'];
@@ -4480,13 +4498,19 @@ export interface operations {
       };
       400: components['responses']['BadRequest'];
       401: components['responses']['Unauthorized'];
-      /** @description `PIN_INVALID` (PIN faux, compté : 3 échecs → `PIN_LOCKED` 15 min) ou `PIN_LOCKED`. */
+      /**
+       * @description `PIN_INVALID` : PIN refusé, qu'il soit faux ou bloqué (même réponse, securite S01).
+       *     3 PIN faux bloquent 15 min, puis 30, puis 60, puis jusqu'à une reconnexion complète
+       *     (mot de passe + MFA). Pendant un blocage, `details.retryAfterSeconds` donne le délai
+       *     restant ; après le 4e blocage, `details.reauthenticationRequired = true`.
+       */
       403: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/problem+json': components['schemas']['Problem'];
+          'application/problem+json':
+            components['schemas']['PinRefusedProblem'] | components['schemas']['Problem'];
         };
       };
       404: components['responses']['NotFound'];
@@ -4619,13 +4643,19 @@ export interface operations {
       };
       400: components['responses']['BadRequest'];
       401: components['responses']['Unauthorized'];
-      /** @description `PIN_INVALID` (PIN faux, compté : 3 échecs → `PIN_LOCKED` 15 min) ou `PIN_LOCKED`. */
+      /**
+       * @description `PIN_INVALID` : PIN refusé, qu'il soit faux ou bloqué (même réponse, securite S01).
+       *     3 PIN faux bloquent 15 min, puis 30, puis 60, puis jusqu'à une reconnexion complète
+       *     (mot de passe + MFA). Pendant un blocage, `details.retryAfterSeconds` donne le délai
+       *     restant ; après le 4e blocage, `details.reauthenticationRequired = true`.
+       */
       403: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          'application/problem+json': components['schemas']['Problem'];
+          'application/problem+json':
+            components['schemas']['PinRefusedProblem'] | components['schemas']['Problem'];
         };
       };
       429: components['responses']['TooManyRequests'];

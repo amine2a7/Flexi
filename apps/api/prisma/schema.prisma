@@ -260,19 +260,22 @@ model PointOfSale {
 }
 
 model Employee {
-  id             String         @id @default(uuid(7)) @db.Uuid
-  companyId      String         @map("company_id") @db.Uuid
-  employeeNumber String         @map("employee_number") @db.VarChar(20)
-  firstName      String         @map("first_name") @db.VarChar(60)
-  lastName       String         @map("last_name") @db.VarChar(60)
-  email          String         @db.VarChar(254)
-  phone          String         @db.VarChar(16)
-  status         EmployeeStatus @default(INVITED)
+  id                String         @id @default(uuid(7)) @db.Uuid
+  companyId         String         @map("company_id") @db.Uuid
+  employeeNumber    String         @map("employee_number") @db.VarChar(20)
+  firstName         String         @map("first_name") @db.VarChar(60)
+  lastName          String         @map("last_name") @db.VarChar(60)
+  email             String         @db.VarChar(254)
+  phone             String         @db.VarChar(16)
+  status            EmployeeStatus @default(INVITED)
   /// Argon2id hash of the 4-digit payment PIN.
-  pinHash        String?        @map("pin_hash")
-  pinFailures    Int            @default(0) @map("pin_failures")
-  pinLockedUntil DateTime?      @map("pin_locked_until") @db.Timestamptz(3)
-  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  pinHash           String?        @map("pin_hash")
+  pinFailures       Int            @default(0) @map("pin_failures")
+  pinLockedUntil    DateTime?      @map("pin_locked_until") @db.Timestamptz(3)
+  /// Number of PIN locks in a row (15, 30, 60 min, then a full sign-in is required).
+  pinLockLevel      Int            @default(0) @map("pin_lock_level")
+  pinRequiresReauth Boolean        @default(false) @map("pin_requires_reauth")
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
 
   company      Company       @relation(fields: [companyId], references: [id])
   user         User?

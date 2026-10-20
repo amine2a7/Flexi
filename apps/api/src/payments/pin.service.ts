@@ -4,9 +4,10 @@ import { DbService } from '../common/db.service.js';
 import { ApiProblem } from '../common/problem.js';
 import { hashSecret, verifySecret } from '../auth/password.js';
 
-/** Contract: a wrong PIN counts; 3 failures lock it for 15 minutes (PIN_LOCKED). */
+/** 3 wrong PINs lock it: 15 min, then 30, then 60 (TIMED_LOCKS), then until a full sign-in. */
 const MAX_FAILURES = 3;
-const LOCK_MS = 15 * 60_000;
+const FIRST_LOCK_MINUTES = 15;
+const TIMED_LOCKS = 3;
 /** Obvious sequences refused for a new PIN (spec 01 §3). */
 const WEAK = new Set([
   '0000',
@@ -43,43 +44,67 @@ export class PinService {
   ) {}
 
   /**
-   * Verifies the payment PIN of the employee. Runs in its own SQL transaction, so a failure is
-   * counted (and the lock set) even though the operation is then refused.
+   * Verifies the payment PIN of the employee (securite B5-S01). The attempt is reserved first by
+   * one UPDATE (at most 3 per lock window, whatever the number of simultaneous requests), then
+   * the hash is checked. 3 failures lock it 15 min, then 30, then 60, then until a full sign-in.
+   * A wrong PIN and a locked PIN get the same answer (PIN_INVALID), with the time left when locked.
    */
   async verify(employeeId: string, pin: string): Promise<void> {
-    const employee = await this.db.system((tx) =>
-      tx.employee.findUnique({ where: { id: employeeId } }),
+    const [reserved] = await this.db.system(
+      (tx) => tx.$queryRaw<{ pin_hash: string; pin_failures: number }[]>`
+        UPDATE employees SET pin_failures = pin_failures + 1
+         WHERE id = ${employeeId}::uuid AND pin_hash IS NOT NULL AND NOT pin_requires_reauth
+           AND pin_failures < ${MAX_FAILURES}
+           AND (pin_locked_until IS NULL OR pin_locked_until <= now())
+        RETURNING pin_hash, pin_failures`,
     );
-    if (employee?.pinHash === undefined || employee.pinHash === null) throw new ApiProblem(403, 'PIN_INVALID');
-    if (employee.pinLockedUntil !== null && employee.pinLockedUntil.getTime() > Date.now()) {
-      throw new ApiProblem(403, 'PIN_LOCKED');
-    }
-    if (await verifySecret(employee.pinHash, pin)) {
-      if (employee.pinFailures > 0) {
-        await this.db.system((tx) =>
-          tx.employee.update({ where: { id: employeeId }, data: { pinFailures: 0 } }),
-        );
-      }
+    if (reserved === undefined) throw await this.refusal(employeeId);
+    if (await verifySecret(reserved.pin_hash, pin)) {
+      await this.db.system(
+        (tx) => tx.$executeRaw`UPDATE employees SET pin_failures = 0, pin_lock_level = 0
+          WHERE id = ${employeeId}::uuid`,
+      );
       return;
     }
-    const locked = await this.db.system(async (tx) => {
-      const updated = await tx.employee.update({
-        where: { id: employeeId },
-        data: { pinFailures: { increment: 1 } },
-      });
-      if (updated.pinFailures < MAX_FAILURES) return false;
-      await tx.employee.update({
-        where: { id: employeeId },
-        data: { pinFailures: 0, pinLockedUntil: new Date(Date.now() + LOCK_MS) },
-      });
+    await this.db.system(async (tx) => {
+      const target = `employé ${employeeId}`;
+      await this.audit.record(tx, 'pin.failed', target);
+      if (reserved.pin_failures < MAX_FAILURES) return;
+      // Old values on the right-hand side: level 0 -> 15 min, 1 -> 30, 2 -> 60, 3 -> sign-in.
+      const [locked] = await tx.$queryRaw<
+        { pin_lock_level: number; pin_requires_reauth: boolean }[]
+      >`
+        UPDATE employees SET pin_failures = 0, pin_lock_level = pin_lock_level + 1,
+               pin_requires_reauth = pin_lock_level + 1 > ${TIMED_LOCKS},
+               pin_locked_until = CASE WHEN pin_lock_level + 1 > ${TIMED_LOCKS} THEN NULL
+                 ELSE now() + make_interval(mins => ${FIRST_LOCK_MINUTES} * (2 ^ pin_lock_level)::int) END
+         WHERE id = ${employeeId}::uuid AND pin_failures >= ${MAX_FAILURES}
+        RETURNING pin_lock_level, pin_requires_reauth`;
+      if (locked === undefined) return;
       await this.audit.record(
         tx,
-        'pin.locked',
-        `${updated.firstName} ${updated.lastName.charAt(0)}.`,
+        locked.pin_requires_reauth ? 'pin.blockedUntilSignIn' : 'pin.locked',
+        `${target} (niveau ${String(locked.pin_lock_level)})`,
       );
-      return true;
     });
-    throw new ApiProblem(403, locked ? 'PIN_LOCKED' : 'PIN_INVALID');
+    throw await this.refusal(employeeId);
+  }
+
+  /** The single answer to a refused PIN: same code, with the time left or the sign-in needed. */
+  private async refusal(employeeId: string): Promise<ApiProblem> {
+    const employee = await this.db.system((tx) =>
+      tx.employee.findUnique({
+        where: { id: employeeId },
+        select: { pinLockedUntil: true, pinRequiresReauth: true },
+      }),
+    );
+    if (employee?.pinRequiresReauth === true) {
+      return new ApiProblem(403, 'PIN_INVALID', { reauthenticationRequired: true });
+    }
+    const left = (employee?.pinLockedUntil?.getTime() ?? 0) - Date.now();
+    return left > 0
+      ? new ApiProblem(403, 'PIN_INVALID', { retryAfterSeconds: Math.ceil(left / 1000) })
+      : new ApiProblem(403, 'PIN_INVALID');
   }
 
   async change(employeeId: string, currentPin: string, newPin: string): Promise<void> {
@@ -100,7 +125,7 @@ export class PinService {
     await this.db.system(async (tx) => {
       const employee = await tx.employee.update({
         where: { id: employeeId },
-        data: { pinHash, pinFailures: 0, pinLockedUntil: null },
+        data: { pinHash, pinFailures: 0, pinLockedUntil: null, pinLockLevel: 0 },
       });
       await this.audit.record(
         tx,

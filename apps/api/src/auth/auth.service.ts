@@ -274,6 +274,13 @@ export class AuthService {
       });
       if (consumed.count !== 1) throw new ApiProblem(401, 'MFA_CHALLENGE_EXPIRED');
       await this.clearFailures(tx, user);
+      // A full sign-in (password + MFA) lifts the payment PIN lock and its progression (S01).
+      if (user.employeeId !== null) {
+        await tx.employee.update({
+          where: { id: user.employeeId },
+          data: { pinFailures: 0, pinLockLevel: 0, pinRequiresReauth: false, pinLockedUntil: null },
+        });
+      }
       const issued = await this.sessions.open(tx, user.id, user.role, this.nextStepAfterMfa(user));
       await this.audit.record(tx, 'auth.signIn', user.displayName, user.displayName);
       return issued;

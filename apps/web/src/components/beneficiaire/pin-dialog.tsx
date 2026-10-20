@@ -4,7 +4,7 @@ import { LockKeyhole } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState, type ReactNode, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
-import { errorMessageKey } from '@/lib/api/problem';
+import { errorMessageKey, pinRefusal } from '@/lib/api/problem';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/field';
 import { Alert } from '@/components/ui/layout-blocks';
@@ -39,6 +39,17 @@ export function PinDialog({
   const [error, setError] = useState<unknown>(undefined);
   const [saving, setSaving] = useState(false);
   const valid = /^[0-9]{4}$/.test(pin);
+  const tErrors = useTranslations('errors');
+  /** Same message for a wrong or a locked PIN, with the time left or the sign-in to do. */
+  const pinMessage = (problem: unknown): string | undefined => {
+    const refusal = pinRefusal(problem);
+    if (refusal === undefined) return undefined;
+    if (refusal.reauthenticationRequired === true)
+      return `${tErrors('pinInvalid')} ${tErrors('pinSignInAgain')}`;
+    if (refusal.retryAfterSeconds !== undefined)
+      return `${tErrors('pinInvalid')} ${tErrors('pinRetryIn', { minutes: Math.ceil(refusal.retryAfterSeconds / 60) })}`;
+    return tErrors('pinInvalid');
+  };
 
   async function submit(event: SyntheticEvent) {
     event.preventDefault();
@@ -68,7 +79,7 @@ export function PinDialog({
         {recap}
         {error !== undefined ? (
           <Alert tone="danger">
-            {describe?.(error) ?? tRoot(messageKey(errorMessageKey(error)))}
+            {describe?.(error) ?? pinMessage(error) ?? tRoot(messageKey(errorMessageKey(error)))}
           </Alert>
         ) : null}
         <TextField

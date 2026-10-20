@@ -135,6 +135,7 @@ info:
     | 409 | `RESOURCE_STATE_CONFLICT` | `errors.resourceStateConflict` | — |
     | 413 | `PAYLOAD_TOO_LARGE` | `errors.payloadTooLarge` | — |
     | 415 | `UNSUPPORTED_MEDIA_TYPE` | `errors.unsupportedMediaType` | — |
+    | 403 | `PIN_INVALID` | `errors.pinInvalid` | `retryAfterSeconds?` (blocage en cours), `reauthenticationRequired?` (reconnexion complète exigée) |
     | 422 | `IDEMPOTENCY_KEY_REUSED` | `errors.idempotencyKeyReused` | — |
     | 422 | `INSUFFICIENT_FUNDS` | `errors.insufficientFunds` | `missingMillimes` (employé titulaire uniquement) ; **aucun** `details` pour un membre famille |
     | 422 | `LIMIT_EXCEEDED` | `errors.limitExceeded` | `limitType`, `remainingMillimes` (employé titulaire ; membre famille : `FAMILY_MEMBER` et reste de sa propre limite) |
@@ -1137,11 +1138,16 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            `PIN_INVALID` (PIN faux, compté : 3 échecs → `PIN_LOCKED` 15 min) ou `PIN_LOCKED`.
+            `PIN_INVALID` : PIN refusé, qu'il soit faux ou bloqué (même réponse, securite S01).
+            3 PIN faux bloquent 15 min, puis 30, puis 60, puis jusqu'à une reconnexion complète
+            (mot de passe + MFA). Pendant un blocage, `details.retryAfterSeconds` donne le délai
+            restant ; après le 4e blocage, `details.reauthenticationRequired = true`.
           content:
             application/problem+json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                oneOf:
+                  - $ref: '#/components/schemas/PinRefusedProblem'
+                  - $ref: '#/components/schemas/Problem'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -1249,11 +1255,16 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            `PIN_INVALID` (PIN faux, compté : 3 échecs → `PIN_LOCKED` 15 min) ou `PIN_LOCKED`.
+            `PIN_INVALID` : PIN refusé, qu'il soit faux ou bloqué (même réponse, securite S01).
+            3 PIN faux bloquent 15 min, puis 30, puis 60, puis jusqu'à une reconnexion complète
+            (mot de passe + MFA). Pendant un blocage, `details.retryAfterSeconds` donne le délai
+            restant ; après le 4e blocage, `details.reauthenticationRequired = true`.
           content:
             application/problem+json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                oneOf:
+                  - $ref: '#/components/schemas/PinRefusedProblem'
+                  - $ref: '#/components/schemas/Problem'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -1390,11 +1401,16 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            `PIN_INVALID` (PIN faux, compté : 3 échecs → `PIN_LOCKED` 15 min) ou `PIN_LOCKED`.
+            `PIN_INVALID` : PIN refusé, qu'il soit faux ou bloqué (même réponse, securite S01).
+            3 PIN faux bloquent 15 min, puis 30, puis 60, puis jusqu'à une reconnexion complète
+            (mot de passe + MFA). Pendant un blocage, `details.retryAfterSeconds` donne le délai
+            restant ; après le 4e blocage, `details.reauthenticationRequired = true`.
           content:
             application/problem+json:
               schema:
-                $ref: '#/components/schemas/Problem'
+                oneOf:
+                  - $ref: '#/components/schemas/PinRefusedProblem'
+                  - $ref: '#/components/schemas/Problem'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -7521,6 +7537,26 @@ components:
                   $ref: '#/components/schemas/LimitType'
                 remainingMillimes:
                   $ref: '#/components/schemas/AmountMillimes'
+    PinRefusedProblem:
+      title: PinRefusedProblem
+      description: PIN refusé pendant un blocage (`PIN_LOCKED` n'est plus émis, même réponse que PIN faux).
+      unevaluatedProperties: false
+      allOf:
+        - $ref: '#/components/schemas/ProblemBase'
+        - type: object
+          required: [details]
+          properties:
+            code:
+              const: PIN_INVALID
+            details:
+              type: object
+              additionalProperties: false
+              properties:
+                retryAfterSeconds:
+                  type: integer
+                  minimum: 1
+                reauthenticationRequired:
+                  type: boolean
     RetryAfterDetails:
       title: RetryAfterDetails
       type: object

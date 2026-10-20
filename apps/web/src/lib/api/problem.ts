@@ -21,6 +21,27 @@ const MESSAGE_KEYS: Readonly<Record<string, string>> = {
   SERVICE_UNAVAILABLE: 'errors.serviceUnavailable',
 };
 
+/**
+ * Refused PIN (securite S01): one code whether it is wrong or locked; while locked, the time left,
+ * or the full sign-in required after the fourth lock.
+ */
+export function pinRefusal(
+  error: unknown,
+): { retryAfterSeconds?: number; reauthenticationRequired?: boolean } | undefined {
+  const problem = asProblem(error);
+  if (problem?.code !== 'PIN_INVALID') return undefined;
+  const details = (problem.details ?? {}) as {
+    retryAfterSeconds?: unknown;
+    reauthenticationRequired?: unknown;
+  };
+  return {
+    ...(typeof details.retryAfterSeconds === 'number'
+      ? { retryAfterSeconds: details.retryAfterSeconds }
+      : {}),
+    ...(details.reauthenticationRequired === true ? { reauthenticationRequired: true } : {}),
+  };
+}
+
 /** The problem carried by an API error body, if it is a well-formed RFC 9457 problem. */
 export function asProblem(error: unknown): ApiProblem | undefined {
   return isProblem(error) ? error : undefined;

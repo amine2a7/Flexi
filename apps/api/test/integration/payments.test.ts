@@ -208,14 +208,15 @@ describe('payment by the customer code (merchant initiates, beneficiary confirms
     expect(
       (await employee.call('POST', '/v1/employee/payments', { body, headers: key() })).body.code,
     ).toBe('PIN_INVALID');
-    expect(
-      (await employee.call('POST', '/v1/employee/payments', { body, headers: key() })).body.code,
-    ).toBe('PIN_LOCKED');
+    // Third failure: locked, same code, with the time left (securite S01).
+    const third = await employee.call('POST', '/v1/employee/payments', { body, headers: key() });
+    expect(third.body.code).toBe('PIN_INVALID');
+    expect(third.body.details).toMatchObject({ retryAfterSeconds: expect.any(Number) as number });
     const right = await employee.call('POST', '/v1/employee/payments', {
       body: { ...body, pin: PIN },
       headers: key(),
     });
-    expect(right.body.code).toBe('PIN_LOCKED');
+    expect(right.body.code).toBe('PIN_INVALID');
   });
 });
 

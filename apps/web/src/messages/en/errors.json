@@ -16,6 +16,8 @@
   "serviceUnavailable": "Service temporarily unavailable. Try again later.",
   "network": "Cannot connect. Check your network and try again.",
   "generic": "The operation did not go through. Try again.",
-  "pinInvalid": "Wrong PIN.",
-  "pinLocked": "PIN locked after 3 attempts: try again in 15 minutes."
+  "pinInvalid": "PIN refused.",
+  "pinLocked": "PIN refused. Try again in 15 min.",
+  "pinRetryIn": "Try again in {minutes} min.",
+  "pinSignInAgain": "For your security, sign in again with your password and code to pay again."
 }

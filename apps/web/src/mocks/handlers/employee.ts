@@ -67,11 +67,18 @@ function wallet(): S['EmployeeWallet'] {
   };
 }
 
+/** Locked PIN: same code as a wrong one, with the time left (API behaviour, securite S01). */
+function pinLocked(until: number): Response {
+  return problem(403, 'PIN_INVALID', {
+    retryAfterSeconds: Math.max(1, Math.ceil((until - Date.now()) / 1000)),
+  });
+}
+
 /** Checks the PIN (3 failures lock it 15 min). Returns a problem response or undefined. */
 function checkPin(pin: string): Response | undefined {
   const state = employee();
   if (state.pinLockedUntil !== undefined && state.pinLockedUntil > Date.now()) {
-    return problem(403, 'PIN_LOCKED');
+    return pinLocked(state.pinLockedUntil);
   }
   if (!/^[0-9]{4}$/.test(pin))
     return validationProblem([{ pointer: '/pin', code: 'INVALID_FORMAT' }]);
@@ -80,7 +87,7 @@ function checkPin(pin: string): Response | undefined {
     if (state.pinFailures >= PIN_MAX_FAILURES) {
       state.pinLockedUntil = Date.now() + PIN_LOCK_MS;
       state.pinFailures = 0;
-      return problem(403, 'PIN_LOCKED');
+      return pinLocked(state.pinLockedUntil);
     }
     return problem(403, 'PIN_INVALID');
   }
