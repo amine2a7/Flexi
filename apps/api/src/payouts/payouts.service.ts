@@ -556,10 +556,16 @@ export class PayoutsService {
     const payout = await this.loadAdmin(tx, id);
     if (payout.status !== 'REQUESTED') throw problems.conflict();
     const today = businessDay();
-    let batch = await tx.settlementBatch.findFirst({
-      where: { status: 'SCHEDULED', settlementDate: { gt: dateOnly(today) } },
-      orderBy: { settlementDate: 'asc' },
-    });
+    // The batch is locked while the payout joins it: the settlement job (SKIP LOCKED) leaves it
+    // for its next run instead of executing it without this payout (ledger-auditor N1).
+    const [open] = await tx.$queryRaw<{ id: string }[]>`
+      SELECT id FROM settlement_batches
+       WHERE status = 'SCHEDULED' AND settlement_date > ${dateOnly(today)}::date
+       ORDER BY settlement_date LIMIT 1 FOR UPDATE`;
+    let batch =
+      open === undefined
+        ? null
+        : await tx.settlementBatch.findUniqueOrThrow({ where: { id: open.id } });
     if (batch === null) {
       const [sequence] = await tx.$queryRaw<
         { value: bigint }[]

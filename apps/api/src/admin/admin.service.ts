@@ -466,6 +466,8 @@ export class AdminService {
   async approve(id: string) {
     const who = principal();
     return this.db.user(async (tx) => {
+      // Approve and reject of the same request are served one after the other (securite S03).
+      await tx.$queryRaw`SELECT id FROM approvals WHERE id = ${id}::uuid FOR UPDATE`;
       const approval = await tx.approval.findUnique({ where: { id } });
       if (approval === null) throw problems.notFound();
       if (approval.initiatorId === who.userId) throw problems.forbidden();
@@ -491,6 +493,8 @@ export class AdminService {
   async reject(id: string, reason: string) {
     const who = principal();
     return this.db.user(async (tx) => {
+      // Approve and reject of the same request are served one after the other (securite S03).
+      await tx.$queryRaw`SELECT id FROM approvals WHERE id = ${id}::uuid FOR UPDATE`;
       const approval = await tx.approval.findUnique({ where: { id } });
       if (approval === null) throw problems.notFound();
       if (approval.status !== 'PENDING') throw problems.conflict();

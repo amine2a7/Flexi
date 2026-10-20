@@ -393,6 +393,16 @@ describe('opening balances (development seed only, decision of 2026-10-14)', () 
     await owner.end();
   });
 
+  it('are refused in a database that is not marked as a development one (fail closed)', async () => {
+    const owner = await ownerClient();
+    await owner.query('BEGIN');
+    await owner.query(`SELECT set_config('app.seed', 'on', true)`);
+    await owner.query(`SELECT set_config('app.environment', '', true)`);
+    await expect(owner.query(opening('OPENING_BALANCE'))).rejects.toMatchObject({ code: '42501' });
+    await owner.query('ROLLBACK');
+    await owner.end();
+  });
+
   it('are accepted from the seed (owner, app.seed on, not production)', async () => {
     const owner = await ownerClient();
     await owner.query('BEGIN');

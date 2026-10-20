@@ -256,4 +256,32 @@ describe('concurrent decisions on one financial object', () => {
     ]);
     expect(statuses(results)).toEqual([201, 409]);
   });
+
+  it('either approves or rejects a four-eyes request, never both (securite S03)', async () => {
+    const initiator = await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Amine K.'));
+    const second = await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Hela R.'));
+    const third = await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Mehdi S.'));
+    const profile = await db.system((tx) =>
+      tx.commissionProfile.create({
+        data: { name: `Profil ${randomUUID().slice(0, 8)}`, rateBps: 180 },
+      }),
+    );
+    const requested = await initiator.call(
+      'POST',
+      `/v1/admin/commission-profiles/${profile.id}/change-requests`,
+      { body: { newRateBps: 210, reason: 'Révision' } },
+    );
+    expect(requested.status).toBe(201);
+    const id = String(requested.body.id);
+    const results = await Promise.all([
+      second.call('POST', `/v1/admin/approvals/${id}/approve`),
+      third.call('POST', `/v1/admin/approvals/${id}/reject`, { body: { reason: 'Non' } }),
+    ]);
+    expect(statuses(results)).toEqual([200, 409]);
+    const row = await db.system((tx) => tx.approval.findUniqueOrThrow({ where: { id } }));
+    const rate = (
+      await db.system((tx) => tx.commissionProfile.findUniqueOrThrow({ where: { id: profile.id } }))
+    ).rateBps;
+    expect(row.status === 'APPROVED' ? rate : 180).toBe(row.status === 'APPROVED' ? 210 : rate);
+  });
 });
