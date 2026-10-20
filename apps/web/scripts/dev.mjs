@@ -1,4 +1,6 @@
 // Development server launcher (`pnpm dev`, mocked API; `pnpm dev:api`, real API on localhost:3000).
+// Both run with webpack (`--webpack` in package.json) while Turbopack's persistent cache crashes on
+// this machine ("turbo-tasks: an internal panic occurred", 2026-10-17).
 // 1. Copies the MSW service worker into public/ (git-ignored; removed by `pnpm build`).
 // 2. Starts `next dev` WITHOUT the AI-agent environment variables: when it detects a coding agent,
 //    Next.js writes AGENTS.md / CLAUDE.md (instructions from a dependency, never reviewed) which

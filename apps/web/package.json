@@ -8,8 +8,8 @@
     "node": ">=22.14.0 <23"
   },
   "scripts": {
-    "dev": "node scripts/dev.mjs",
-    "dev:api": "node scripts/dev.mjs --real-api",
+    "dev": "node scripts/dev.mjs --webpack",
+    "dev:api": "node scripts/dev.mjs --real-api --webpack",
     "build": "node scripts/remove-mock-worker.mjs && next build",
     "start": "next start",
     "lint": "eslint .",
