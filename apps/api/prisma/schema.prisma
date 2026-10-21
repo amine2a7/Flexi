@@ -379,6 +379,9 @@ model PasswordResetToken {
   id        String    @id @default(uuid(7)) @db.Uuid
   userId    String    @map("user_id") @db.Uuid
   tokenHash String    @unique @map("token_hash")
+  /// LINK (e-mail) or OTP (6-digit SMS code, at most 5 attempts).
+  kind      String    @default("LINK") @db.VarChar(4)
+  attempts  Int       @default(0)
   expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
   usedAt    DateTime? @map("used_at") @db.Timestamptz(3)
 

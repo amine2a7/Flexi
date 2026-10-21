@@ -1,5 +1,7 @@
 // Authentication end to end over HTTP (spec 01 §8 tests 1-4, 7; contract §6, §10).
-import { randomUUID } from 'node:crypto';
+import { randomInt, randomUUID } from 'node:crypto';
+import { readdir, readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadTestEnv, ownerClient } from './setup.js';
 import { WebClient, listen } from './http.js';
@@ -310,3 +312,48 @@ async function rotatedLongAgo(refreshToken: string): Promise<void> {
   );
   await owner.end();
 }
+
+describe('reset code by SMS (securite S06)', () => {
+  /** Code of the latest SMS written to the local outbox for `phone`. */
+  async function smsCode(phone: string): Promise<string> {
+    const outbox = join(env.uploadDir, '..', 'outbox');
+    for (const file of (await readdir(outbox)).sort().reverse()) {
+      const text = await readFile(join(outbox, file), 'utf8');
+      const code = text.includes(`To: ${phone}`) ? /est (\d{6})/.exec(text)?.[1] : undefined;
+      if (code !== undefined) return code;
+    }
+    throw new Error('no SMS');
+  }
+
+  it('evaluates at most 5 codes, even sent at the same time, then the code is dead', async () => {
+    const { email } = await createUser({ mfa: false, role: 'COMPANY' });
+    const phone = `+2169${String(randomInt(1_000_000, 9_999_999))}`;
+    const userId = (await db.system((tx) => tx.user.update({ where: { email }, data: { phone } })))
+      .id;
+    const client = new WebClient(base);
+    expect(
+      (await client.call('POST', '/v1/auth/password/forgot', { body: { identifier: phone } }))
+        .status,
+    ).toBe(202);
+    const code = await smsCode(phone);
+    const wrong = String((Number(code) + 1) % 1_000_000).padStart(6, '0');
+    const attempts = await Promise.all(
+      Array.from({ length: 20 }, () =>
+        client.call('POST', '/v1/auth/password/reset', {
+          body: { identifier: phone, otp: wrong, newPassword: NEW_PASSWORD },
+        }),
+      ),
+    );
+    expect(attempts.every((attempt) => attempt.status === 400)).toBe(true);
+    const failures = await db.system((tx) =>
+      tx.auditLog.count({
+        where: { action: 'auth.resetCodeFailed', target: { contains: userId } },
+      }),
+    );
+    expect(failures).toBe(5);
+    const right = await client.call('POST', '/v1/auth/password/reset', {
+      body: { identifier: phone, otp: code, newPassword: NEW_PASSWORD },
+    });
+    expect(right.status).toBe(400);
+  });
+});

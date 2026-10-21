@@ -30,6 +30,8 @@ const CHALLENGE_TTL_MS = 5 * 60_000;
 const ENROLL_TTL_MS = 10 * 60_000;
 const RESET_LINK_TTL_MS = 15 * 60_000;
 const RESET_OTP_TTL_MS = 10 * 60_000;
+/** Attempts of a reset code by SMS (securite S06). */
+const RESET_OTP_ATTEMPTS = 5;
 /** Lockout (spec 01 §3, DP n° 24). */
 const COUPLE_LIMIT = 5;
 const COUPLE_BLOCK_MS = 15 * 60_000;
@@ -475,6 +477,7 @@ export class AuthService {
           id: uuidv7(),
           userId: user.id,
           tokenHash: byPhone ? sha256(`otp|${user.id}|${secret}`) : sha256(secret),
+          kind: byPhone ? 'OTP' : 'LINK',
           expiresAt: new Date(Date.now() + (byPhone ? RESET_OTP_TTL_MS : RESET_LINK_TTL_MS)),
         },
       });
@@ -516,10 +519,26 @@ export class AuthService {
       }
       const user = await this.findByIdentifier(tx, input.identifier);
       if (user === null) return null;
-      return tx.passwordResetToken.findUnique({
+      // One attempt reserved on the live code before the check: at most RESET_OTP_ATTEMPTS per
+      // code, even with simultaneous requests (securite S06); then the code is dead.
+      const [reserved] = await tx.$queryRaw<{ id: string }[]>`
+        UPDATE password_reset_tokens SET attempts = attempts + 1
+         WHERE user_id = ${user.id}::uuid AND kind = 'OTP' AND used_at IS NULL
+           AND expires_at > now() AND attempts < ${RESET_OTP_ATTEMPTS}
+        RETURNING id`;
+      if (reserved === undefined) return null;
+      const token = await tx.passwordResetToken.findUnique({
         where: { tokenHash: sha256(`otp|${user.id}|${input.otp}`) },
         include: { user: true },
       });
+      if (token?.id === reserved.id) return token;
+      await this.audit.record(
+        tx,
+        'auth.resetCodeFailed',
+        `${user.displayName} (${user.id})`,
+        'Système',
+      );
+      return null;
     });
     const pointer = 'token' in input ? '/token' : '/otp';
     if (found?.usedAt !== null || found.expiresAt.getTime() <= Date.now()) throw invalid(pointer);
