@@ -3,6 +3,17 @@
 Ce dossier est la **mémoire durable** de l'équipe : une équipe d'agents ne survit pas à `/resume`, ce qui est écrit ici, si.
 Le résumé de ce protocole est repris dans `CLAUDE.md` (section « Équipe d'agents »), chargé par tous les coéquipiers.
 
+## 0. Mode économe (depuis le 2026-10-21, prime sur la suite)
+
+- **Pas de mode équipe** : une seule session travaille. Sous-agents seulement : `securite` pour chaque tâche touchant l'authentification, les permissions, l'argent ou les données personnelles ; `design`, `qualite`, `ux`, `conformite` en **une revue groupée à la fin de chaque espace** (Commun, Commerçant, Entreprise, Administrateur).
+- **Modèles** : `securite` et `ledger-auditor` en opus, les autres en sonnet. Hook TeammateIdle désactivé.
+- **Lecture** : seulement les fichiers de la tâche en cours (spec de l'écran, composants concernés), jamais tout `docs/`.
+- **Hooks Git** : sujet clos, sauf constat Critique ou Haute.
+- **Rapports** : 15 lignes maximum (fait, à vérifier dans le navigateur, bloquants) ; le détail va dans `docs/handoff/`.
+- **Une tâche à la fois**, petite, terminée et commitée avant la suivante ; `docs/handoff/BOARD.md` mis à jour après chaque tâche (reprise possible après `/clear`).
+
+Les sections suivantes restent la référence pour les rôles, les étiquettes de messages et les périmètres quand un sous-agent est appelé.
+
 ## 1. L'équipe
 
 | Nom (adresse) | Définition | Rôle |
@@ -10,11 +21,11 @@ Le résumé de ce protocole est repris dans `CLAUDE.md` (section « Équipe d'ag
 | `main` (le « lead ») | session principale | Découpe, assigne, route, arbitre, surveille, rend compte. **Ne code pas.** |
 | `securite` | `.claude/agents/securite.md` (opus) | Revue de sécurité, modèle de menaces, droit de blocage |
 | `design` | `.claude/agents/design.md` (sonnet) | Specs d'écran avant le code, tokens, revue de fidélité |
-| `backend` | `.claude/agents/backend.md` (opus) | API NestJS, ledger, contrat OpenAPI, infra, monorepo |
+| `backend` | `.claude/agents/backend.md` (sonnet) | API NestJS, ledger, contrat OpenAPI, infra, monorepo |
 | `frontend` | `.claude/agents/frontend.md` (sonnet) | Web Next.js : Administrateur, Entreprise, Commerçant |
 | `mobile` | `.claude/agents/mobile.md` (sonnet) | Flutter : app Employé, app Pro (Commerçant) |
-| `ux` | `.claude/agents/ux.md` (opus) | **Relecteur** : expérience utilisateur des specs (avant le code) et des écrans réels (Nielsen, WCAG 2.1 AA, RTL, microcopie) ; user stories proposées au lead |
-| `qualite` | `.claude/agents/qualite.md` (opus) | **Relecteur** : qualité du code hors sécurité (architecture, typage, tests, conventions, performances) |
+| `ux` | `.claude/agents/ux.md` (sonnet) | **Relecteur** : expérience utilisateur des specs (avant le code) et des écrans réels (Nielsen, WCAG 2.1 AA, RTL, microcopie) ; user stories proposées au lead |
+| `qualite` | `.claude/agents/qualite.md` (sonnet) | **Relecteur** : qualité du code hors sécurité (architecture, typage, tests, conventions, performances) |
 | `conformite` | `.claude/agents/conformite.md` (sonnet) | **Relecteur**, en dernier : conformité aux demandes (cahier, specs, décisions, contrat, BOARD), matrice de traçabilité |
 
 Les **relecteurs** (`securite`, `ux`, `qualite`, `conformite`) ne modifient jamais le code ni les specs des autres : ils écrivent leurs revues dans `docs/handoff/reviews/` et envoient leurs constats au propriétaire.

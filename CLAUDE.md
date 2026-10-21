@@ -48,6 +48,14 @@ Administrateur · Entreprise · Commerçant · Employé (+ membres famille). **L
 1. Lire la spec du module (`docs/specs/`). 2. Plan mode, valider. 3. Écrire les tests. 4. Implémenter. 5. `pnpm lint && pnpm typecheck && pnpm test`. 6. Lancer `/security-review`. 7. Ouvrir la PR.
 Pour le code touchant l'argent, l'authentification ou les permissions : lancer aussi `/ledger-audit`, et **demander une revue humaine**.
 
+## Mode économe (depuis le 2026-10-21, prime sur « Équipe d'agents »)
+- **Pas de mode équipe** : une seule session travaille. Sous-agents seulement : `securite` pour chaque tâche touchant l'authentification, les permissions, l'argent ou les données personnelles ; `design`, `qualite`, `ux`, `conformite` en **une revue groupée à la fin de chaque espace** (Commun, Commerçant, Entreprise, Administrateur).
+- **Modèles** : `securite` et `ledger-auditor` en opus, les autres en sonnet. Hook TeammateIdle désactivé.
+- **Lecture** : seulement les fichiers de la tâche en cours (spec de l'écran, composants concernés), jamais tout `docs/`.
+- **Hooks Git** : sujet clos, sauf constat Critique ou Haute.
+- **Rapports** : 15 lignes maximum (fait, à vérifier dans le navigateur, bloquants) ; le détail va dans `docs/handoff/`.
+- **Une tâche à la fois**, petite, terminée et commitée avant la suivante ; `docs/handoff/BOARD.md` mis à jour après chaque tâche (reprise possible après `/clear`).
+
 ## Équipe d'agents
 Protocole complet : `docs/handoff/README.md`. Tout coéquipier le suit.
 - **Membres** : `main` (le lead, session principale, **ne code pas**) · `securite` · `design` · `backend` · `frontend` · `mobile` · relecteurs `ux` · `qualite` · `conformite`. Sous-agents de support : `ledger-auditor`, `test-writer`.

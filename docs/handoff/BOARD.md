@@ -1,7 +1,28 @@
 # Tableau des tâches
 
-Tenu par le lead (`team-lead`) à chaque étape. Statuts : À faire · En cours · En revue · Bloqué · Terminé.
+Tenu par le lead (`main`) à chaque étape. Statuts : À faire · En cours · En revue · Bloqué · Terminé.
 Préfixe `TEST-FIRST:` = tâche de tests écrits avant le code (tests rouges acceptés).
+
+## État courant (mis à jour le 2026-10-21) — À LIRE EN PREMIER
+
+Mode économe (voir CLAUDE.md). Branche `feat/web`. Plan de l'utilisateur du 2026-10-21 (étapes 0 à 6, puis carnet de tickets).
+
+| Étape | Statut | Commits / reste |
+|---|---|---|
+| Bloc 5 (API réelle, seed, web branché) + A (comptes et invitations) + B (pg, deux onglets) | Terminé | 3c958c2 … 38110ed |
+| 0. `--webpack` par défaut (bug Turbopack) ; port 3000 = `next dev` de D:ProjectScool (conflit avec l'API) | Terminé | a1c5387 |
+| 1. Ledger C1-C9, C13 (verrous, index 0010, réconciliation quotidienne) | Terminé, ledger-auditor **OK** | 3d9d733, 6bfef5e (S03 approbations, N1) |
+| Correctif : sessions PostgreSQL en UTC (dates décalées d'1 h) | Terminé | d02cdd3 |
+| 2. S01 PIN (réservation atomique, 15/30/60 min puis reconnexion) + S07 (empreinte HMAC) | Terminé | 983b69e, a8b5ce8 |
+| 3. S02 sous-rôles vérifiés par le serveur (matrice de l'utilisateur) | **À faire (suivant)** | puis POINT DE CONTRÔLE 1 (revue securite) |
+| 4. qualite B1, M1, M2 ; boîte d'envoi PostgreSQL + job ; resend-credentials ; relationJoins figé ; commit des changements web en attente (client.ts, page Payer, traductions bénéficiaire, m10, m11) et des maquettes `docs/design` | À faire | |
+| 5. Départements | À faire | |
+| 6. Employé + activation du bénéficiaire par téléphone (code, OTP, PIN 6 chiffres, appareil de confiance) | À faire | puis POINT DE CONTRÔLE 2 |
+| Carnet de tickets (mascotte, connexion, accueil, connexion mobile 360 px) | Après l'étape 6 | |
+
+Revues ouvertes : `docs/handoff/reviews/securite-bloc5-a-b-2026-10-15.md` (S01, S03, S07 corrigés ; S02 ouvert ; S04-S06, S08-S22 à traiter) ; `qualite-bloc5-a-b-2026-10-15.md` (B1, M1-M6, m1-m14 ouverts). Ledger-auditor : N2 (litiges V1, test d'abord), N3, N4 restants.
+Décisions du 2026-10-21 : pas de plafond mensuel en V1 ; litiges V1 = annulation commerçant sous 24 h + écriture corrective admin tracée ; pas de minimum de commission.
+Les lignes WF1 à WF5 ci-dessous sont périmées : écrans faits (commits 4379630, 0c53df3 et suivants).
 
 ## Phase en cours : « web d'abord » — étape 1 terminée le 2026-10-12 (point de contrôle) ; branche `feat/web` ; 24 décisions en attente ; Docker arrêté (C: plein)
 
