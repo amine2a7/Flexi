@@ -1,3 +1,4 @@
+import { PiiService } from '../common/pii.js';
 import { randomInt } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import { InvitationService } from '../auth/invitation.service.js';
@@ -101,6 +102,7 @@ export class AdminService {
     @Inject(Paginator) private readonly paginator: Paginator,
     @Inject(FILE_STORAGE) private readonly storage: FileStorage,
     @Inject(FourEyesService) private readonly fourEyes: FourEyesService,
+    @Inject(PiiService) private readonly pii: PiiService,
     @Inject(InvitationService) private readonly invitations: InvitationService,
   ) {}
 
@@ -262,7 +264,7 @@ export class AdminService {
           name: input.name.trim(),
           category: input.category,
           city: input.city.trim(),
-          phone: input.phone,
+          phone: this.pii.seal(input.phone),
           email: input.email.toLowerCase(),
           acceptedCreditTypes: [...new Set(input.acceptedCreditTypes)],
           paymentCode,
@@ -347,7 +349,7 @@ export class AdminService {
           id,
           name: input.name.trim(),
           city: input.city.trim(),
-          phone: input.phone,
+          phone: this.pii.seal(input.phone),
           email: input.email.toLowerCase(),
           status: 'PENDING_KYC',
         },

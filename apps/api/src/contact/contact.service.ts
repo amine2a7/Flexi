@@ -1,3 +1,4 @@
+import { PiiService } from '../common/pii.js';
 import { Inject, Injectable } from '@nestjs/common';
 import { AuditService } from '../common/audit.service.js';
 import { uuidv7 } from '../common/crypto.js';
@@ -12,13 +13,13 @@ import type {
   Prisma,
 } from '../generated/prisma/client.js';
 
-function body(message: ContactMessage) {
+function body(message: ContactMessage, pii: PiiService) {
   return {
     id: message.id,
     reference: message.reference,
     name: message.name,
     email: message.email,
-    phone: message.phone,
+    phone: pii.openNullable(message.phone),
     companyName: message.companyName,
     requesterType: message.requesterType,
     message: message.message,
@@ -36,6 +37,7 @@ export class ContactService {
     @Inject(DbService) private readonly db: DbService,
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(Paginator) private readonly paginator: Paginator,
+    @Inject(PiiService) private readonly pii: PiiService,
   ) {}
 
   /** Public form: stored as NEW, a reference is returned. Its content is never logged. */
@@ -58,7 +60,7 @@ export class ContactService {
           reference,
           name: input.name.trim(),
           email: input.email.trim().toLowerCase(),
-          phone: input.phone ?? null,
+          phone: this.pii.sealNullable(input.phone),
           companyName:
             input.companyName?.trim() === '' ? null : (input.companyName?.trim() ?? null),
           requesterType: input.requesterType,
@@ -96,7 +98,12 @@ export class ContactService {
       const count = request.withCount
         ? await tx.contactMessage.count({ where, take: 10_001 })
         : undefined;
-      return this.paginator.page(request, rows.map(body), filters, count);
+      return this.paginator.page(
+        request,
+        rows.map((row) => body(row, this.pii)),
+        filters,
+        count,
+      );
     });
   }
 
@@ -104,7 +111,7 @@ export class ContactService {
     return this.db.user(async (tx) => {
       const message = await tx.contactMessage.findUnique({ where: { id } });
       if (message === null) throw problems.notFound();
-      return body(message);
+      return body(message, this.pii);
     });
   }
 
@@ -124,7 +131,7 @@ export class ContactService {
         },
       });
       await this.audit.record(tx, 'contact.handle', message.reference);
-      return body(updated);
+      return body(updated, this.pii);
     });
   }
 }

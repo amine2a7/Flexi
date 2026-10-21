@@ -1,3 +1,4 @@
+import { PiiService } from '../common/pii.js';
 import { Inject, Injectable } from '@nestjs/common';
 import { AuditService } from '../common/audit.service.js';
 import { randomDigits, uuidv7 } from '../common/crypto.js';
@@ -53,6 +54,7 @@ export class PaymentsService {
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(Paginator) private readonly paginator: Paginator,
     @Inject(PinService) private readonly pins: PinService,
+    @Inject(PiiService) private readonly pii: PiiService,
   ) {}
 
   private employeeId(): string {
@@ -558,7 +560,7 @@ export class PaymentsService {
         lastName: employee.lastName,
         employeeNumber: employee.employeeNumber,
         email: employee.email,
-        phone: employee.phone,
+        phone: this.pii.open(employee.phone),
         companyName: employee.company.name,
         pinSet: employee.pinHash !== null,
       };

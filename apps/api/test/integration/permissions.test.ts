@@ -9,7 +9,7 @@ loadTestEnv();
 const { loadEnv } = await import('../../src/config/env.js');
 const { createApp } = await import('../../src/app.factory.js');
 const { DbService } = await import('../../src/common/db.service.js');
-const { createCompany, createEmployee, createUser, seedSettings, signedIn } =
+const { createCompany, createEmployee, createUser, sealed, seedSettings, signedIn } =
   await import('./fixtures.js');
 
 type SubRole =
@@ -61,7 +61,7 @@ async function merchantUser(subRole: SubRole, merchantId?: string) {
         name: `Café ${randomUUID().slice(0, 5)}`,
         category: 'CAFE',
         city: 'Tunis',
-        phone: '+21671000001',
+        phone: sealed('+21671000001'),
         email: 'cafe@test.tn',
         status: 'APPROVED',
         acceptedCreditTypes: ['RESTAURATION'],

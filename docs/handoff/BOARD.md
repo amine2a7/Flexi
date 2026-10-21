@@ -19,7 +19,7 @@ Mode économe (voir CLAUDE.md). Branche `feat/web`. Plan de l'utilisateur du 202
 | a. Règle des quatre yeux (KYC, taux, paramétrage, seconde validation, virements) | Terminé, securite **OK** | commit « four eyes » ; ouverts : QY-03 b (décision : l'admin créateur du commerçant ne valide pas ses virements ?), QY-05 Basse ; RIB et rôles admin à couvrir dans la gestion des utilisateurs |
 | b. Revérification securite de S01 (PIN) et S07 (idempotence) | Terminé : S01 et S07 **FERMÉS** ; S23 (Moyenne) et S24 corrigés | ouvert : S25 Basse (purge des clés d'idempotence) → phase de durcissement |
 | c. Seed et MSW : un compte fictif par sous-rôle | Terminé | 12 comptes (mot de passe Test1234!, MFA 123456) ; base de dev recréée le 2026-10-21 |
-| d. S06, S10, S11, S04 | À faire | S05, S08, S09, S12 : phase de durcissement |
+| d. S06, S10, S11, S04 | S06 fait (d454c03), S10 fait (cb8f418), S11 fait (téléphones et IBAN chiffrés AES-256-GCM, index HMAC du téléphone, `db:encrypt-pii`), S04 à faire | S05, S08, S09, S12 : phase de durcissement |
 | e. Gestion des utilisateurs (design → ux → contrat → tests → API → web → securite → design et ux) | À faire | décisions e3 à poser avant le code |
 | 4. qualite B1, M1, M2 ; boîte d'envoi PostgreSQL + job ; resend-credentials ; relationJoins figé ; commit des changements web en attente (client.ts, page Payer, traductions bénéficiaire, m10, m11) et des maquettes `docs/design` | À faire | |
 | 5. Départements | À faire | |

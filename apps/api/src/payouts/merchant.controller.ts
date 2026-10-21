@@ -1,3 +1,4 @@
+import { PiiService } from '../common/pii.js';
 import {
   Body,
   Controller,
@@ -36,6 +37,7 @@ export class MerchantController {
     @Inject(IdempotencyService) private readonly idempotency: IdempotencyService,
     @Inject(DbService) private readonly db: DbService,
     @Inject(Paginator) private readonly paginator: Paginator,
+    @Inject(PiiService) private readonly pii: PiiService,
   ) {}
 
   @Can('stats.read')
@@ -203,8 +205,8 @@ export class MerchantController {
         category: merchant.category,
         city: merchant.city,
         address: merchant.address,
-        phone: merchant.phone,
-        maskedIban: merchant.iban === null ? '' : `•••• ${merchant.iban.slice(-4)}`,
+        phone: this.pii.open(merchant.phone),
+        maskedIban: merchant.iban === null ? '' : this.pii.maskedIban(merchant.iban),
         paymentCode: merchant.paymentCode,
         acceptedCreditTypes: CREDIT_TYPES.filter((type) =>
           merchant.acceptedCreditTypes.includes(type),

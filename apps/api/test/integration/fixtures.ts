@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { DbService } from '../../src/common/db.service.js';
 import { encryptSecret } from '../../src/common/crypto.js';
+import { phoneIndex, sealPii } from '../../src/common/pii.js';
 import { hashSecret } from '../../src/auth/password.js';
 import { codeAt, currentStep, newSecretBase32 } from '../../src/auth/totp.js';
 import type { Env } from '../../src/config/env.js';
@@ -8,6 +9,12 @@ import type { Role, SubRole } from '../../src/generated/prisma/enums.js';
 import { WebClient } from './http.js';
 
 export const PASSWORD = 'Rose-des-sables-2026'; // gitleaks:allow (test-only value)
+
+const dataKey = () => Buffer.from(process.env.DATA_ENCRYPTION_KEY ?? '', 'base64');
+/** A phone or an IBAN as the API stores it (encrypted, securite B5-S11). */
+export const sealed = (value: string) => sealPii(dataKey(), value);
+/** Lookup index of a user phone (users.phone_hash). */
+export const phoneKey = (phone: string) => phoneIndex(dataKey(), phone);
 
 /** Platform and credit type settings of the demo (idempotent). */
 export async function seedSettings(db: DbService): Promise<void> {
@@ -51,7 +58,7 @@ export async function createCompany(db: DbService, name = `Société ${randomUUI
       data: {
         name,
         city: 'Tunis',
-        phone: '+21671000000',
+        phone: sealed('+21671000000'),
         email: 'contact@societe.test',
         status: 'APPROVED',
       },
@@ -68,7 +75,7 @@ export async function createEmployee(db: DbService, companyId: string) {
         firstName: 'Yasmine',
         lastName: 'Jebali',
         email: `${randomUUID().slice(0, 8)}@salarie.test`,
-        phone: '+21698123456',
+        phone: sealed('+21698123456'),
         status: 'ACTIVE',
       },
     }),

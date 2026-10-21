@@ -8,6 +8,7 @@ import { AuthGuard } from './auth.guard.js';
 import { DbService } from './db.service.js';
 import { FourEyesService } from './four-eyes.service.js';
 import { IdempotencyService } from './idempotency.service.js';
+import { PiiService } from './pii.js';
 import { OutboxService } from './outbox.service.js';
 import { Paginator } from './pagination.js';
 import { ProblemFilter } from './problem.filter.js';
@@ -25,6 +26,7 @@ import type { Env } from '../config/env.js';
     AuditService,
     IdempotencyService,
     FourEyesService,
+    PiiService,
     OutboxService,
     InvitationService,
     {
@@ -48,6 +50,7 @@ import type { Env } from '../config/env.js';
     AuditService,
     IdempotencyService,
     FourEyesService,
+    PiiService,
     OutboxService,
     InvitationService,
     Paginator,

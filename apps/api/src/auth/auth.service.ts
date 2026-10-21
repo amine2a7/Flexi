@@ -1,3 +1,4 @@
+import { PiiService } from '../common/pii.js';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Response } from 'express';
 import { ENV, KEYS, type Keys } from '../config/env.provider.js';
@@ -55,6 +56,7 @@ export class AuthService {
     @Inject(KEYS) private readonly keys: Keys,
     @Inject(ENV) private readonly env: Env,
     @Inject(OutboxService) private readonly outbox: OutboxService,
+    @Inject(PiiService) private readonly pii: PiiService,
   ) {}
 
   private ip(): string {
@@ -73,7 +75,8 @@ export class AuthService {
   private async findByIdentifier(tx: Tx, identifier: string): Promise<User | null> {
     const key = this.normalize(identifier);
     if (key.email !== undefined) return tx.user.findUnique({ where: { email: key.email } });
-    if (key.phone !== undefined) return tx.user.findUnique({ where: { phone: key.phone } });
+    if (key.phone !== undefined)
+      return tx.user.findUnique({ where: { phoneHash: this.pii.phoneIndex(key.phone) } });
     return null;
   }
 
@@ -403,7 +406,7 @@ export class AuthService {
   private async assertPolicy(user: User, candidate: string, checkCurrent: boolean): Promise<void> {
     const broken = await brokenRules(
       candidate,
-      [user.email, ...(user.phone === null ? [] : [user.phone])],
+      [user.email, ...(user.phone === null ? [] : [this.pii.open(user.phone)])],
       checkCurrent ? user.passwordHash : undefined,
     );
     if (broken.length > 0) {
@@ -491,7 +494,7 @@ export class AuthService {
     await this.outbox.send(
       byPhone
         ? {
-            to: user.phone ?? '',
+            to: this.pii.openNullable(user.phone) ?? '',
             subject: 'Code FlexiPay',
             text: `Votre code FlexiPay est ${secret} (10 min).`,
           }

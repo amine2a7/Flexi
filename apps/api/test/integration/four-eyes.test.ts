@@ -9,7 +9,7 @@ loadTestEnv();
 const { loadEnv } = await import('../../src/config/env.js');
 const { createApp } = await import('../../src/app.factory.js');
 const { DbService } = await import('../../src/common/db.service.js');
-const { createUser, seedSettings, signedIn } = await import('./fixtures.js');
+const { createUser, sealed, seedSettings, signedIn } = await import('./fixtures.js');
 
 const env = loadEnv();
 const db = new DbService(env);
@@ -96,7 +96,7 @@ describe('four eyes', () => {
           data: {
             name: `Société ${randomUUID().slice(0, 6)}`,
             city: 'Tunis',
-            phone: '+21671000000',
+            phone: sealed('+21671000000'),
             email: 'rh@societe.tn',
             status: 'APPROVED',
           },
@@ -156,7 +156,7 @@ describe('four eyes', () => {
         data: {
           name: `Société ${randomUUID().slice(0, 6)}`,
           city: 'Tunis',
-          phone: '+21671000000',
+          phone: sealed('+21671000000'),
           email: 'rh@societe.tn',
         },
       }),

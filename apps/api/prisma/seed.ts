@@ -15,6 +15,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { hashSecret } from '../src/auth/password.js';
 import { newSecretBase32 } from '../src/auth/totp.js';
 import { encryptSecret, hmac, randomToken } from '../src/common/crypto.js';
+import { sealPii } from '../src/common/pii.js';
 import { LocalDiskStorage } from '../src/common/storage.js';
 import {
   addDays,
@@ -122,6 +123,10 @@ const keys = {
   session: Buffer.from(env.SESSION_SECRET, 'base64'),
   data: Buffer.from(env.DATA_ENCRYPTION_KEY, 'base64'),
 };
+/** Phones and IBAN are stored encrypted (securite B5-S11). */
+const seal = (value: string) => sealPii(keys.data, value);
+const sealNullable = (value: string | null) => (value === null ? null : seal(value));
+const DEMO_IBAN = 'TN5904018104003691234821';
 
 /** Initial data of MSW, printed by the web exporter (same generators, same seeds). */
 function readSnapshot(): Snapshot {
@@ -285,7 +290,7 @@ const summary = await prisma.$transaction(
         id: company.id,
         name: company.name,
         city: company.city,
-        phone: `+2167${digitsOf(company.id, 7)}`,
+        phone: seal(`+2167${digitsOf(company.id, 7)}`),
         email: `contact@${slug(company.name)}.test`,
         status: company.status,
         createdAt: at(company.createdAt),
@@ -309,7 +314,7 @@ const summary = await prisma.$transaction(
         merchant.status !== 'APPROVED'
           ? null
           : own
-            ? 'TN5904018104003691234821'
+            ? DEMO_IBAN
             : (ibans.get(merchant.id) ?? `TN59${digitsOf(merchant.id, 20)}`);
       return {
         id: merchant.id,
@@ -317,12 +322,12 @@ const summary = await prisma.$transaction(
         category: merchant.category,
         city: merchant.city,
         address: own ? snap.merchant.profile.address : '',
-        phone: own ? snap.merchant.profile.phone : `+2167${digitsOf(merchant.id, 7)}`,
+        phone: seal(own ? snap.merchant.profile.phone : `+2167${digitsOf(merchant.id, 7)}`),
         email: `contact@${slug(merchant.name)}.test`,
         status: merchant.status,
         acceptedCreditTypes: merchant.acceptedCreditTypes,
         paymentCode: own ? snap.merchant.profile.paymentCode : paymentCode(merchant.id),
-        iban,
+        iban: sealNullable(iban),
         commissionProfileId: merchant.commissionProfile?.id ?? null,
         createdAt: at(merchant.createdAt),
       };
@@ -344,12 +349,12 @@ const summary = await prisma.$transaction(
         category: CATEGORY[shop.types[0] ?? 'RESTAURATION'],
         city: shop.city,
         address: '',
-        phone: `+2167${digitsOf(id, 7)}`,
+        phone: seal(`+2167${digitsOf(id, 7)}`),
         email: `contact@${slug(shop.name)}.test`,
         status: 'APPROVED',
         acceptedCreditTypes: shop.types,
         paymentCode: paymentCode(id),
-        iban: `TN59${digitsOf(id, 20)}`,
+        iban: seal(`TN59${digitsOf(id, 20)}`),
         commissionProfileId: standard,
         createdAt: new Date(now.getTime() - 300 * DAY),
       });
@@ -384,7 +389,7 @@ const summary = await prisma.$transaction(
               firstName: profile.firstName,
               lastName: profile.lastName,
               email: profile.email,
-              phone: profile.phone,
+              phone: seal(profile.phone),
               status: 'ACTIVE' as const,
               pinHash,
             }
@@ -395,7 +400,7 @@ const summary = await prisma.$transaction(
               firstName: employee.firstName,
               lastName: employee.lastName,
               email: employee.email,
-              phone: employee.phone,
+              phone: seal(employee.phone),
               status: employee.status,
             },
       ),
@@ -410,7 +415,7 @@ const summary = await prisma.$transaction(
         firstName: employee.firstName,
         lastName: employee.lastName,
         email: `${slug(`${employee.firstName}.${employee.lastName}`).replaceAll('-', '')}${String(index)}@${domain}.test`,
-        phone: employee.phone,
+        phone: seal(employee.phone),
         status: employee.status,
       }));
       for (let start = 0; start < rows.length; start += 1_000)
@@ -1046,7 +1051,7 @@ const summary = await prisma.$transaction(
           commissionRateBps: input.rateBps,
           commissionMillimes: input.commission,
           netMillimes: input.net,
-          iban: input.iban,
+          iban: seal(input.iban),
           transactionId: posted.transactionId,
           requestedAt: input.requestedAt,
           batchId,
@@ -1087,7 +1092,6 @@ const summary = await prisma.$transaction(
       }
     }
 
-    const demoIban = merchantRows.find((row) => row.id === demoMerchantId)?.iban ?? '';
     for (const request of snap.merchant.payouts) {
       steps.push({
         at: at(request.requestedAt).getTime(),
@@ -1103,7 +1107,7 @@ const summary = await prisma.$transaction(
             commission: big(request.commissionMillimes),
             net: big(request.netMillimes),
             requestedAt: at(request.requestedAt),
-            iban: demoIban,
+            iban: DEMO_IBAN,
           }),
       });
     }
@@ -1262,7 +1266,7 @@ const summary = await prisma.$transaction(
         reference: message.reference,
         name: message.name,
         email: message.email,
-        phone: message.phone,
+        phone: sealNullable(message.phone),
         companyName: message.companyName,
         requesterType: message.requesterType,
         message: message.message,

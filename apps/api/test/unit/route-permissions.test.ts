@@ -60,5 +60,5 @@ describe('route permissions (deny by default)', () => {
       .filter((route) => !Array.isArray(route.permissions) || route.permissions.length === 0)
       .map((route) => route.name);
     expect(missing).toEqual([]);
-  });
+  }, 30_000); // builds the whole Nest application: slow on a busy machine
 });

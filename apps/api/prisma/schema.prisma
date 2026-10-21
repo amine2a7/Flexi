@@ -192,7 +192,7 @@ model Company {
   id        String        @id @default(uuid(7)) @db.Uuid
   name      String        @db.VarChar(200)
   city      String        @db.VarChar(80)
-  phone     String        @db.VarChar(16)
+  phone     String // encrypted (AES-256-GCM)
   email     String        @db.VarChar(254)
   status    AccountStatus @default(PENDING_KYC)
   createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -223,14 +223,14 @@ model Merchant {
   category            MerchantCategory
   city                String           @db.VarChar(80)
   address             String           @default("") @db.VarChar(200)
-  phone               String           @db.VarChar(16)
+  phone               String // encrypted (AES-256-GCM)
   email               String           @db.VarChar(254)
   status              AccountStatus    @default(PENDING_KYC)
   acceptedCreditTypes CreditType[]     @map("accepted_credit_types")
   /// 6-digit code shown at the till and in the merchant QR (flexipay:merchant:<code>).
   paymentCode         String           @unique @map("payment_code") @db.Char(6)
   /// Bank account for payouts (TN + 22 digits). Masked everywhere except the admin payout control.
-  iban                String?          @db.Char(24)
+  iban                String? // encrypted (AES-256-GCM)
   /// Own commission profile of the shop; null = the rate of each credit type applies.
   commissionProfileId String?          @map("commission_profile_id") @db.Uuid
   createdAt           DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -266,7 +266,7 @@ model Employee {
   firstName         String         @map("first_name") @db.VarChar(60)
   lastName          String         @map("last_name") @db.VarChar(60)
   email             String         @db.VarChar(254)
-  phone             String         @db.VarChar(16)
+  phone             String // encrypted (AES-256-GCM)
   status            EmployeeStatus @default(INVITED)
   /// Argon2id hash of the 4-digit payment PIN.
   pinHash           String?        @map("pin_hash")
@@ -296,7 +296,9 @@ model User {
   displayName           String     @map("display_name") @db.VarChar(120)
   /// Normalized sign-in identifier (lower-case e-mail).
   email                 String     @unique @db.VarChar(254)
-  phone                 String?    @unique @db.VarChar(16)
+  /// Encrypted (AES-256-GCM); found and kept unique by phoneHash.
+  phone                 String?
+  phoneHash             String?    @unique @map("phone_hash") @db.Char(64)
   passwordHash          String     @map("password_hash")
   mustChangePassword    Boolean    @default(false) @map("must_change_password")
   tempPasswordExpiresAt DateTime?  @map("temp_password_expires_at") @db.Timestamptz(3)
@@ -673,7 +675,7 @@ model PayoutRequest {
   commissionMillimes BigInt       @map("commission_millimes")
   netMillimes        BigInt       @map("net_millimes")
   /// IBAN at the time of the request (the transfer goes there even if the shop changes it).
-  iban               String       @db.Char(24)
+  iban               String // encrypted (AES-256-GCM)
   batchId            String?      @map("batch_id") @db.Uuid
   transactionId      String?      @map("transaction_id") @db.Uuid
   requestedAt        DateTime     @default(now()) @map("requested_at") @db.Timestamptz(3)
@@ -785,7 +787,7 @@ model ContactMessage {
   reference     String               @unique @db.VarChar(32)
   name          String               @db.VarChar(120)
   email         String               @db.VarChar(254)
-  phone         String?              @db.VarChar(16)
+  phone         String? // encrypted (AES-256-GCM)
   companyName   String?              @map("company_name") @db.VarChar(200)
   requesterType ContactRequesterType @map("requester_type")
   message       String               @db.VarChar(2000)

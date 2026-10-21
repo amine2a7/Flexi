@@ -11,6 +11,7 @@ const { loadEnv } = await import('../../src/config/env.js');
 const { createApp } = await import('../../src/app.factory.js');
 const { DbService } = await import('../../src/common/db.service.js');
 const { encryptSecret } = await import('../../src/common/crypto.js');
+const { phoneIndex, sealPii } = await import('../../src/common/pii.js');
 const { hashSecret } = await import('../../src/auth/password.js');
 const { codeAt, currentStep, newSecretBase32 } = await import('../../src/auth/totp.js');
 
@@ -328,8 +329,15 @@ describe('reset code by SMS (securite S06)', () => {
   it('evaluates at most 5 codes, even sent at the same time, then the code is dead', async () => {
     const { email } = await createUser({ mfa: false, role: 'COMPANY' });
     const phone = `+2169${String(randomInt(1_000_000, 9_999_999))}`;
-    const userId = (await db.system((tx) => tx.user.update({ where: { email }, data: { phone } })))
-      .id;
+    const dataKey = Buffer.from(env.DATA_ENCRYPTION_KEY, 'base64');
+    const userId = (
+      await db.system((tx) =>
+        tx.user.update({
+          where: { email },
+          data: { phone: sealPii(dataKey, phone), phoneHash: phoneIndex(dataKey, phone) },
+        }),
+      )
+    ).id;
     const client = new WebClient(base);
     expect(
       (await client.call('POST', '/v1/auth/password/forgot', { body: { identifier: phone } }))

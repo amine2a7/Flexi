@@ -1,3 +1,4 @@
+import { PiiService } from '../common/pii.js';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { AuditService } from '../common/audit.service.js';
 import { FourEyesService } from '../common/four-eyes.service.js';
@@ -34,8 +35,6 @@ type PayoutRow = PayoutRequest & {
   batch: { id: string; reference: string } | null;
 };
 
-const maskIban = (iban: string) => `•••• ${iban.slice(-4)}`;
-
 function payoutBody(payout: PayoutRequest) {
   return {
     id: payout.id,
@@ -58,12 +57,12 @@ function history(events: readonly PayoutEvent[]) {
   }));
 }
 
-function adminPayout(payout: PayoutRow) {
+function adminPayout(payout: PayoutRow, pii: PiiService) {
   return {
     ...payoutBody(payout),
     merchantId: payout.merchantId,
     merchantName: payout.merchant.name,
-    iban: payout.iban,
+    iban: pii.open(payout.iban),
     ...(payout.batch === null
       ? {}
       : { batchId: payout.batch.id, batchReference: payout.batch.reference }),
@@ -86,6 +85,7 @@ export class PayoutsService {
     @Inject(SettingsService) private readonly settings: SettingsService,
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(FourEyesService) private readonly fourEyes: FourEyesService,
+    @Inject(PiiService) private readonly pii: PiiService,
     @Inject(Paginator) private readonly paginator: Paginator,
   ) {}
 
@@ -366,7 +366,7 @@ export class PayoutsService {
     if (covered.length > 0)
       await tx.payment.updateMany({ where: { id: { in: covered } }, data: { payoutId: id } });
     await this.audit.record(tx, 'payouts.request', reference);
-    return { ...payoutBody(payout), maskedIban: maskIban(merchant.iban) };
+    return { ...payoutBody(payout), maskedIban: this.pii.maskedIban(merchant.iban) };
   }
 
   async merchantPayouts(
@@ -398,7 +398,7 @@ export class PayoutsService {
         : undefined;
       return this.paginator.page(
         request,
-        rows.map((row) => ({ ...payoutBody(row), maskedIban: maskIban(row.iban) })),
+        rows.map((row) => ({ ...payoutBody(row), maskedIban: this.pii.maskedIban(row.iban) })),
         filters,
         count,
       );
@@ -414,7 +414,7 @@ export class PayoutsService {
       if (payout === null) throw problems.notFound();
       return {
         ...payoutBody(payout),
-        maskedIban: maskIban(payout.iban),
+        maskedIban: this.pii.maskedIban(payout.iban),
         history: history(payout.events),
       };
     });
@@ -526,7 +526,7 @@ export class PayoutsService {
         request,
         ranked.flatMap((id) => {
           const row = byId.get(id);
-          return row === undefined ? [] : [adminPayout(row)];
+          return row === undefined ? [] : [adminPayout(row, this.pii)];
         }),
         filters,
         request.withCount ? all.length : undefined,
@@ -543,7 +543,7 @@ export class PayoutsService {
   async adminGet(id: string) {
     return this.db.user(async (tx) => {
       const payout = await this.loadAdmin(tx, id);
-      return { ...adminPayout(payout), history: history(payout.events) };
+      return { ...adminPayout(payout, this.pii), history: history(payout.events) };
     });
   }
 
@@ -596,7 +596,7 @@ export class PayoutsService {
     });
     await this.audit.record(tx, 'payouts.approve', payout.reference);
     const updated = await this.loadAdmin(tx, id);
-    return { ...adminPayout(updated), history: history(updated.events) };
+    return { ...adminPayout(updated, this.pii), history: history(updated.events) };
   }
 
   /** Rejected with a reason: the request entry is reversed (the merchant gets its balance back). */
@@ -620,7 +620,7 @@ export class PayoutsService {
       });
       await this.audit.record(tx, 'payouts.reject', payout.reference);
       const updated = await this.loadAdmin(tx, id);
-      return { ...adminPayout(updated), history: history(updated.events) };
+      return { ...adminPayout(updated, this.pii), history: history(updated.events) };
     }
   }
 
@@ -677,7 +677,7 @@ export class PayoutsService {
         settlementDate: dayOf(batch.settlementDate),
         status: batch.status,
         ...this.batchTotals(payouts),
-        payouts: payouts.map(adminPayout),
+        payouts: payouts.map((row) => adminPayout(row, this.pii)),
       };
     });
   }

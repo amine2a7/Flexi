@@ -12,7 +12,7 @@ const { DbService } = await import('../../src/common/db.service.js');
 const { LedgerService, accounts } = await import('../../src/ledger/ledger.service.js');
 const { PayoutsService } = await import('../../src/payouts/payouts.service.js');
 const { hashSecret } = await import('../../src/auth/password.js');
-const { createCompany, createEmployee, createUser, seedSettings, signedIn } =
+const { createCompany, createEmployee, createUser, sealed, seedSettings, signedIn } =
   await import('./fixtures.js');
 
 const env = loadEnv();
@@ -49,14 +49,16 @@ async function createMerchant() {
         name: `Café ${randomUUID().slice(0, 5)}`,
         category: 'CAFE',
         city: 'Tunis',
-        phone: '+21671000001',
+        phone: sealed('+21671000001'),
         email: 'cafe@test.tn',
         status: 'APPROVED',
         acceptedCreditTypes: ['RESTAURATION'],
         paymentCode: String(randomInt(100_000, 999_999)),
-        iban: `TN59${String(randomInt(10 ** 9, 10 ** 10 - 1))}${String(randomInt(10 ** 9, 10 ** 10 - 1))}12`.slice(
-          0,
-          24,
+        iban: sealed(
+          `TN59${String(randomInt(10 ** 9, 10 ** 10 - 1))}${String(randomInt(10 ** 9, 10 ** 10 - 1))}12`.slice(
+            0,
+            24,
+          ),
         ),
       },
     }),

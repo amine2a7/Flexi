@@ -1,3 +1,4 @@
+import { PiiService } from '../common/pii.js';
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import { InvitationService } from '../auth/invitation.service.js';
@@ -75,6 +76,7 @@ export class CompanyService {
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(Paginator) private readonly paginator: Paginator,
     @Inject(InvitationService) private readonly invitations: InvitationService,
+    @Inject(PiiService) private readonly pii: PiiService,
   ) {}
 
   private companyId(): string {
@@ -116,7 +118,7 @@ export class CompanyService {
       firstName: employee.firstName,
       lastName: employee.lastName,
       email: employee.email,
-      phone: employee.phone,
+      phone: this.pii.open(employee.phone),
       status: employee.status,
       monthAllocatedMillimes: toMillimes(allocated),
     };
@@ -271,7 +273,7 @@ export class CompanyService {
           firstName,
           lastName,
           email,
-          phone: input.phone.trim(),
+          phone: this.pii.seal(input.phone.trim()),
           status: 'INVITED',
         },
       });
@@ -395,7 +397,7 @@ export class CompanyService {
           firstName: row.firstName,
           lastName: row.lastName,
           email: row.email.toLowerCase(),
-          phone: row.phone,
+          phone: this.pii.seal(row.phone),
           status: 'INVITED' as const,
         })),
       });
