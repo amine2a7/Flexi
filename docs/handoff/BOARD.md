@@ -14,7 +14,8 @@ Mode économe (voir CLAUDE.md). Branche `feat/web`. Plan de l'utilisateur du 202
 | 1. Ledger C1-C9, C13 (verrous, index 0010, réconciliation quotidienne) | Terminé, ledger-auditor **OK** | 3d9d733, 6bfef5e (S03 approbations, N1) |
 | Correctif : sessions PostgreSQL en UTC (dates décalées d'1 h) | Terminé | d02cdd3 |
 | 2. S01 PIN (réservation atomique, 15/30/60 min puis reconnexion) + S07 (empreinte HMAC) | Terminé | 983b69e, a8b5ce8 |
-| 3. S02 sous-rôles vérifiés par le serveur (matrice de l'utilisateur) | **À faire (suivant)** | puis POINT DE CONTRÔLE 1 (revue securite) |
+| 3. S02 sous-rôles vérifiés par le serveur (matrice de l'utilisateur) | Terminé, securite : S02 **FERMÉ** | voir le commit S02 ; ouverts : B5-S02-a (Moyenne, créateur du commerçant = validateur de son KYC), B5-S02-c (droits à confirmer, decisions.md 2026-10-21) |
+| POINT DE CONTRÔLE 1 | **En attente de l'utilisateur** | |
 | 4. qualite B1, M1, M2 ; boîte d'envoi PostgreSQL + job ; resend-credentials ; relationJoins figé ; commit des changements web en attente (client.ts, page Payer, traductions bénéficiaire, m10, m11) et des maquettes `docs/design` | À faire | |
 | 5. Départements | À faire | |
 | 6. Employé + activation du bénéficiaire par téléphone (code, OTP, PIN 6 chiffres, appareil de confiance) | À faire | puis POINT DE CONTRÔLE 2 |

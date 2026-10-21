@@ -5,6 +5,7 @@ import { DbService, type Tx } from '../common/db.service.js';
 import { commissionOf, fromMillimes, toMillimes } from '../common/money.js';
 import { Paginator, type Page } from '../common/pagination.js';
 import { ApiProblem, problems, validationFailed } from '../common/problem.js';
+import { permissionsOf } from '../common/permissions.js';
 import { principal } from '../common/request-context.js';
 import { addDays, businessDay, dateOnly, dayOf, startOfBusinessDay } from '../common/tunis.js';
 import type { CreditType, Payment, PaymentEvent } from '../generated/prisma/client.js';
@@ -653,6 +654,14 @@ export class PaymentsService {
   ) {
     await this.expireStale();
     const request = this.paginator.request(query, filters);
+    const since = this.dayOnlySince();
+    // A cashier only sees the payments of the day, whatever the period asked for (B5-S02).
+    const from =
+      since === undefined
+        ? request.createdFrom
+        : request.createdFrom === undefined || request.createdFrom < since
+          ? since
+          : request.createdFrom;
     return this.db.user(async (tx) => {
       const needle = filters.q?.trim();
       const where = {
@@ -666,11 +675,11 @@ export class PaymentsService {
                 { customerFirstName: { contains: needle, mode: 'insensitive' as const } },
               ],
             }),
-        ...(request.createdFrom === undefined && request.createdTo === undefined
+        ...(from === undefined && request.createdTo === undefined
           ? {}
           : {
               createdAt: {
-                ...(request.createdFrom === undefined ? {} : { gte: request.createdFrom }),
+                ...(from === undefined ? {} : { gte: from }),
                 ...(request.createdTo === undefined ? {} : { lt: request.createdTo }),
               },
             }),
@@ -687,14 +696,25 @@ export class PaymentsService {
   }
 
   /** Detail: rate of the type, commission and net (integers), D+2 date, steps reached. */
+  /** Start of the business day when the session may only read the day's sales (cashier). */
+  private dayOnlySince(): Date | undefined {
+    const who = principal();
+    return permissionsOf(who.role, who.subRole).includes('sales.read')
+      ? undefined
+      : startOfBusinessDay(businessDay());
+  }
+
   async merchantPaymentDetail(paymentId: string) {
     await this.expireStale();
+    const since = this.dayOnlySince();
     return this.db.user(async (tx) => {
       const payment = await tx.payment.findUnique({
         where: { id: paymentId },
         include: { events: { orderBy: { occurredAt: 'asc' } } },
       });
       if (payment === null) throw problems.notFound();
+      // A cashier only sees the payments of the day (securite B5-S02).
+      if (since !== undefined && payment.createdAt < since) throw problems.notFound();
       const collected = payment.status === 'CONFIRMED' || payment.status === 'SETTLED';
       const rate =
         payment.commissionRateBps ??

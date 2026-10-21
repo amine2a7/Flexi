@@ -4,7 +4,7 @@ import { encryptSecret } from '../../src/common/crypto.js';
 import { hashSecret } from '../../src/auth/password.js';
 import { codeAt, currentStep, newSecretBase32 } from '../../src/auth/totp.js';
 import type { Env } from '../../src/config/env.js';
-import type { Role } from '../../src/generated/prisma/enums.js';
+import type { Role, SubRole } from '../../src/generated/prisma/enums.js';
 import { WebClient } from './http.js';
 
 export const PASSWORD = 'Rose-des-sables-2026'; // gitleaks:allow (test-only value)
@@ -87,6 +87,7 @@ export async function createUser(
   role: Role,
   tenant: { companyId?: string; merchantId?: string; employeeId?: string } = {},
   displayName = 'Test U.',
+  subRole?: SubRole | null,
 ): Promise<TestUser> {
   const email = `${role.toLowerCase()}-${randomUUID().slice(0, 8)}@flexipay.test`;
   const secret = newSecretBase32();
@@ -94,7 +95,14 @@ export async function createUser(
     tx.user.create({
       data: {
         role,
-        subRole: role === 'ADMIN' ? 'SUPER_ADMIN' : role === 'EMPLOYEE' ? null : 'OWNER',
+        subRole:
+          subRole !== undefined
+            ? subRole
+            : role === 'ADMIN'
+              ? 'SUPER_ADMIN'
+              : role === 'EMPLOYEE'
+                ? null
+                : 'OWNER',
         displayName,
         email,
         passwordHash: await hashSecret(PASSWORD),

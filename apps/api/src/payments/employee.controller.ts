@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
-import { Roles } from '../common/decorators.js';
+import { Can, Roles } from '../common/decorators.js';
 import { IdempotencyService } from '../common/idempotency.service.js';
 import { validationFailed } from '../common/problem.js';
 import { pathId, sendOutcome } from '../common/responses.js';
@@ -40,22 +40,26 @@ export class EmployeeController {
     @Inject(IdempotencyService) private readonly idempotency: IdempotencyService,
   ) {}
 
+  @Can('wallet.read')
   @Get('wallet')
   wallet() {
     return this.payments.wallet();
   }
 
+  @Can('payments.pay')
   @Post('payment-codes')
   @HttpCode(201)
   code() {
     return this.payments.newCode();
   }
 
+  @Can('payments.pay')
   @Get('payment-requests')
   requests() {
     return this.payments.requests();
   }
 
+  @Can('payments.pay')
   @Post('payment-requests/:requestId/confirm')
   async confirm(
     @Req() req: Request,
@@ -75,12 +79,14 @@ export class EmployeeController {
     return sendOutcome(res, outcome);
   }
 
+  @Can('payments.pay')
   @Post('payment-requests/:requestId/refuse')
   @HttpCode(204)
   async refuse(@Param('requestId') requestId: string): Promise<void> {
     await this.payments.refuseRequest(pathId('requestId', requestId));
   }
 
+  @Can('payments.pay')
   @Get('merchants/:merchantCode')
   merchant(@Param('merchantCode') merchantCode: string) {
     if (!/^[0-9]{6}$/.test(merchantCode)) {
@@ -89,6 +95,7 @@ export class EmployeeController {
     return this.payments.lookupMerchant(merchantCode);
   }
 
+  @Can('payments.pay')
   @Post('payments')
   async pay(@Req() req: Request, @Res({ passthrough: true }) res: Response, @Body() body: unknown) {
     const input = parse(payBody, body);
@@ -101,6 +108,7 @@ export class EmployeeController {
     return sendOutcome(res, outcome);
   }
 
+  @Can('wallet.read')
   @Get('operations')
   operations(@Query() query: Record<string, unknown>) {
     return this.payments.listOperations(
@@ -109,16 +117,19 @@ export class EmployeeController {
     );
   }
 
+  @Can('wallet.read')
   @Get('operations/:operationId')
   operation(@Param('operationId') operationId: string) {
     return this.payments.operation(pathId('operationId', operationId));
   }
 
+  @Can('wallet.read')
   @Get('profile')
   profile() {
     return this.payments.profile();
   }
 
+  @Can('payments.pay')
   @Post('pin')
   @HttpCode(204)
   async changePin(@Body() body: unknown): Promise<void> {

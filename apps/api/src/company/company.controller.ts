@@ -15,7 +15,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
-import { Roles } from '../common/decorators.js';
+import { Can, Roles } from '../common/decorators.js';
 import { IdempotencyService } from '../common/idempotency.service.js';
 import { pathId, sendFile, sendOutcome } from '../common/responses.js';
 import { creditType, email, parse, phoneNumber, positiveMillimes } from '../common/validation.js';
@@ -64,11 +64,13 @@ export class CompanyController {
     @Inject(IdempotencyService) private readonly idempotency: IdempotencyService,
   ) {}
 
+  @Can('balances.read')
   @Get('dashboard')
   dashboard() {
     return this.company.dashboard();
   }
 
+  @Can('employees.read')
   @Get('employees')
   employees(@Query() query: Record<string, unknown>) {
     return this.company.employees(
@@ -77,12 +79,14 @@ export class CompanyController {
     );
   }
 
+  @Can('employees.manage')
   @Post('employees')
   @HttpCode(201)
   createEmployee(@Body() body: unknown) {
     return this.company.createEmployee(parse(employeeBody, body));
   }
 
+  @Can('employees.manage')
   @Post('employees/import-previews')
   @HttpCode(200)
   previewImport(@Body() body: unknown) {
@@ -91,6 +95,7 @@ export class CompanyController {
     );
   }
 
+  @Can('employees.manage')
   @Post('employees/imports')
   @HttpCode(201)
   confirmImport(@Body() body: unknown) {
@@ -99,12 +104,14 @@ export class CompanyController {
     );
   }
 
+  @Can('orders.create')
   @Post('order-quotes')
   @HttpCode(200)
   quote(@Body() body: unknown) {
     return this.orders.quote(parse(z.strictObject({ lines }), body).lines);
   }
 
+  @Can('orders.read')
   @Get('orders')
   listOrders(@Query() query: Record<string, unknown>) {
     return this.orders.list(
@@ -113,6 +120,7 @@ export class CompanyController {
     );
   }
 
+  @Can('orders.create')
   @Post('orders')
   async createOrder(
     @Req() req: Request,
@@ -127,17 +135,20 @@ export class CompanyController {
     return sendOutcome(res, outcome);
   }
 
+  @Can('orders.read')
   @Get('orders/:orderId')
   order(@Param('orderId') orderId: string) {
     return this.orders.get(pathId('orderId', orderId));
   }
 
+  @Can('orders.create')
   @Post('orders/:orderId/cancel')
   @HttpCode(200)
   cancel(@Param('orderId') orderId: string) {
     return this.orders.cancel(pathId('orderId', orderId));
   }
 
+  @Can('orders.declareTransfer')
   @Post('orders/:orderId/transfer-declarations')
   @UseInterceptors(
     FileInterceptor('proof', { limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 5 } }),
@@ -157,17 +168,20 @@ export class CompanyController {
     return sendOutcome(res, outcome);
   }
 
+  @Can('orders.read')
   @Get('orders/:orderId/proof')
   async proof(@Param('orderId') orderId: string, @Res() res: Response): Promise<void> {
     const file = await this.orders.proof(pathId('orderId', orderId));
     sendFile(res, file.data, file.contentType, file.fileName);
   }
 
+  @Can('fundingAccount.read')
   @Get('funding-account')
   fundingAccount() {
     return this.settings.fundingAccount();
   }
 
+  @Can('credits.allocate')
   @Post('allocation-imports/previews')
   @HttpCode(200)
   previewAllocations(@Body() body: unknown) {
@@ -176,6 +190,7 @@ export class CompanyController {
     );
   }
 
+  @Can('credits.allocate')
   @Post('allocations')
   async allocate(
     @Req() req: Request,
@@ -190,6 +205,7 @@ export class CompanyController {
     return sendOutcome(res, outcome);
   }
 
+  @Can('invoices.read')
   @Get('invoices')
   invoices(@Query() query: Record<string, unknown>) {
     return this.company.invoices(query);

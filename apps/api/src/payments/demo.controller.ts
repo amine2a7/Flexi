@@ -1,5 +1,5 @@
 import { Controller, HttpCode, Inject, Post } from '@nestjs/common';
-import { Roles } from '../common/decorators.js';
+import { Can, Roles } from '../common/decorators.js';
 import { PaymentsService } from './payments.service.js';
 
 /**
@@ -12,6 +12,7 @@ import { PaymentsService } from './payments.service.js';
 export class DemoController {
   constructor(@Inject(PaymentsService) private readonly payments: PaymentsService) {}
 
+  @Can('payments.pay')
   @Post('employee/payment-request')
   @HttpCode(204)
   async paymentRequest(): Promise<void> {

@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
-import { Roles } from '../common/decorators.js';
+import { Can, Roles } from '../common/decorators.js';
 import { IdempotencyService } from '../common/idempotency.service.js';
 import { pathId, sendOutcome } from '../common/responses.js';
 import { creditType, parse, reason } from '../common/validation.js';
@@ -26,6 +26,7 @@ export class AdminPayoutsController {
     @Inject(IdempotencyService) private readonly idempotency: IdempotencyService,
   ) {}
 
+  @Can('platform.read')
   @Get('payout-requests')
   list(@Query() query: Record<string, unknown>) {
     const filters = parse(
@@ -40,11 +41,13 @@ export class AdminPayoutsController {
     return this.payouts.adminList(query, filters);
   }
 
+  @Can('platform.read')
   @Get('payout-requests/:payoutId')
   get(@Param('payoutId') payoutId: string) {
     return this.payouts.adminGet(pathId('payoutId', payoutId));
   }
 
+  @Can('payouts.decide')
   @Post('payout-requests/:payoutId/approve')
   async approve(
     @Req() req: Request,
@@ -60,6 +63,7 @@ export class AdminPayoutsController {
   }
 
   /** Financial (reversal of the request entry): Idempotency-Key required (rule 4). */
+  @Can('payouts.decide')
   @Post('payout-requests/:payoutId/reject')
   @HttpCode(200)
   async reject(
@@ -77,11 +81,13 @@ export class AdminPayoutsController {
     return sendOutcome(res, outcome);
   }
 
+  @Can('platform.read')
   @Get('settlements')
   batches(@Query() query: Record<string, unknown>) {
     return this.payouts.batches(query);
   }
 
+  @Can('platform.read')
   @Get('settlements/:batchId')
   batch(@Param('batchId') batchId: string) {
     return this.payouts.batch(pathId('batchId', batchId));

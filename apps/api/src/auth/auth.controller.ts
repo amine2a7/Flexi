@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
-import { AllowSteps, Public } from '../common/decorators.js';
+import { AllowSteps, Public, Self } from '../common/decorators.js';
 import { REFRESH_COOKIE, cookiesOf } from '../common/http.js';
 import { validationFailed } from '../common/problem.js';
 import { parse } from '../common/validation.js';
@@ -94,6 +94,7 @@ export class AuthController {
   }
 
   @AllowSteps('MFA_ENROLL')
+  @Self()
   @Post('mfa/enroll')
   @HttpCode(200)
   async enrol(@Req() req: Request, @Body() body: unknown) {
@@ -102,6 +103,7 @@ export class AuthController {
   }
 
   @AllowSteps('MFA_ENROLL')
+  @Self()
   @Post('mfa/enroll/confirm')
   @HttpCode(200)
   async confirmEnrolment(
@@ -116,6 +118,7 @@ export class AuthController {
     return { ...this.sessions.result(issued), recoveryCodes };
   }
 
+  @Self()
   @Post('mfa/recovery-codes')
   @HttpCode(200)
   async recoveryCodes(@Req() req: Request, @Body() body: unknown) {
@@ -124,6 +127,7 @@ export class AuthController {
   }
 
   @AllowSteps('PASSWORD_CHANGE')
+  @Self()
   @Post('password/change')
   @HttpCode(200)
   async changePassword(
@@ -161,6 +165,7 @@ export class AuthController {
   }
 
   @AllowSteps('PASSWORD_CHANGE', 'MFA_ENROLL')
+  @Self()
   @Post('logout')
   @HttpCode(204)
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
@@ -189,11 +194,13 @@ export class AuthController {
 export class MeController {
   constructor(@Inject(AuthService) private readonly auth: AuthService) {}
 
+  @Self()
   @Get()
   me() {
     return this.auth.me();
   }
 
+  @Self()
   @Post('onboarding-tour')
   @HttpCode(204)
   async tour(): Promise<void> {

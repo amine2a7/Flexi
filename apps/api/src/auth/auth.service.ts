@@ -3,6 +3,7 @@ import type { Response } from 'express';
 import { ENV, KEYS, type Keys } from '../config/env.provider.js';
 import type { Env } from '../config/env.js';
 import { AuditService } from '../common/audit.service.js';
+import { permissionsOf } from '../common/permissions.js';
 import { OutboxService } from '../common/outbox.service.js';
 import {
   decryptSecret,
@@ -18,7 +19,7 @@ import {
 import { DbService, type Tx } from '../common/db.service.js';
 import { ApiProblem, problems, validationFailed } from '../common/problem.js';
 import { currentContext, principal } from '../common/request-context.js';
-import type { Role, SessionStep, SubRole, User } from '../generated/prisma/client.js';
+import type { Role, SessionStep, User } from '../generated/prisma/client.js';
 import { brokenRules, dummyHash, hashSecret, verifySecret } from './password.js';
 import { type IssuedSession, SessionService } from './session.service.js';
 import { matchStep, newSecretBase32, otpauthUri } from './totp.js';
@@ -35,30 +36,6 @@ const COUPLE_BLOCK_MS = 15 * 60_000;
 const GLOBAL_LIMIT = 20;
 const GLOBAL_BLOCK_MS = 24 * 3_600_000;
 const RECOVERY_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-
-/** Permissions computed by the server from the role and sub-role (DP n° 13). */
-export function permissionsOf(role: Role, subRole: SubRole | null): string[] {
-  switch (role) {
-    case 'ADMIN':
-      return [
-        'merchants.manage',
-        'companies.manage',
-        'commissions.request',
-        'approvals.decide',
-        'audit.read',
-        'settings.request',
-      ];
-    case 'COMPANY':
-      return subRole === 'OWNER'
-        ? ['employees.manage', 'orders.create', 'credits.allocate', 'invoices.read']
-        : ['employees.manage', 'credits.allocate'];
-    case 'MERCHANT':
-      return ['payments.collect', 'sales.read', 'payouts.request', 'settlements.read'];
-    case 'EMPLOYEE':
-    case 'FAMILY_MEMBER':
-      return ['wallet.read', 'payments.pay'];
-  }
-}
 
 export type LoginOutcome =
   | {

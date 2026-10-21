@@ -4,7 +4,8 @@ import type { Request } from 'express';
 import type { Role, SessionStep } from '../generated/prisma/enums.js';
 import { SessionService } from '../auth/session.service.js';
 import { DbService } from './db.service.js';
-import { PUBLIC, ROLES, STEPS } from './decorators.js';
+import { PERMISSIONS, PUBLIC, ROLES, STEPS } from './decorators.js';
+import { allows, type Permission, type SELF } from './permissions.js';
 import { ACCESS_COOKIE, REFRESH_COOKIE, cookiesOf } from './http.js';
 import { ApiProblem, problems } from './problem.js';
 import { currentContext } from './request-context.js';
@@ -14,7 +15,8 @@ const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 /**
  * Global guard, deny by default (contract §6): every route needs a live session unless marked
  * `@Public()`; restricted session states only reach their own routes (§10); unsafe methods
- * authenticated by cookie need the CSRF token; `@Roles()` restricts the roles.
+ * authenticated by cookie need the CSRF token; `@Roles()` restricts the roles and `@Can()` the
+ * sub-roles (permission of the session; none declared = refused).
  */
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -26,7 +28,8 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const targets = [context.getHandler(), context.getClass()];
-    if (this.reflector.getAllAndOverride<boolean | undefined>(PUBLIC, targets) ?? false) return true;
+    if (this.reflector.getAllAndOverride<boolean | undefined>(PUBLIC, targets) ?? false)
+      return true;
     const req = context.switchToHttp().getRequest<Request>();
     const cookies = cookiesOf(req);
     const bearer = /^Bearer ([A-Za-z0-9_-]{20,})$/.exec(req.headers.authorization ?? '')?.[1];
@@ -62,6 +65,15 @@ export class AuthGuard implements CanActivate {
     if (user?.status !== 'ACTIVE') throw problems.unauthenticated();
     const roles = this.reflector.getAllAndOverride<Role[] | undefined>(ROLES, targets);
     if (roles !== undefined && !roles.includes(user.role)) throw problems.forbidden();
+    // Sub-role of the session, checked here for every route (securite B5-S02). A route that
+    // declares no permission is refused: nothing is reachable by omission.
+    const required = this.reflector.getAllAndOverride<(Permission | typeof SELF)[] | undefined>(
+      PERMISSIONS,
+      targets,
+    );
+    if (required === undefined || !allows(user.role, user.subRole, required)) {
+      throw problems.forbidden();
+    }
 
     const ctx = currentContext();
     if (ctx === undefined) throw new Error('request context missing');

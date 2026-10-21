@@ -13,7 +13,7 @@ import {
 import type { Response } from 'express';
 import { z } from 'zod';
 import { ContactService } from '../contact/contact.service.js';
-import { Public, Roles } from '../common/decorators.js';
+import { Can, Public, Roles } from '../common/decorators.js';
 import { pathId, sendFile } from '../common/responses.js';
 import {
   creditType,
@@ -72,11 +72,13 @@ export class AdminController {
     @Inject(ContactService) private readonly contact: ContactService,
   ) {}
 
+  @Can('platform.read')
   @Get('dashboard')
   dashboard() {
     return this.admin.dashboard();
   }
 
+  @Can('platform.read')
   @Get('merchants')
   merchants(@Query() query: Record<string, unknown>) {
     return this.admin.merchants(
@@ -85,6 +87,7 @@ export class AdminController {
     );
   }
 
+  @Can('merchants.manage')
   @Post('merchants')
   @HttpCode(201)
   createMerchant(@Body() body: unknown) {
@@ -104,11 +107,13 @@ export class AdminController {
     );
   }
 
+  @Can('platform.read')
   @Get('merchants/:merchantId')
   merchant(@Param('merchantId') merchantId: string) {
     return this.admin.merchant(pathId('merchantId', merchantId));
   }
 
+  @Can('merchants.manage')
   @Put('merchants/:merchantId/credit-types')
   setTypes(@Param('merchantId') merchantId: string, @Body() body: unknown) {
     return this.admin.setMerchantTypes(
@@ -117,6 +122,7 @@ export class AdminController {
     );
   }
 
+  @Can('platform.read')
   @Get('companies')
   companies(@Query() query: Record<string, unknown>) {
     return this.admin.companies(
@@ -125,6 +131,7 @@ export class AdminController {
     );
   }
 
+  @Can('companies.manage')
   @Post('companies')
   @HttpCode(201)
   createCompany(@Body() body: unknown) {
@@ -133,11 +140,13 @@ export class AdminController {
     );
   }
 
+  @Can('platform.read')
   @Get('commission-profiles')
   profiles() {
     return this.admin.profiles();
   }
 
+  @Can('commissions.request')
   @Post('commission-profiles/:profileId/change-requests')
   @HttpCode(201)
   changeRequest(@Param('profileId') profileId: string, @Body() body: unknown) {
@@ -149,6 +158,7 @@ export class AdminController {
     );
   }
 
+  @Can('platform.read')
   @Get('approvals')
   approvals(@Query() query: Record<string, unknown>) {
     return this.admin.approvals(
@@ -161,12 +171,14 @@ export class AdminController {
     );
   }
 
+  @Can('approvals.decide')
   @Post('approvals/:approvalId/approve')
   @HttpCode(200)
   approve(@Param('approvalId') approvalId: string) {
     return this.admin.approve(pathId('approvalId', approvalId));
   }
 
+  @Can('approvals.decide')
   @Post('approvals/:approvalId/reject')
   @HttpCode(200)
   reject(@Param('approvalId') approvalId: string, @Body() body: unknown) {
@@ -176,6 +188,7 @@ export class AdminController {
     );
   }
 
+  @Can('platform.read')
   @Get('transactions')
   transactions(@Query() query: Record<string, unknown>) {
     const filters = parse(
@@ -190,6 +203,7 @@ export class AdminController {
     return this.admin.transactions(query, filters);
   }
 
+  @Can('audit.read')
   @Get('audit-logs')
   audit(@Query() query: Record<string, unknown>) {
     return this.admin.auditLogs(
@@ -198,11 +212,13 @@ export class AdminController {
     );
   }
 
+  @Can('platform.read')
   @Get('settings')
   settings() {
     return this.admin.platformSettings();
   }
 
+  @Can('settings.request')
   @Put('settings')
   @HttpCode(202)
   changeSettings(@Body() body: unknown) {
@@ -210,6 +226,7 @@ export class AdminController {
     return this.admin.requestSettingsChange(input.settings, input.reason);
   }
 
+  @Can('platform.read')
   @Get('kyc-files')
   kycFiles(@Query() query: Record<string, unknown>) {
     const filters = parse(
@@ -223,11 +240,13 @@ export class AdminController {
     return this.admin.kycFiles(query, filters);
   }
 
+  @Can('platform.read')
   @Get('kyc-files/:fileId')
   kycFile(@Param('fileId') fileId: string) {
     return this.admin.kycFile(pathId('fileId', fileId));
   }
 
+  @Can('kycDocuments.read')
   @Get('kyc-files/:fileId/documents/:documentId')
   async kycDocument(
     @Param('fileId') fileId: string,
@@ -241,12 +260,14 @@ export class AdminController {
     sendFile(res, file.data, file.contentType, file.fileName);
   }
 
+  @Can('kyc.decide')
   @Post('kyc-files/:fileId/approve')
   @HttpCode(200)
   approveKyc(@Param('fileId') fileId: string) {
     return this.admin.decideKyc(pathId('fileId', fileId), 'APPROVED');
   }
 
+  @Can('kyc.decide')
   @Post('kyc-files/:fileId/reject')
   @HttpCode(200)
   rejectKyc(@Param('fileId') fileId: string, @Body() body: unknown) {
@@ -257,6 +278,7 @@ export class AdminController {
     );
   }
 
+  @Can('platform.read')
   @Get('contact-messages')
   messages(@Query() query: Record<string, unknown>) {
     const filters = parse(
@@ -271,11 +293,13 @@ export class AdminController {
     return this.contact.list(query, filters);
   }
 
+  @Can('platform.read')
   @Get('contact-messages/:messageId')
   message(@Param('messageId') messageId: string) {
     return this.contact.get(pathId('messageId', messageId));
   }
 
+  @Can('messages.handle')
   @Post('contact-messages/:messageId/handle')
   @HttpCode(200)
   handle(@Param('messageId') messageId: string, @Body() body: unknown) {

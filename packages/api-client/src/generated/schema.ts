@@ -2079,7 +2079,17 @@ export interface components {
      *     sont publiés espace par espace (§11 Commerçant) ; les cases de la matrice rôle ×
      *     sous-rôle que les documents ne fixent pas sont soumises à l'utilisateur. Une permission
      *     inconnue du client est ignorée ; le web masque ce qui n'est pas permis, le serveur
-     *     refuse (`403 FORBIDDEN`).
+     *     refuse (`403 FORBIDDEN`) : chaque route exige une permission, calculée à partir du rôle
+     *     et du sous-rôle de la session (jamais de la requête), une route sans règle est refusée.
+     *     Matrice (2026-10-21) — Entreprise : OWNER tout ; MANAGER (RH) `balances.read`,
+     *     `employees.read`, `employees.manage`, `credits.allocate` ; ACCOUNTANT (comptable)
+     *     `balances.read`, `orders.read`, `orders.create`, `orders.declareTransfer`,
+     *     `fundingAccount.read`, `invoices.read` ; READ_ONLY lecture. Commerçant : OWNER tout ;
+     *     CASHIER `payments.collect`, `sales.readToday` (ventes du jour seulement), `shop.read` ;
+     *     ACCOUNTANT lecture des finances. Administrateur : SUPER_ADMIN tout (seul à demander un
+     *     changement de paramétrage ou de commission) ; COMPLIANCE (opérations) KYC, confirmation
+     *     des commandes, comptes ; FINANCE validation des paiements, virements, seconde validation ;
+     *     SUPPORT lecture et messages de contact.
      */
     Permission: string;
     /** Me */
