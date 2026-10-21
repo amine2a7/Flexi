@@ -2,12 +2,19 @@
   "accounts": {
     "title": "Demo accounts (development)",
     "hint": "MFA code for every account: {code}",
-    "admin": "Administrator",
+    "admin": "Administrator (Super admin)",
     "company": "Company",
     "merchant": "Merchant",
     "firstLogin": "First sign-in",
-    "admin2": "Administrator (second approval)",
-    "beneficiary": "Beneficiary (employee)"
+    "admin2": "Administrator Finance (second validation)",
+    "beneficiary": "Beneficiary (employee)",
+    "operations": "Administrator Operations",
+    "support": "Administrator Support",
+    "hr": "Company HR",
+    "accountant": "Company Accountant",
+    "readOnly": "Company read-only",
+    "cashier": "Merchant Cashier",
+    "merchantAccountant": "Merchant Accountant"
   },
   "codes": {
     "title": "Demo customer codes",

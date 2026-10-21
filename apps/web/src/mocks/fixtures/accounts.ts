@@ -45,6 +45,96 @@ export const MERCHANT_TENANT = {
   label: 'Café El Medina',
 };
 
+/** Permissions of the server matrix (apps/api/src/common/permissions.ts, decision of 2026-10-21). */
+const ADMIN_READ = ['platform.read', 'audit.read'];
+const PERMISSIONS = {
+  SUPER_ADMIN: [
+    ...ADMIN_READ,
+    'merchants.manage',
+    'companies.manage',
+    'commissions.request',
+    'settings.request',
+    'approvals.decide',
+    'kyc.decide',
+    'kycDocuments.read',
+    'orders.confirm',
+    'orders.validate',
+    'payouts.decide',
+    'messages.handle',
+  ],
+  COMPLIANCE: [...ADMIN_READ, 'kyc.decide', 'kycDocuments.read', 'orders.confirm'],
+  FINANCE: [...ADMIN_READ, 'orders.validate', 'payouts.decide', 'approvals.decide'],
+  SUPPORT: [...ADMIN_READ, 'messages.handle'],
+  COMPANY_OWNER: [
+    'balances.read',
+    'employees.read',
+    'employees.manage',
+    'credits.allocate',
+    'orders.read',
+    'orders.create',
+    'orders.declareTransfer',
+    'fundingAccount.read',
+    'invoices.read',
+  ],
+  COMPANY_MANAGER: ['balances.read', 'employees.read', 'employees.manage', 'credits.allocate'],
+  COMPANY_ACCOUNTANT: [
+    'balances.read',
+    'orders.read',
+    'orders.create',
+    'orders.declareTransfer',
+    'fundingAccount.read',
+    'invoices.read',
+  ],
+  COMPANY_READ_ONLY: ['balances.read', 'employees.read', 'orders.read', 'invoices.read'],
+  MERCHANT_OWNER: [
+    'stats.read',
+    'sales.read',
+    'payments.collect',
+    'receivables.read',
+    'payouts.read',
+    'payouts.request',
+    'settlements.read',
+    'documents.read',
+    'shop.read',
+  ],
+  MERCHANT_CASHIER: ['payments.collect', 'sales.readToday', 'shop.read'],
+  MERCHANT_ACCOUNTANT: [
+    'stats.read',
+    'sales.read',
+    'receivables.read',
+    'payouts.read',
+    'settlements.read',
+    'documents.read',
+    'shop.read',
+  ],
+  EMPLOYEE: ['wallet.read', 'payments.pay'],
+} as const;
+
+/** One fictitious account per sub-role (synthetic data only), same password and MFA code. */
+function subRoleAccount(
+  id: string,
+  identifier: string,
+  role: Schemas['Role'],
+  subRole: Schemas['SubRole'],
+  displayName: string,
+  tenant: Schemas['TenantSummary'] | null,
+  permissions: readonly string[],
+): DemoAccount {
+  return {
+    id,
+    identifier,
+    password: DEMO_PASSWORD,
+    role,
+    subRole,
+    displayName,
+    tenant,
+    temporaryPassword: false,
+    mfaEnrolled: true,
+    recoveryCodes: [...DEMO_RECOVERY_CODES],
+    permissions,
+  };
+}
+
 export function createDemoAccounts(): DemoAccount[] {
   return [
     {
@@ -58,14 +148,7 @@ export function createDemoAccounts(): DemoAccount[] {
       temporaryPassword: false,
       mfaEnrolled: true,
       recoveryCodes: [...DEMO_RECOVERY_CODES],
-      permissions: [
-        'merchants.manage',
-        'companies.manage',
-        'commissions.request',
-        'approvals.decide',
-        'audit.read',
-        'settings.request',
-      ],
+      permissions: PERMISSIONS.SUPER_ADMIN,
     },
     {
       id: '01930a1c-0009-7a00-8000-000000000009',
@@ -78,14 +161,7 @@ export function createDemoAccounts(): DemoAccount[] {
       temporaryPassword: false,
       mfaEnrolled: true,
       recoveryCodes: [...DEMO_RECOVERY_CODES],
-      permissions: [
-        'merchants.manage',
-        'companies.manage',
-        'commissions.request',
-        'approvals.decide',
-        'audit.read',
-        'settings.request',
-      ],
+      permissions: PERMISSIONS.FINANCE,
     },
     {
       id: '01930a1c-0002-7a00-8000-000000000002',
@@ -98,7 +174,7 @@ export function createDemoAccounts(): DemoAccount[] {
       temporaryPassword: false,
       mfaEnrolled: true,
       recoveryCodes: [...DEMO_RECOVERY_CODES],
-      permissions: ['employees.manage', 'orders.create', 'credits.allocate', 'invoices.read'],
+      permissions: PERMISSIONS.COMPANY_OWNER,
     },
     {
       id: '01930a1c-0003-7a00-8000-000000000003',
@@ -111,7 +187,7 @@ export function createDemoAccounts(): DemoAccount[] {
       temporaryPassword: false,
       mfaEnrolled: true,
       recoveryCodes: [...DEMO_RECOVERY_CODES],
-      permissions: ['payments.collect', 'sales.read', 'payouts.request', 'settlements.read'],
+      permissions: PERMISSIONS.MERCHANT_OWNER,
     },
     {
       id: '01930a1c-0005-7a00-8000-000000000005',
@@ -124,7 +200,7 @@ export function createDemoAccounts(): DemoAccount[] {
       temporaryPassword: false,
       mfaEnrolled: true,
       recoveryCodes: [...DEMO_RECOVERY_CODES],
-      permissions: ['wallet.read', 'payments.pay'],
+      permissions: PERMISSIONS.EMPLOYEE,
     },
     {
       id: '01930a1c-0004-7a00-8000-000000000004',
@@ -137,8 +213,71 @@ export function createDemoAccounts(): DemoAccount[] {
       temporaryPassword: true,
       mfaEnrolled: false,
       recoveryCodes: [],
-      permissions: ['employees.manage', 'credits.allocate'],
+      permissions: PERMISSIONS.COMPANY_MANAGER,
     },
+    subRoleAccount(
+      '01930a1c-000a-7a00-8000-00000000000a',
+      'operations@flexipay.test',
+      'ADMIN',
+      'COMPLIANCE',
+      'Mehdi S.',
+      null,
+      PERMISSIONS.COMPLIANCE,
+    ),
+    subRoleAccount(
+      '01930a1c-000b-7a00-8000-00000000000b',
+      'support@flexipay.test',
+      'ADMIN',
+      'SUPPORT',
+      'Olfa D.',
+      null,
+      PERMISSIONS.SUPPORT,
+    ),
+    subRoleAccount(
+      '01930a1c-000c-7a00-8000-00000000000c',
+      'rh@flexipay.test',
+      'COMPANY',
+      'MANAGER',
+      'Sarra B.',
+      COMPANY_TENANT,
+      PERMISSIONS.COMPANY_MANAGER,
+    ),
+    subRoleAccount(
+      '01930a1c-000d-7a00-8000-00000000000d',
+      'comptable@flexipay.test',
+      'COMPANY',
+      'ACCOUNTANT',
+      'Karim J.',
+      COMPANY_TENANT,
+      PERMISSIONS.COMPANY_ACCOUNTANT,
+    ),
+    subRoleAccount(
+      '01930a1c-000e-7a00-8000-00000000000e',
+      'lecture@flexipay.test',
+      'COMPANY',
+      'READ_ONLY',
+      'Ines A.',
+      COMPANY_TENANT,
+      PERMISSIONS.COMPANY_READ_ONLY,
+    ),
+    subRoleAccount(
+      '01930a1c-000f-7a00-8000-00000000000f',
+      'caissier@flexipay.test',
+      'MERCHANT',
+      'CASHIER',
+      'Salma B.',
+      MERCHANT_TENANT,
+      PERMISSIONS.MERCHANT_CASHIER,
+    ),
+    subRoleAccount(
+      '01930a1c-0010-7a00-8000-000000000010',
+      'comptable-commerce@flexipay.test',
+      'MERCHANT',
+      'ACCOUNTANT',
+      'Imen J.',
+      MERCHANT_TENANT,
+      PERMISSIONS.MERCHANT_ACCOUNTANT,
+    ),
   ];
 }
 
@@ -150,6 +289,17 @@ export const DEMO_ACCOUNT_HINTS = [
   { role: 'merchant', identifier: 'commercant@flexipay.test', password: DEMO_PASSWORD },
   { role: 'beneficiary', identifier: 'beneficiaire@flexipay.test', password: DEMO_PASSWORD },
   { role: 'firstLogin', identifier: 'premiere@flexipay.test', password: DEMO_FIRST_LOGIN_PASSWORD },
+  { role: 'operations', identifier: 'operations@flexipay.test', password: DEMO_PASSWORD },
+  { role: 'support', identifier: 'support@flexipay.test', password: DEMO_PASSWORD },
+  { role: 'hr', identifier: 'rh@flexipay.test', password: DEMO_PASSWORD },
+  { role: 'accountant', identifier: 'comptable@flexipay.test', password: DEMO_PASSWORD },
+  { role: 'readOnly', identifier: 'lecture@flexipay.test', password: DEMO_PASSWORD },
+  { role: 'cashier', identifier: 'caissier@flexipay.test', password: DEMO_PASSWORD },
+  {
+    role: 'merchantAccountant',
+    identifier: 'comptable-commerce@flexipay.test',
+    password: DEMO_PASSWORD,
+  },
 ] as const;
 
 export const DEMO_ACCOUNTS_MARKER = MOCK_FIXTURE_SENTINEL;

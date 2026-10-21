@@ -2,12 +2,19 @@
   "accounts": {
     "title": "Comptes de démonstration (développement)",
     "hint": "Code MFA de tous les comptes : {code}",
-    "admin": "Administrateur",
+    "admin": "Administrateur (Super-admin)",
     "company": "Entreprise",
     "merchant": "Commerçant",
     "firstLogin": "Première connexion",
-    "admin2": "Administrateur (2e validation)",
-    "beneficiary": "Bénéficiaire (employé)"
+    "admin2": "Administrateur Finance (2e validation)",
+    "beneficiary": "Bénéficiaire (employé)",
+    "operations": "Administrateur Opérations",
+    "support": "Administrateur Support",
+    "hr": "Entreprise RH",
+    "accountant": "Entreprise Comptable",
+    "readOnly": "Entreprise lecture seule",
+    "cashier": "Commerçant Caissier",
+    "merchantAccountant": "Commerçant Comptable"
   },
   "codes": {
     "title": "Codes clients de démonstration",

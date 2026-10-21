@@ -493,9 +493,12 @@ const summary = await prisma.$transaction(
       }
     }
     // Staff of the demo shop (shown on its profile; they have no known password).
-    const merchantOwner = snap.accounts.find((account) => account.role === 'MERCHANT');
+    // Staff members that are demo accounts (owner, cashier, accountant) were created above.
+    const merchantAccounts = new Set(
+      snap.accounts.filter((account) => account.role === 'MERCHANT').map((a) => a.displayName),
+    );
     for (const member of snap.merchant.profile.staff) {
-      if (member.displayName === merchantOwner?.displayName) continue;
+      if (merchantAccounts.has(member.displayName)) continue;
       await tx.user.create({
         data: {
           id: member.id,
