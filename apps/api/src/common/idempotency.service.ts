@@ -1,7 +1,7 @@
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Request } from 'express';
-import { sha256 } from './crypto.js';
+import { KEYS, type Keys } from '../config/env.provider.js';
 import { DbService, TRANSACTION_TIMEOUT_MS, scopeOf, type Tx } from './db.service.js';
 import { ApiProblem } from './problem.js';
 import { principal, tenantOf } from './request-context.js';
@@ -45,7 +45,10 @@ function canonical(value: unknown): unknown {
  */
 @Injectable()
 export class IdempotencyService {
-  constructor(@Inject(DbService) private readonly db: DbService) {}
+  constructor(
+    @Inject(DbService) private readonly db: DbService,
+    @Inject(KEYS) private readonly keys: Keys,
+  ) {}
 
   /** Key of the request: required (`400 IDEMPOTENCY_KEY_REQUIRED`) and a UUID. */
   keyOf(req: Request): string {
@@ -58,10 +61,15 @@ export class IdempotencyService {
     return header.toLowerCase();
   }
 
+  /**
+   * Fingerprint of the request, keyed by a server secret (HMAC): a body holding a PIN cannot be
+   * found again from the stored value by trying the candidates (securite B5-S07).
+   */
   fingerprint(req: Request): string {
     const query = new URL(req.originalUrl, 'http://api').searchParams;
     const sorted = [...query.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-    return sha256(JSON.stringify([req.method, req.path, sorted, canonical(req.body as unknown)]));
+    const request = JSON.stringify([req.method, req.path, sorted, canonical(req.body as unknown)]);
+    return createHmac('sha256', this.keys.session).update(`idempotency|${request}`).digest('hex');
   }
 
   /**
