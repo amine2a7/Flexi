@@ -295,6 +295,11 @@ describe('admin sub-roles (Super-admin, Opérations COMPLIANCE, Finance, Support
   it('operations handle KYC and order confirmation, never payments nor settings', async () => {
     const operations = await adminUser('COMPLIANCE');
     await refused(operations, [
+      [
+        'POST',
+        '/v1/admin/companies',
+        { name: 'X', city: 'Tunis', phone: '+21671000000', email: 'x@y.tn' },
+      ],
       ['POST', `/v1/admin/credit-orders/${ID}/validate`],
       ['POST', `/v1/admin/payout-requests/${ID}/approve`],
       ['PUT', '/v1/admin/settings', {}],

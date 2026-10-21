@@ -63,9 +63,9 @@ export type Permission =
  *   Comptable (ACCOUNTANT) = orders, transfer declarations, invoices; READ_ONLY = reading.
  * - Merchant: Gérant (OWNER) = everything; Caissier (CASHIER) = collect and the day's history,
  *   no payout (IBAN masked everywhere); ACCOUNTANT = reading of the finances, no collect.
- * - Admin: SUPER_ADMIN = everything, settings and commissions only for it; Opérations
- *   (COMPLIANCE) = KYC, order confirmation, accounts; FINANCE = payment validation, payouts,
- *   second validation; SUPPORT = reading and contact messages.
+ * - Admin: SUPER_ADMIN = every read and action (accounts, settings, commissions only for it),
+ *   never an exception to the four eyes; Opérations (COMPLIANCE) = KYC and order confirmation;
+ *   FINANCE = payment validation, payouts, second validation; SUPPORT = reading and messages.
  */
 const MATRIX: Record<Role, Partial<Record<SubRole | 'NONE', readonly Permission[]>>> = {
   ADMIN: {
@@ -75,8 +75,6 @@ const MATRIX: Record<Role, Partial<Record<SubRole | 'NONE', readonly Permission[
       'kyc.decide',
       'kycDocuments.read',
       'orders.confirm',
-      'merchants.manage',
-      'companies.manage',
     ],
     FINANCE: [...ADMIN_READ, 'orders.validate', 'payouts.decide', 'approvals.decide'],
     SUPPORT: [...ADMIN_READ, 'messages.handle'],

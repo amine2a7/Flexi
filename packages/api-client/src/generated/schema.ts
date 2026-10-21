@@ -2086,9 +2086,10 @@ export interface components {
      *     `balances.read`, `orders.read`, `orders.create`, `orders.declareTransfer`,
      *     `fundingAccount.read`, `invoices.read` ; READ_ONLY lecture. Commerçant : OWNER tout ;
      *     CASHIER `payments.collect`, `sales.readToday` (ventes du jour seulement), `shop.read` ;
-     *     ACCOUNTANT lecture des finances. Administrateur : SUPER_ADMIN tout (seul à demander un
-     *     changement de paramétrage ou de commission) ; COMPLIANCE (opérations) KYC, confirmation
-     *     des commandes, comptes ; FINANCE validation des paiements, virements, seconde validation ;
+     *     ACCOUNTANT lecture des finances. Administrateur : SUPER_ADMIN tout (seul à créer les
+     *     comptes et à demander un changement de paramétrage ou de commission ; jamais d'exception
+     *     aux quatre yeux) ; COMPLIANCE (opérations) KYC et confirmation des commandes ; FINANCE
+     *     validation des paiements, virements, seconde validation ;
      *     SUPPORT lecture et messages de contact.
      */
     Permission: string;
