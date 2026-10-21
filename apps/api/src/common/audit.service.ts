@@ -11,7 +11,8 @@ import { currentContext } from './request-context.js';
 export class AuditService {
   async record(tx: Tx, action: string, target: string, actorName?: string): Promise<void> {
     const who = currentContext()?.principal;
-    await tx.auditLog.create({
+    // No RETURNING: a tenant may write its audit entry but never read the audit log (RLS).
+    await tx.auditLog.createMany({
       data: {
         actorUserId: who?.userId ?? null,
         actorName: actorName ?? who?.displayName ?? 'Système',
