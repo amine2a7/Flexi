@@ -2,6 +2,7 @@ import { randomInt } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import { InvitationService } from '../auth/invitation.service.js';
 import { AuditService } from '../common/audit.service.js';
+import { FourEyesService } from '../common/four-eyes.service.js';
 import { uuidv7 } from '../common/crypto.js';
 import { DbService, type Tx } from '../common/db.service.js';
 import { toMillimes } from '../common/money.js';
@@ -99,6 +100,7 @@ export class AdminService {
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(Paginator) private readonly paginator: Paginator,
     @Inject(FILE_STORAGE) private readonly storage: FileStorage,
+    @Inject(FourEyesService) private readonly fourEyes: FourEyesService,
     @Inject(InvitationService) private readonly invitations: InvitationService,
   ) {}
 
@@ -372,7 +374,13 @@ export class AdminService {
     owner: { merchantId?: string; companyId?: string },
   ): Promise<void> {
     const file = await tx.kycFile.create({
-      data: { id: uuidv7(), accountType, ...owner, status: 'PENDING' },
+      data: {
+        id: uuidv7(),
+        accountType,
+        ...owner,
+        status: 'PENDING',
+        createdBy: principal().userId,
+      },
     });
     await tx.kycEvent.create({
       data: {
@@ -470,7 +478,7 @@ export class AdminService {
       await tx.$queryRaw`SELECT id FROM approvals WHERE id = ${id}::uuid FOR UPDATE`;
       const approval = await tx.approval.findUnique({ where: { id } });
       if (approval === null) throw problems.notFound();
-      if (approval.initiatorId === who.userId) throw problems.forbidden();
+      await this.fourEyes.ensureNotAuthor(approval.initiatorId, `approbation ${approval.subject}`);
       if (approval.status !== 'PENDING') throw problems.conflict();
       if (approval.type === 'COMMISSION_RATE_CHANGE') {
         const payload = approval.payload as { profileId: string; newRateBps: number };
@@ -774,9 +782,15 @@ export class AdminService {
   async decideKyc(id: string, decision: 'APPROVED' | 'REJECTED', reason?: string) {
     const who = principal();
     return this.db.user(async (tx) => {
+      // Two decisions on the same file are served one after the other (securite QY-04).
+      await tx.$queryRaw`SELECT id FROM kyc_files WHERE id = ${id}::uuid FOR UPDATE`;
       const file = await tx.kycFile.findUnique({ where: { id }, include: this.kycInclude });
       if (file === null) throw problems.notFound();
       if (file.status !== 'PENDING') throw problems.conflict();
+      // The administrator who opened the file (created the account) never decides it.
+      await this.fourEyes.ensureNotAuthor(file.createdBy, `dossier KYC ${id}`, {
+        authorRequired: true,
+      });
       await tx.kycFile.update({
         where: { id },
         data: { status: decision, rejectionReason: reason ?? null },

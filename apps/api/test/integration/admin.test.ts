@@ -36,8 +36,8 @@ const admins = async () => ({
 });
 
 describe('accounts and KYC', () => {
-  it('creates a merchant inactive until its KYC file is approved', async () => {
-    const { first } = await admins();
+  it('creates a merchant inactive until its KYC file is approved (by another administrator)', async () => {
+    const { first, second } = await admins();
     const profiles = await first.call('GET', '/v1/admin/commission-profiles');
     const profileId = (profiles.body.data as { id: string }[])[0]?.id;
     const created = await first.call('POST', '/v1/admin/merchants', {
@@ -65,7 +65,7 @@ describe('accounts and KYC', () => {
       body: { reason: '' },
     });
     expect(empty.status).toBe(400);
-    const approved = await first.call('POST', `/v1/admin/kyc-files/${file?.id ?? ''}/approve`);
+    const approved = await second.call('POST', `/v1/admin/kyc-files/${file?.id ?? ''}/approve`);
     expect(approved.body).toMatchObject({ status: 'APPROVED' });
     expect((approved.body.history as { action: string }[]).map((event) => event.action)).toEqual([
       'SUBMITTED',
@@ -74,9 +74,9 @@ describe('accounts and KYC', () => {
     expect(
       (await first.call('GET', `/v1/admin/merchants/${String(created.body.id)}`)).body.status,
     ).toBe('APPROVED');
-    expect((await first.call('POST', `/v1/admin/kyc-files/${file?.id ?? ''}/approve`)).status).toBe(
-      409,
-    );
+    expect(
+      (await second.call('POST', `/v1/admin/kyc-files/${file?.id ?? ''}/approve`)).status,
+    ).toBe(409);
     const types = await first.call(
       'PUT',
       `/v1/admin/merchants/${String(created.body.id)}/credit-types`,
@@ -146,6 +146,13 @@ describe('four-eyes approvals', () => {
         (entry) => entry.action === 'approvals.approve',
       ),
     ).toBe(true);
+    // Settings are global to the test database: the other test files expect the defaults.
+    await db.system((tx) =>
+      tx.platformSettings.update({
+        where: { id: 1 },
+        data: { orderFeeRateBps: 150, expiredCreditsDestination: 'PLATFORM_REVENUE' },
+      }),
+    );
   });
 });
 

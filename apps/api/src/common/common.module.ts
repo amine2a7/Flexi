@@ -6,6 +6,7 @@ import { SessionService } from '../auth/session.service.js';
 import { AuditService } from './audit.service.js';
 import { AuthGuard } from './auth.guard.js';
 import { DbService } from './db.service.js';
+import { FourEyesService } from './four-eyes.service.js';
 import { IdempotencyService } from './idempotency.service.js';
 import { OutboxService } from './outbox.service.js';
 import { Paginator } from './pagination.js';
@@ -23,6 +24,7 @@ import type { Env } from '../config/env.js';
     SessionService,
     AuditService,
     IdempotencyService,
+    FourEyesService,
     OutboxService,
     InvitationService,
     {
@@ -45,6 +47,7 @@ import type { Env } from '../config/env.js';
     SessionService,
     AuditService,
     IdempotencyService,
+    FourEyesService,
     OutboxService,
     InvitationService,
     Paginator,

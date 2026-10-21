@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { AuditService } from '../common/audit.service.js';
+import { FourEyesService } from '../common/four-eyes.service.js';
 import { uuidv7 } from '../common/crypto.js';
 import { DbService, type Tx } from '../common/db.service.js';
 import { commissionOf, fromMillimes, toMillimes } from '../common/money.js';
@@ -84,6 +85,7 @@ export class PayoutsService {
     @Inject(LedgerService) private readonly ledger: LedgerService,
     @Inject(SettingsService) private readonly settings: SettingsService,
     @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(FourEyesService) private readonly fourEyes: FourEyesService,
     @Inject(Paginator) private readonly paginator: Paginator,
   ) {}
 
@@ -555,6 +557,13 @@ export class PayoutsService {
     await this.lockPayout(tx, id);
     const payout = await this.loadAdmin(tx, id);
     if (payout.status !== 'REQUESTED') throw problems.conflict();
+    // Four eyes: the user who requested the payout (author of its ledger entry) never approves it.
+    const [requested] =
+      payout.transactionId === null
+        ? []
+        : await tx.$queryRaw<{ user_id: string | null }[]>`
+            SELECT user_id FROM ledger_transactions WHERE id = ${payout.transactionId}::uuid`;
+    await this.fourEyes.ensureNotAuthor(requested?.user_id, `virement ${payout.reference}`);
     const today = businessDay();
     // The batch is locked while the payout joins it: the settlement job (SKIP LOCKED) leaves it
     // for its next run instead of executing it without this payout (ledger-auditor N1).

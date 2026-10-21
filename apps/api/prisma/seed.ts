@@ -1185,6 +1185,8 @@ const summary = await prisma.$transaction(
         data: {
           id: file.id,
           accountType: file.accountType,
+          // Opened by the second demo administrator: the first one (and the others) can decide it.
+          createdBy: demo.adminIds['Hela R.'] ?? null,
           companyId: file.accountType === 'COMPANY' ? file.accountId : null,
           merchantId: file.accountType === 'MERCHANT' ? file.accountId : null,
           status: file.status,

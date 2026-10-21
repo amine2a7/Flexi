@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AuditService } from '../common/audit.service.js';
+import { FourEyesService } from '../common/four-eyes.service.js';
 import { randomDigits, uuidv7 } from '../common/crypto.js';
 import { DbService, type Tx } from '../common/db.service.js';
 import { FILE_STORAGE, type FileStorage } from '../common/storage.js';
@@ -97,6 +98,7 @@ export class OrdersService {
     @Inject(LedgerService) private readonly ledger: LedgerService,
     @Inject(SettingsService) private readonly settings: SettingsService,
     @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(FourEyesService) private readonly fourEyes: FourEyesService,
     @Inject(Paginator) private readonly paginator: Paginator,
     @Inject(FILE_STORAGE) private readonly storage: FileStorage,
   ) {}
@@ -525,7 +527,7 @@ export class OrdersService {
         await this.audit.record(tx, 'orders.firstValidation', order.reference);
         return this.detail(await this.load(tx, id));
       }
-      if (order.firstValidatorId === who.userId) throw problems.forbidden();
+      await this.fourEyes.ensureNotAuthor(order.firstValidatorId, `commande ${order.reference}`);
     }
     await this.ledger.post(tx, {
       type: 'ORDER_VALIDATED',

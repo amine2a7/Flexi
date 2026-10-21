@@ -10,13 +10,13 @@
 
 3 constats Haute ouverts (B5-S01 PIN, B5-S02 sous-rôles, B5-S03 décisions financières concurrentes). Aucun Critique.
 
-| Sévérité | Nombre | Constats |
-|---|---|---|
-| Critique | 0 | — |
-| Haute | 3 | S01, S02, S03 |
-| Moyenne | 9 | S04 à S12 |
-| Basse | 9 | S13 à S21 |
-| Info | 1 | S22 |
+| Sévérité | Nombre | Constats      |
+| -------- | ------ | ------------- |
+| Critique | 0      | —             |
+| Haute    | 3      | S01, S02, S03 |
+| Moyenne  | 9      | S04 à S12     |
+| Basse    | 9      | S13 à S21     |
+| Info     | 1      | S22           |
 
 ## Réponses aux points prioritaires du lead
 
@@ -31,6 +31,7 @@
 ## Constats
 
 ### [CONSTAT] B5-S01 PIN de paiement : force brute par requêtes simultanées, blocage non progressif
+
 Sévérité : **Haute**
 Fichier : `apps/api/src/payments/pin.service.ts:49-83` (appelé par `employee.controller.ts` `confirm` et `pay`, et `change`)
 Preuve : la vérification lit l'employé dans une transaction (`findUnique`, l. 50), teste `pinLockedUntil` (l. 54), vérifie le haché (l. 57), puis incrémente `pinFailures` dans une **autre** transaction (l. 65-69). Rien ne réserve la tentative avant la vérification : N requêtes envoyées ensemble lisent toutes « non bloqué » avant que le 3e échec soit commité. Après blocage, le compteur repart à 0 (l. 73) et la durée reste 15 min (pas de progression, contrairement à SEC-A5). Le test `locks the PIN after 3 failures` est séquentiel.
@@ -39,6 +40,7 @@ Correctif proposé : réserver la tentative de façon atomique **avant** la vér
 Exigence : SEC-A5 / ASVS 2.2.1, 11.1.4 / API4:2023
 
 ### [CONSTAT] B5-S02 Permissions de sous-rôle calculées mais jamais appliquées par le serveur
+
 Sévérité : **Haute**
 Fichier : `apps/api/src/auth/auth.service.ts:40-61` (calcul) ; `apps/api/src/company/company.controller.ts:57-197` (seul `@Roles('COMPANY')`) ; aucun contrôle de `subRole` dans `src/` hors `permissionsOf`
 Preuve : `permissionsOf('COMPANY', 'MANAGER')` = `['employees.manage', 'credits.allocate']`, publié par `GET /v1/me` ; or `POST /v1/company/orders`, `GET /v1/company/invoices`, `GET /v1/company/funding-account` et `GET /v1/company/dashboard` ne vérifient que le rôle. Le contrat (`openapi.yaml`, schéma `Permission`) promet : « le web masque ce qui n'est pas permis, le serveur refuse (`403 FORBIDDEN`) ». Le seed crée un tel compte (`premiere@flexipay.test`, `MANAGER`).
@@ -47,6 +49,7 @@ Correctif proposé : décorateur `@Permissions('orders.create')` lu par le garde
 Exigence : SEC-Z2 / ASVS 4.1.3, 4.2.1 / API5:2023
 
 ### [CONSTAT] B5-S03 Décisions financières concurrentes sans verrou de ligne (double crédit, virement exécuté et remboursé)
+
 Sévérité : **Haute** (suivi conjoint avec ledger-auditor, tests C1 à C6)
 Fichier : `apps/api/src/orders/orders.service.ts:169-173` et `:497-547` (`validate`) ; `apps/api/src/payouts/payouts.service.ts:548` (`approve`) et `:581` (`reject`) ; `:277-289` (`request`, devis) ; `apps/api/src/admin/admin.service.ts:466-509` (`approve`/`reject` d'une approbation)
 Preuve : l'état est lu par `findUnique` sans `FOR UPDATE`, puis le traitement (écriture ledger comprise) s'exécute et l'état est mis à jour sans condition (`update where: { id }`). Deux requêtes portant des `Idempotency-Key` différentes passent toutes les deux. Le compte `BANK_ESCROW` n'est pas `nonNegative` : rien n'arrête un second `ORDER_VALIDATED`. Aucune unicité sur `ledger_transactions.reference`. Exécution réelle : `concurrency.test.ts` (non versionné, ledger-auditor) échoue sur 38110ed pour C2 (« approuve et rejette un virement » ⇒ `[200, 200]` au lieu de `[200, 409]`) et C3 ; C1 (double validation) passe sur un essai (fenêtre étroite), la course reste ouverte à la lecture du code.
@@ -55,6 +58,7 @@ Correctif proposé : `SELECT … FOR UPDATE` sur la ligne métier (commande, dem
 Exigence : CLAUDE.md règle 4 / SEC-P3, SEC-Z5 / ASVS 1.11.3, 11.1.6
 
 ### [CONSTAT] B5-S04 Énumération des comptes de tous les tenants par une entreprise (409 et `ALREADY_EXISTS`)
+
 Sévérité : **Moyenne**
 Fichier : `apps/api/src/company/company.service.ts:286-293` et `:326-327` (aperçu, `emailsInUse` en portée SYSTEM), `:278` + `apps/api/src/auth/invitation.service.ts:87-89` (409 à la création unitaire)
 Preuve : l'aperçu d'import confronte jusqu'à 5 001 adresses à **toute** la table `users` et marque `ALREADY_EXISTS` ; la création unitaire renvoie 409 pour un e-mail utilisé par n'importe quel compte. Le test `accounts.test.ts:171-188` le démontre avec l'adresse d'un **administrateur**. Ni limite dédiée, ni audit de l'aperçu.
@@ -63,6 +67,7 @@ Correctif proposé : dans l'aperçu, ne signaler que les doublons **de l'entrepr
 Exigence : SEC-W5 / ASVS 2.2.1 (anti-énumération), 4.1.1 / API3:2023
 
 ### [CONSTAT] B5-S05 Déni de service par l'import de salariés (Argon2id en masse, aperçus en mémoire sans plafond, invitations en masse)
+
 Sévérité : **Moyenne** (point aussi relevé par qualite, B1)
 Fichier : `apps/api/src/auth/invitation.service.ts:52-63` (`Promise.all` de `hashSecret`) ; `apps/api/src/company/company.service.ts:66-69`, `:335-339` (Map d'aperçus), `:355-410` (confirmation)
 Preuve : une confirmation de 5 000 lignes lance 5 000 hachages Argon2id (19 MiB, t=2) sur le pool libuv (4 fils) : environ 38 s mesurées par qualite, pendant lesquelles chaque connexion et chaque vérification de PIN attend. La Map `previews` accepte un aperçu de 1,1 MiB par requête, sans plafond par entreprise, conservé 30 min. Chaque import envoie 5 000 invitations.
@@ -71,6 +76,7 @@ Correctif proposé : création en masse sans hachage synchrone : compte créé a
 Exigence : SEC-W2 / ASVS 11.1.4, 12.1.1 / API4:2023
 
 ### [CONSTAT] B5-S06 Code de réinitialisation par SMS (6 chiffres) sans limite d'essais par jeton ni par compte
+
 Sévérité : **Moyenne**
 Fichier : `apps/api/src/auth/auth.service.ts:512-534` ; `apps/api/src/common/http.ts:142-175`
 Preuve : `resetPassword` cherche `sha256('otp|' + userId + '|' + otp)` ; aucun compteur d'échecs, le jeton reste valable 10 min ; seule limite : 30 requêtes par minute **par IP** et par route.
@@ -79,6 +85,7 @@ Correctif proposé : compteur d'échecs sur le jeton (invalidé après 5 essais)
 Exigence : SEC-W2 / ASVS 2.5.x, 2.7.x (essais limités sur les codes hors bande)
 
 ### [CONSTAT] B5-S07 Le PIN est récupérable à partir de l'empreinte d'idempotence stockée
+
 Sévérité : **Moyenne**
 Fichier : `apps/api/src/common/idempotency.service.ts:61-65` (empreinte = SHA-256 de méthode, chemin, query et **corps canonique**) et `:123-134` (stockée dans `idempotency_keys.fingerprint`)
 Preuve : pour `POST /v1/employee/payment-requests/{id}/confirm`, le corps est `{"pin":"NNNN"}` ; le chemin est connu par la ligne `payments`. 10 000 SHA-256 suffisent pour retrouver le PIN. Même chose pour `POST /v1/employee/payments` (montant, type et code commerçant connus par la ligne de paiement).
@@ -87,6 +94,7 @@ Correctif proposé : exclure `pin` (et tout secret) du corps avant l'empreinte, 
 Exigence : SEC-A5, SEC-D4 / ASVS 2.4.1, 8.3.x
 
 ### [CONSTAT] B5-S08 `NODE_ENV` vaut `development` par défaut : code MFA universel, routes de démonstration, boîte d'envoi en clair, pas de HSTS
+
 Sévérité : **Moyenne**
 Fichier : `apps/api/src/config/env.ts:11`, `:43-46`, `:62-64` ; `apps/api/src/payments/payments.module.ts:27-30` (lit `process.env.NODE_ENV` directement) ; `apps/api/src/common/outbox.service.ts:156-169` ; `apps/api/src/common/http.ts:64-66`
 Preuve : `NODE_ENV: z.enum([...]).default('development')`. Le refus de `DEMO_FIXED_MFA_CODE` ne porte que sur `production`. `env:init` écrit `DEMO_FIXED_MFA_CODE=123456`.
@@ -95,6 +103,7 @@ Correctif proposé : `NODE_ENV` obligatoire (sans défaut) ; `DEMO_FIXED_MFA_COD
 Exigence : ASVS 14.1.x, 14.3.x (configuration de production sûre par défaut), 2.8.x
 
 ### [CONSTAT] B5-S09 RIB et IBAN de financement FlexiPay codés en dur comme valeurs par défaut
+
 Sévérité : **Moyenne**
 Fichier : `apps/api/src/config/env.ts:29-42`
 Preuve : `FUNDING_RIB` `.default('08006000671234567891')`, `FUNDING_IBAN` `.default('TN5908006000671234567891')`, renvoyés aux entreprises par `GET /v1/company/funding-account`.
@@ -103,6 +112,7 @@ Correctif proposé : aucune valeur par défaut en production (variables obligato
 Exigence : SEC-D7, SEC-P7 / ASVS 14.1.x
 
 ### [CONSTAT] B5-S10 RLS absente sur le ledger, l'audit, les sessions, l'idempotence et les secrets d'authentification ; politique `companies_access` sans rôle
+
 Sévérité : **Moyenne** (défense en profondeur)
 Fichier : `apps/api/prisma/migrations/0002_security/migration.sql:15` (droits sur toutes les tables), `:116-119` ; tables sans `ENABLE ROW LEVEL SECURITY` : `ledger_accounts`, `ledger_transactions`, `ledger_entries`, `account_balances`, `credit_lots`, `audit_log`, `idempotency_keys`, `sessions`, `recovery_codes`, `mfa_challenges`, `password_reset_tokens`, `login_failures`
 Preuve : `grep "ROW LEVEL" 0001_init` ⇒ aucune ; 0002 n'active la RLS que sur les tables métier. `companies_access` (USING sans `FOR`, donc aussi UPDATE et DELETE) accepte `id = app.company_id` pour **tout** rôle ; or le garde place `companyId` de l'entreprise dans le contexte d'un EMPLOYEE (`auth.guard.ts:76`).
@@ -111,6 +121,7 @@ Correctif proposé : RLS sur `ledger_accounts` (par `owner_type`/`owner_id`), `l
 Exigence : SEC-Z3, SEC-Z4 / ASVS 4.1.5, 4.2.1
 
 ### [CONSTAT] B5-S11 IBAN et téléphones stockés en clair
+
 Sévérité : **Moyenne** (Must avant lancement)
 Fichier : `apps/api/prisma/schema.prisma:233` (`merchants.iban`), `:670` (`payout_requests.iban`) ; colonnes `phone` de `users`, `employees`, `merchants`, `companies`, `contact_messages`
 Preuve : colonnes `Char(24)` et `VARCHAR` en clair ; seuls les secrets TOTP sont chiffrés (`encryptSecret`).
@@ -119,6 +130,7 @@ Correctif proposé : chiffrement AES-256-GCM au niveau du champ avec clé géré
 Exigence : SEC-D2 / ASVS 6.1.1, 6.2.x
 
 ### [CONSTAT] B5-S12 Journal d'audit sans chaînage, sans IP, appareil ni avant/après ; téléchargement des pièces KYC non journalisé
+
 Sévérité : **Moyenne**
 Fichier : `apps/api/src/common/audit.service.ts:222-232` (état 38110ed : `record`) ; `apps/api/prisma/migrations/0001_init/migration.sql` (`audit_log` : id, date, acteur, action, cible) ; `apps/api/src/admin/admin.service.ts:754-768` (`kycDocument`)
 Preuve : aucune colonne `ip`, `user_agent`/appareil, `before`/`after`, `prev_hash`/`hash` ; la lecture d'une pièce d'identité par un administrateur ne laisse aucune trace ; les approbations de paramétrage n'enregistrent pas l'ancienne valeur.
@@ -127,6 +139,7 @@ Correctif proposé : colonnes IP, appareil (empreinte de session), avant/après 
 Exigence : SEC-L1 / ASVS 7.1.x, 7.3.x
 
 ### [CONSTAT] B5-S13 Refresh concurrent : fenêtre de 30 s sans révocation ni trace
+
 Sévérité : **Basse**
 Fichier : `apps/api/src/auth/session.service.ts:27`, `:194-226` ; `apps/api/src/auth/auth.service.ts:567-587` ; `apps/web/src/lib/api/client.ts:40-60`
 Preuve : verrou correct (voir réponse au point 1). Mais un jeton tourné il y a moins de 30 s reçoit 409 sans révocation ni audit ; le client web réessaie une seule fois après 300 ms **avec le même cookie** s'il n'en a pas reçu de nouveau.
@@ -135,6 +148,7 @@ Correctif proposé : fenêtre ramenée à 10 s (alignée sur la grâce du jeton 
 Exigence : SEC-A3 / ASVS 3.5.x, 3.3.x
 
 ### [CONSTAT] B5-S14 Rejeu automatique après 403 CSRF sous un autre compte
+
 Sévérité : **Basse**
 Fichier : `apps/web/src/lib/api/client.ts:96-107`
 Preuve : après 403 `CSRF_TOKEN_INVALID`, le client renouvelle la session puis rejoue la requête sans vérifier que la session obtenue est celle du même utilisateur.
@@ -143,6 +157,7 @@ Correctif proposé : ne rejouer que si l'utilisateur n'a pas changé (identifian
 Exigence : ASVS 3.x, 4.1.x (intégrité de l'acteur), SEC-Z5
 
 ### [CONSTAT] B5-S15 Énumération par le temps de réponse (connexion et mot de passe oublié)
+
 Sévérité : **Basse**
 Fichier : `apps/api/src/auth/auth.service.ts:162-171` (`recordFailure` seulement pour un compte existant), `:472-493` (`forgotPassword` : retour immédiat si compte inconnu, sinon écritures SQL et fichier de boîte d'envoi)
 Preuve : le coût Argon2id est égalisé, mais pas les écritures qui suivent.
@@ -151,6 +166,7 @@ Correctif proposé : traitement de `forgotPassword` en tâche asynchrone (répon
 Exigence : SEC-W5 / ASVS 2.2.1
 
 ### [CONSTAT] B5-S16 Boîte d'envoi locale : secrets en clair sans purge, chemin relatif au répertoire courant, contenu injectable
+
 Sévérité : **Basse**
 Fichier : `apps/api/src/common/outbox.service.ts:156-169` ; `apps/api/src/config/env.ts:77` (`resolve(UPLOAD_DIR)` relatif au répertoire courant) ; `apps/api/.gitignore:4` ; `apps/api/src/auth/invitation.service.ts:106-117`
 Preuve : mots de passe temporaires et liens de réinitialisation conservés indéfiniment dans `var/outbox` ; `git check-ignore` : `apps/api/var/outbox/x.txt` ignoré, `var/outbox/x.txt` à la racine **non** ignoré (API lancée depuis la racine ⇒ fichiers commis par `git add -A`, gitleaks ne reconnaît pas ces mots de passe). Le nom saisi par l'entreprise et l'adresse choisie par elle sont recopiés dans un message signé FlexiPay.
@@ -159,6 +175,7 @@ Correctif proposé : chemin résolu par rapport au paquet `apps/api` (ou `var/` 
 Exigence : SEC-D4, SEC-S2 / ASVS 5.2.x, 8.3.x
 
 ### [CONSTAT] B5-S17 Garde `OPENING_BALANCE` : échec ouvert sur une base non marquée
+
 Sévérité : **Basse**
 Fichier : `apps/api/prisma/migrations/0007_opening_balance_guard/migration.sql:9-11`
 Preuve : la condition est `app.environment <> 'production'` : une base de préproduction, de démonstration ou une restauration oubliée sans `ALTER DATABASE … SET app.environment` accepte les écritures d'ouverture du propriétaire avec `app.seed = on` ; le marqueur est un GUC modifiable par tout rôle (`SET app.environment = ''`). Le rôle applicatif reste toujours refusé (testé : `ledger.test.ts:331-351`).
@@ -167,6 +184,7 @@ Correctif proposé : échec fermé : exiger `app.environment = 'development'` po
 Exigence : SEC-P4 / ASVS 1.14.x
 
 ### [CONSTAT] B5-S18 Le test RLS de 0009 ne prouve pas le contrôle d'appartenance de l'employé
+
 Sévérité : **Basse**
 Fichier : `apps/api/test/integration/accounts.test.ts:190-209`
 Preuve : l'`INSERT` du test n'a pas `must_change_password` (défaut `false`) : il est refusé par la clause `AND must_change_password`, que l'employé appartienne ou non à l'entreprise. Retirer la sous-requête `employee_id IN (…)` de la politique ne ferait pas échouer ce test.
@@ -175,6 +193,7 @@ Correctif proposé : insérer une ligne par ailleurs conforme (`must_change_pass
 Exigence : SEC-Z3 / ASVS 4.1.x
 
 ### [CONSTAT] B5-S19 Code client à 8 chiffres : aucune limite d'échecs par commerçant, collision possible
+
 Sévérité : **Basse** (menace déjà inscrite au modèle, ligne « Code manuel d'encaissement »)
 Fichier : `apps/api/src/payments/payments.service.ts:150-167` (`newCode`), `:573-600` (`initiate`) ; index `payment_codes_code_idx` non unique
 Preuve : un commerçant peut enchaîner les `POST /v1/merchant/payments` (600/min par IP) ; un code faux répond `PAYMENT_DECLINED` sans compteur ni alerte ; deux codes vivants identiques sont possibles (le plus récent l'emporte).
@@ -183,6 +202,7 @@ Correctif proposé : compteur d'échecs par commerçant et par terminal (blocage
 Exigence : SEC-P1, SEC-L2
 
 ### [CONSTAT] B5-S20 Cookie mal encodé : erreur 500 et page d'erreur Express hors production
+
 Sévérité : **Basse**
 Fichier : `apps/api/src/common/http.ts:28-40`
 Preuve : `decodeURIComponent` lève `URIError` sur `%E0` ; dans `originCheck` (middleware avant Nest) l'erreur part au gestionnaire par défaut d'Express, qui affiche la pile hors `production` (voir S08 pour le défaut de `NODE_ENV`).
@@ -191,6 +211,7 @@ Correctif proposé : `try/catch` autour du décodage (cookie ignoré) ; gestionn
 Exigence : SEC-W5 / ASVS 7.4.1
 
 ### [CONSTAT] B5-S21 Courses mineures sur les compteurs d'authentification (TOTP, verrouillage de connexion)
+
 Sévérité : **Basse**
 Fichier : `apps/api/src/auth/auth.service.ts:101-145` (vérification du blocage puis incrément dans une autre transaction), `:213-230` (`mfaLastStep` écrit sans comparaison atomique)
 Preuve : même schéma que S01 : des rafales simultanées passent le contrôle de blocage avant l'incrément ; deux vérifications simultanées du même code TOTP peuvent toutes deux réussir.
@@ -199,6 +220,7 @@ Correctif proposé : réservation atomique de la tentative (comme S01) ; `UPDATE
 Exigence : ASVS 2.2.1, 2.8.4
 
 ### [CONSTAT] B5-S22 Limitation de débit et verrouillage fondés sur l'adresse du socket
+
 Sévérité : **Info** (déploiement)
 Fichier : `apps/api/src/common/http.ts:51`, `:142-175` ; `apps/api/src/app.factory.ts:316` (`trust proxy` désactivé)
 Preuve : derrière un proxy inverse, tous les clients partagent l'IP du proxy : le plafond « auth » de 30/min devient global et le couple (compte, IP) du verrouillage perd son sens ; la table des compteurs est vidée au-delà de 50 000 entrées (vidage provoquable avec des IPv6 variées).
@@ -220,15 +242,15 @@ Exigence : SEC-W2
 
 ## Vérifications
 
-| Commande | Résultat |
-|---|---|
+| Commande                                                                           | Résultat                                                                                                                                                                                 |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pnpm --filter @flexipay/api test:integration` (1er passage, base `flexipay_test`) | 7 fichiers sur 8 verts, 55 tests verts sur 58 ; 3 échecs, tous dans `concurrency.test.ts` **non versionné** (ledger-auditor) : C2 `[200,200]`, C3 « insufficient funds », C6 `[400,400]` |
-| idem, 2e passage | 13 échecs dont « Database (not available) does not exist » : base de test recréée en parallèle par un autre agent ; passage non probant |
-| `pnpm --filter @flexipay/api test` | 4 fichiers, 19 tests verts |
-| `pnpm --filter @flexipay/web exec vitest run test/lib/api-client.test.ts` | 10 tests verts (état du répertoire de travail, client en cours de modification) |
-| `gitleaks git --no-banner --log-opts="3c958c2^..38110ed" .` | 13 commits, « no leaks found » |
-| `git check-ignore -v var/outbox/x.txt apps/api/var/outbox/x.txt` | seul `apps/api/var/…` est ignoré |
-| `pnpm audit --prod` | **refusé** par les permissions de la session (non exécuté) |
+| idem, 2e passage                                                                   | 13 échecs dont « Database (not available) does not exist » : base de test recréée en parallèle par un autre agent ; passage non probant                                                  |
+| `pnpm --filter @flexipay/api test`                                                 | 4 fichiers, 19 tests verts                                                                                                                                                               |
+| `pnpm --filter @flexipay/web exec vitest run test/lib/api-client.test.ts`          | 10 tests verts (état du répertoire de travail, client en cours de modification)                                                                                                          |
+| `gitleaks git --no-banner --log-opts="3c958c2^..38110ed" .`                        | 13 commits, « no leaks found »                                                                                                                                                           |
+| `git check-ignore -v var/outbox/x.txt apps/api/var/outbox/x.txt`                   | seul `apps/api/var/…` est ignoré                                                                                                                                                         |
+| `pnpm audit --prod`                                                                | **refusé** par les permissions de la session (non exécuté)                                                                                                                               |
 
 ## Non vérifié
 
@@ -251,19 +273,20 @@ Le serveur applique désormais le sous-rôle sur chaque route. Un constat Moyenn
 
 ### Points vérifiés
 
-| Point | Résultat |
-|---|---|
-| Refus par défaut, route sans règle | `auth.guard.ts` : `required === undefined` → 403 après `@Roles` ; test unitaire statique sur toutes les routes de tous les `*.controller.ts` (> 90), échoue si une route non publique n'a ni `@Can` ni `@Self` |
-| Sous-rôle `null` ou absent de la matrice | `permissionsOf` : `MATRIX[role][subRole ?? 'NONE'] ?? []` → aucun droit (MERCHANT/COMPANY/ADMIN sans sous-rôle, EMPLOYEE avec sous-rôle, ADMIN avec `OWNER`) ; `allows` ne contourne que `SELF` |
-| Source du rôle et du sous-rôle | ligne `users` relue par `db.system` à chaque requête (`session.userId`), statut `ACTIVE` exigé ; rien n'est lu de la requête ni du jeton ; `principal.subRole` alimenté par la même ligne |
-| Routes oubliées | 9 contrôleurs ; toutes les routes non publiques annotées ; publiques : `health`, `v1/public/*`, routes d'auth explicitement `@Public()` ; `__demo` annoté `@Can('payments.pay')` et non enregistré hors `DEVELOPMENT` ; noms de permission disjoints entre rôles (aucune permission d'un rôle n'ouvre une route d'un autre) |
-| Caissier : liste | `merchantPayments` : `createdFrom` borné au début du jour ouvré de Tunis, quelle que soit la période demandée ; `createdTo` ne peut que réduire ; curseur signé à décalage, le filtre s'applique à chaque page ; RLS `merchant_id` inchangée |
-| Caissier : détail | `merchantPaymentDetail` → 404 si `createdAt` < début du jour (pas d'oracle 403/404) ; `cancel` ne porte que sur un paiement `INITIATED` (expiré avant la veille) |
-| Caissier : IBAN | profil `shop.read` : `maskedIban` uniquement ; virements, créances, règlements, documents, tableau de bord refusés |
-| Matrice | conforme à la demande pour Entreprise (Administrateur, RH, Comptable), Commerçant (Gérant, Caissier), Admin (Super-admin seul à demander paramétrage et commission ; Finance : validation, virements, seconde validation ; Support : lecture + messages ; pièces KYC hors Support) ; écarts en S02-c |
-| Créateur ≠ validateur | approbations (`admin.service.ts:473`), double validation des commandes (`orders.service.ts:528`) : OK ; virement : demandé par le commerçant, décidé par l'admin. Exception : KYC (S02-a) |
+| Point                                    | Résultat                                                                                                                                                                                                                                                                                                                    |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Refus par défaut, route sans règle       | `auth.guard.ts` : `required === undefined` → 403 après `@Roles` ; test unitaire statique sur toutes les routes de tous les `*.controller.ts` (> 90), échoue si une route non publique n'a ni `@Can` ni `@Self`                                                                                                              |
+| Sous-rôle `null` ou absent de la matrice | `permissionsOf` : `MATRIX[role][subRole ?? 'NONE'] ?? []` → aucun droit (MERCHANT/COMPANY/ADMIN sans sous-rôle, EMPLOYEE avec sous-rôle, ADMIN avec `OWNER`) ; `allows` ne contourne que `SELF`                                                                                                                             |
+| Source du rôle et du sous-rôle           | ligne `users` relue par `db.system` à chaque requête (`session.userId`), statut `ACTIVE` exigé ; rien n'est lu de la requête ni du jeton ; `principal.subRole` alimenté par la même ligne                                                                                                                                   |
+| Routes oubliées                          | 9 contrôleurs ; toutes les routes non publiques annotées ; publiques : `health`, `v1/public/*`, routes d'auth explicitement `@Public()` ; `__demo` annoté `@Can('payments.pay')` et non enregistré hors `DEVELOPMENT` ; noms de permission disjoints entre rôles (aucune permission d'un rôle n'ouvre une route d'un autre) |
+| Caissier : liste                         | `merchantPayments` : `createdFrom` borné au début du jour ouvré de Tunis, quelle que soit la période demandée ; `createdTo` ne peut que réduire ; curseur signé à décalage, le filtre s'applique à chaque page ; RLS `merchant_id` inchangée                                                                                |
+| Caissier : détail                        | `merchantPaymentDetail` → 404 si `createdAt` < début du jour (pas d'oracle 403/404) ; `cancel` ne porte que sur un paiement `INITIATED` (expiré avant la veille)                                                                                                                                                            |
+| Caissier : IBAN                          | profil `shop.read` : `maskedIban` uniquement ; virements, créances, règlements, documents, tableau de bord refusés                                                                                                                                                                                                          |
+| Matrice                                  | conforme à la demande pour Entreprise (Administrateur, RH, Comptable), Commerçant (Gérant, Caissier), Admin (Super-admin seul à demander paramétrage et commission ; Finance : validation, virements, seconde validation ; Support : lecture + messages ; pièces KYC hors Support) ; écarts en S02-c                        |
+| Créateur ≠ validateur                    | approbations (`admin.service.ts:473`), double validation des commandes (`orders.service.ts:528`) : OK ; virement : demandé par le commerçant, décidé par l'admin. Exception : KYC (S02-a)                                                                                                                                   |
 
 ### [CONSTAT] B5-S02-a Le même administrateur crée le commerçant (ouvre son dossier KYC) et valide ce KYC
+
 Sévérité : Moyenne
 Fichier : apps/api/src/admin/admin.service.ts:774-783 (`decideKyc` sans contrôle d'auteur) ; apps/api/src/common/permissions.ts:73-80 (COMPLIANCE : `merchants.manage` + `kyc.decide`)
 Preuve : `createMerchant`/`createCompany` appellent `openKyc` (dossier `PENDING`, auteur non stocké) ; `decideKyc` ne compare l'acteur à personne. Opérations (et Super-admin) détiennent les deux permissions.
@@ -272,6 +295,7 @@ Correctif proposé : nouvelle migration stockant l'auteur du dossier (`kyc_files
 Exigence : SEC-RBAC (séparation des tâches) / ASVS 4.0 V1.4.1, V11.1.x (logique métier)
 
 ### [CONSTAT] B5-S02-b Preuve de test incomplète sur trois chemins du refus par défaut
+
 Sévérité : Basse
 Fichier : apps/api/test/integration/permissions.test.ts (fichier entier)
 Preuve : aucun cas avec sous-rôle `null` ou hors matrice (ex. MERCHANT sans sous-rôle, ADMIN `OWNER`) ; aucun appel du caissier avec `?createdFrom=` antérieur au jour (seule la liste par défaut est testée) ; le refus à l'exécution d'une route sans règle n'est prouvé que statiquement.
@@ -280,6 +304,7 @@ Correctif proposé : ajouter ces trois cas (dont `GET /v1/merchant/payments?crea
 Exigence : ASVS 4.0 V4.1.3, V4.1.5
 
 ### [CONSTAT] B5-S02-c Écarts de matrice tranchés par le lead, non confirmés par l'utilisateur
+
 Sévérité : Basse
 Fichier : apps/api/src/common/permissions.ts:78-79, 88, 95, 100-108 ; docs/handoff/decisions.md (ligne du 2026-10-21, « à confirmer »)
 Preuve : Opérations reçoit `merchants.manage` et `companies.manage` (création de comptes commerçant et entreprise) ; Comptable reçoit `balances.read` (tableau de bord de l'entreprise) ; sous-rôles `READ_ONLY` (entreprise) et `ACCOUNTANT` (commerçant) absents de la demande, dotés de droits de lecture.
@@ -289,9 +314,9 @@ Exigence : ASVS 4.0 V4.1.3 (moindre privilège)
 
 ### Vérifications
 
-| Commande | Résultat |
-|---|---|
-| `pnpm --filter @flexipay/api test` | 6 fichiers, 22 tests verts |
+| Commande                                                              | Résultat                    |
+| --------------------------------------------------------------------- | --------------------------- |
+| `pnpm --filter @flexipay/api test`                                    | 6 fichiers, 22 tests verts  |
 | `pnpm --filter @flexipay/api test:integration` (base `flexipay_test`) | 10 fichiers, 78 tests verts |
 
 ### Non vérifié (S02)
@@ -300,3 +325,84 @@ Exigence : ASVS 4.0 V4.1.3 (moindre privilège)
 - Contenu exposé à Support par `platform.read` (détail KYC, preuve de virement de commande, détail des virements) : lecture seule conforme à la demande, minimisation des données non revue.
 - `apps/web/**` (masquage côté interface) : hors périmètre.
 - Modèle de menaces non mis à jour dans ce passage (mode économe) : la menace « séparation des tâches KYC » (S02-a) est à y ajouter au prochain passage.
+
+## Revue quatre yeux (2026-10-21)
+
+Objet : décision utilisateur du 2026-10-21 (« l'auteur d'un dossier ou d'une opération ne peut jamais la valider, super-admin compris ; KYC, taux, RIB, lots de virements, rôles des administrateurs ; centralisée et testée »), réponse à B5-S02-a. Base : modifications non commitées listées par `main` (`git diff` + `four-eyes.service.ts`, migration `0012_kyc_file_author`, `four-eyes.test.ts`).
+
+**Verdict : OK.** Aucun Critique ni Haute. B5-S02-a **fermé** pour les dossiers KYC créés après 0012 (résiduel QY-01). 1 Moyenne, 4 Basses.
+
+### Contrôles vérifiés
+
+| Point               | Résultat                                                                                                                                                                                                                                                                                                                         |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Centralisation      | `FourEyesService.ensureNotAuthor` (`four-eyes.service.ts:20-25`) : comparaison à `principal().userId` (session serveur, jamais la requête) ; aucun passe-droit de sous-rôle (super-admin compris)                                                                                                                                |
+| KYC                 | `decideKyc` (`admin.service.ts:782-789`) sert **approve et reject** : l'auteur ne peut ni approuver ni rejeter. Seul chemin qui écrit `kyc_files.status` et le statut `merchant`/`company` (recherche `kycFile.update`, `merchant.update`, `company.update` : aucun autre)                                                       |
+| Taux et paramétrage | `approve` (`admin.service.ts:481`) couvre `COMMISSION_RATE_CHANGE` et `SETTINGS_CHANGE` ; contrôle après `FOR UPDATE`, avant application du payload. `reject` par l'initiateur reste permis (`:501`) : retrait de sa propre demande, sans effet appliqué, acceptable (ce n'est pas une validation)                               |
+| Commandes           | `validate` (`orders.service.ts:530`) : après `lock`, premier validateur ≠ second ; `rejectProof` remet le premier validateur à null, ce qui relance un cycle complet à deux (pas de contournement). Rejeu de l'`Idempotency-Key` de la première validation : rejoue la réponse « première validation », pas de validation finale |
+| Virements           | `approve` (`payouts.service.ts:560-566`) : auteur = `ledger_transactions.user_id` de `PAYOUT_REQUESTED`, après `lockPayout`. Défense en profondeur : l'auteur est toujours un utilisateur commerçant, jamais un admin, le refus n'est donc pas déclenchable aujourd'hui                                                          |
+| Ordre et course     | Chaque contrôle s'exécute dans la transaction de la décision, après le verrou (sauf KYC, QY-04) ; l'auteur ne peut pas gagner une course contre son propre contrôle (comparaison d'identité, pas d'état)                                                                                                                         |
+| Traçabilité         | `fourEyes.refused` écrit dans une transaction système séparée, donc conservé malgré le rollback ; l'acteur vient du contexte de requête (`audit.service.ts:13-17`) ; cible sans secret (référence, sujet, id). Réponse 403 générique `problems.forbidden()`                                                                      |
+| Lots de virements   | exécutés par le job (`executeDueBatches`), sans auteur humain ni validation manuelle : règle sans objet aujourd'hui                                                                                                                                                                                                              |
+| RIB, rôles admin    | aucune route d'écriture (recherche `iban`, `subRole` en écriture : aucune ; aucune route de création d'admin) : non couverts, à câbler à leur création (QY-03)                                                                                                                                                                   |
+
+### [CONSTAT] QY-01 Auteur inconnu = contrôle sauté (échec ouvert)
+
+Sévérité : Moyenne
+Fichier : apps/api/src/common/four-eyes.service.ts:22 ; apps/api/prisma/migrations/0012_kyc_file_author/migration.sql:3
+Preuve : `if (authorUserId === null || authorUserId === undefined || …) return;` ; `ADD COLUMN created_by uuid` sans `NOT NULL`, sans clé étrangère vers `users`.
+Scénario d'attaque : (1) un admin Opérations approuve seul un dossier KYC créé avant 0012 qu'il a lui-même ouvert (aujourd'hui données de dev seulement) ; (2) surtout, toute future création de dossier ou d'opération qui oublie de renseigner l'auteur (import, nouveau chemin de création, job) désactive la règle **en silence**, sans erreur ni test rouge : contraire au principe « échec fermé » (§2 du modèle de menaces).
+Correctif proposé : nouvelle migration : reprise de `created_by` depuis `audit_logs` (`merchants.create` / `companies.create`, acteur) pour l'existant, puis `CHECK (created_by IS NOT NULL) NOT VALID` et FK vers `users(id)` ; dans le service, distinguer « pas d'auteur humain par construction » (job) de « auteur inconnu » : pour KYC, auteur null → refus (409) ou validation par un super-admin tracée comme dossier hérité. Test : dossier sans auteur.
+Exigence : SEC-RBAC (séparation des tâches) / ASVS 4.0 V1.4.1, V4.1.5 (échec fermé)
+
+### [CONSTAT] QY-02 Tests : chemins de la décision non prouvés
+
+Sévérité : Basse
+Fichier : apps/api/test/integration/four-eyes.test.ts (fichier entier)
+Preuve : pas de cas « l'auteur **rejette** son dossier KYC » ; pas de cas `SETTINGS_CHANGE` approuvé par son auteur ; pas de contrôle positif « un autre admin donne la seconde validation de la commande → 200 » ; pas de cas « auteur null » ; virement non testé (non déclenchable, voir tableau).
+Scénario d'attaque : régression silencieuse (ex. contrôle déplacé dans la seule branche `APPROVED` de `decideKyc`, ou dans la seule branche `COMMISSION_RATE_CHANGE` d'`approve`) non détectée par la CI.
+Correctif proposé : ajouter ces quatre cas ; pour le virement, un test unitaire du service avec un `principal` égal au `user_id` de l'écriture.
+Exigence : ASVS 4.0 V1.4.1, V11.1.x
+
+### [CONSTAT] QY-03 Décision couverte partiellement : RIB, rôles admin, virements d'un commerçant créé par l'admin
+
+Sévérité : Basse (aucune route exposée aujourd'hui)
+Fichier : apps/api/src/payouts/payouts.service.ts:560-566 ; routes RIB et rôles admin inexistantes
+Preuve : aucune écriture d'IBAN ni de sous-rôle dans `src/` ; le contrôle des virements compare au compte commerçant demandeur.
+Scénario d'attaque : un admin A crée un commerçant avec **sa propre** adresse (il reçoit l'invitation et devient le Gérant) ; un admin B approuve le KYC ; A approuve ensuite seul les virements de « son » commerçant : deux comptes, une personne, le contrôle par identifiant ne le voit pas.
+Correctif proposé : (a) exigence à porter dans la spec de la gestion des utilisateurs : changement de RIB et de rôle admin = `Approval` avec `initiatorId` + `ensureNotAuthor`, tests à l'appui, revue securite obligatoire ; (b) `[DÉCISION]` : interdire l'approbation d'un virement par l'admin qui a créé le commerçant (`kyc_files.created_by`) ? Recommandation : oui (coût faible, même service).
+Exigence : SEC-RBAC / ASVS 4.0 V1.4.1, V11.1.x
+
+### [CONSTAT] QY-04 Décision KYC sans verrou de ligne
+
+Sévérité : Basse (préexistant, pas un contournement des quatre yeux)
+Fichier : apps/api/src/admin/admin.service.ts:785-787
+Preuve : `findUnique` puis test `status !== 'PENDING'` sans `SELECT … FOR UPDATE` (à la différence des approbations, S03).
+Scénario d'attaque : deux admins non auteurs décident en même temps (approbation et rejet) : les deux lisent `PENDING`, le dernier écrit gagne, deux événements et deux audits contradictoires (répudiation possible).
+Correctif proposé : `SELECT id FROM kyc_files WHERE id = $1 FOR UPDATE` avant la lecture, test de concurrence.
+Exigence : ASVS 4.0 V11.1.6 (concurrence)
+
+### [CONSTAT] QY-05 Refus audité sur une seconde connexion pendant que le verrou est tenu
+
+Sévérité : Basse
+Fichier : apps/api/src/common/four-eyes.service.ts:23 ; admin.service.ts:478-481
+Preuve : `db.system(...)` ouvre une autre transaction alors que la transaction utilisateur garde sa connexion et son `FOR UPDATE` ; dans `approve`, le contrôle précède le test de statut (un auteur qui rappelle une demande déjà décidée produit encore un refus audité).
+Scénario d'attaque : un admin authentifié rejoue en parallèle `POST /v1/admin/approvals/{id}/approve` sur sa propre demande : chaque appel consomme deux connexions et bloque la demande ; pool épuisé (déni de service du back-office) et journal pollué. Limité aux admins authentifiés.
+Correctif proposé : contrôle de statut avant le contrôle d'auteur ; limitation de débit sur les routes de décision ; ou audit du refus après le rollback (hors transaction utilisateur).
+Exigence : ASVS 4.0 V11.1.4 (anti-automatisation)
+
+### Vérifications
+
+| Commande                                                                                                                              | Résultat                                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lecture `git diff` des 6 fichiers + 3 nouveaux fichiers                                                                               | cf. tableau                                                                                                                                  |
+| Recherche des autres chemins d'écriture (`kycFile.update`, `merchant.update`, `company.update`, `approval.update`, `iban`, `subRole`) | aucun chemin de validation hors service                                                                                                      |
+| Tests                                                                                                                                 | **non relancés** par securite (mode économe, base partagée) ; résultat de `main` repris : intégration 82/82 (deux passages), unitaires 22/22 |
+
+### Non vérifié (quatre yeux)
+
+- Exécution réelle des tests et d'un test de course (non relancés, voir ci-dessus).
+- Contenu réel de la base de dev (dossiers KYC antérieurs à 0012 et leur nombre).
+- Politiques RLS de `kyc_files` après ajout de la colonne (migration 0012 non comparée aux politiques existantes ; colonne non exposée par l'API à la lecture).
+- Identité d'une même personne derrière plusieurs comptes (contrôle organisationnel, QY-03).
+- `apps/web/**` (affichage de « initié par moi », masquage des boutons) : hors périmètre.

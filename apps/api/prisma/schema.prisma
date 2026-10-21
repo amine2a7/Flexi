@@ -732,6 +732,8 @@ model KycFile {
   merchantId      String?        @map("merchant_id") @db.Uuid
   status          KycStatus      @default(PENDING)
   rejectionReason String?        @map("rejection_reason") @db.VarChar(500)
+  /// Administrator who opened the file: never its decider (four eyes).
+  createdBy       String?        @map("created_by") @db.Uuid
   submittedAt     DateTime       @default(now()) @map("submitted_at") @db.Timestamptz(3)
 
   company   Company?      @relation(fields: [companyId], references: [id])
