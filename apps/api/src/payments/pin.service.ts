@@ -3,6 +3,7 @@ import { AuditService } from '../common/audit.service.js';
 import { DbService } from '../common/db.service.js';
 import { ApiProblem } from '../common/problem.js';
 import { hashSecret, verifySecret } from '../auth/password.js';
+import { SessionService } from '../auth/session.service.js';
 
 /** 3 wrong PINs lock it: 15 min, then 30, then 60 (TIMED_LOCKS), then until a full sign-in. */
 const MAX_FAILURES = 3;
@@ -41,6 +42,7 @@ export class PinService {
   constructor(
     @Inject(DbService) private readonly db: DbService,
     @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(SessionService) private readonly sessions: SessionService,
   ) {}
 
   /**
@@ -81,6 +83,11 @@ export class PinService {
          WHERE id = ${employeeId}::uuid AND pin_failures >= ${MAX_FAILURES}
         RETURNING pin_lock_level, pin_requires_reauth`;
       if (locked === undefined) return;
+      if (locked.pin_requires_reauth) {
+        // Whoever holds the session loses it: only a complete sign-in lifts the block (S24).
+        const users = await tx.user.findMany({ where: { employeeId }, select: { id: true } });
+        for (const user of users) await this.sessions.revokeOthers(tx, user.id);
+      }
       await this.audit.record(
         tx,
         locked.pin_requires_reauth ? 'pin.blockedUntilSignIn' : 'pin.locked',

@@ -406,3 +406,64 @@ Exigence : ASVS 4.0 V11.1.4 (anti-automatisation)
 - Politiques RLS de `kyc_files` après ajout de la colonne (migration 0012 non comparée aux politiques existantes ; colonne non exposée par l'API à la lecture).
 - Identité d'une même personne derrière plusieurs comptes (contrôle organisationnel, QY-03).
 - `apps/web/**` (affichage de « initié par moi », masquage des boutons) : hors périmètre.
+
+## Revérification S01 et S07 (2026-10-21)
+
+Base : `git show 983b69e` (S01), `d02cdd3` (sessions PostgreSQL en UTC), `a8b5ce8` (S07). Code relu à l'état courant de `feat/web`.
+
+### B5-S01 PIN de paiement : **FERMÉ**
+
+- **Concurrence** : la tentative est réservée par un seul `UPDATE … SET pin_failures = pin_failures + 1 WHERE … pin_failures < 3 AND (pin_locked_until IS NULL OR pin_locked_until <= now()) RETURNING pin_hash` (`pin.service.ts:53-60`) **avant** Argon2id. Le verrou de ligne PostgreSQL et la réévaluation du `WHERE` en READ COMMITTED garantissent au plus 3 PIN évalués par fenêtre, quel que soit le nombre de requêtes ; `CHECK (pin_failures BETWEEN 0 AND 3)` en base (0011). Test « 20 PIN faux simultanés » vert : 3 audits `pin.failed`, niveau 1, 15 min.
+- **Toutes les routes passent par le même compteur** : `POST /v1/employee/payments` (`employee.controller.ts:103`), `POST /v1/employee/payment-requests/{id}/confirm` (`:74`) et `POST /v1/employee/pin` (`change` → `verify`, `pin.service.ts:123`). Aucun autre chemin n'écrit `pin_failures` / `pin_lock_level` / `pin_requires_reauth` (recherche dans `src/` : seul `auth.service.ts:258`).
+- **Oracle** : pendant un blocage, le haché n'est pas vérifié ; un PIN juste reçoit exactement la réponse d'un PIN faux (`PIN_INVALID` + `retryAfterSeconds`, test vert). L'écart de temps (pas d'Argon2id pendant le blocage) ne dépend pas de la valeur du PIN : il ne révèle que l'état de blocage, déjà annoncé par `retryAfterSeconds`. Hors blocage, succès et échec se distinguent par nature.
+- **Remise à zéro** : seulement après un PIN juste (`:64`), un changement de PIN (qui exige le PIN actuel) ou une connexion mot de passe + MFA (`auth.service.ts:254-260`, dans la transaction qui consomme le défi). Pas de remise à zéro par le verrou lui-même : la progression 15 / 30 / 60 min puis reconnexion est testée.
+- **Audit** : `pin.failed`, `pin.locked`, `pin.blockedUntilSignIn` avec l'identifiant de l'employé et le niveau, jamais le PIN.
+- **Horloge** : réservation et pose du verrou comparent `now()` à `now()` côté SQL ; seul `refusal()` compare à `Date.now()`, rendu fiable par `d02cdd3` (`TimeZone=UTC` sur toutes les connexions, test de régression vert).
+
+### B5-S07 Empreinte d'idempotence : **FERMÉ**
+
+- `fingerprint` = `HMAC-SHA256(SESSION_SECRET, "idempotency|" + méthode, chemin, query triée, corps canonique)` en hexadécimal (`idempotency.service.ts:68-73`) : sans la clé serveur, les 10 000 PIN ne permettent plus de retrouver la valeur stockée (test unitaire vert). Séparation de domaine par préfixe avec l'autre usage de la même clé (`recovery|…`, `auth.service.ts:210`).
+- **Rejeu légitime** : même corps ⇒ même empreinte ⇒ réponse rejouée ; le PIN est revérifié avant `idempotency.run` (`employee.controller.ts:74`, `:103`), donc un rejeu ne contourne pas le compteur et un `422 IDEMPOTENCY_KEY_REUSED` n'est atteignable qu'après un PIN juste (pas d'oracle).
+- **Autre stockage en clair** : `response_body` contient la réponse métier ou le problème de refus, jamais le corps de la requête ; aucun journal de `req.body` dans `src/` (seule occurrence : `company.controller.ts:163`, déclaration de virement, sans PIN).
+
+### [CONSTAT] B5-S23 Employé sans MFA : le blocage « jusqu'à reconnexion » ne se lève jamais
+
+Sévérité : **Moyenne**
+Fichier : `apps/api/src/auth/auth.service.ts:28` (`MFA_REQUIRED` = ADMIN, COMPANY, MERCHANT), `:139-182` (`login` sans défi ne touche pas au PIN), `:254-260` (seule levée, dans `verifyMfa`) ; `apps/api/src/payments/pin.service.ts:56`
+Preuve : un employé n'est pas tenu d'activer le MFA (cahier : MFA pour admin, entreprise, commerçant). Sans `mfaSecretEnc`, `login` ouvre la session directement et ne remet pas `pin_requires_reauth` à `false`. `change` passe par `verify`, qui refuse tant que `pin_requires_reauth` est vrai. Aucun autre chemin (ni admin, ni support) ne lève ce drapeau. Le test d'intégration ne couvre que l'employé **avec** MFA (`fixtures.ts:109` enrôle tous les comptes).
+Scénario d'attaque : un tiers qui a la session d'un bénéficiaire (poste partagé, cookie volé), ou l'enfant qui manipule le téléphone, tape 12 PIN faux en un peu moins de 2 h ; le bénéficiaire ne peut plus jamais payer, même après s'être reconnecté. Déni de service définitif sur le moyen de paiement, à résoudre en base par un opérateur.
+Correctif proposé : lever le blocage à la connexion complète du compte, c'est-à-dire mot de passe + MFA si le compte en a un, mot de passe seul sinon (dans `login`, branche session directe, même transaction que `clearFailures`) ; test d'intégration avec un employé sans MFA. Si le lead préfère une autre levée (support, réinitialisation du PIN), c'est une décision à poser.
+Exigence : SEC-A5 / ASVS 2.2.1 (anti-automatisation sans déni de service définitif)
+
+### [CONSTAT] B5-S24 La session qui a provoqué le blocage reste valide après la « reconnexion »
+
+Sévérité : **Basse**
+Fichier : `apps/api/src/payments/pin.service.ts:74-88` (pose de `pin_requires_reauth` sans révocation) ; `apps/api/src/auth/auth.service.ts:254-260`
+Preuve : le 4e blocage exige une connexion complète, mais ne révoque aucune session : la session de l'attaquant reste active. Dès que la victime se reconnecte (ou paie avec son PIN, `pin.service.ts:64` remet le niveau à 0), l'attaquant retrouve 12 essais.
+Scénario d'attaque : avec un cookie volé encore valide, l'attaquant obtient 12 essais par cycle de reconnexion de la victime ; ≈ 0,12 % de chances par cycle, cumulables tant que la session vit (durée absolue de la session).
+Correctif proposé : au passage à `pin_requires_reauth`, révoquer toutes les sessions de l'utilisateur lié (familles de refresh comprises) et l'auditer ; la nouvelle connexion devient alors réellement nécessaire pour l'attaquant aussi.
+Exigence : SEC-A5, SEC-S3 / ASVS 3.3.3
+
+### [CONSTAT] B5-S25 Clés d'idempotence jamais purgées (anciennes empreintes SHA-256 conservées)
+
+Sévérité : **Basse**
+Fichier : `apps/api/src/common/idempotency.service.ts:211-217` (seule suppression : réservation abandonnée) ; aucun job de purge de `idempotency_keys`
+Preuve : les lignes créées avant `a8b5ce8` gardent l'empreinte SHA-256 en clair du corps (PIN retrouvable, cf. S07) ; aucune purge après la durée de rejeu (correctif S07 proposé : « purge des clés d'idempotence après leur durée de rejeu »). Sans incidence en production (aucune donnée réelle), mais la base de dev et ses sauvegardes contiennent ces empreintes.
+Scénario d'attaque : une sauvegarde de dev fuitée qui contient les PIN de démonstration réutilisés ailleurs ; à terme, accumulation illimitée des réponses rejouables (montants, références).
+Correctif proposé : job BullMQ de purge des clés `DONE` au-delà de la fenêtre de rejeu du contrat ; purge ponctuelle des lignes antérieures à `a8b5ce8` en dev.
+Exigence : SEC-D4 / ASVS 8.3.8
+
+### Vérifications (2026-10-21)
+
+| Commande | Résultat |
+| --- | --- |
+| `git show 983b69e`, `d02cdd3`, `a8b5ce8` (API, migration, contrat, web) | relus |
+| `pnpm --filter @flexipay/api test` | 6 fichiers, 22/22 verts |
+| `vitest run --config vitest.integration.config.ts test/integration/pin.test.ts connections.test.ts payments.test.ts` | 3 fichiers, 16/16 verts (une erreur de journal `ledger reconciliation failed: 1 account(s)` dans la base de test, sans lien avec S01/S07) |
+
+### Non vérifié (revérification)
+
+- Suite d'intégration complète (seuls `pin`, `connections`, `payments` relancés, base partagée).
+- Applications mobiles : traitement de `reauthenticationRequired` / `retryAfterSeconds` non relu.
+- Rotation de `SESSION_SECRET` : rend non rejouables les clés en cours (422 `IDEMPOTENCY_KEY_REUSED` au lieu du rejeu) ; procédure de rotation non documentée, non testée.
+- Erreur `ledger reconciliation failed` de la base de test : hors périmètre, non analysée.

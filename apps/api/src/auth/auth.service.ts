@@ -180,6 +180,13 @@ export class AuthService {
       let step: SessionStep = 'NONE';
       if (user.mustChangePassword) step = 'PASSWORD_CHANGE';
       else if (this.needsEnrolment(user)) step = 'MFA_ENROLL';
+      // A complete sign-in of a beneficiary without MFA (password) lifts the PIN block (S23).
+      if (step === 'NONE' && user.employeeId !== null) {
+        await tx.employee.update({
+          where: { id: user.employeeId },
+          data: { pinFailures: 0, pinLockLevel: 0, pinRequiresReauth: false, pinLockedUntil: null },
+        });
+      }
       const issued = await this.sessions.open(tx, user.id, user.role, step);
       await this.audit.record(tx, 'auth.signIn', user.displayName, user.displayName);
       return { kind: 'session', issued };

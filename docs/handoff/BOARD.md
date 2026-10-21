@@ -17,7 +17,7 @@ Mode économe (voir CLAUDE.md). Branche `feat/web`. Plan de l'utilisateur du 202
 | 3. S02 sous-rôles vérifiés par le serveur (matrice de l'utilisateur) | Terminé, securite : S02 **FERMÉ** | voir le commit S02 ; ouverts : B5-S02-a (Moyenne, créateur du commerçant = validateur de son KYC), B5-S02-c (droits à confirmer, decisions.md 2026-10-21) |
 | POINT DE CONTRÔLE 1 | Fait (décisions du 2026-10-21 reçues) | matrice confirmée, f582f2a |
 | a. Règle des quatre yeux (KYC, taux, paramétrage, seconde validation, virements) | Terminé, securite **OK** | commit « four eyes » ; ouverts : QY-03 b (décision : l'admin créateur du commerçant ne valide pas ses virements ?), QY-05 Basse ; RIB et rôles admin à couvrir dans la gestion des utilisateurs |
-| b. Revérification securite de S01 (PIN) et S07 (idempotence) | À faire (suivant) | |
+| b. Revérification securite de S01 (PIN) et S07 (idempotence) | Terminé : S01 et S07 **FERMÉS** ; S23 (Moyenne) et S24 corrigés | ouvert : S25 Basse (purge des clés d'idempotence) → phase de durcissement |
 | c. Seed et MSW : un compte fictif par sous-rôle | À faire | |
 | d. S06, S10, S11, S04 | À faire | S05, S08, S09, S12 : phase de durcissement |
 | e. Gestion des utilisateurs (design → ux → contrat → tests → API → web → securite → design et ux) | À faire | décisions e3 à poser avant le code |

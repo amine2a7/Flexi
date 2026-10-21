@@ -4,7 +4,7 @@
 import { randomInt, randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadTestEnv, ownerClient } from './setup.js';
-import { listen } from './http.js';
+import { listen, WebClient } from './http.js';
 
 loadTestEnv();
 const { loadEnv } = await import('../../src/config/env.js');
@@ -12,7 +12,7 @@ const { createApp } = await import('../../src/app.factory.js');
 const { DbService } = await import('../../src/common/db.service.js');
 const { LedgerService, accounts } = await import('../../src/ledger/ledger.service.js');
 const { hashSecret } = await import('../../src/auth/password.js');
-const { createCompany, createEmployee, createUser, seedSettings, signedIn } =
+const { PASSWORD, createCompany, createEmployee, createUser, seedSettings, signedIn } =
   await import('./fixtures.js');
 
 const env = loadEnv();
@@ -150,9 +150,8 @@ describe('payment PIN', () => {
     const blocked = await lockFor();
     expect(blocked.pinRequiresReauth).toBe(true);
     await lockEnds(employee.id);
-    const refused = await pay(PIN);
-    expect(refused.body.code).toBe('PIN_INVALID');
-    expect(refused.body.details).toMatchObject({ reauthenticationRequired: true });
+    // The session that made the guesses is closed (S24): even the right PIN goes nowhere.
+    expect((await pay(PIN)).status).toBe(401);
 
     // A full sign-in (password + MFA) lifts the block and the progression.
     const again = await signedIn(base, user);
@@ -175,5 +174,33 @@ describe('payment PIN', () => {
     expect(paid.status).toBe(201);
     const cleared = await state(employee.id);
     expect(cleared).toMatchObject({ pinLockLevel: 0, pinRequiresReauth: false, pinFailures: 0 });
+  });
+
+  /** Reaches the fourth lock (sign-in required): 4 x 3 wrong PINs, each lock ended. */
+  async function untilSignIn(employeeId: string, pay: (pin: string) => Promise<unknown>) {
+    for (let round = 0; round < 4; round += 1) {
+      for (let attempt = 0; attempt < 3; attempt += 1) await pay('0000');
+      if (round < 3) await lockEnds(employeeId);
+    }
+  }
+
+  it('closes every session of the beneficiary at the fourth lock (securite S24)', async () => {
+    const { employee, client, pay } = await setup();
+    await untilSignIn(employee.id, pay);
+    expect((await client.call('GET', '/v1/employee/wallet')).status).toBe(401);
+  });
+
+  it('a beneficiary without MFA lifts the block by signing in again with the password (S23)', async () => {
+    const { employee, user, pay } = await setup();
+    await untilSignIn(employee.id, pay);
+    await db.system((tx) =>
+      tx.user.update({ where: { id: user.id }, data: { mfaSecretEnc: null } }),
+    );
+    const again = new WebClient(base);
+    const login = await again.call('POST', '/v1/auth/login', {
+      body: { identifier: user.email, password: PASSWORD },
+    });
+    expect(login.body.nextStep).toBe('NONE');
+    expect(await state(employee.id)).toMatchObject({ pinLockLevel: 0, pinRequiresReauth: false });
   });
 });
