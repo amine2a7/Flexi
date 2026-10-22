@@ -8,6 +8,7 @@
 - [ ] CGU, politique de confidentialité, contrats entreprise et commerçant
 
 ## Métier
+- [ ] **À valider par le juriste (droit du travail)** : employé désactivé, délai de grâce de 30 jours par défaut (paramétrable) pour dépenser le solde restant, puis compte fermé et solde traité comme crédits expirés (décision du 2026-10-22)
 - [ ] Frais entreprise **ajoutés** à la commande (hypothèse retenue) ou déduits ?
 - [ ] Membres famille : consomment le solde de l'employé (retenu) ou ont un solde propre ?
 - [ ] Crédits expirés : perdus pour l'employé, remboursés, reportés ? Qui en bénéficie ?
