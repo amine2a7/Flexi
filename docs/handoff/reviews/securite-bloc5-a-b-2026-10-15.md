@@ -467,3 +467,96 @@ Exigence : SEC-D4 / ASVS 8.3.8
 - Applications mobiles : traitement de `reauthenticationRequired` / `retryAfterSeconds` non relu.
 - Rotation de `SESSION_SECRET` : rend non rejouables les clés en cours (422 `IDEMPOTENCY_KEY_REUSED` au lieu du rejeu) ; procédure de rotation non documentée, non testée.
 - Erreur `ledger reconciliation failed` de la base de test : hors périmètre, non analysée.
+
+## Re-vérification tâche d (S04, S06, S10, S11) — 2026-10-22
+
+Base : `git show d454c03` (S06), `cb8f418` (S10), `f62db47` (S11), `da24b40` (S04), code courant de `feat/web` relu aux lignes citées.
+
+### Verdict : **OK** (aucun Critique ni Haute ouvert sur ce périmètre)
+
+| Constat | Statut | Résiduel |
+| --- | --- | --- |
+| B5-S04 Énumération par 409 / `ALREADY_EXISTS` | **FERMÉ** | course acceptée (ci-dessous) |
+| B5-S06 Code SMS sans limite d'essais | **FERMÉ** (volet jeton) | volet « par compte » → B5-S26 (Basse) |
+| B5-S10 RLS absente (ledger, secrets, audit, idempotence, `companies`) | **FERMÉ** | lecture plus large que nécessaire → B5-S27 (Basse) |
+| B5-S11 IBAN et téléphones en clair | **FERMÉ** | hygiène cryptographique → B5-S28 (Basse) |
+
+### B5-S06 : FERMÉ
+
+- `auth.service.ts:527-532` : un seul `UPDATE … SET attempts = attempts + 1 … AND attempts < 5 RETURNING id` réserve l'essai **avant** la comparaison ; atomique sous concurrence (verrou de ligne), plafond doublé par `CHECK (attempts BETWEEN 0 AND 5)` (migration 0014). L'incrément est validé avant le `throw` (`:547`), donc un échec compte toujours.
+- `:537` : le code n'est accepté que s'il est la ligne réservée (`token.id === reserved.id`) ; un code LINK ou périmé ne passe pas. `forgotPassword` (`:474-477`) invalide tout jeton vivant avant d'en créer un : un seul code OTP vivant par compte.
+- Audit `auth.resetCodeFailed` sans le code tenté. Test `auth.test.ts` « 20 codes faux simultanés, 5 évalués, le bon refusé ensuite » pertinent.
+- Le lien e-mail (jeton aléatoire de 256 bits) reste sans compteur : sans objet.
+- Écart de temps de réponse identifiant inconnu / connu sur `password/reset` (pas d'`UPDATE` ni d'audit pour un inconnu) : même nature que B5-S15, suivi là.
+
+### B5-S10 : FERMÉ
+
+- Migration 0015 : RLS sur les 12 tables du constat ; `sessions`, `recovery_codes`, `mfa_challenges`, `password_reset_tokens`, `login_failures` réservées à `SYSTEM` ; `audit_log` : insertion par tout contexte authentifié, lecture plateforme seulement, ni `UPDATE` ni `DELETE` (pas de politique + droits révoqués en 0002) ; `idempotency_keys` par `user_id` ; `companies` en écriture plateforme seulement, `SELECT` pour l'entreprise et ses bénéficiaires (l'employé ne peut plus modifier la ligne de son entreprise, test `rls-ledger.test.ts:176`).
+- `ledger_account_visible` : employé ⇒ son portefeuille ; entreprise ⇒ les siens et ceux de **ses** employés (sous-requête sur `employees`, elle-même sous RLS) ; commerçant ⇒ les siens. Écritures, soldes et lots suivent leur compte.
+- `audit.service.ts` : `createMany` (pas de `RETURNING`), cohérent avec la lecture refusée.
+- Tests exécutés avec le rôle applicatif `flexipay_app` (`appClient`, `rls-ledger.test.ts:40-55`), pas avec le propriétaire : la preuve est valable.
+- `FORCE ROW LEVEL SECURITY` non posé : acceptable tant que l'API ne se connecte jamais avec le propriétaire (seul le script `db:encrypt-pii` et les migrations le font).
+
+### B5-S11 : FERMÉ
+
+- `pii.ts` + `crypto.ts:42-55` : AES-256-GCM, IV aléatoire de 12 octets par chiffrement (pas de réutilisation de nonce), tag vérifié ; clé `DATA_ENCRYPTION_KEY` validée ≥ 32 octets (`env.ts:5-8`). `openPii` refuse une valeur en clair (échec fermé, message sans la valeur).
+- Écritures : téléphones de `merchants`, `companies` (`admin.service.ts:267`, `:352`), `employees` (`company.service.ts:278`, `:401`), `contact_messages` (`contact.service.ts:63`) chiffrés. Aucun chemin applicatif n'écrit `users.phone` ni `merchants.iban` en dehors du seed et des fixtures (vérifié par recherche) : pas de valeur en clair réintroduite.
+- **IBAN de la demande de virement** : `payouts.service.ts:294-296` puis `:348` recopie la valeur **chiffrée** de `merchants.iban` (pas de déchiffrement intermédiaire) ; affichage masqué (`maskedIban`) pour le commerçant, IBAN complet seulement côté admin (`adminPayout`, `:65`). Le test `payments.test.ts:335` lit l'IBAN complet par l'admin : comme `open` refuse le clair, il prouve indirectement que la copie est chiffrée.
+- **Recherche par téléphone** : `findByIdentifier` (`auth.service.ts:78-79`) passe uniquement par `phoneHash` (HMAC) ; unicité par `users_phone_hash_key` (0016). Aucune autre recherche par téléphone (`contains`, filtre `q`) dans `src/`.
+- Aucun journal de téléphone ni d'IBAN ajouté ; le script `encrypt-pii.ts` n'affiche qu'un compteur. Ses noms de table et de colonne interpolés viennent d'une liste constante (pas d'entrée externe).
+- **Rotation de clé** : absente ; d'accord pour la classer en durcissement (intégrée à B5-S28, Basse), à condition de prévoir l'identifiant de version maintenant, tant que le format est neuf.
+
+### B5-S04 : FERMÉ
+
+- Création unitaire (`company.service.ts:254-290`) : mot de passe haché dans tous les cas, même `201` et même corps ; adresse déjà utilisée ⇒ employé sans compte, avis au titulaire, aucune invitation. Le 409 ne subsiste que pour un doublon **de l'entreprise** (matricule ou e-mail d'un de ses employés), ce qui n'apprend rien sur les autres tenants.
+- Aperçu (`:293-355`) : plus aucune consultation de `users` ; seuls `DUPLICATE_IN_FILE` et `ALREADY_EXISTS` de l'entreprise. Confirmation (`:356-416`) : `createdCount` compte aussi les employés sans compte ; avis au lieu d'invitation.
+- **Avis au titulaire** (`invitation.service.ts:131-147`) : ne contient ni mot de passe, ni nom de l'entreprise, ni donnée du compte ; adressé à l'adresse déjà connue, pas à un tiers. Abus de relance limité : un même e-mail ne peut figurer qu'une fois par entreprise (doublon ⇒ 409, `DUPLICATE_IN_FILE`).
+- **Canal secondaire** : un employé sans compte reste `INVITED`, comme une adresse fictive jamais activée ; aucune route entreprise ne dépend de l'existence du compte lié (seul `pin.service.ts:88`, côté bénéficiaire, et sans effet visible). Écart de temps résiduel : un `INSERT users` en moins pour une adresse prise (quelques ms, noyé dans les 2 Argon2id) : non exploitable de façon fiable.
+- **Course** (adresse inscrite entre `emailsInUse` et `invitations.create` ⇒ 409, ou import entier en 409) : **risque accepté**, d'accord avec le lead. L'attaquant ne maîtrise pas l'instant de création d'un compte d'un autre tenant ; la fuite se limite à « un compte vient d'être créé à cette milliseconde » et exige de deviner l'adresse. À noter dans `decisions.md` comme risque accepté.
+- Tests `accounts.test.ts` : réponse identique (statut, clés, statut de l'employé) pour une adresse d'administrateur, compte admin intact, avis sans mot de passe, aperçu sans signalement, doublon de l'entreprise toujours en 409.
+
+### [CONSTAT] B5-S26 Code SMS renouvelable sans limite par compte (volet « par compte » de S06)
+
+Sévérité : **Basse**
+Fichier : `apps/api/src/auth/auth.service.ts:468-490` (`forgotPassword`) ; `apps/api/src/common/http.ts:142-175` (seule limite : 30/min par IP et par route)
+Preuve : après 5 échecs, `password/forgot` émet aussitôt un nouveau code à 5 essais ; aucun plafond de codes émis ni d'échecs cumulés par compte.
+Scénario d'attaque : un attaquant réparti sur de nombreuses IP (cf. B5-S22) enchaîne « forgot + 5 essais » sur le numéro d'un bénéficiaire : 5 × 10⁻⁶ de réussite par cycle (≈ 1 % après 2 000 cycles, donc 2 000 SMS reçus par la victime). Gain réel faible, mais bombardement de SMS de n'importe quel compte inscrit par téléphone (harcèlement, coût d'envoi).
+Correctif proposé : plafond par compte sur `forgot` (par exemple 3 codes par heure, 10 par jour, réponse 202 inchangée) et compteur d'échecs cumulés par compte (par exemple 15 en 24 h ⇒ réinitialisation par SMS suspendue, audit et alerte).
+Exigence : SEC-W2 / ASVS 2.2.1, 2.7.x
+
+### [CONSTAT] B5-S27 RLS du ledger plus large que nécessaire en lecture ; recherche de `ledger_entries` non qualifiée dans la fonction `SECURITY DEFINER`
+
+Sévérité : **Basse** (défense en profondeur ; suppose un autre défaut)
+Fichier : `apps/api/prisma/migrations/0015_rls_isolation/migration.sql:15` (`EMPLOYEE` voit **tous** les comptes `MERCHANT`), `:17` (`MERCHANT` voit tous les comptes `PLATFORM`), `:47-48` ; `apps/api/prisma/migrations/0003_fix_balance_trigger/migration.sql:13` (`FROM ledger_entries` non qualifié) ; tables sans RLS : `commission_profiles`, `credit_type_settings`, `platform_settings`
+Preuve : les politiques ouvrent la **lecture** pour les besoins de l'**écriture** (un paiement crédite le portefeuille du commerçant) ; `account_balances` et `ledger_entries` suivent. `SET search_path = public` sans `pg_temp` explicite : PostgreSQL cherche alors les **tables** dans `pg_temp` en premier (documentation de `search_path`, non reproduit ici).
+Scénario d'attaque : (1) un futur défaut de filtre dans une requête du ledger exécutée sous `EMPLOYEE` (un commerçant concurrent peut aussi être bénéficiaire chez son employeur) expose le solde et les écritures de chaque commerçant, c'est-à-dire son chiffre d'affaires ; sous `MERCHANT`, les soldes plateforme (commissions, dettes envers les commerçants). (2) Avec une exécution SQL arbitraire dans la session `flexipay_app`, une table temporaire `ledger_entries` équilibrée fait passer une transaction déséquilibrée dans `public.ledger_entries`. Ce point existait déjà avant 0015 (fonction en droits de l'appelant), il n'est pas une régression. (3) `commission_profiles` est modifiable par tout contexte à la base.
+Correctif proposé : séparer lecture et écriture : politique `FOR SELECT` restreinte au propriétaire (et à l'entreprise pour ses employés), écriture côté commerçant ou plateforme par une fonction `SECURITY DEFINER` de passation dédiée ou par une étape `SYSTEM` auditée ; dans `ledger_check_balanced`, `FROM public.ledger_entries` et `SET search_path = pg_catalog, public, pg_temp` ; `REVOKE TEMPORARY ON DATABASE … FROM PUBLIC` ; RLS sur les trois tables de paramètres (écriture plateforme seule).
+Exigence : SEC-Z3 / ASVS 4.1.3, 4.2.1
+
+### [CONSTAT] B5-S28 Chiffrement des PII : une clé pour trois usages, chiffré non lié à sa ligne, longueur de tag GCM non imposée, pas de version de clé
+
+Sévérité : **Basse** (durcissement)
+Fichier : `apps/api/src/common/pii.ts:18-30` ; `apps/api/src/common/crypto.ts:42-55` ; `apps/api/src/config/env.provider.ts:24`
+Preuve : `keys.data` sert au chiffrement des secrets TOTP, au chiffrement des PII **et** à la clé HMAC de `phoneIndex` ; `encryptSecret` n'utilise pas de données associées (AAD) ; `decryptSecret` appelle `setAuthTag(tag)` sans `authTagLength: 16` ni contrôle de longueur (Node accepte des tags tronqués à partir de 4 octets) ; format `iv.tag.ciphertext` sans identifiant de clé.
+Scénario d'attaque : un acteur qui peut écrire en base sans la clé (injection SQL, DBA indélicat) copie la valeur chiffrée de **son** IBAN de commerçant dans `merchants.iban` d'une victime ou dans `payout_requests.iban` d'une demande `REQUESTED` : le déchiffrement réussit, l'admin voit un IBAN valide et le virement part chez l'attaquant. Le tag tronqué ouvre en théorie une contrefaçon à 2⁻³² par essai. Sans version de clé, une rotation imposerait un rechiffrement en une fois, hors ligne.
+Correctif proposé : sous-clés dérivées par HKDF (`pii-enc`, `pii-index`, `totp`) ; AAD = `table|colonne|id` ; `createDecipheriv(..., { authTagLength: 16 })` et refus d'un tag ≠ 16 octets ; préfixe de version (`v1.`) dès maintenant, rotation en durcissement. Après exécution de `db:encrypt-pii` sur une base existante : `VACUUM FULL` des tables touchées et purge des sauvegardes antérieures (anciennes versions des lignes en clair).
+Exigence : SEC-D2 / ASVS 6.2.1, 6.2.5, 6.4.1
+
+### Vérifications (2026-10-22)
+
+| Commande | Résultat |
+| --- | --- |
+| `git show --stat` puis `git show` des 4 commits (sources, migrations 0014 à 0016, tests, contrat) | relus |
+| `grep` des écritures et lectures de `phone`, `iban`, `phoneHash` dans `apps/api/src` | aucune écriture en clair, recherche par HMAC seulement |
+| `grep` des tables créées sans `ENABLE ROW LEVEL SECURITY` dans les migrations | `commission_profiles`, `credit_type_settings`, `platform_settings` |
+| `grep` des chemins `invitations.prepare` / `create` | seuls admin (de confiance) et entreprise (corrigé) |
+| Suites de tests | non relancées (consigne du lead : intégration 97/97, unitaires 22/22 annoncés) |
+
+### Non vérifié (tâche d)
+
+- Exécution des tests : résultats du lead non reproduits.
+- Ombrage de `ledger_entries` par une table temporaire (B5-S27, point 2) : tiré de la documentation PostgreSQL, non reproduit.
+- Script `db:encrypt-pii` non exécuté ; ordre de déploiement migration 0016 → script (entre les deux, `open` échoue en 500 et la connexion par téléphone est impossible) non testé.
+- Propriétaire de `ledger_check_balanced` dans chaque environnement (superutilisateur ou propriétaire des tables) : non vérifié.
+- Gestion de `DATA_ENCRYPTION_KEY` dans un gestionnaire de secrets (KMS) : hors dépôt, `.env*` non lus par consigne.
+- Client web et mobiles : effet du `201` sans compte sur l'interface (message à l'entreprise) non relu.
