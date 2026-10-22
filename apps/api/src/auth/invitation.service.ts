@@ -90,13 +90,21 @@ export class InvitationService {
     }
   }
 
-  /** E-mails of the list that already sign in (checked by the platform, not by the tenant). */
+  /**
+   * E-mails of the list that already sign in (checked by the platform, never shown to the tenant:
+   * securite B5-S04, the company gets the same answer as for a fresh address).
+   */
   async emailsInUse(tx: Tx, emails: readonly string[]): Promise<Set<string>> {
     const rows = await tx.user.findMany({
       where: { email: { in: emails.map((email) => email.trim().toLowerCase()) } },
       select: { email: true },
     });
     return new Set(rows.map((row) => row.email));
+  }
+
+  /** Notices to the holders of addresses that already sign in (see `existingAccountNotice`). */
+  async notifyExisting(emails: readonly string[]): Promise<void> {
+    for (const email of emails) await this.outbox.send(existingAccountNotice(email));
   }
 
   async deliver(prepared: readonly PreparedInvitation[]): Promise<void> {
@@ -118,6 +126,24 @@ export class InvitationService {
       });
     }
   }
+}
+
+/**
+ * Tells the holder of an address that already signs in that someone tried to register it (instead
+ * of an invitation: no account is created, and the company is not told).
+ */
+export function existingAccountNotice(email: string) {
+  return {
+    to: email.trim().toLowerCase(),
+    subject: "Tentative d'inscription FlexiPay",
+    text: [
+      'Bonjour,',
+      '',
+      'Une entreprise a demandé un accès FlexiPay pour votre adresse, qui a déjà un compte.',
+      "Aucun nouveau compte n'a été créé.",
+      "Si vous changez d'employeur ou si vous n'attendiez pas ce message, contactez le support FlexiPay.",
+    ].join('\n'),
+  };
 }
 
 function isUniqueViolation(error: unknown): boolean {

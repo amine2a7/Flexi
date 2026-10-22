@@ -43,6 +43,16 @@ async function invitationTo(email: string): Promise<{ text: string; password: st
   throw new Error(`no invitation for ${email}`);
 }
 
+/** Latest message written to the local outbox for `email`. */
+async function messageTo(email: string): Promise<string> {
+  const files = (await readdir(OUTBOX)).sort().reverse();
+  for (const file of files) {
+    const text = await readFile(join(OUTBOX, file), 'utf8');
+    if (text.includes(`To: ${email}`)) return text;
+  }
+  throw new Error(`no message for ${email}`);
+}
+
 const unique = (prefix: string) => `${prefix}-${randomUUID().slice(0, 8)}@exemple.tn`;
 
 async function companyOwner() {
@@ -168,23 +178,74 @@ describe('sign-in accounts created with their owner', () => {
     await invitationTo(companyEmail);
   });
 
-  it('refuses an e-mail that already signs in, and creates nothing', async () => {
+  // securite B5-S04: a company never learns whether an address signs in elsewhere (any tenant,
+  // administrators included). Same answer as a fresh address; no account is created, and the
+  // holder of the address is told that someone tried to register it.
+  it('answers as for a fresh address when the e-mail already signs in elsewhere', async () => {
     const { owner } = await companyOwner();
     const taken = await createUser(db, env, 'ADMIN', {}, 'Hela R.');
-    const number = `E-${randomUUID().slice(0, 6)}`;
-    const created = await owner.call('POST', '/v1/company/employees', {
-      body: {
-        employeeNumber: number,
-        firstName: 'Ines',
-        lastName: 'Ayari',
-        email: taken.email,
-        phone: '+21698333444',
-      },
+    const employee = (email: string) => ({
+      employeeNumber: `E-${randomUUID().slice(0, 6)}`,
+      firstName: 'Ines',
+      lastName: 'Ayari',
+      email,
+      phone: '+21698333444',
     });
-    expect(created.status).toBe(409);
+    const fresh = await owner.call('POST', '/v1/company/employees', {
+      body: employee(unique('ines.ayari')),
+    });
+    const created = await owner.call('POST', '/v1/company/employees', {
+      body: employee(taken.email.toUpperCase()),
+    });
+    expect(created.status).toBe(fresh.status);
+    expect(Object.keys(created.body).sort()).toEqual(Object.keys(fresh.body).sort());
+    expect(created.body.status).toBe(fresh.body.status);
+    const account = await db.system((tx) => tx.user.findUnique({ where: { email: taken.email } }));
+    expect(account).toMatchObject({ id: taken.id, role: 'ADMIN', employeeId: null });
+    const notice = await messageTo(taken.email);
+    expect(notice).not.toContain('Mot de passe temporaire');
+    expect(notice).toContain('déjà un compte');
+  });
+
+  it('never flags in an import an address that signs in elsewhere', async () => {
+    const { owner } = await companyOwner();
+    const taken = await createUser(db, env, 'ADMIN', {}, 'Mehdi S.');
+    const fresh = unique('sami.gharbi');
+    const csv = [
+      'matricule;prenom;nom;email;telephone',
+      `I-${randomUUID().slice(0, 5)};Sami;Gharbi;${fresh};+21620000001`,
+      `I-${randomUUID().slice(0, 5)};Mehdi;Saidi;${taken.email};+21620000002`,
+    ].join('\n');
+    const preview = await owner.call('POST', '/v1/company/employees/import-previews', {
+      body: { csv },
+    });
+    expect(preview.body).toMatchObject({ validCount: 2, errorCount: 0, duplicateCount: 0 });
+    const imported = await owner.call('POST', '/v1/company/employees/imports', {
+      body: { previewId: preview.body.previewId },
+    });
+    expect(imported.body.createdCount).toBe(2);
     expect(
-      await db.system((tx) => tx.employee.findFirst({ where: { employeeNumber: number } })),
-    ).toBeNull();
+      await db.system((tx) => tx.user.findUnique({ where: { email: taken.email } })),
+    ).toMatchObject({ id: taken.id, employeeId: null });
+    expect(await messageTo(taken.email)).toContain('déjà un compte');
+    expect((await invitationTo(fresh)).password.length).toBeGreaterThanOrEqual(12);
+  });
+
+  it('still refuses an employee number or an e-mail already used in the same company', async () => {
+    const { owner } = await companyOwner();
+    const email = unique('rim.haddad');
+    const body = {
+      employeeNumber: `E-${randomUUID().slice(0, 6)}`,
+      firstName: 'Rim',
+      lastName: 'Haddad',
+      email,
+      phone: '+21698333445',
+    };
+    expect((await owner.call('POST', '/v1/company/employees', { body })).status).toBe(201);
+    const again = await owner.call('POST', '/v1/company/employees', {
+      body: { ...body, employeeNumber: `E-${randomUUID().slice(0, 6)}` },
+    });
+    expect(again.status).toBe(409);
   });
 
   it("never lets a company create the account of another company's employee (RLS)", async () => {

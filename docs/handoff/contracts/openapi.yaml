@@ -2213,8 +2213,11 @@ paths:
         identifiant = e-mail, mot de passe temporaire valable 72 h, changement obligatoire à la
         première connexion puis enrôlement MFA. Le mot de passe temporaire n'est jamais renvoyé
         dans la réponse ni journalisé ; il ne part que dans l'invitation (boîte d'envoi locale en
-        développement, aucun fournisseur d'e-mail en production pour l'instant). Un e-mail déjà
-        utilisé pour se connecter : `409 RESOURCE_STATE_CONFLICT`, rien n'est créé.
+        développement, aucun fournisseur d'e-mail en production pour l'instant). Matricule ou
+        e-mail déjà utilisé par un employé de l'entreprise : `409 RESOURCE_STATE_CONFLICT`.
+        Adresse qui sert déjà à se connecter ailleurs (autre tenant, plateforme) : même réponse
+        `201` qu'une adresse neuve (anti-énumération, securite B5-S04) ; l'employé est créé sans
+        compte et le titulaire de l'adresse reçoit un avis au lieu d'une invitation.
       requestBody:
         required: true
         content:
@@ -2287,9 +2290,10 @@ paths:
       summary: Confirmer un import (lignes valides de l'aperçu)
       description: |
         Crée les employés des lignes valides, chacun avec son compte de connexion et son invitation
-        (mot de passe temporaire de 72 h, comme `createEmployee`). L'aperçu signale par
-        `ALREADY_EXISTS` sur `email` une adresse qui sert déjà à se connecter : la ligne est
-        écartée.
+        (mot de passe temporaire de 72 h, comme `createEmployee`). L'aperçu ne signale que les
+        doublons du fichier et de l'entreprise : une adresse qui sert déjà à se connecter ailleurs
+        n'est jamais signalée (securite B5-S04) ; comme pour `createEmployee`, l'employé est créé
+        sans compte, compté dans `createdCount`, et le titulaire reçoit un avis.
       requestBody:
         required: true
         content:

@@ -249,7 +249,8 @@ export class CompanyService {
     const id = uuidv7();
     const firstName = input.firstName.trim();
     const lastName = input.lastName.trim();
-    // Its sign-in account and invitation come with it (decision of 2026-10-14).
+    // Its sign-in account and invitation come with it (decision of 2026-10-14). The password is
+    // hashed even for an address that already signs in: same answer, same time (securite S04).
     const [invitation] = await this.invitations.prepare([
       {
         role: 'EMPLOYEE',
@@ -259,8 +260,9 @@ export class CompanyService {
         employeeId: id,
       },
     ]);
+    const email = input.email.trim().toLowerCase();
+    const taken = await this.db.system((tx) => this.invitations.emailsInUse(tx, [email]));
     const body = await this.db.user(async (tx) => {
-      const email = input.email.trim().toLowerCase();
       const exists = await tx.employee.findFirst({
         where: { OR: [{ employeeNumber: input.employeeNumber.trim() }, { email }] },
       });
@@ -277,22 +279,21 @@ export class CompanyService {
           status: 'INVITED',
         },
       });
-      if (invitation !== undefined) await this.invitations.create(tx, [invitation]);
+      // An address that already signs in elsewhere: employee without account, holder told.
+      if (invitation !== undefined && !taken.has(email))
+        await this.invitations.create(tx, [invitation]);
       await this.audit.record(tx, 'employees.create', `${employee.firstName} ${employee.lastName}`);
       return this.employeeBody(employee, 0n);
     });
-    if (invitation !== undefined) await this.invitations.deliver([invitation]);
+    if (taken.has(email)) await this.invitations.notifyExisting([email]);
+    else if (invitation !== undefined) await this.invitations.deliver([invitation]);
     return body;
   }
 
   async previewEmployees(csv: string) {
     const companyId = this.companyId();
-    // E-mails that already sign in (any tenant): their account could not be created.
-    const listed = csv
-      .split(/\r?\n/)
-      .flatMap((line) => line.split(/[;,]/).slice(3, 4))
-      .slice(0, 5_001);
-    const inUse = await this.db.system((tx) => this.invitations.emailsInUse(tx, listed));
+    // Duplicates of the company only: whether an address signs in elsewhere is never shown
+    // (securite B5-S04), confirmImport handles it.
     return this.db.user(async (tx) => {
       const existing = await tx.employee.findMany({
         select: { employeeNumber: true, email: true },
@@ -325,8 +326,6 @@ export class CompanyService {
           issues.push({ field: 'employeeNumber', code: 'DUPLICATE_IN_FILE' });
         } else if (numbers.has(employeeNumber) || emails.has(email.toLowerCase())) {
           issues.push({ field: 'employeeNumber', code: 'ALREADY_EXISTS' });
-        } else if (inUse.has(email.trim().toLowerCase())) {
-          issues.push({ field: 'email', code: 'ALREADY_EXISTS' });
         }
         seenNumbers.add(employeeNumber);
         seenEmails.add(email.toLowerCase());
@@ -368,9 +367,11 @@ export class CompanyService {
       ),
     );
     const valid = preview.rows
-      .filter((row) => row.issues.length === 0 && !inUse.has(row.email.toLowerCase()))
+      .filter((row) => row.issues.length === 0)
       .map((row) => ({ ...row, id: uuidv7() }));
     // Accounts and invitations of the imported employees (hashing before the SQL transaction).
+    // An address that already signs in elsewhere: employee without account, holder told; hashed
+    // all the same, so that neither the answer nor the time tells it (securite B5-S04).
     const prepared = await this.invitations.prepare(
       valid.map((row) => ({
         role: 'EMPLOYEE' as const,
@@ -401,14 +402,16 @@ export class CompanyService {
           status: 'INVITED' as const,
         })),
       });
-      const ids = new Set(fresh.map((row) => row.id));
+      const taken = fresh.filter((row) => inUse.has(row.email.toLowerCase()));
+      const ids = new Set(fresh.filter((row) => !taken.includes(row)).map((row) => row.id));
       const invited = prepared.filter((item) => ids.has(item.invitee.employeeId ?? ''));
       await this.invitations.create(tx, invited);
       await this.audit.record(tx, 'employees.import', `${String(fresh.length)} employés`);
-      return invited;
+      return { invited, notified: taken.map((row) => row.email), count: fresh.length };
     });
-    await this.invitations.deliver(created);
-    return { createdCount: created.length };
+    await this.invitations.deliver(created.invited);
+    await this.invitations.notifyExisting(created.notified);
+    return { createdCount: created.count };
   }
 
   // ---------------------------------------------------------------- allocation
