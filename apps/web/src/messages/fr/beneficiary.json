@@ -61,7 +61,8 @@
     "continue": "Continuer",
     "change": "Changer de commerçant",
     "demo": "Simuler une demande d'un commerçant (démo)",
-    "demoPin": "PIN de démonstration : {pin}"
+    "demoPin": "PIN de démonstration : {pin}",
+    "demoError": "La demande de démonstration a échoué. Réessayez."
   },
   "pin": {
     "label": "Code PIN (4 chiffres)",

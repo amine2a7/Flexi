@@ -1,6 +1,6 @@
 'use client';
 
-import type { Schemas } from '@flexipay/api-client';
+import { WEB_CHANNEL_HEADER, type Schemas } from '@flexipay/api-client';
 import { Check, FlaskConical, QrCode as QrIcon, RefreshCw, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState, type SyntheticEvent } from 'react';
@@ -327,27 +327,39 @@ function ConfirmRequest({
 /** Development only: a merchant request arrives, as if a shop had typed the code. */
 function DemoRequest({ onCreated }: { onCreated: () => void }) {
   const t = useTranslations('beneficiary.pay');
+  const [failed, setFailed] = useState(false);
+
+  const create = async (): Promise<void> => {
+    setFailed(false);
+    try {
+      const response = await fetch(`${getApiOrigin() ?? ''}/__demo/employee/payment-request`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { ...WEB_CHANNEL_HEADER, ...(await csrfHeader()) },
+      });
+      if (response.ok) onCreated();
+      else setFailed(true);
+    } catch {
+      setFailed(true);
+    }
+  };
+
   return (
     <div className="mt-4 flex flex-col gap-2 rounded-card-desktop border border-warning bg-warning-soft p-3 text-warning-text">
       <Button
         variant="secondary"
         size="sm"
         icon={<FlaskConical aria-hidden="true" className="size-icon-sm" />}
-        onClick={() =>
-          void csrfHeader()
-            .then((headers) =>
-              fetch(`${getApiOrigin() ?? ''}/__demo/employee/payment-request`, {
-                method: 'POST',
-                credentials: 'include',
-                headers,
-              }),
-            )
-            .then(onCreated)
-        }
+        onClick={() => void create()}
       >
         {t('demo')}
       </Button>
       <p className="text-caption">{t('demoPin', { pin: '1234' })}</p>
+      {failed ? (
+        <p role="alert" className="text-caption font-title">
+          {t('demoError')}
+        </p>
+      ) : null}
     </div>
   );
 }

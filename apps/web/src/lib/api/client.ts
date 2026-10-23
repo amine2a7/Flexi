@@ -16,6 +16,18 @@ const PUBLIC_ROUTES = new Set([
   '/v1/auth/password/reset',
   '/v1/public/contact-messages',
 ]);
+/**
+ * Copies of the requests that change something, kept until their response (or failure) to replay
+ * one once after a CSRF refusal: the API refuses before doing anything, so the replay is safe, and
+ * it keeps the same Idempotency-Key (the copy carries every header of the original).
+ */
+const copies = new Map<string, Request>();
+
+/** Number of copies still waiting for an outcome (a leak detector for tests). */
+export function pendingReplayCopies(): number {
+  return copies.size;
+}
+
 /** Pause before retrying a refresh that another tab of the browser was doing (409). */
 const CONCURRENT_REFRESH_RETRY_MS = 300;
 
@@ -78,9 +90,6 @@ export function getApi(): ApiClient {
   if (client !== undefined) return client;
   const baseUrl = getApiOrigin();
   if (baseUrl === undefined) throw new Error('API origin is not configured');
-  // Copies of the requests that change something, to replay one once after a CSRF refusal (the
-  // API refuses before doing anything, so the replay is safe).
-  const copies = new Map<string, Request>();
   client = createApiClient({ baseUrl, getCsrfToken: () => csrfToken });
   client.use({
     async onRequest({ request, id }) {
@@ -104,6 +113,12 @@ export function getApi(): ApiClient {
       const replay = new Request(copy);
       replay.headers.set('X-CSRF-Token', token);
       return fetch(replay);
+    },
+    onError({ id }) {
+      // Network failure: no response will come, so the copy (and its body, uploads included)
+      // must not stay in memory. Returning nothing lets the error reach the caller unchanged.
+      copies.delete(id);
+      return undefined;
     },
   });
   return client;

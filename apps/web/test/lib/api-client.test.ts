@@ -99,6 +99,7 @@ describe('API client: two tabs of one browser renew the session', () => {
     vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', API);
   });
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.unstubAllEnvs();
   });
@@ -141,7 +142,6 @@ describe('API client: two tabs of one browser renew the session', () => {
     const done = getApi().POST('/v1/me/onboarding-tour');
     await vi.runAllTimersAsync();
     await done;
-    vi.useRealTimers();
     expect(seen.map((call) => call.url)).toEqual([
       '/v1/auth/refresh',
       '/v1/auth/refresh',
@@ -172,6 +172,53 @@ describe('API client: two tabs of one browser renew the session', () => {
       ['/v1/company/employees', 'renewed'],
     ]);
     expect(JSON.parse(seen[2]?.body ?? '{}')).toEqual(body);
+  });
+
+  it('replays a financial request with the SAME Idempotency-Key (that is what makes it safe)', async () => {
+    const headers: (string | null)[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const request = new Request(input, init);
+        await Promise.resolve();
+        if (request.url.endsWith('/v1/auth/refresh')) return session('renewed')();
+        headers.push(request.headers.get('Idempotency-Key'));
+        return headers.length === 1
+          ? problem(403, 'CSRF_TOKEN_INVALID')()
+          : new Response(null, { status: 204 });
+      }),
+    );
+    const { getApi, setCsrfToken } = await freshClient();
+    setCsrfToken('stale');
+    const key = crypto.randomUUID();
+    const result = await getApi().POST('/v1/merchant/payouts', {
+      params: { header: { 'Idempotency-Key': key } },
+      body: { quoteId: crypto.randomUUID() },
+    });
+    expect(result.response.status).toBe(204);
+    expect(headers).toEqual([key, key]);
+  });
+
+  it('forgets the copy of a request when the network fails (no body kept in memory)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        await Promise.resolve();
+        throw new TypeError('Failed to fetch');
+      }),
+    );
+    const { getApi, setCsrfToken, pendingReplayCopies } = await freshClient();
+    setCsrfToken('token');
+    await expect(getApi().POST('/v1/me/onboarding-tour')).rejects.toThrow('Failed to fetch');
+    expect(pendingReplayCopies()).toBe(0);
+  });
+
+  it('forgets the copy once the answer arrived', async () => {
+    script({});
+    const { getApi, setCsrfToken, pendingReplayCopies } = await freshClient();
+    setCsrfToken('token');
+    await getApi().POST('/v1/me/onboarding-tour');
+    expect(pendingReplayCopies()).toBe(0);
   });
 
   it('does not loop: a second CSRF refusal is returned as is', async () => {

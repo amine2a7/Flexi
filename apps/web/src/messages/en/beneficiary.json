@@ -61,7 +61,8 @@
     "continue": "Continue",
     "change": "Change merchant",
     "demo": "Simulate a merchant request (demo)",
-    "demoPin": "Demo PIN: {pin}"
+    "demoPin": "Demo PIN: {pin}",
+    "demoError": "The demo request failed. Try again."
   },
   "pin": {
     "label": "PIN (4 digits)",

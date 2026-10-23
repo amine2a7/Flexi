@@ -100,6 +100,11 @@ module.exports = {
         'محاكاة طلب من تاجر (تجريبي)',
       ],
       demoPin: ['PIN de démonstration : {pin}', 'Demo PIN: {pin}', 'رمز PIN التجريبي: {pin}'],
+      demoError: [
+        'La demande de démonstration a échoué. Réessayez.',
+        'The demo request failed. Try again.',
+        'فشل طلب العرض التجريبي. أعد المحاولة.',
+      ],
     },
     pin: {
       label: ['Code PIN (4 chiffres)', 'PIN (4 digits)', 'الرمز السري (4 أرقام)'],
