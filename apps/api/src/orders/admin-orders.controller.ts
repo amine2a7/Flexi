@@ -42,7 +42,7 @@ export class AdminOrdersController {
     @Inject(IdempotencyService) private readonly idempotency: IdempotencyService,
   ) {}
 
-  @Can('platform.read')
+  @Can('creditOrders.read')
   @Get()
   list(@Query() raw: Record<string, unknown>) {
     return this.orders.adminList(
@@ -55,7 +55,7 @@ export class AdminOrdersController {
     );
   }
 
-  @Can('platform.read')
+  @Can('creditOrders.read')
   @Get(':orderId')
   get(@Param('orderId') orderId: string) {
     return this.orders.get(pathId('orderId', orderId));
@@ -97,7 +97,7 @@ export class AdminOrdersController {
     return this.orders.rejectProof(pathId('orderId', orderId), parse(reasonBody, body).reason);
   }
 
-  @Can('platform.read')
+  @Can('creditOrders.read')
   @Get(':orderId/proof')
   async proof(@Param('orderId') orderId: string, @Res() res: Response): Promise<void> {
     const file = await this.orders.proof(pathId('orderId', orderId));

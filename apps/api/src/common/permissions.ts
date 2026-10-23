@@ -31,10 +31,25 @@ const MERCHANT_OWNER = [
   'shop.read',
 ] as const;
 
-/** Read access of every administrator (support is read-only, plus the contact messages). */
-const ADMIN_READ = ['platform.read', 'audit.read'] as const;
+// Admin permissions never reuse a company or merchant name: a tenant route must stay unreachable
+// for an administrator (the matrix is per role, the guard checks names only).
 const ADMIN_ALL = [
-  ...ADMIN_READ,
+  'dashboard.read',
+  'accounts.read',
+  'transactions.read',
+  'audit.read',
+  'settings.read',
+  'commissions.read',
+  'creditOrders.read',
+  'adminPayouts.read',
+  'approvals.read',
+  'kyc.read',
+  'messages.read',
+  'users.read',
+  'userBalances.read',
+  'users.manage',
+  'users.adminRoles',
+  'users.support',
   'merchants.manage',
   'companies.manage',
   'commissions.request',
@@ -46,6 +61,21 @@ const ADMIN_ALL = [
   'orders.validate',
   'payouts.decide',
   'messages.handle',
+] as const;
+
+/** What Opérations (COMPLIANCE) and Finance both read (decision C of 2026-10-23). */
+const ADMIN_BACK_OFFICE_READ = [
+  'dashboard.read',
+  'accounts.read',
+  'transactions.read',
+  'audit.read',
+  'commissions.read',
+  'creditOrders.read',
+  'adminPayouts.read',
+  'approvals.read',
+  'kyc.read',
+  'users.read',
+  'userBalances.read',
 ] as const;
 
 const EMPLOYEE = ['wallet.read', 'payments.pay'] as const;
@@ -63,21 +93,34 @@ export type Permission =
  *   Comptable (ACCOUNTANT) = orders, transfer declarations, invoices; READ_ONLY = reading.
  * - Merchant: Gérant (OWNER) = everything; Caissier (CASHIER) = collect and the day's history,
  *   no payout (IBAN masked everywhere); ACCOUNTANT = reading of the finances, no collect.
- * - Admin: SUPER_ADMIN = every read and action (accounts, settings, commissions only for it),
- *   never an exception to the four eyes; Opérations (COMPLIANCE) = KYC and order confirmation;
- *   FINANCE = payment validation, payouts, second validation; SUPPORT = reading and messages.
+ * - Admin (decision C of 2026-10-23): SUPER_ADMIN = everything (admins, roles, statuses,
+ *   settings), never an exception to the four eyes; Opérations (COMPLIANCE) = KYC and audit, reading
+ *   of accounts, commissions, orders, settlements, balances, users; FINANCE = commissions and rates,
+ *   credit orders, payouts, second validation, reading of accounts, transactions, balances, users,
+ *   settings, audit; SUPPORT = reading of accounts, users, transactions, invitation resend and PIN
+ *   unlock, contact messages; never balances.
  */
 const MATRIX: Record<Role, Partial<Record<SubRole | 'NONE', readonly Permission[]>>> = {
   ADMIN: {
     SUPER_ADMIN: ADMIN_ALL,
-    COMPLIANCE: [
-      ...ADMIN_READ,
-      'kyc.decide',
-      'kycDocuments.read',
+    COMPLIANCE: [...ADMIN_BACK_OFFICE_READ, 'kyc.decide', 'kycDocuments.read'],
+    FINANCE: [
+      ...ADMIN_BACK_OFFICE_READ,
+      'settings.read',
+      'commissions.request',
       'orders.confirm',
+      'orders.validate',
+      'payouts.decide',
+      'approvals.decide',
     ],
-    FINANCE: [...ADMIN_READ, 'orders.validate', 'payouts.decide', 'approvals.decide'],
-    SUPPORT: [...ADMIN_READ, 'messages.handle'],
+    SUPPORT: [
+      'accounts.read',
+      'transactions.read',
+      'users.read',
+      'users.support',
+      'messages.read',
+      'messages.handle',
+    ],
   },
   COMPANY: {
     OWNER: COMPANY_OWNER,

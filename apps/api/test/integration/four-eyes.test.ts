@@ -112,8 +112,9 @@ describe('four eyes', () => {
       headers: key(),
     });
     const id = String(created.body.id);
-    const ops = await admin('COMPLIANCE', 'Opérations E.');
-    await ops.client.call('POST', `/v1/admin/credit-orders/${id}/confirm`);
+    // Finance confirms the order (decision C); a third administrator confirms here.
+    const confirmer = await admin('FINANCE', 'Finance E.');
+    await confirmer.client.call('POST', `/v1/admin/credit-orders/${id}/confirm`);
     const form = new FormData();
     form.set('transferReference', 'BIAT-4E');
     form.set('transferDate', new Date().toISOString().slice(0, 10));

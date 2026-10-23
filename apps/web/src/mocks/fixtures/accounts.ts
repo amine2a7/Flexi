@@ -45,11 +45,28 @@ export const MERCHANT_TENANT = {
   label: 'Café El Medina',
 };
 
-/** Permissions of the server matrix (apps/api/src/common/permissions.ts, decision of 2026-10-21). */
-const ADMIN_READ = ['platform.read', 'audit.read'];
+/** Permissions of the server matrix (apps/api/src/common/permissions.ts, decision C of 2026-10-23). */
+const BACK_OFFICE_READ = [
+  'dashboard.read',
+  'accounts.read',
+  'transactions.read',
+  'audit.read',
+  'commissions.read',
+  'creditOrders.read',
+  'adminPayouts.read',
+  'approvals.read',
+  'kyc.read',
+  'users.read',
+  'userBalances.read',
+];
 const PERMISSIONS = {
   SUPER_ADMIN: [
-    ...ADMIN_READ,
+    ...BACK_OFFICE_READ,
+    'settings.read',
+    'messages.read',
+    'users.manage',
+    'users.adminRoles',
+    'users.support',
     'merchants.manage',
     'companies.manage',
     'commissions.request',
@@ -62,9 +79,24 @@ const PERMISSIONS = {
     'payouts.decide',
     'messages.handle',
   ],
-  COMPLIANCE: [...ADMIN_READ, 'kyc.decide', 'kycDocuments.read', 'orders.confirm'],
-  FINANCE: [...ADMIN_READ, 'orders.validate', 'payouts.decide', 'approvals.decide'],
-  SUPPORT: [...ADMIN_READ, 'messages.handle'],
+  COMPLIANCE: [...BACK_OFFICE_READ, 'kyc.decide', 'kycDocuments.read'],
+  FINANCE: [
+    ...BACK_OFFICE_READ,
+    'settings.read',
+    'commissions.request',
+    'orders.confirm',
+    'orders.validate',
+    'payouts.decide',
+    'approvals.decide',
+  ],
+  SUPPORT: [
+    'accounts.read',
+    'transactions.read',
+    'users.read',
+    'users.support',
+    'messages.read',
+    'messages.handle',
+  ],
   COMPANY_OWNER: [
     'balances.read',
     'employees.read',

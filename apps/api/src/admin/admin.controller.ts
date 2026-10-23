@@ -72,13 +72,13 @@ export class AdminController {
     @Inject(ContactService) private readonly contact: ContactService,
   ) {}
 
-  @Can('platform.read')
+  @Can('dashboard.read')
   @Get('dashboard')
   dashboard() {
     return this.admin.dashboard();
   }
 
-  @Can('platform.read')
+  @Can('accounts.read')
   @Get('merchants')
   merchants(@Query() query: Record<string, unknown>) {
     return this.admin.merchants(
@@ -107,7 +107,7 @@ export class AdminController {
     );
   }
 
-  @Can('platform.read')
+  @Can('accounts.read')
   @Get('merchants/:merchantId')
   merchant(@Param('merchantId') merchantId: string) {
     return this.admin.merchant(pathId('merchantId', merchantId));
@@ -122,7 +122,7 @@ export class AdminController {
     );
   }
 
-  @Can('platform.read')
+  @Can('accounts.read')
   @Get('companies')
   companies(@Query() query: Record<string, unknown>) {
     return this.admin.companies(
@@ -140,7 +140,7 @@ export class AdminController {
     );
   }
 
-  @Can('platform.read')
+  @Can('commissions.read')
   @Get('commission-profiles')
   profiles() {
     return this.admin.profiles();
@@ -158,7 +158,7 @@ export class AdminController {
     );
   }
 
-  @Can('platform.read')
+  @Can('approvals.read')
   @Get('approvals')
   approvals(@Query() query: Record<string, unknown>) {
     return this.admin.approvals(
@@ -188,7 +188,7 @@ export class AdminController {
     );
   }
 
-  @Can('platform.read')
+  @Can('transactions.read')
   @Get('transactions')
   transactions(@Query() query: Record<string, unknown>) {
     const filters = parse(
@@ -212,7 +212,7 @@ export class AdminController {
     );
   }
 
-  @Can('platform.read')
+  @Can('settings.read')
   @Get('settings')
   settings() {
     return this.admin.platformSettings();
@@ -226,7 +226,7 @@ export class AdminController {
     return this.admin.requestSettingsChange(input.settings, input.reason);
   }
 
-  @Can('platform.read')
+  @Can('kyc.read')
   @Get('kyc-files')
   kycFiles(@Query() query: Record<string, unknown>) {
     const filters = parse(
@@ -240,7 +240,7 @@ export class AdminController {
     return this.admin.kycFiles(query, filters);
   }
 
-  @Can('platform.read')
+  @Can('kyc.read')
   @Get('kyc-files/:fileId')
   kycFile(@Param('fileId') fileId: string) {
     return this.admin.kycFile(pathId('fileId', fileId));
@@ -278,7 +278,7 @@ export class AdminController {
     );
   }
 
-  @Can('platform.read')
+  @Can('messages.read')
   @Get('contact-messages')
   messages(@Query() query: Record<string, unknown>) {
     const filters = parse(
@@ -293,7 +293,7 @@ export class AdminController {
     return this.contact.list(query, filters);
   }
 
-  @Can('platform.read')
+  @Can('messages.read')
   @Get('contact-messages/:messageId')
   message(@Param('messageId') messageId: string) {
     return this.contact.get(pathId('messageId', messageId));

@@ -243,70 +243,80 @@ describe('merchant sub-roles (Gérant OWNER, Caissier CASHIER)', () => {
   });
 });
 
-describe('admin sub-roles (Super-admin, Opérations COMPLIANCE, Finance, Support)', () => {
-  it('support reads and handles messages, never decides', async () => {
+describe('admin sub-roles (Super-admin, Opérations COMPLIANCE, Finance, Support), decision C', () => {
+  const companyBody = { name: 'X', city: 'Tunis', phone: '+21671000000', email: 'x@y.tn' };
+  const rateBody = { newRateBps: 210, reason: 'R' };
+
+  it('support reads accounts, transactions and messages, never balances, audit nor decisions', async () => {
     const support = await adminUser('SUPPORT');
     await refused(support, [
+      ['GET', '/v1/admin/dashboard'],
+      ['GET', '/v1/admin/audit-logs'],
+      ['GET', '/v1/admin/settings'],
+      ['GET', '/v1/admin/credit-orders'],
+      ['GET', '/v1/admin/payout-requests'],
+      ['GET', '/v1/admin/settlements'],
+      ['GET', '/v1/admin/commission-profiles'],
+      ['GET', '/v1/admin/approvals'],
+      ['GET', '/v1/admin/kyc-files'],
       ['POST', `/v1/admin/credit-orders/${ID}/confirm`],
       ['POST', `/v1/admin/credit-orders/${ID}/validate`],
       ['POST', `/v1/admin/payout-requests/${ID}/approve`],
       ['POST', `/v1/admin/payout-requests/${ID}/reject`, { reason: 'Non' }],
       ['POST', `/v1/admin/kyc-files/${ID}/approve`],
       ['POST', `/v1/admin/approvals/${ID}/approve`],
-      [
-        'POST',
-        `/v1/admin/commission-profiles/${ID}/change-requests`,
-        { newRateBps: 210, reason: 'R' },
-      ],
+      ['POST', `/v1/admin/commission-profiles/${ID}/change-requests`, rateBody],
       ['GET', `/v1/admin/kyc-files/${ID}/documents/${ID}`],
-      [
-        'POST',
-        '/v1/admin/companies',
-        { name: 'X', city: 'Tunis', phone: '+21671000000', email: 'x@y.tn' },
-      ],
+      ['POST', '/v1/admin/companies', companyBody],
     ]);
     await allowed(support, [
-      ['GET', '/v1/admin/dashboard'],
-      ['GET', '/v1/admin/credit-orders'],
+      ['GET', '/v1/admin/merchants'],
+      ['GET', '/v1/admin/companies'],
+      ['GET', '/v1/admin/transactions'],
       ['GET', '/v1/admin/contact-messages'],
       ['POST', `/v1/admin/contact-messages/${ID}/handle`, { note: 'Rappelé' }],
     ]);
   });
 
-  it('finance validates payments and payouts, never settings, KYC nor order confirmation', async () => {
+  it('finance handles commissions, credit orders and payouts, never settings, KYC nor accounts', async () => {
     const finance = await adminUser('FINANCE');
     await refused(finance, [
       ['PUT', '/v1/admin/settings', {}],
-      [
-        'POST',
-        `/v1/admin/commission-profiles/${ID}/change-requests`,
-        { newRateBps: 210, reason: 'R' },
-      ],
       ['POST', `/v1/admin/kyc-files/${ID}/approve`],
-      ['POST', `/v1/admin/credit-orders/${ID}/confirm`],
+      ['GET', `/v1/admin/kyc-files/${ID}/documents/${ID}`],
+      ['POST', '/v1/admin/companies', companyBody],
     ]);
     await allowed(finance, [
+      ['GET', '/v1/admin/settings'],
+      ['GET', '/v1/admin/audit-logs'],
+      ['GET', '/v1/admin/transactions'],
+      ['POST', `/v1/admin/commission-profiles/${ID}/change-requests`, rateBody],
+      ['POST', `/v1/admin/credit-orders/${ID}/confirm`],
       ['POST', `/v1/admin/credit-orders/${ID}/validate`],
       ['POST', `/v1/admin/payout-requests/${ID}/approve`],
       ['POST', `/v1/admin/approvals/${ID}/approve`],
     ]);
   });
 
-  it('operations handle KYC and order confirmation, never payments nor settings', async () => {
+  it('operations handle KYC and read the rest, never orders, payouts, commissions nor settings', async () => {
     const operations = await adminUser('COMPLIANCE');
     await refused(operations, [
-      [
-        'POST',
-        '/v1/admin/companies',
-        { name: 'X', city: 'Tunis', phone: '+21671000000', email: 'x@y.tn' },
-      ],
+      ['POST', '/v1/admin/companies', companyBody],
+      ['POST', `/v1/admin/credit-orders/${ID}/confirm`],
       ['POST', `/v1/admin/credit-orders/${ID}/validate`],
       ['POST', `/v1/admin/payout-requests/${ID}/approve`],
+      ['POST', `/v1/admin/approvals/${ID}/approve`],
+      ['POST', `/v1/admin/commission-profiles/${ID}/change-requests`, rateBody],
+      ['GET', '/v1/admin/settings'],
       ['PUT', '/v1/admin/settings', {}],
     ]);
     await allowed(operations, [
+      ['GET', '/v1/admin/audit-logs'],
+      ['GET', '/v1/admin/transactions'],
+      ['GET', '/v1/admin/credit-orders'],
+      ['GET', '/v1/admin/settlements'],
+      ['GET', '/v1/admin/commission-profiles'],
       ['POST', `/v1/admin/kyc-files/${ID}/approve`],
-      ['POST', `/v1/admin/credit-orders/${ID}/confirm`],
     ]);
   });
 });

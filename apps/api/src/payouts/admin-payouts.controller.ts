@@ -26,7 +26,7 @@ export class AdminPayoutsController {
     @Inject(IdempotencyService) private readonly idempotency: IdempotencyService,
   ) {}
 
-  @Can('platform.read')
+  @Can('adminPayouts.read')
   @Get('payout-requests')
   list(@Query() query: Record<string, unknown>) {
     const filters = parse(
@@ -41,7 +41,7 @@ export class AdminPayoutsController {
     return this.payouts.adminList(query, filters);
   }
 
-  @Can('platform.read')
+  @Can('adminPayouts.read')
   @Get('payout-requests/:payoutId')
   get(@Param('payoutId') payoutId: string) {
     return this.payouts.adminGet(pathId('payoutId', payoutId));
@@ -81,13 +81,13 @@ export class AdminPayoutsController {
     return sendOutcome(res, outcome);
   }
 
-  @Can('platform.read')
+  @Can('adminPayouts.read')
   @Get('settlements')
   batches(@Query() query: Record<string, unknown>) {
     return this.payouts.batches(query);
   }
 
-  @Can('platform.read')
+  @Can('adminPayouts.read')
   @Get('settlements/:batchId')
   batch(@Param('batchId') batchId: string) {
     return this.payouts.batch(pathId('batchId', batchId));
