@@ -11,7 +11,9 @@ Permissions abstraites (noms à confirmer par backend, S8) :
 | Permission | Donne |
 |---|---|
 | `users.read` | voir la liste, la fiche, l'historique d'audit |
-| `users.manage` | modifier un utilisateur non administrateur, suspendre/réactiver/désactiver, réinitialiser le mot de passe, débloquer le PIN |
+| `users.manage` | modifier un utilisateur non administrateur, suspendre/réactiver/désactiver, réinitialiser le mot de passe (super-admin seul, décision C du 2026-10-23) |
+| `users.support` | renvoyer l'invitation, débloquer le PIN (super-admin et Support ; tracé, l'utilisateur est notifié) |
+| `userBalances.read` | voir le solde d'un employé (super-admin, Finance, Opérations ; jamais Support) |
 | `users.adminRoles` | créer un administrateur, changer le rôle d'un administrateur, gérer le statut d'un administrateur, modifier le délai de grâce |
 | Matrice actuelle | `SUPER_ADMIN` : les trois. `COMPLIANCE`, `FINANCE`, `SUPPORT` : **à décider** (proposition en §12.1) |
 Conditions d'affichage (un bouton interdit n'existe pas dans le DOM) :
@@ -21,8 +23,8 @@ Conditions d'affichage (un bouton interdit n'existe pas dans le DOM) :
 | « Créer un administrateur » | `users.adminRoles` |
 | Modifier / Suspendre / Réactiver / Désactiver | `users.manage` (cible non administrateur) ou `users.adminRoles` (cible administrateur) **et** cible ≠ soi-même **et** transition valide pour l'état **et** pas de `pendingChange` sur le compte |
 | Changer le rôle | `users.adminRoles` **et** cible = administrateur **et** cible ≠ soi-même |
-| Renvoyer l'invitation | `users.manage`, cible ≠ soi-même, compte Invité ou Actif (absent si suspendu ou désactivé) |
-| Débloquer le PIN | `users.manage`, cible de rôle employé (membre de la famille inclus **[à confirmer]**), PIN effectivement bloqué (`pinLocked`) |
+| Renvoyer l'invitation | `users.support`, cible ≠ soi-même, compte Invité ou Actif (absent si suspendu ou désactivé) |
+| Débloquer le PIN | `users.support`, cible de rôle employé (membre de la famille inclus **[à confirmer]**), PIN effectivement bloqué (`pinLocked`) ; l'utilisateur est notifié |
 | Approuver / refuser une demande en attente | `canApprove: true` fourni par l'API ; l'initiateur n'a jamais ce bouton (`isInitiator`) |
 | Onglet « Comptes » (délai de grâce), bouton « Modifier » | lecture : `users.read` ; modification : `users.adminRoles` |
 Transitions d'état : Actif ↔ Suspendu ; Actif ou Suspendu → Désactivé ; Invité → Actif automatiquement à la première connexion ; Invité → Suspendu ; Invité → Désactivé (détail `commun-statut-utilisateur.md` §3.1). Aucune suppression, aucun retour depuis Désactivé.
@@ -143,16 +145,16 @@ Tableau : `caption`, `th scope`, `aria-sort` ; le nom est le lien (nom accessibl
 Permissions lues de `GET /v1/me`, autorité serveur (`403`/`404`) ; jamais de tenant passé en paramètre côté client pour agir ; mot de passe temporaire : jamais affiché ni renvoyé par l'API (invitation par e-mail seulement) ; PIN jamais affiché ; téléphone/e-mail masqués fournis masqués ; auteur d'une demande ne peut pas l'approuver (UI + serveur) ; auto-modification impossible (UI + serveur) ; dernier super-admin protégé côté serveur ; anti-énumération (§6) ; motif échappé ; `Idempotency-Key` par action ; audit écrit par le serveur seulement.
 
 ## 12. Questions ouvertes (avec recommandation)
-1. **[À DÉCIDER] Matrice `users.*` pour COMPLIANCE (Opérations), FINANCE, SUPPORT.** Proposition : `COMPLIANCE` : `users.read` + `users.manage` ; `FINANCE` : `users.read` seul ; `SUPPORT` : `users.read` seul (pas de permission plus fine sans décision). Aucun n'a `users.adminRoles` (règle validée).
+1. **Tranché (décision C du 2026-10-23)** : `users.read` pour tous les administrateurs ; `users.manage` et `users.adminRoles` super-admin seul ; `users.support` super-admin et Support ; `userBalances.read` super-admin, Finance, Opérations.
 2. **Libellé « Opérations » : tranché par l'utilisateur** pour COMPLIANCE (`role.sub.COMPLIANCE.label`). La mention « Conformité » de `navigation.md` reste à corriger (hors de ce périmètre : à signaler à `main`).
 3. **Descriptions des sous-rôles : fournies** (matrice du 2026-10-21, §5). Prérequis levé.
-4. **[À DÉCIDER, ux UX-03 et UX-04]** (a) Suspension, réactivation et désactivation d'un administrateur : double validation ? Recommandation : oui. (b) Qui approuve la création d'un administrateur s'il n'y a qu'un super-administrateur ? Recommandation : message « Un second super-administrateur est nécessaire pour valider cette demande. » (`approversAvailable: false`). (c) Dernier super-administrateur face au changement de rôle : recommandation : protégé aussi.
+4. **Tranché (décisions A, B, D du 2026-10-23)** : (a) pas de double validation pour la suspension, la réactivation, la désactivation, la création ou le changement de rôle d'un administrateur : le super-admin agit seul, avec motif, tracé dans l'audit ; (b) sans objet (pas de second validateur pour la gestion des utilisateurs) ; (c) le dernier super-admin ne peut être ni suspendu, ni désactivé, ni rétrogradé ; personne ne modifie son propre rôle ni son propre statut.
 5. **Motif obligatoire pour une simple modification** (nom, téléphone) ? Recommandation : oui côté admin (audit « motif »), facultatif non retenu.
-6. **[À DÉCIDER] Solde d'un employé sur la fiche admin** : l'admin le voit-il ? Recommandation : lecture seule fournie par l'API, sous `users.read`, sinon absent.
+6. **Tranché (D4)** : solde visible en lecture seule, fourni par l'API, sous `userBalances.read` (super-admin, Finance, Opérations) ; absent pour Support.
 7. **Délai de grâce** : s'applique-t-il aux désactivations déjà en cours ? Recommandation : non, valeur figée (`graceDays`) au moment de la désactivation, comme le snapshot de commission ; bornes (min/max) à fournir par l'API.
-8. **[À DÉCIDER, ux UX-02] Utilisateurs internes entreprise/commerçant** (RH, comptable, lecture) : gérés ici seulement. Changement de leur rôle : `users.adminRoles` en double validation, ou `users.manage` simple ? Recommandation ux : double validation.
+8. **Tranché (D3)** : utilisateurs internes entreprise/commerçant gérés ici seulement ; changement de leur rôle sous `users.manage`, sans double validation.
 9. **Création d'un utilisateur non administrateur** par l'admin : hors périmètre de cette spec (comptes créés par l'entreprise ou le parcours commerçant).
-10. **[À DÉCIDER] User stories proposées par ux** : retirer sa propre demande en attente (UX-17) ; être averti qu'aucun second validateur n'existe (UX-04).
+10. **Tranché (D8) : oui aux deux user stories ux** : retirer sa propre demande en attente (UX-17) ; être averti qu'aucun second validateur n'existe (UX-04, message `approversAvailable: false`) — ces deux cas ne concernent plus que les demandes à double validation (argent, paramétrage).
 
 ## Besoins de contrat
 | Route proposée | Usage |
@@ -162,7 +164,7 @@ Permissions lues de `GET /v1/me`, autorité serveur (`403`/`404`) ; jamais de te
 | `GET /v1/admin/users/{id}/audit?cursor` | historique : `{ at, actor{id,name}, action, reason, from, to }` (valeurs filtrées, sans donnée sensible) |
 | `POST /v1/admin/users` | création d'administrateur : `{ firstName, lastName, email, phone, subRole, reason }` → `202` avec `pendingChange` ; même `202` si l'e-mail existe déjà |
 | `PATCH /v1/admin/users/{id}` | modification + `reason` |
-| `POST /v1/admin/users/{id}/suspend` · `/reactivate` · `/deactivate` · `/role` | avec `reason` ; `/role` en double validation |
+| `POST /v1/admin/users/{id}/suspend` · `/reactivate` · `/deactivate` · `/role` | avec `reason` ; effet immédiat, sans double validation (décision A) ; refus si cible = soi-même ou dernier super-admin (décision B) |
 | `POST /v1/admin/users/{id}/reset-invitation` | nouvelle invitation par e-mail (mot de passe temporaire 72 h, sessions fermées) ; `202` sans secret |
 | `POST /v1/admin/users/{id}/unlock-pin` | employés seulement |
 | `POST /v1/admin/approvals/{id}/approve|reject` | existant ou à créer (`canApprove`, `isInitiator`) |

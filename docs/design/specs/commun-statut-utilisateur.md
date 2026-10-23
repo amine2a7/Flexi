@@ -32,7 +32,7 @@ Obligatoire avant : suspension, réactivation d'un suspendu, désactivation, cha
 1. Titre `h2` = question avec le verbe : « Suspendre {nom} ? », « Réactiver {nom} ? », « Désactiver {nom} ? », « Changer le rôle de {nom} ? ».
 2. Récapitulatif (`DescriptionList`) : personne, état actuel → état demandé (changement de rôle : `ChangeDiff` ancien rôle → nouveau rôle).
 3. Ligne de conséquence (icône + texte, toujours présente, texte fourni par variante §3.3).
-4. Si l'opération passe en double validation : ligne `common.reason.approvalNote` « Cette demande sera soumise à l'approbation d'un second administrateur. »
+4. Si l'opération passe en double validation : ligne `common.reason.approvalNote` « Cette demande sera soumise à l'approbation d'un second administrateur. » *Sans objet depuis la décision A du 2026-10-23 (aucune double validation dans la gestion des utilisateurs).*
 5. **Champ Motif** : `Textarea`, requis (« obligatoire » écrit en texte, S4.1), compteur `{count}/{max}` annoncé poliment, aide `common.reason.hint`.
 6. Zone d'erreur de l'API (saisie conservée).
 7. Pied : « Annuler » (`tertiary`) puis bouton **destructif** nommé par le résultat (« Suspendre le compte », « Désactiver le compte », « Changer le rôle », « Réactiver le compte »). Suspension et désactivation : variante `danger` (`color.danger` / `on-danger`) ; réactivation et changement de rôle : `primary`.
@@ -136,12 +136,12 @@ Le motif est du texte libre : échappé à l'affichage (jamais `dangerouslySetIn
 ## 12. Questions ouvertes
 1. **Réactiver un compte désactivé : tranché par l'utilisateur, non.** Aucun retour depuis Désactivé ; la ligne irréversible est toujours affichée (ux UX-01).
 2. **Désactivation d'un compte non employé** (administrateur, utilisateur interne d'entreprise ou de commerçant) : le délai de grâce ne vise que l'employé. Recommandation : effet immédiat (connexion coupée, sessions révoquées) pour les autres.
-3. **[À DÉCIDER, ux UX-03] Suspension / désactivation d'un administrateur en double validation ?** Règle absente (seul le changement de rôle d'administrateur l'exige). Recommandation : validation simple avec motif, sauf désactivation d'un administrateur (double validation).
+3. **Tranché (décision A du 2026-10-23)** : pas de double validation pour le statut d'un administrateur ; le super-admin agit seul, avec motif, tracé dans l'audit. La ligne `common.reason.approvalNote` ne s'affiche jamais dans la gestion des utilisateurs.
 4. **Bornes du motif** : 10 à 500 caractères, à confirmer.
 5. **Motif à la réactivation** : demandé ici (réactivation = changement d'accès). Recommandation : oui.
 6. **Tokens** `ACTIF`, `DESACTIVE`, `DESACTIVE_GRACE` à créer dans `design-tokens.json` (design, hors périmètre de cette tâche d'écriture de specs : à faire avant le code).
-7. **[À DÉCIDER, ux UX-11] Membre de la famille et délai de grâce** : un membre désactivé par cascade peut-il dépenser pendant le délai de grâce de l'employé ? Recommandation : oui, avec le même libellé exact « Désactivé — délai de grâce jusqu'au {date} ».
-8. **[À DÉCIDER, ux UX-04] Dernier super-administrateur et changement de rôle ; impasse avec un seul super-administrateur** : la phrase `lastSuperAdmin` couvre suspension et désactivation seulement. Recommandation : l'étendre au changement de rôle, et afficher « Un second super-administrateur est nécessaire pour valider cette demande. » si l'API signale `approversAvailable: false`.
+7. **Tranché (D6)** : un membre de la famille désactivé par cascade est désactivé **immédiatement**, sans délai de grâce (badge « Désactivé avec l'employé », jamais « délai de grâce »).
+8. **Tranché (décision B)** : la phrase `lastSuperAdmin` couvre suspension, désactivation **et** rétrogradation ; la phrase « Un second super-administrateur est nécessaire… » est sans objet ici (pas de double validation).
 
 ## Besoins de contrat
 | Besoin | Proposition |

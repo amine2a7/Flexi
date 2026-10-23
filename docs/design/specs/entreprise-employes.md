@@ -150,7 +150,7 @@ Tenant uniquement de la session ; employé hors tenant : 404 ; permissions `empl
 5. **Service** (département) : champ et filtre supposés ; si absent du modèle, retirer la colonne et le filtre. Recommandation : le conserver (déjà demandé).
 6. **Réactiver un employé désactivé** : tranché non (utilisateur) ; voir `commun-statut-utilisateur.md` §12.1.
 7. **Membres de la famille** : on montre prénom, lien, statut (pas de solde ni de contact). Recommandation : suffit à expliquer une cascade.
-8. **[À DÉCIDER] Motif visible par l'entreprise** : les motifs saisis par l'administrateur sont-ils visibles ? Recommandation : masqués par défaut (interne), visibles seulement si l'admin les marque partageables (champ `visibility`) ; l'auteur reste « Administrateur FlexiPay » (appliqué).
+8. **Tranché (D7)** : l'entreprise ne voit **jamais** le motif saisi par un administrateur FlexiPay (pas de champ `visibility`) ; l'auteur reste « Administrateur FlexiPay » ; l'événement reste visible sans motif.
 
 ## Besoins de contrat
 | Route / champ | Usage |

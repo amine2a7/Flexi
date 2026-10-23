@@ -20,7 +20,7 @@
 `GET /me` fournit : `displayName`, `role` (`ADMIN` | `COMPANY` | `MERCHANT` | `EMPLOYEE` | `FAMILY_MEMBER`), `subRole` éventuel, `permissions[]`. **MVP : un compte = un seul tenant** (décision du 2026-10-09) : pas de liste d'espaces, pas de changement de tenant en session, le tenant n'est jamais transmis par le client. Compteur de notifications non lues : champ de `/me` ou route dédiée (**ouvert**). La navigation est calculée **uniquement** à partir de ces données, jamais d'une valeur côté client.
 
 ### Libellés de rôle (clés `role.*`)
-`role.ADMIN` « Administrateur » · `role.COMPANY` « Entreprise » · `role.MERCHANT` « Commerçant » · `role.EMPLOYEE` « Employé » · `role.FAMILY_MEMBER` « Membre famille ». Sous-rôles (specs 01, 05, 07 ; **enums à confirmer**) : `role.sub.OWNER` « Propriétaire » · `role.sub.MANAGER` « Gestionnaire » · `role.sub.ACCOUNTANT` « Comptable » · `role.sub.READ_ONLY` « Lecture seule » · `role.sub.CASHIER` « Caissier » · `role.sub.SUPER_ADMIN` « Super-administrateur » · `role.sub.FINANCE` « Finance » · `role.sub.SUPPORT` « Support » · `role.sub.COMPLIANCE` « Conformité ».
+`role.ADMIN` « Administrateur » · `role.COMPANY` « Entreprise » · `role.MERCHANT` « Commerçant » · `role.EMPLOYEE` « Employé » · `role.FAMILY_MEMBER` « Membre famille ». Sous-rôles (specs 01, 05, 07 ; **enums à confirmer**) : `role.sub.OWNER` « Propriétaire » · `role.sub.MANAGER` « Gestionnaire » · `role.sub.ACCOUNTANT` « Comptable » · `role.sub.READ_ONLY` « Lecture seule » · `role.sub.CASHIER` « Caissier » · `role.sub.SUPER_ADMIN` « Super-administrateur » · `role.sub.FINANCE` « Finance » · `role.sub.SUPPORT` « Support » · `role.sub.COMPLIANCE` « Opérations ».
 
 ---
 
