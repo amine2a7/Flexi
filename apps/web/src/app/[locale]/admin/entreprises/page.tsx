@@ -14,12 +14,14 @@ import { DataTable, type Column } from '@/components/ui/data-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { PageHeader } from '@/components/ui/layout-blocks';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { useCan } from '@/lib/session/session-context';
 
 const STATUSES: Schemas['AccountStatus'][] = ['APPROVED', 'PENDING_KYC', 'SUSPENDED', 'REJECTED'];
 
 export default function AdminCompaniesPage() {
   const t = useTranslations('admin.companies');
   const tStatus = useTranslations('statusLabel');
+  const canCreate = useCan('companies.manage');
   const locale = useLocale();
   const [filters, setFilters] = useState({ q: '', status: '' });
   const [creating, setCreating] = useState(false);
@@ -71,14 +73,16 @@ export default function AdminCompaniesPage() {
         title={t('title')}
         description={t('description')}
         actions={
-          <Button
-            icon={<Building2 aria-hidden="true" className="size-icon-sm" />}
-            onClick={() => {
-              setCreating(true);
-            }}
-          >
-            {t('create')}
-          </Button>
+          !canCreate ? undefined : (
+            <Button
+              icon={<Building2 aria-hidden="true" className="size-icon-sm" />}
+              onClick={() => {
+                setCreating(true);
+              }}
+            >
+              {t('create')}
+            </Button>
+          )
         }
       />
       <Card>

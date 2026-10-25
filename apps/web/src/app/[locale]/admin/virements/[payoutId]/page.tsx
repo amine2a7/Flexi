@@ -23,6 +23,7 @@ import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Timeline } from '@/components/ui/timeline';
 import { useToast } from '@/components/ui/toast';
+import { useCan } from '@/lib/session/session-context';
 
 type Payout = Schemas['AdminPayoutRequestDetail'];
 
@@ -71,6 +72,7 @@ function PayoutView({
   const t = useTranslations('admin.payouts');
   const tTypes = useTranslations('ui.creditTypes');
   const tRoot = useTranslations();
+  const canDecide = useCan('payouts.decide');
   const locale = useLocale();
   const toast = useToast();
   const [dialog, setDialog] = useState<'approve' | 'reject' | undefined>(undefined);
@@ -139,7 +141,7 @@ function PayoutView({
         {error !== undefined ? (
           <Alert tone="danger">{tRoot(messageKey(errorMessageKey(error)))}</Alert>
         ) : null}
-        {payout.status === 'REQUESTED' ? (
+        {payout.status === 'REQUESTED' && canDecide ? (
           <Card>
             <div className="flex flex-col gap-4">
               <Alert tone="warning">{t('pendingInfo')}</Alert>

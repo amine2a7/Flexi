@@ -18,6 +18,7 @@ import { Alert, DescriptionList, PageHeader, Tabs } from '@/components/ui/layout
 import { ConfirmDialog, Modal } from '@/components/ui/modal';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useToast } from '@/components/ui/toast';
+import { useCan } from '@/lib/session/session-context';
 
 type Approval = Schemas['Approval'];
 type Tab = 'pending' | 'history';
@@ -28,6 +29,7 @@ interface Decision {
 
 export default function ApprovalsPage() {
   const t = useTranslations('admin.approvals');
+  const canDecide = useCan('approvals.decide');
   const locale = useLocale();
   const [tab, setTab] = useState<Tab>('pending');
   const [refresh, setRefresh] = useState(0);
@@ -82,7 +84,7 @@ export default function ApprovalsPage() {
           header: t('actions'),
           align: 'end',
           cell: (row) =>
-            row.initiatedByMe ? (
+            !canDecide ? null : row.initiatedByMe ? (
               <span className="text-caption text-text-muted">{t('own')}</span>
             ) : (
               <span className="flex flex-wrap justify-end gap-2">

@@ -12,6 +12,7 @@ import { messageKey } from '@/i18n/keys';
 import { cn } from '@/lib/cn';
 import { resetAuthFlow } from '@/lib/session/auth-flow';
 import { SPACE_HOME } from '@/lib/session/return-to';
+import { canOpen, firstOpenPage } from '@/lib/session/permissions';
 import { SessionProvider, type Me } from '@/lib/session/session-context';
 import { buttonClasses } from '@/components/ui/button';
 import { PageEyebrowContext } from '@/components/ui/layout-blocks';
@@ -117,6 +118,23 @@ function Forbidden({ me }: { me: Me }) {
   );
 }
 
+/** A page the sub-role may not open, reached by its URL: said plainly, inside the shell. */
+function PageForbidden({ home }: { home: string | undefined }) {
+  const t = useTranslations();
+  return (
+    <div className="mx-auto flex max-w-form-max-width flex-col items-center gap-4 px-4 py-12 text-center">
+      <ShieldOff aria-hidden="true" className="size-icon-lg text-danger" />
+      <h1 className="text-headline text-text">{t('layout.pageForbidden.title')}</h1>
+      <p className="text-body-lg text-text-muted">{t('layout.pageForbidden.message')}</p>
+      {home !== undefined ? (
+        <Link href={home} className={buttonClasses('primary')}>
+          {t('layout.pageForbidden.action')}
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
 interface ShellProps {
   readonly me: Me;
   readonly role: Role;
@@ -128,9 +146,26 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
   const t = useTranslations();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const items = useMemo(() => NAVIGATION[role] ?? [], [role]);
+  const router = useRouter();
+  // Only the pages the session may open (decision C); the API refuses the others anyway.
+  const items = useMemo(
+    () => (NAVIGATION[role] ?? []).filter((item) => canOpen(me, item.href)),
+    [role, me],
+  );
   const home = SPACE_HOME[role] ?? '/';
-  const counts = useNavCounters(role, pathname);
+  const counts = useNavCounters(me, pathname);
+  const pageOpen = canOpen(me, pathname);
+  // Home denied (support has no dashboard): land on the first page of the menu instead.
+  const landing =
+    pathname === home && !pageOpen
+      ? firstOpenPage(
+          me,
+          items.map((item) => item.href),
+        )
+      : undefined;
+  useEffect(() => {
+    if (landing !== undefined) router.replace(landing);
+  }, [landing, router]);
   const tour = useOnboardingTour(role, me);
   const helpHref = `/aide#${HELP_ANCHORS[role === 'FAMILY_MEMBER' ? 'EMPLOYEE' : role]}`;
   const secondary =
@@ -302,7 +337,13 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
         >
           <PageEyebrowContext.Provider value={t(`layout.eyebrow.${role}`)}>
             {/* Animation 1: page content enters in cascade; sidebar and header never move. */}
-            <div className="fp-cascade">{children}</div>
+            <div className="fp-cascade">
+              {pageOpen ? (
+                children
+              ) : landing === undefined ? (
+                <PageForbidden home={items[0]?.href} />
+              ) : null}
+            </div>
           </PageEyebrowContext.Provider>
           {role === 'EMPLOYEE' ? (
             <div aria-hidden="true" className="h-bottom-nav-height lg:hidden" />

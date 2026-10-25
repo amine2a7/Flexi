@@ -15,6 +15,11 @@
     "message": "Cet espace n'est pas accessible avec votre compte.",
     "action": "Aller à mon espace"
   },
+  "pageForbidden": {
+    "title": "Accès refusé",
+    "message": "Votre rôle ne donne pas accès à cette page.",
+    "action": "Retour à l'accueil"
+  },
   "session": {
     "warningTitle": "Votre session va expirer",
     "warningMessage": "Sans activité, vous serez déconnecté dans 2 minutes. Voulez-vous rester connecté ?",

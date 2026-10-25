@@ -15,11 +15,13 @@ import { CreditTypeBadge, type CreditType } from '@/components/ui/credit-type';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { PageHeader } from '@/components/ui/layout-blocks';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { useCanOpen } from '@/lib/session/session-context';
 
 export default function ReceivablesPage() {
   const t = useTranslations('merchant.receivables');
   const locale = useLocale();
   const tTypes = useTranslations('ui.creditTypes');
+  const canPayouts = useCanOpen('/commercant/virements');
   const [total, setTotal] = useState<number | undefined>(undefined);
   const [creditType, setCreditType] = useState<CreditType | ''>('');
   const list = usePagedList(
@@ -79,9 +81,11 @@ export default function ReceivablesPage() {
         title={t('title')}
         description={t('description')}
         actions={
-          <Link href="/commercant/virements" className={buttonClasses('primary')}>
-            {t('requestPayout')}
-          </Link>
+          canPayouts ? (
+            <Link href="/commercant/virements" className={buttonClasses('primary')}>
+              {t('requestPayout')}
+            </Link>
+          ) : null
         }
       />
       <div className="mb-6 grid gap-4 sm:grid-cols-2">

@@ -16,10 +16,13 @@ import { buttonClasses } from '@/components/ui/button';
 import { Card, CardTitle, StatCard } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/layout-blocks';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
+import { useCanOpen } from '@/lib/session/session-context';
 
 export default function CompanyDashboardPage() {
   const t = useTranslations('company.dashboard');
   const tTypes = useTranslations('ui.creditTypes');
+  const canAllocate = useCanOpen('/entreprise/attribution');
+  const canOrder = useCanOpen('/entreprise/commandes/nouvelle');
   const locale = useLocale();
   const dashboard = useApiQuery(() => getApi().GET('/v1/company/dashboard'), []);
   // « À faire »: the orders waiting for the company's transfer (status from the server).
@@ -38,14 +41,18 @@ export default function CompanyDashboardPage() {
         description={t('description')}
         actions={
           <>
-            <Link href="/entreprise/commandes/nouvelle" className={buttonClasses('secondary')}>
-              <ShoppingCart aria-hidden="true" className="size-icon-sm" />
-              {t('order')}
-            </Link>
-            <Link href="/entreprise/attribution" className={buttonClasses('primary')}>
-              <WalletCards aria-hidden="true" className="size-icon-sm" />
-              {t('allocate')}
-            </Link>
+            {canOrder ? (
+              <Link href="/entreprise/commandes/nouvelle" className={buttonClasses('secondary')}>
+                <ShoppingCart aria-hidden="true" className="size-icon-sm" />
+                {t('order')}
+              </Link>
+            ) : null}
+            {canAllocate ? (
+              <Link href="/entreprise/attribution" className={buttonClasses('primary')}>
+                <WalletCards aria-hidden="true" className="size-icon-sm" />
+                {t('allocate')}
+              </Link>
+            ) : null}
           </>
         }
       />

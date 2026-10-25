@@ -15,6 +15,11 @@
     "message": "This space is not available with your account.",
     "action": "Go to my space"
   },
+  "pageForbidden": {
+    "title": "Access denied",
+    "message": "Your role does not give access to this page.",
+    "action": "Back to home"
+  },
   "session": {
     "warningTitle": "Your session is about to expire",
     "warningMessage": "Without activity, you will be signed out in 2 minutes. Do you want to stay signed in?",

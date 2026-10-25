@@ -471,6 +471,23 @@ module.exports = {
         "الانتقال إلى فضائي"
       ]
     },
+    "pageForbidden": {
+      "title": [
+        "Accès refusé",
+        "Access denied",
+        "الدخول مرفوض"
+      ],
+      "message": [
+        "Votre rôle ne donne pas accès à cette page.",
+        "Your role does not give access to this page.",
+        "دورك لا يتيح الوصول إلى هذه الصفحة."
+      ],
+      "action": [
+        "Retour à l'accueil",
+        "Back to home",
+        "العودة إلى الصفحة الرئيسية"
+      ]
+    },
     "session": {
       "warningTitle": [
         "Votre session va expirer",

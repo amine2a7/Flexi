@@ -16,6 +16,7 @@ import { DataTable, type Column } from '@/components/ui/data-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { PageHeader } from '@/components/ui/layout-blocks';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { useCan } from '@/lib/session/session-context';
 
 const STATUSES: Schemas['AccountStatus'][] = ['APPROVED', 'PENDING_KYC', 'SUSPENDED', 'REJECTED'];
 
@@ -23,6 +24,7 @@ export default function AdminMerchantsPage() {
   const t = useTranslations('admin.merchants');
   const tStatus = useTranslations('statusLabel');
   const tCategory = useTranslations('category');
+  const canCreate = useCan('merchants.manage');
   const locale = useLocale();
   const [filters, setFilters] = useState({ q: '', status: '' });
   const [creating, setCreating] = useState(false);
@@ -91,14 +93,16 @@ export default function AdminMerchantsPage() {
         title={t('title')}
         description={t('description')}
         actions={
-          <Button
-            icon={<Store aria-hidden="true" className="size-icon-sm" />}
-            onClick={() => {
-              setCreating(true);
-            }}
-          >
-            {t('create')}
-          </Button>
+          !canCreate ? undefined : (
+            <Button
+              icon={<Store aria-hidden="true" className="size-icon-sm" />}
+              onClick={() => {
+                setCreating(true);
+              }}
+            >
+              {t('create')}
+            </Button>
+          )
         }
       />
       <Card>

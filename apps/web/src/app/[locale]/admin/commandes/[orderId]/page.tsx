@@ -26,6 +26,7 @@ import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { ConfirmDialog } from '@/components/ui/modal';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { useToast } from '@/components/ui/toast';
+import { useCan } from '@/lib/session/session-context';
 
 type Dialog = 'confirm' | 'refuse' | 'validate' | 'reject' | undefined;
 
@@ -78,6 +79,8 @@ function AdminOrderView({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<unknown>(undefined);
   const [validateKey, setValidateKey] = useState(newIdempotencyKey);
+  const canConfirm = useCan('orders.confirm');
+  const canValidate = useCan('orders.validate');
   const loadProof = useCallback(
     () =>
       getApi().GET('/v1/admin/credit-orders/{orderId}/proof', {
@@ -169,7 +172,7 @@ function AdminOrderView({
           <Card>
             <div className="flex flex-col gap-4">
               <Alert tone={order.status === 'AWAITING_PAYMENT' ? 'info' : 'warning'}>{step}</Alert>
-              {order.status === 'AWAITING_CONFIRMATION' ? (
+              {order.status === 'AWAITING_CONFIRMATION' && canConfirm ? (
                 <div className="flex flex-wrap justify-end gap-3">
                   <Button
                     variant="secondary"
@@ -214,29 +217,31 @@ function AdminOrderView({
                       {mismatchText}
                     </Alert>
                   ) : null}
-                  <div className="flex flex-wrap justify-end gap-3">
-                    <Button
-                      variant="secondary"
-                      icon={<FileX aria-hidden="true" className="size-icon-sm" />}
-                      onClick={() => {
-                        setDialog('reject');
-                      }}
-                    >
-                      {t('admin.rejectProof')}
-                    </Button>
-                    {order.firstValidation?.byMe === true ? null : (
+                  {canValidate ? (
+                    <div className="flex flex-wrap justify-end gap-3">
                       <Button
-                        variant="success"
-                        icon={<CircleCheck aria-hidden="true" className="size-icon-sm" />}
+                        variant="secondary"
+                        icon={<FileX aria-hidden="true" className="size-icon-sm" />}
                         onClick={() => {
-                          setValidateKey(newIdempotencyKey());
-                          setDialog('validate');
+                          setDialog('reject');
                         }}
                       >
-                        {validateLabel}
+                        {t('admin.rejectProof')}
                       </Button>
-                    )}
-                  </div>
+                      {order.firstValidation?.byMe === true ? null : (
+                        <Button
+                          variant="success"
+                          icon={<CircleCheck aria-hidden="true" className="size-icon-sm" />}
+                          onClick={() => {
+                            setValidateKey(newIdempotencyKey());
+                            setDialog('validate');
+                          }}
+                        >
+                          {validateLabel}
+                        </Button>
+                      )}
+                    </div>
+                  ) : null}
                 </>
               ) : null}
             </div>

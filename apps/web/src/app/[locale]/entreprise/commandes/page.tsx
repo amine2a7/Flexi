@@ -18,10 +18,12 @@ import { DataTable } from '@/components/ui/data-table';
 import { FilterBar, type Filters } from '@/components/ui/filter-bar';
 import { PageHeader } from '@/components/ui/layout-blocks';
 import { Skeleton } from '@/components/ui/states';
+import { useCanOpen } from '@/lib/session/session-context';
 
 export default function OrdersPage() {
   const t = useTranslations('company.orders');
   const tOrders = useTranslations('orders');
+  const canOrder = useCanOpen('/entreprise/commandes/nouvelle');
   const columns = useOrderColumns();
   const [filters, setFilters] = useState<Filters>({ q: '', status: '', creditType: '' });
   const dashboard = useApiQuery(() => getApi().GET('/v1/company/dashboard'), []);
@@ -51,10 +53,12 @@ export default function OrdersPage() {
         title={tOrders('company.title')}
         description={tOrders('company.description')}
         actions={
-          <Link href="/entreprise/commandes/nouvelle" className={buttonClasses('primary')}>
-            <Plus aria-hidden="true" className="size-icon-sm" />
-            {t('new')}
-          </Link>
+          canOrder ? (
+            <Link href="/entreprise/commandes/nouvelle" className={buttonClasses('primary')}>
+              <Plus aria-hidden="true" className="size-icon-sm" />
+              {t('new')}
+            </Link>
+          ) : null
         }
       />
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

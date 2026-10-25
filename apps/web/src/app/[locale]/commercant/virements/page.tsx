@@ -24,6 +24,7 @@ import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { ConfirmDialog } from '@/components/ui/modal';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useToast } from '@/components/ui/toast';
+import { useCan } from '@/lib/session/session-context';
 
 type Quote = Schemas['PayoutQuote'];
 type Status = Schemas['PayoutRequestStatus'];
@@ -38,6 +39,7 @@ export default function PayoutsPage() {
   const t = useTranslations('merchant.payouts');
   const tRoot = useTranslations();
   const tTypes = useTranslations('ui.creditTypes');
+  const canRequest = useCan('payouts.request');
   const locale = useLocale();
   const toast = useToast();
   const [amountText, setAmountText] = useState('');
@@ -246,82 +248,84 @@ export default function PayoutsPage() {
         />
       </div>
 
-      <Card className="mb-6">
-        <CardTitle>{t('simulate')}</CardTitle>
-        <div className="grid gap-6 lg:grid-cols-2">
-          <form
-            onSubmit={(event) => void onSimulate(event)}
-            className="flex flex-col gap-5"
-            noValidate
-          >
-            <CreditTypeSelect
-              label={t('creditType')}
-              hint={t('creditTypeHint')}
-              types={accepted.length === 0 ? undefined : accepted}
-              value={creditType}
-              onChange={(value) => {
-                if (value !== '') setCreditType(value);
-                setQuote(undefined);
-              }}
-            />
-            <TextField
-              label={t('amount')}
-              hint={
-                millimes === undefined
-                  ? t('amountHint')
-                  : t('amountPreview', { amount: formatMillimesWithCurrency(millimes, locale) })
-              }
-              error={amountText !== '' && millimes === undefined ? t('amountInvalid') : undefined}
-              inputMode="decimal"
-              dir="ltr"
-              value={amountText}
-              onChange={(event) => {
-                setAmountText(event.target.value);
-                setQuote(undefined);
-              }}
-            />
-            <Button
-              type="submit"
-              variant="secondary"
-              loading={quoting}
-              disabled={millimes === undefined || millimes === 0}
+      {canRequest ? (
+        <Card className="mb-6">
+          <CardTitle>{t('simulate')}</CardTitle>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <form
+              onSubmit={(event) => void onSimulate(event)}
+              className="flex flex-col gap-5"
+              noValidate
             >
-              {t('simulateSubmit')}
-            </Button>
-          </form>
-          <div className="flex flex-col gap-4">
-            {error !== undefined ? (
-              <Alert tone="danger">
-                {conflict ? t('conflict') : tRoot(messageKey(errorMessageKey(error)))}
-              </Alert>
-            ) : null}
-            {created !== undefined ? (
-              <Alert tone="success" title={t('createdTitle')}>
-                {t('createdMessage', { reference: created.reference })}
-              </Alert>
-            ) : null}
-            {quote === undefined && created === undefined && error === undefined ? (
-              <p className="text-body text-text-muted">{t('summaryEmpty')}</p>
-            ) : null}
-            {quote !== undefined ? (
-              <>
-                <AmountBreakdown
-                  lines={breakdown}
-                  total={{ label: t('net'), millimes: quote.netMillimes }}
-                />
-                <Button
-                  icon={<Send aria-hidden="true" className="size-icon-sm rtl:-scale-x-100" />}
-                  onClick={() => {
-                    setConfirming(true);
-                  }}
-                >
-                  {t('request')}
-                </Button>
-              </>
-            ) : null}
+              <CreditTypeSelect
+                label={t('creditType')}
+                hint={t('creditTypeHint')}
+                types={accepted.length === 0 ? undefined : accepted}
+                value={creditType}
+                onChange={(value) => {
+                  if (value !== '') setCreditType(value);
+                  setQuote(undefined);
+                }}
+              />
+              <TextField
+                label={t('amount')}
+                hint={
+                  millimes === undefined
+                    ? t('amountHint')
+                    : t('amountPreview', { amount: formatMillimesWithCurrency(millimes, locale) })
+                }
+                error={amountText !== '' && millimes === undefined ? t('amountInvalid') : undefined}
+                inputMode="decimal"
+                dir="ltr"
+                value={amountText}
+                onChange={(event) => {
+                  setAmountText(event.target.value);
+                  setQuote(undefined);
+                }}
+              />
+              <Button
+                type="submit"
+                variant="secondary"
+                loading={quoting}
+                disabled={millimes === undefined || millimes === 0}
+              >
+                {t('simulateSubmit')}
+              </Button>
+            </form>
+            <div className="flex flex-col gap-4">
+              {error !== undefined ? (
+                <Alert tone="danger">
+                  {conflict ? t('conflict') : tRoot(messageKey(errorMessageKey(error)))}
+                </Alert>
+              ) : null}
+              {created !== undefined ? (
+                <Alert tone="success" title={t('createdTitle')}>
+                  {t('createdMessage', { reference: created.reference })}
+                </Alert>
+              ) : null}
+              {quote === undefined && created === undefined && error === undefined ? (
+                <p className="text-body text-text-muted">{t('summaryEmpty')}</p>
+              ) : null}
+              {quote !== undefined ? (
+                <>
+                  <AmountBreakdown
+                    lines={breakdown}
+                    total={{ label: t('net'), millimes: quote.netMillimes }}
+                  />
+                  <Button
+                    icon={<Send aria-hidden="true" className="size-icon-sm rtl:-scale-x-100" />}
+                    onClick={() => {
+                      setConfirming(true);
+                    }}
+                  >
+                    {t('request')}
+                  </Button>
+                </>
+              ) : null}
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      ) : null}
 
       <Card>
         <CardTitle>{t('listTitle')}</CardTitle>

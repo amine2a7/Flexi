@@ -25,6 +25,7 @@ import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { ConfirmDialog } from '@/components/ui/modal';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { useToast } from '@/components/ui/toast';
+import { useCan } from '@/lib/session/session-context';
 
 export default function CompanyOrderPage() {
   const { orderId } = useParams<{ orderId: string }>();
@@ -72,6 +73,8 @@ function OrderView({
 }) {
   const t = useTranslations('orders');
   const tRoot = useTranslations();
+  const canDeclare = useCan('orders.declareTransfer');
+  const canCreateOrders = useCan('orders.create');
   const locale = useLocale();
   const toast = useToast();
   const [cancelling, setCancelling] = useState(false);
@@ -126,7 +129,7 @@ function OrderView({
         actions={
           <div className="flex flex-wrap items-center gap-3">
             <OrderStatusBadge status={order.status} />
-            {canCancel ? (
+            {canCancel && canCreateOrders ? (
               <Button
                 variant="secondary"
                 icon={<Ban aria-hidden="true" className="size-icon-sm" />}
@@ -161,7 +164,7 @@ function OrderView({
           <OrderSummaryCard order={order} showCompany={false} />
           <FundingAccountCard paymentReference={order.paymentReference} />
         </div>
-        {order.status === 'AWAITING_PAYMENT' ? (
+        {order.status === 'AWAITING_PAYMENT' && canDeclare ? (
           <DeclareTransferForm order={order} onDeclared={onChange} />
         ) : null}
         <DeclarationCard order={order} loadProof={loadProof} warnOnMismatch={false} />

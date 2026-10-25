@@ -22,6 +22,7 @@ import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { Modal } from '@/components/ui/modal';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { useToast } from '@/components/ui/toast';
+import { useCan } from '@/lib/session/session-context';
 
 type Settings = Schemas['PlatformSettings'];
 const DESTINATIONS: readonly Schemas['ExpiredCreditsDestination'][] = [
@@ -45,6 +46,7 @@ function integerIn(text: string, min: number, max: number): number | undefined {
 export default function SettingsPage() {
   const t = useTranslations('admin.settings');
   const tTypes = useTranslations('ui.creditTypes');
+  const canRequest = useCan('settings.request');
   const locale = useLocale();
   const settings = useApiQuery(() => getApi().GET('/v1/admin/settings'), []);
   const [editing, setEditing] = useState(false);
@@ -90,7 +92,7 @@ export default function SettingsPage() {
         title={t('title')}
         description={t('description')}
         actions={
-          settings.status === 'success' ? (
+          settings.status === 'success' && canRequest ? (
             <Button
               icon={<SlidersHorizontal aria-hidden="true" className="size-icon-sm" />}
               onClick={() => {

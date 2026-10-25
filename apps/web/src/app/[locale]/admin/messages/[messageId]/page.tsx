@@ -18,6 +18,7 @@ import { Alert, DescriptionList, PageHeader } from '@/components/ui/layout-block
 import { ConfirmDialog } from '@/components/ui/modal';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { useToast } from '@/components/ui/toast';
+import { useCan } from '@/lib/session/session-context';
 
 const NOTE_MAX = 500;
 
@@ -27,6 +28,7 @@ export default function ContactMessagePage() {
   const t = useTranslations('adminMessages');
   const tContact = useTranslations('contact');
   const tRoot = useTranslations();
+  const canHandle = useCan('messages.handle');
   const locale = useLocale();
   const toast = useToast();
   const message = useApiQuery(
@@ -100,7 +102,7 @@ export default function ContactMessagePage() {
                     <DescriptionList items={[{ label: t('note'), value: message.data.note }]} />
                   ) : null}
                 </div>
-              ) : (
+              ) : !canHandle ? null : (
                 <div className="mt-6 flex flex-wrap gap-3">
                   <a
                     href={`mailto:${message.data.email}?subject=${encodeURIComponent(message.data.reference)}`}

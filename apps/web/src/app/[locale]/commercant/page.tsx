@@ -16,10 +16,12 @@ import { Card, CardTitle, StatCard } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/layout-blocks';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { useCan } from '@/lib/session/session-context';
 
 export default function MerchantDashboardPage() {
   const t = useTranslations('merchant.dashboard');
   const tTypes = useTranslations('ui.creditTypes');
+  const canCollect = useCan('payments.collect');
   const locale = useLocale();
   const dashboard = useApiQuery(() => getApi().GET('/v1/merchant/dashboard'), []);
 
@@ -29,13 +31,15 @@ export default function MerchantDashboardPage() {
         title={t('title')}
         description={t('description')}
         actions={
-          <Link
-            href="/commercant/encaissement"
-            className={buttonClasses('primary', 'md', 'w-full sm:w-auto')}
-          >
-            <HandCoins aria-hidden="true" className="size-icon-md" />
-            {t('collect')}
-          </Link>
+          !canCollect ? undefined : (
+            <Link
+              href="/commercant/encaissement"
+              className={buttonClasses('primary', 'md', 'w-full sm:w-auto')}
+            >
+              <HandCoins aria-hidden="true" className="size-icon-md" />
+              {t('collect')}
+            </Link>
+          )
         }
       />
       {dashboard.status === 'loading' ? <LoadingBlock lines={6} /> : null}

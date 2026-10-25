@@ -20,16 +20,18 @@ import { TextField } from '@/components/ui/field';
 import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { Modal } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast';
+import { useCan } from '@/lib/session/session-context';
 
 type Profile = Schemas['CommissionProfile'];
 
 export default function CommissionsPage() {
   const t = useTranslations('admin.commissions');
+  const canRequest = useCan('commissions.request');
   const locale = useLocale();
   const profiles = useApiQuery(() => getApi().GET('/v1/admin/commission-profiles'), []);
   const [editing, setEditing] = useState<Profile | undefined>(undefined);
 
-  const columns: Column<Profile>[] = [
+  const allColumns: Column<Profile>[] = [
     { key: 'name', header: t('name'), cell: (row) => row.name, sortValue: (row) => row.name },
     {
       key: 'rate',
@@ -70,6 +72,7 @@ export default function CommissionsPage() {
       ),
     },
   ];
+  const columns = allColumns.filter((column) => canRequest || column.key !== 'action');
 
   return (
     <>

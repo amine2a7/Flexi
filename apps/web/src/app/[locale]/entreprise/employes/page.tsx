@@ -19,6 +19,7 @@ import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { Modal } from '@/components/ui/modal';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useToast } from '@/components/ui/toast';
+import { useCan, useCanOpen } from '@/lib/session/session-context';
 
 type Employee = Schemas['Employee'];
 type Draft = Schemas['EmployeeCreate'];
@@ -30,6 +31,9 @@ export default function EmployeesPage() {
   const t = useTranslations('company.employees');
   const tDashboard = useTranslations('company.dashboard');
   const tStatus = useTranslations('statusLabel');
+  const canManage = useCan('employees.manage');
+  const canAllocate = useCanOpen('/entreprise/attribution');
+  const canImport = useCanOpen('/entreprise/employes/import');
   const [filters, setFilters] = useState({ q: '', status: '' });
   const [adding, setAdding] = useState(false);
   const [refresh, setRefresh] = useState(0);
@@ -88,23 +92,29 @@ export default function EmployeesPage() {
         description={t('description')}
         actions={
           <>
-            <Link href="/entreprise/employes/import" className={buttonClasses('secondary')}>
-              <FileUp aria-hidden="true" className="size-icon-sm" />
-              {t('import')}
-            </Link>
-            <Button
-              variant="secondary"
-              icon={<UserPlus aria-hidden="true" className="size-icon-sm" />}
-              onClick={() => {
-                setAdding(true);
-              }}
-            >
-              {t('add')}
-            </Button>
-            <Link href="/entreprise/attribution" className={buttonClasses('primary')}>
-              <WalletCards aria-hidden="true" className="size-icon-sm" />
-              {tDashboard('allocate')}
-            </Link>
+            {canImport ? (
+              <Link href="/entreprise/employes/import" className={buttonClasses('secondary')}>
+                <FileUp aria-hidden="true" className="size-icon-sm" />
+                {t('import')}
+              </Link>
+            ) : null}
+            {canManage ? (
+              <Button
+                variant="secondary"
+                icon={<UserPlus aria-hidden="true" className="size-icon-sm" />}
+                onClick={() => {
+                  setAdding(true);
+                }}
+              >
+                {t('add')}
+              </Button>
+            ) : null}
+            {canAllocate ? (
+              <Link href="/entreprise/attribution" className={buttonClasses('primary')}>
+                <WalletCards aria-hidden="true" className="size-icon-sm" />
+                {tDashboard('allocate')}
+              </Link>
+            ) : null}
           </>
         }
       />

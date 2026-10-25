@@ -22,6 +22,7 @@ import { Alert, DescriptionList, PageHeader } from '@/components/ui/layout-block
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useToast } from '@/components/ui/toast';
+import { useCan } from '@/lib/session/session-context';
 
 /** Merchant record: details and the credit types the merchant accepts (set by the admin). */
 export default function MerchantRecordPage() {
@@ -51,6 +52,7 @@ function MerchantRecord({ merchant }: { merchant: Schemas['MerchantAccount'] }) 
   const tTypes = useTranslations('ui.creditTypes');
   const tCategory = useTranslations('category');
   const tRoot = useTranslations();
+  const canManage = useCan('merchants.manage');
   const locale = useLocale();
   const toast = useToast();
   const [types, setTypes] = useState<CreditType[]>([...merchant.acceptedCreditTypes]);
@@ -113,14 +115,16 @@ function MerchantRecord({ merchant }: { merchant: Schemas['MerchantAccount'] }) 
               value={types}
               onChange={setTypes}
             />
-            <Button
-              loading={saving}
-              icon={<Save aria-hidden="true" className="size-icon-sm" />}
-              className="self-start"
-              onClick={() => void save()}
-            >
-              {t('typesSave')}
-            </Button>
+            {canManage ? (
+              <Button
+                loading={saving}
+                icon={<Save aria-hidden="true" className="size-icon-sm" />}
+                className="self-start"
+                onClick={() => void save()}
+              >
+                {t('typesSave')}
+              </Button>
+            ) : null}
           </div>
         </Card>
       </div>

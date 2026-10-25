@@ -21,6 +21,7 @@ import { ConfirmDialog } from '@/components/ui/modal';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { Timeline } from '@/components/ui/timeline';
 import { useToast } from '@/components/ui/toast';
+import { useCan } from '@/lib/session/session-context';
 
 type KycFile = Schemas['KycFile'];
 
@@ -68,6 +69,7 @@ function KycView({
 }) {
   const t = useTranslations('admin.kyc');
   const tRoot = useTranslations();
+  const canDecide = useCan('kyc.decide');
   const locale = useLocale();
   const toast = useToast();
   const [dialog, setDialog] = useState<'approve' | 'reject' | undefined>(undefined);
@@ -120,7 +122,7 @@ function KycView({
         {error !== undefined ? (
           <Alert tone="danger">{tRoot(messageKey(errorMessageKey(error)))}</Alert>
         ) : null}
-        {file.status === 'PENDING' ? (
+        {file.status === 'PENDING' && canDecide ? (
           <Card>
             <div className="flex flex-col gap-4">
               <Alert tone="warning">{t('pendingInfo')}</Alert>
