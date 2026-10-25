@@ -233,6 +233,8 @@ model Merchant {
   iban                String? // encrypted (AES-256-GCM)
   /// Own commission profile of the shop; null = the rate of each credit type applies.
   commissionProfileId String?          @map("commission_profile_id") @db.Uuid
+  /// Administrator who created the merchant: never the approver of its payouts (QY-03 b).
+  createdBy           String?          @map("created_by") @db.Uuid
   createdAt           DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
 
   commissionProfile CommissionProfile? @relation(fields: [commissionProfileId], references: [id])

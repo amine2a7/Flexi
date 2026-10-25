@@ -37,6 +37,7 @@ const key = () => ({ 'Idempotency-Key': randomUUID() });
 async function createMerchant(
   types: ('RESTAURATION' | 'CADEAUX')[] = ['RESTAURATION'],
   ownRateBps?: number,
+  createdBy?: string,
 ) {
   return db.system(async (tx) => {
     const profile =
@@ -62,6 +63,7 @@ async function createMerchant(
           ),
         ),
         commissionProfileId: profile?.id ?? null,
+        createdBy: createdBy ?? null,
       },
     });
   });
@@ -429,6 +431,42 @@ describe('payout and settlement', () => {
     expect(rejected.body.status).toBe('REJECTED');
     expect(await db.system((tx) => ledger.balance(tx, wallet))).toBe(30_000n);
     expect((await shop.call('GET', '/v1/merchant/receivables')).body.totalMillimes).toBe(30_000);
+  });
+
+  it('the administrator who created the merchant never approves its payouts (QY-03 b)', async () => {
+    const { client: employee } = await fundedEmployee(20_000n);
+    const creator = await createUser(db, env, 'ADMIN', {}, 'Créateur K.', 'SUPER_ADMIN');
+    const merchant = await createMerchant(['RESTAURATION'], undefined, creator.id);
+    const shop = await merchantClient(merchant.id);
+    await employee.call('POST', '/v1/employee/payments', {
+      body: {
+        merchantCode: merchant.paymentCode,
+        creditType: 'RESTAURATION',
+        amountMillimes: 20_000,
+        pin: PIN,
+      },
+      headers: key(),
+    });
+    const quote = await shop.call('POST', '/v1/merchant/payout-quotes', {
+      body: { creditType: 'RESTAURATION', grossMillimes: 20_000 },
+    });
+    const requested = await shop.call('POST', '/v1/merchant/payouts', {
+      body: { quoteId: quote.body.quoteId },
+      headers: key(),
+    });
+    const path = `/v1/admin/payout-requests/${String(requested.body.id)}/approve`;
+    const own = await (await signedIn(base, creator)).call('POST', path, { headers: key() });
+    expect(own.status).toBe(403);
+    expect(
+      await db.system((tx) =>
+        tx.auditLog.count({ where: { action: 'fourEyes.refused', actorUserId: creator.id } }),
+      ),
+    ).toBe(1);
+    const other = await signedIn(
+      base,
+      await createUser(db, env, 'ADMIN', {}, 'Finance L.', 'FINANCE'),
+    );
+    expect((await other.call('POST', path, { headers: key() })).status).toBe(200);
   });
 
   it('keeps each merchant in its own payments (404 for another merchant)', async () => {

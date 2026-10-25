@@ -270,6 +270,7 @@ export class AdminService {
           paymentCode,
           commissionProfileId: profile?.id ?? null,
           status: 'PENDING_KYC',
+          createdBy: principal().userId,
         },
         include: { commissionProfile: true },
       });

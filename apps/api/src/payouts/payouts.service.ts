@@ -564,6 +564,12 @@ export class PayoutsService {
         : await tx.$queryRaw<{ user_id: string | null }[]>`
             SELECT user_id FROM ledger_transactions WHERE id = ${payout.transactionId}::uuid`;
     await this.fourEyes.ensureNotAuthor(requested?.user_id, `virement ${payout.reference}`);
+    // QY-03 b: nor does the administrator who created the merchant.
+    const merchant = await tx.merchant.findUniqueOrThrow({
+      where: { id: payout.merchantId },
+      select: { createdBy: true },
+    });
+    await this.fourEyes.ensureNotAuthor(merchant.createdBy, `virement ${payout.reference}`);
     const today = businessDay();
     // The batch is locked while the payout joins it: the settlement job (SKIP LOCKED) leaves it
     // for its next run instead of executing it without this payout (ledger-auditor N1).
