@@ -581,3 +581,91 @@ describe('daily reconciliation (ledger-auditor C8)', () => {
     expect(await jobs.reconcileBooks()).toBe(true);
   });
 });
+
+// TEST-FIRST N4 (ledger-auditor): every financial route replays the same answer for the same
+// Idempotency-Key and body, writes nothing more, and refuses the key reused with another body.
+describe('replays (N4)', () => {
+  const entries = () => db.system((tx) => tx.ledgerEntry.count());
+
+  it('a payment replayed with the same key is booked once', async () => {
+    const { client: employee } = await fundedEmployee(40_000n);
+    const merchant = await createMerchant();
+    const body = {
+      merchantCode: merchant.paymentCode,
+      creditType: 'RESTAURATION',
+      amountMillimes: 10_000,
+      pin: PIN,
+    };
+    const headers = key();
+    const first = await employee.call('POST', '/v1/employee/payments', { body, headers });
+    expect(first.status).toBeLessThan(300);
+    const before = await entries();
+    const again = await employee.call('POST', '/v1/employee/payments', { body, headers });
+    expect(again.status).toBe(first.status);
+    expect(again.body).toEqual(first.body);
+    expect(await entries()).toBe(before);
+    const wallet = accounts.merchantWallet(merchant.id, 'RESTAURATION');
+    expect(await db.system((tx) => ledger.balance(tx, wallet))).toBe(10_000n);
+    const reused = await employee.call('POST', '/v1/employee/payments', {
+      body: { ...body, amountMillimes: 9_000 },
+      headers,
+    });
+    expect(reused.status).toBe(422);
+    expect(reused.body.code).toBe('IDEMPOTENCY_KEY_REUSED');
+  });
+
+  it('a payout request replayed with the same key is booked once, even at the same time', async () => {
+    const { client: employee } = await fundedEmployee(40_000n);
+    const merchant = await createMerchant();
+    const shop = await merchantClient(merchant.id);
+    await employee.call('POST', '/v1/employee/payments', {
+      body: {
+        merchantCode: merchant.paymentCode,
+        creditType: 'RESTAURATION',
+        amountMillimes: 20_000,
+        pin: PIN,
+      },
+      headers: key(),
+    });
+    const quote = await shop.call('POST', '/v1/merchant/payout-quotes', {
+      body: { creditType: 'RESTAURATION', grossMillimes: 20_000 },
+    });
+    const headers = key();
+    const body = { quoteId: quote.body.quoteId };
+    const [first, second] = await Promise.all([
+      shop.call('POST', '/v1/merchant/payouts', { body, headers }),
+      shop.call('POST', '/v1/merchant/payouts', { body, headers }),
+    ]);
+    const done = [first, second].filter((result) => result.status < 300);
+    expect(done.length).toBeGreaterThanOrEqual(1);
+    for (const result of done) expect(result.body.id).toBe(done[0]?.body.id);
+    const wallet = accounts.merchantWallet(merchant.id, 'RESTAURATION');
+    expect(await db.system((tx) => ledger.balance(tx, wallet))).toBe(0n);
+    const payouts = await db.system((tx) =>
+      tx.payoutRequest.count({ where: { merchantId: merchant.id } }),
+    );
+    expect(payouts).toBe(1);
+    const reused = await shop.call('POST', '/v1/merchant/payouts', {
+      body: { quoteId: randomUUID() },
+      headers,
+    });
+    expect(reused.body.code).toBe('IDEMPOTENCY_KEY_REUSED');
+  });
+
+  it('a financial route without Idempotency-Key is refused before anything', async () => {
+    const { client: employee } = await fundedEmployee(10_000n);
+    const merchant = await createMerchant();
+    const before = await entries();
+    const refused = await employee.call('POST', '/v1/employee/payments', {
+      body: {
+        merchantCode: merchant.paymentCode,
+        creditType: 'RESTAURATION',
+        amountMillimes: 1_000,
+        pin: PIN,
+      },
+    });
+    expect(refused.status).toBe(400);
+    expect(refused.body.code).toBe('IDEMPOTENCY_KEY_REQUIRED');
+    expect(await entries()).toBe(before);
+  });
+});
