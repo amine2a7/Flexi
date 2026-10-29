@@ -13,6 +13,7 @@ import type { CreditType, Payment, PaymentEvent } from '../generated/prisma/clie
 import { InsufficientFundsError, LedgerService, accounts } from '../ledger/ledger.service.js';
 import { CREDIT_TYPES, SettingsService } from '../platform/settings.service.js';
 import { PinService } from './pin.service.js';
+import { canSpend } from '../common/account-lifecycle.js';
 
 /** Validity of a beneficiary payment code and of a merchant request (DP n° 8: 60 s). */
 export const CODE_VALIDITY_SECONDS = 60;
@@ -607,7 +608,7 @@ export class PaymentsService {
       const employee = await system.employee.findUniqueOrThrow({ where: { id: found.employeeId } });
       return { employee };
     });
-    if (code === null || code.employee.status === 'SUSPENDED')
+    if (code === null || !canSpend(code.employee, new Date()))
       throw new ApiProblem(422, 'PAYMENT_DECLINED');
     const now = new Date();
     const id = uuidv7();

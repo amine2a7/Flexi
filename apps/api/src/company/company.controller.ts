@@ -22,6 +22,8 @@ import { creditType, email, parse, phoneNumber, positiveMillimes } from '../comm
 import { OrdersService } from '../orders/orders.service.js';
 import { SettingsService } from '../platform/settings.service.js';
 import { CompanyService } from './company.service.js';
+import { UsersService } from '../users/users.service.js';
+import { accessReason } from '../users/users.controller.js';
 
 const orderStatus = z.enum([
   'AWAITING_CONFIRMATION',
@@ -37,7 +39,7 @@ const lines = z
   .max(4);
 const ordersQuery = z.object({ status: orderStatus.optional(), creditType: creditType.optional() });
 const employeesQuery = z.object({
-  status: z.enum(['INVITED', 'ACTIVE', 'SUSPENDED']).optional(),
+  status: z.enum(['INVITED', 'ACTIVE', 'SUSPENDED', 'DEACTIVATED']).optional(),
   q: z.string().max(100).optional(),
 });
 const employeeBody = z.strictObject({
@@ -62,6 +64,7 @@ export class CompanyController {
     @Inject(OrdersService) private readonly orders: OrdersService,
     @Inject(SettingsService) private readonly settings: SettingsService,
     @Inject(IdempotencyService) private readonly idempotency: IdempotencyService,
+    @Inject(UsersService) private readonly users: UsersService,
   ) {}
 
   @Can('balances.read')
@@ -84,6 +87,58 @@ export class CompanyController {
   @HttpCode(201)
   createEmployee(@Body() body: unknown) {
     return this.company.createEmployee(parse(employeeBody, body));
+  }
+
+  @Can('employees.manage')
+  @Post('employees/:employeeId/suspend')
+  @HttpCode(200)
+  async suspendEmployee(@Param('employeeId') employeeId: string, @Body() body: unknown) {
+    return this.employeeStatus(employeeId, 'SUSPEND', body);
+  }
+
+  @Can('employees.manage')
+  @Post('employees/:employeeId/reactivate')
+  @HttpCode(200)
+  async reactivateEmployee(@Param('employeeId') employeeId: string, @Body() body: unknown) {
+    return this.employeeStatus(employeeId, 'REACTIVATE', body);
+  }
+
+  @Can('employees.manage')
+  @Post('employees/:employeeId/deactivate')
+  @HttpCode(200)
+  async deactivateEmployee(@Param('employeeId') employeeId: string, @Body() body: unknown) {
+    return this.employeeStatus(employeeId, 'DEACTIVATE', body);
+  }
+
+  /** Bulk suspend or reactivate of one page (never a bulk deactivation, spec §12.1). */
+  @Can('employees.manage')
+  @Post('employees/status-changes')
+  @HttpCode(200)
+  employeesStatus(@Body() body: unknown) {
+    const input = parse(
+      z.strictObject({
+        action: z.enum(['SUSPEND', 'REACTIVATE']),
+        employeeIds: z.array(z.uuid()).min(1).max(100),
+        reason: accessReason,
+      }),
+      body,
+    );
+    return this.users.changeEmployeesStatus(
+      [...new Set(input.employeeIds)],
+      input.action,
+      input.reason,
+    );
+  }
+
+  private async employeeStatus(
+    employeeId: string,
+    action: 'SUSPEND' | 'REACTIVATE' | 'DEACTIVATE',
+    body: unknown,
+  ) {
+    const id = pathId('employeeId', employeeId);
+    const { reason } = parse(z.strictObject({ reason: accessReason }), body);
+    await this.users.changeEmployeeStatus(id, action, reason);
+    return this.company.employee(id);
   }
 
   @Can('employees.manage')

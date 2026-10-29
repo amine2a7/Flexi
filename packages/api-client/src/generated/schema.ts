@@ -2998,6 +2998,8 @@ export interface components {
      */
     EmployeePage: {
       data: components['schemas']['Employee'][];
+      /** @description Délai de grâce appliqué à une désactivation (jours, paramétrage de l'administrateur). */
+      graceDays?: number;
       page: components['schemas']['PageInfo'];
     };
     /** EmployeeCreate */
@@ -3740,6 +3742,8 @@ export interface components {
       mfaEnabled: boolean;
       /** @description PIN de paiement bloqué (employé seulement, sinon false). */
       pinLocked: boolean;
+      /** @description Délai de grâce qu'appliquerait une désactivation (employé seulement). */
+      graceDays?: number;
       /** @description Solde de l'employé ; absent sans `userBalances.read` (Support) ou hors employé. */
       balanceMillimes?: components['schemas']['AmountMillimes'];
       history: components['schemas']['UserAuditEntry'][];
@@ -5809,15 +5813,7 @@ export interface operations {
   suspendEmployee: {
     parameters: {
       query?: never;
-      header: {
-        /**
-         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
-         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
-         *     Voir la section 5 de la description.
-         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
-         */
-        'Idempotency-Key': components['parameters']['IdempotencyKey'];
-      };
+      header?: never;
       path: {
         employeeId: components['schemas']['Uuid'];
       };
@@ -5852,15 +5848,7 @@ export interface operations {
   reactivateEmployee: {
     parameters: {
       query?: never;
-      header: {
-        /**
-         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
-         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
-         *     Voir la section 5 de la description.
-         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
-         */
-        'Idempotency-Key': components['parameters']['IdempotencyKey'];
-      };
+      header?: never;
       path: {
         employeeId: components['schemas']['Uuid'];
       };
@@ -5895,15 +5883,7 @@ export interface operations {
   deactivateEmployee: {
     parameters: {
       query?: never;
-      header: {
-        /**
-         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
-         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
-         *     Voir la section 5 de la description.
-         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
-         */
-        'Idempotency-Key': components['parameters']['IdempotencyKey'];
-      };
+      header?: never;
       path: {
         employeeId: components['schemas']['Uuid'];
       };
@@ -5938,15 +5918,7 @@ export interface operations {
   changeEmployeesStatus: {
     parameters: {
       query?: never;
-      header: {
-        /**
-         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
-         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
-         *     Voir la section 5 de la description.
-         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
-         */
-        'Idempotency-Key': components['parameters']['IdempotencyKey'];
-      };
+      header?: never;
       path?: never;
       cookie?: never;
     };
@@ -7294,15 +7266,7 @@ export interface operations {
   createAdministrator: {
     parameters: {
       query?: never;
-      header: {
-        /**
-         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
-         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
-         *     Voir la section 5 de la description.
-         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
-         */
-        'Idempotency-Key': components['parameters']['IdempotencyKey'];
-      };
+      header?: never;
       path?: never;
       cookie?: never;
     };
@@ -7361,15 +7325,7 @@ export interface operations {
   suspendUser: {
     parameters: {
       query?: never;
-      header: {
-        /**
-         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
-         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
-         *     Voir la section 5 de la description.
-         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
-         */
-        'Idempotency-Key': components['parameters']['IdempotencyKey'];
-      };
+      header?: never;
       path: {
         userId: components['schemas']['Uuid'];
       };
@@ -7405,15 +7361,7 @@ export interface operations {
   reactivateUser: {
     parameters: {
       query?: never;
-      header: {
-        /**
-         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
-         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
-         *     Voir la section 5 de la description.
-         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
-         */
-        'Idempotency-Key': components['parameters']['IdempotencyKey'];
-      };
+      header?: never;
       path: {
         userId: components['schemas']['Uuid'];
       };
@@ -7448,15 +7396,7 @@ export interface operations {
   deactivateUser: {
     parameters: {
       query?: never;
-      header: {
-        /**
-         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
-         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
-         *     Voir la section 5 de la description.
-         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
-         */
-        'Idempotency-Key': components['parameters']['IdempotencyKey'];
-      };
+      header?: never;
       path: {
         userId: components['schemas']['Uuid'];
       };
@@ -7492,15 +7432,7 @@ export interface operations {
   changeUserRole: {
     parameters: {
       query?: never;
-      header: {
-        /**
-         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
-         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
-         *     Voir la section 5 de la description.
-         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
-         */
-        'Idempotency-Key': components['parameters']['IdempotencyKey'];
-      };
+      header?: never;
       path: {
         userId: components['schemas']['Uuid'];
       };
@@ -7536,15 +7468,7 @@ export interface operations {
   resendInvitation: {
     parameters: {
       query?: never;
-      header: {
-        /**
-         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
-         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
-         *     Voir la section 5 de la description.
-         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
-         */
-        'Idempotency-Key': components['parameters']['IdempotencyKey'];
-      };
+      header?: never;
       path: {
         userId: components['schemas']['Uuid'];
       };
@@ -7574,15 +7498,7 @@ export interface operations {
   unlockPin: {
     parameters: {
       query?: never;
-      header: {
-        /**
-         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
-         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
-         *     Voir la section 5 de la description.
-         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
-         */
-        'Idempotency-Key': components['parameters']['IdempotencyKey'];
-      };
+      header?: never;
       path: {
         userId: components['schemas']['Uuid'];
       };

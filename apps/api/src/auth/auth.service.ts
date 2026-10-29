@@ -24,6 +24,7 @@ import type { Role, SessionStep, User } from '../generated/prisma/client.js';
 import { brokenRules, dummyHash, hashSecret, verifySecret } from './password.js';
 import { type IssuedSession, SessionService } from './session.service.js';
 import { matchStep, newSecretBase32, otpauthUri } from './totp.js';
+import { canSignIn } from '../common/account-lifecycle.js';
 
 /** MFA is mandatory for these roles (spec 01 §3); optional for beneficiaries (PIN + device). */
 const MFA_REQUIRED: ReadonlySet<Role> = new Set(['ADMIN', 'COMPANY', 'MERCHANT']);
@@ -155,7 +156,17 @@ export class AuthService {
       user.mustChangePassword &&
       user.tempPasswordExpiresAt !== null &&
       user.tempPasswordExpiresAt.getTime() < Date.now();
-    if (user.status !== 'ACTIVE' || tempExpired) throw problems.invalidCredentials();
+    // Active, or an employee spending its balance during its grace period (decision e3).
+    const employee =
+      user.status === 'DEACTIVATED' && user.employeeId !== null
+        ? await this.db.system((tx) =>
+            tx.employee.findUnique({
+              where: { id: user.employeeId ?? '' },
+              select: { status: true, graceUntil: true },
+            }),
+          )
+        : null;
+    if (!canSignIn(user, employee, new Date()) || tempExpired) throw problems.invalidCredentials();
     if (user.role === 'FAMILY_MEMBER') {
       await this.db.system((tx) =>
         this.audit.record(tx, 'auth.webRefused', user.displayName, 'Système'),

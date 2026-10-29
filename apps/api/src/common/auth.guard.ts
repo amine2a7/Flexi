@@ -9,6 +9,7 @@ import { allows, type Permission, type SELF } from './permissions.js';
 import { ACCESS_COOKIE, REFRESH_COOKIE, cookiesOf } from './http.js';
 import { ApiProblem, problems } from './problem.js';
 import { currentContext } from './request-context.js';
+import { canSignIn } from './account-lifecycle.js';
 
 const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -59,10 +60,12 @@ export class AuthGuard implements CanActivate {
     const user = await this.db.system((tx) =>
       tx.user.findUnique({
         where: { id: session.userId },
-        include: { employee: { select: { companyId: true } } },
+        include: { employee: { select: { companyId: true, status: true, graceUntil: true } } },
       }),
     );
-    if (user?.status !== 'ACTIVE') throw problems.unauthenticated();
+    // Active, or an employee spending its balance during its grace period (decision e3).
+    if (user === null || !canSignIn(user, user.employee, new Date()))
+      throw problems.unauthenticated();
     const roles = this.reflector.getAllAndOverride<Role[] | undefined>(ROLES, targets);
     if (roles !== undefined && !roles.includes(user.role)) throw problems.forbidden();
     // Sub-role of the session, checked here for every route (securite B5-S02). A route that

@@ -33,7 +33,7 @@ const BACK_OFFICE: Sub[] = ['SUPER_ADMIN', 'COMPLIANCE', 'FINANCE'];
 const MONEY: Sub[] = ['SUPER_ADMIN', 'FINANCE'];
 const KYC: Sub[] = ['SUPER_ADMIN', 'COMPLIANCE'];
 const SUPER: Sub[] = ['SUPER_ADMIN'];
-const MESSAGES: Sub[] = ['SUPER_ADMIN', 'SUPPORT'];
+const MESSAGES: Sub[] = ['SUPER_ADMIN', 'SUPPORT']; // also invitations and PIN (users.support)
 
 /** Who may call each admin route (decision C). */
 const EXPECTED: Record<string, Sub[]> = {
@@ -74,6 +74,15 @@ const EXPECTED: Record<string, Sub[]> = {
   'AdminPayoutsController.reject': MONEY,
   'AdminPayoutsController.batches': BACK_OFFICE,
   'AdminPayoutsController.batch': BACK_OFFICE,
+  'AdminUsersController.list': ALL,
+  'AdminUsersController.create': SUPER,
+  'AdminUsersController.detail': ALL,
+  'AdminUsersController.suspend': SUPER,
+  'AdminUsersController.reactivate': SUPER,
+  'AdminUsersController.deactivate': SUPER,
+  'AdminUsersController.role': SUPER,
+  'AdminUsersController.resendInvitation': MESSAGES,
+  'AdminUsersController.unlockPin': MESSAGES,
 };
 
 const adminRoutes = (await routes()).filter(

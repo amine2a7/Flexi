@@ -39,6 +39,7 @@ enum SubRole {
 enum UserStatus {
   ACTIVE
   SUSPENDED
+  DEACTIVATED
 }
 
 enum SessionStep {
@@ -76,6 +77,7 @@ enum EmployeeStatus {
   INVITED
   ACTIVE
   SUSPENDED
+  DEACTIVATED
 }
 
 enum OrderStatus {
@@ -277,6 +279,8 @@ model Employee {
   /// Number of PIN locks in a row (15, 30, 60 min, then a full sign-in is required).
   pinLockLevel      Int            @default(0) @map("pin_lock_level")
   pinRequiresReauth Boolean        @default(false) @map("pin_requires_reauth")
+  /// End of the grace period of a deactivated employee (only spending its balance until then).
+  graceUntil        DateTime?      @map("grace_until") @db.Timestamptz(3)
   createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
 
   company      Company       @relation(fields: [companyId], references: [id])
@@ -314,6 +318,8 @@ model User {
   failedLogins          Int        @default(0) @map("failed_logins")
   lockedUntil           DateTime?  @map("locked_until") @db.Timestamptz(3)
   onboardingTourDone    Boolean    @default(false) @map("onboarding_tour_done")
+  /// Moment of the deactivation (irreversible).
+  deactivatedAt         DateTime?  @map("deactivated_at") @db.Timestamptz(3)
   companyId             String?    @map("company_id") @db.Uuid
   merchantId            String?    @map("merchant_id") @db.Uuid
   employeeId            String?    @unique @map("employee_id") @db.Uuid
@@ -423,6 +429,8 @@ model PlatformSettings {
   orderFeeRateBps           Int                       @map("order_fee_rate_bps")
   /// Where the remainder of expired lots goes (provisional, decision of 2026-10-14).
   expiredCreditsDestination ExpiredCreditsDestination @default(PLATFORM_REVENUE) @map("expired_credits_destination")
+  /// Grace period of a deactivated employee, in days (decision e3 of 2026-10-22).
+  accountGraceDays          Int                       @default(30) @map("account_grace_days")
   updatedAt                 DateTime                  @default(now()) @map("updated_at") @db.Timestamptz(3)
 
   @@map("platform_settings")
@@ -466,8 +474,13 @@ model AuditLog {
   actorName   String   @map("actor_name") @db.VarChar(120)
   action      String   @db.VarChar(64)
   target      String   @db.VarChar(200)
+  /// User the entry is about (history of an account).
+  subjectId   String?  @map("subject_id") @db.Uuid
+  /// Reason typed by the actor (status and role changes).
+  reason      String?  @db.VarChar(500)
 
   @@index([occurredAt])
+  @@index([subjectId, occurredAt], map: "audit_log_subject_id_idx")
   @@map("audit_log")
 }
 

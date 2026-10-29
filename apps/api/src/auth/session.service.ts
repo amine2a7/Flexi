@@ -7,6 +7,7 @@ import { DbService, type Tx } from '../common/db.service.js';
 import { ACCESS_COOKIE, REFRESH_COOKIE } from '../common/http.js';
 import { ApiProblem, problems } from '../common/problem.js';
 import type { Role, Session, SessionStep } from '../generated/prisma/client.js';
+import { canSignIn } from '../common/account-lifecycle.js';
 
 /** Session durations (DP n° 18): 15 min idle; 4 h absolute (admin), 8 h otherwise. */
 export const IDLE_TIMEOUT_SECONDS = 15 * 60;
@@ -200,7 +201,15 @@ export class SessionService {
     await tx.$queryRaw`SELECT id FROM sessions WHERE refresh_token_hash = ${hash} FOR UPDATE`;
     const session = await tx.session.findUnique({
       where: { refreshTokenHash: hash },
-      include: { user: { select: { role: true, status: true } } },
+      include: {
+        user: {
+          select: {
+            role: true,
+            status: true,
+            employee: { select: { status: true, graceUntil: true } },
+          },
+        },
+      },
     });
     const now = Date.now();
     if (session === null) throw problems.unauthenticated();
@@ -220,7 +229,7 @@ export class SessionService {
       session.absoluteExpiresAt.getTime() <= now ||
       (session.restrictedUntil !== null && session.restrictedUntil.getTime() <= now) ||
       now - session.lastSeenAt.getTime() > IDLE_TIMEOUT_SECONDS * 1000 ||
-      session.user.status !== 'ACTIVE';
+      !canSignIn(session.user, session.user.employee, new Date(now));
     if (expired) throw problems.unauthenticated();
     return { session, role: session.user.role };
   }

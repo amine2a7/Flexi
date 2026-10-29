@@ -2261,7 +2261,6 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/Uuid'
-        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -2307,7 +2306,6 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/Uuid'
-        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -2353,7 +2351,6 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/Uuid'
-        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -2394,8 +2391,6 @@ paths:
       description: >-
         Désactivation jamais en masse (entreprise-employes.md §12.1). Chaque employé dont la
         transition est impossible est ignoré (`SKIPPED`). Permission `employees.manage`.
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -3952,8 +3947,6 @@ paths:
         Permission `users.adminRoles` (super-administrateur seul). Effet immédiat, sans double
         validation (décision A). Une adresse déjà inscrite renvoie la même réponse sans créer de
         compte (pas d'énumération, S04) : le titulaire est prévenu par e-mail.
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -4030,7 +4023,6 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/Uuid'
-        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -4079,7 +4071,6 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/Uuid'
-        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -4126,7 +4117,6 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/Uuid'
-        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -4175,7 +4165,6 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/Uuid'
-        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -4224,7 +4213,6 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/Uuid'
-        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: Succès.
@@ -4263,7 +4251,6 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/Uuid'
-        - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: Succès.
@@ -6576,6 +6563,11 @@ components:
           maxItems: 100
           items:
             $ref: '#/components/schemas/Employee'
+        graceDays:
+          description: Délai de grâce appliqué à une désactivation (jours, paramétrage de l'administrateur).
+          type: integer
+          minimum: 1
+          maximum: 365
         page:
           $ref: '#/components/schemas/PageInfo'
     EmployeeCreate:
@@ -8070,6 +8062,11 @@ components:
             pinLocked:
               description: PIN de paiement bloqué (employé seulement, sinon false).
               type: boolean
+            graceDays:
+              description: Délai de grâce qu'appliquerait une désactivation (employé seulement).
+              type: integer
+              minimum: 1
+              maximum: 365
             balanceMillimes:
               description: Solde de l'employé ; absent sans `userBalances.read` (Support) ou hors employé.
               $ref: '#/components/schemas/AmountMillimes'

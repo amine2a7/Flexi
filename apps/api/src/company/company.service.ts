@@ -14,6 +14,7 @@ import type { CreditType, Employee, EmployeeStatus } from '../generated/prisma/c
 import { InsufficientFundsError, LedgerService, accounts } from '../ledger/ledger.service.js';
 import { OPEN_ORDER_STATUSES, orderSummary } from '../orders/orders.service.js';
 import { CREDIT_TYPES, SettingsService } from '../platform/settings.service.js';
+import { canReceiveCredits } from '../common/account-lifecycle.js';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE = /^\+216[0-9]{8}$/;
@@ -121,6 +122,7 @@ export class CompanyService {
       phone: this.pii.open(employee.phone),
       status: employee.status,
       monthAllocatedMillimes: toMillimes(allocated),
+      ...(employee.graceUntil === null ? {} : { graceUntil: employee.graceUntil.toISOString() }),
     };
   }
 
@@ -220,12 +222,27 @@ export class CompanyService {
       const count = request.withCount
         ? await tx.employee.count({ where, take: 10_001 })
         : undefined;
-      return this.paginator.page(
-        request,
-        rows.map((row) => this.employeeBody(row, allocated.get(row.id) ?? 0n)),
-        filters,
-        count,
-      );
+      const settings = await tx.platformSettings.findUniqueOrThrow({ where: { id: 1 } });
+      return {
+        ...this.paginator.page(
+          request,
+          rows.map((row) => this.employeeBody(row, allocated.get(row.id) ?? 0n)),
+          filters,
+          count,
+        ),
+        // Grace period a deactivation would apply (shown before confirming it).
+        graceDays: settings.accountGraceDays,
+      };
+    });
+  }
+
+  /** One employee of the company (RLS: another company's employee is a 404). */
+  async employee(id: string) {
+    return this.db.user(async (tx) => {
+      const employee = await tx.employee.findUnique({ where: { id } });
+      if (employee === null) throw problems.notFound();
+      const allocated = await this.monthAllocated(tx, [id]);
+      return this.employeeBody(employee, allocated.get(id) ?? 0n);
     });
   }
 
@@ -500,12 +517,13 @@ export class CompanyService {
       where: { id: { in: [...new Set(lines.map((line) => line.employeeId))] } },
     });
     const known = new Map(employees.map((employee) => [employee.id, employee]));
-    // Unknown (or other company: RLS hides it) or suspended employee: the whole request is refused.
-    const status = (id: string) => known.get(id)?.status;
+    // Unknown (or other company: RLS hides it), suspended or deactivated employee: the whole
+    // request is refused (decision e3).
     if (
-      lines.some(
-        (line) => status(line.employeeId) === undefined || status(line.employeeId) === 'SUSPENDED',
-      )
+      lines.some((line) => {
+        const employee = known.get(line.employeeId);
+        return employee === undefined || !canReceiveCredits(employee);
+      })
     ) {
       throw problems.conflict();
     }
