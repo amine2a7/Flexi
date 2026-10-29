@@ -34,8 +34,11 @@
       "acorn@^8": "8.18.0",
       "ansi-regex@^6": "6.3.0",
       "bare-fs@^4": "4.8.2",
+      "body-parser@^2": "2.4.0",
       "chai@^6": "6.2.2",
+      "fast-uri@^3": "3.1.9",
       "ignore@^7": "7.0.10",
+      "multer@^2": "2.5.0",
       "nanoid@^3": "3.3.19",
       "pg-cloudflare@^1": "1.4.0",
       "pg-connection-string@^2": "2.14.0",
@@ -47,6 +50,7 @@
       "std-env@^4": "4.2.0",
       "tar-stream@^3": "3.2.1",
       "tinyrainbow@^3": "3.1.1",
+      "undici@^7": "7.30.1",
       "uuid@^10": "11.1.1",
       "vite@^8": "8.3.1"
     }
