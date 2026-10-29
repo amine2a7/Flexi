@@ -15,8 +15,9 @@ let okRepo; // core.hooksPath = .githooks, pre-commit commité
 let noHookRepo; // core.hooksPath absent
 let tamperedRepo; // pre-commit modifié après le commit
 let introRepo; // pre-commit pas encore commité (commit qui l'introduit)
+let noPushRepo; // pre-push absent
 
-function makeRepo(name, { setHooksPath, tamper, intro }) {
+function makeRepo(name, { setHooksPath, tamper, intro, noPush }) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `guard-${name}-`));
   const git = (...args) => execFileSync('git', ['-C', dir, ...args], { stdio: 'ignore' });
   git('init', '-q');
@@ -24,8 +25,9 @@ function makeRepo(name, { setHooksPath, tamper, intro }) {
   git('config', 'user.name', 't');
   fs.mkdirSync(path.join(dir, '.githooks'));
   fs.copyFileSync(path.join(projectRoot, '.githooks', 'pre-commit'), path.join(dir, '.githooks', 'pre-commit'));
+  if (!noPush) fs.copyFileSync(path.join(projectRoot, '.githooks', 'pre-push'), path.join(dir, '.githooks', 'pre-push'));
   git('commit', '-q', '--allow-empty', '-m', 'init');
-  git('add', '.githooks/pre-commit');
+  git('add', '.githooks');
   if (!intro) git('-c', 'core.hooksPath=/dev/null', 'commit', '-q', '-m', 'hook');
   if (setHooksPath) git('config', '--local', 'core.hooksPath', '.githooks');
   if (tamper) fs.writeFileSync(path.join(dir, '.githooks', 'pre-commit'), '#!/bin/sh\nexit 0\n');
@@ -37,6 +39,7 @@ before(() => {
   noHookRepo = makeRepo('nohook', { setHooksPath: false });
   tamperedRepo = makeRepo('tampered', { setHooksPath: true, tamper: true });
   introRepo = makeRepo('intro', { setHooksPath: true, intro: true });
+  noPushRepo = makeRepo('nopush', { setHooksPath: true, noPush: true });
 });
 
 function run(command, repo = okRepo) {
@@ -68,6 +71,14 @@ const PASS = [
   'grep hooksPath docs/handoff/README.md',
   'cat .githooks/pre-commit',
   'git add .githooks/pre-commit',
+  // S1-10 : texte libre et heredoc à délimiteur cité = données
+  "cat <<'EOF' > notes.md\nLe hook .githooks/pre-commit et core.hooksPath\ngit commit --no-verify\nEOF",
+  'echo "voir .githooks/pre-commit et hooksPath" > x.md',
+  "cat <<'EOF'\nDELETE FROM ledger_entries\nEOF",
+  'git config --get alias.ci',
+  'git config --list',
+  'git push origin feat/web',
+  'git -C . log --oneline',
   // Commandes ordinaires
   'pnpm lint',
   'SELECT * FROM ledger_entries',
@@ -104,6 +115,25 @@ const BLOCK = [
   // Alias et plomberie
   'git -c alias.ci="commit -n" ci -m x',
   'git commit-tree HEAD^{tree} -m x',
+  // S1-09 : sous-commande dynamique, alias persistants, variables GIT_*, push sans hook
+  'git $(printf commit) --no-verify -m x',
+  'S=commit; git $S --no-verify -m x',
+  'git `printf commit` -n -m x',
+  '$G commit -n -m x',
+  'echo commit | xargs git',
+  'eval "git commit -n -m x"',
+  'git config alias.ci "commit --no-verify"',
+  'git config --global alias.ci commit',
+  'K=core.hooks; export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=${K}Path GIT_CONFIG_VALUE_0=/x; git commit -m x',
+  'GIT_INDEX_FILE=/tmp/i git commit -m x',
+  'git push --no-verify origin x',
+  'git push --no-v origin x',
+  'echo "[core]" >> .git/config',
+  // S1-10 : un heredoc lu par un interpréteur ou psql reste analysé
+  "bash <<'EOF'\ngit commit --no-verify -m x\nEOF",
+  "cat <<'EOF' | sh\ngit commit -n -m x\nEOF",
+  "psql <<'EOF'\nDELETE FROM ledger_entries;\nEOF",
+  'cat <<EOF\n$(git commit -n -m x)\nEOF',
   // Ledger (aide CF-09)
   'psql -c "DELETE FROM ledger_entries"',
   'UPDATE transactions SET amount = 0',
@@ -116,6 +146,11 @@ for (const c of BLOCK) test(`bloque : ${c}`, () => assert.strictEqual(run(c), 2)
 test('commit refusé si core.hooksPath ne vaut pas .githooks (échec fermé)', () => {
   assert.strictEqual(run('git commit -m x', noHookRepo), 2);
   assert.strictEqual(run('pnpm lint', noHookRepo), 0);
+});
+
+test('commit et push refusés si .githooks/pre-push est absent', () => {
+  assert.strictEqual(run('git commit -m x', noPushRepo), 2);
+  assert.strictEqual(run('git push origin x', noPushRepo), 2);
 });
 
 test('commit refusé si .githooks/ diffère du dernier commit', () => {

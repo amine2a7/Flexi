@@ -1,0 +1,15 @@
+#!/bin/sh
+# Hook git natif (S1-09) : gitleaks scanne chaque commit poussé, y compris ceux créés sans pre-commit
+# (stash, cherry-pick, am, rebase, merge). Activé par : git config --local core.hooksPath .githooks
+command -v gitleaks >/dev/null 2>&1 || { echo "Bloqué : gitleaks est absent, push refusé sans scan de secrets (échec fermé). Voir docs/handoff/README.md §14." >&2; exit 1; }
+zero=$(git hash-object --stdin </dev/null | tr '0-9a-f' '0')
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue # suppression d'une branche distante : rien à scanner
+  if [ "$remote_sha" = "$zero" ]; then
+    range="$local_sha --not --remotes" # nouvelle branche : commits absents de toutes les branches distantes
+  else
+    range="$remote_sha..$local_sha"
+  fi
+  gitleaks git --redact --no-banner --exit-code 1 --log-opts="$range" . || exit 1
+done
+exit 0
