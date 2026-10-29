@@ -46,12 +46,13 @@ export default function EmployeesPage() {
   const [adding, setAdding] = useState(false);
   const [refresh, setRefresh] = useState(0);
   const [graceDays, setGraceDays] = useState<number | undefined>(undefined);
+  // Result of the last status change, kept on the page (spec §6: persistent, never a toast).
+  const [notice, setNotice] = useState<string | undefined>(undefined);
   const [target, setTarget] = useState<{ employee: Employee; action: Lifecycle } | undefined>(
     undefined,
   );
   const tLife = useTranslations('company.employees.lifecycle');
   const tReason = useTranslations('common.reason');
-  const toast = useToast();
   const list = usePagedList(
     (cursor, withCount) =>
       getApi()
@@ -121,6 +122,7 @@ export default function EmployeesPage() {
                       key={action}
                       size="sm"
                       variant={action === 'deactivate' ? 'danger' : 'secondary'}
+                      aria-label={`${tLife(action)} ${row.firstName} ${row.lastName}`}
                       onClick={() => {
                         setTarget({ employee: row, action });
                       }}
@@ -145,7 +147,7 @@ export default function EmployeesPage() {
           ? await getApi().POST('/v1/company/employees/{employeeId}/reactivate', options)
           : await getApi().POST('/v1/company/employees/{employeeId}/deactivate', options);
     if (result.error !== undefined) return result.error;
-    toast.notify('success', tLife(`done.${action}`));
+    setNotice(tLife(`done.${action}`));
     setRefresh((value) => value + 1);
     return undefined;
   }
@@ -183,6 +185,11 @@ export default function EmployeesPage() {
           </>
         }
       />
+      {notice !== undefined ? (
+        <div role="status" className="mb-6">
+          <Alert tone="success">{notice}</Alert>
+        </div>
+      ) : null}
       <Card>
         <FilterBar
           searchLabel={t('search')}
@@ -231,7 +238,7 @@ export default function EmployeesPage() {
             target.action === 'suspend'
               ? [tReason('suspend.effect'), tReason('suspendEmployee.effect')]
               : target.action === 'reactivate'
-                ? [tReason('reactivate.effect')]
+                ? [tReason('reactivate.effect'), tReason('reactivateEmployee.effect')]
                 : []
           }
           {...(target.action === 'deactivate'
@@ -240,6 +247,7 @@ export default function EmployeesPage() {
                   ...(graceDays === undefined
                     ? []
                     : [tReason('deactivateEmployee.grace', { days: graceDays })]),
+                  tReason('deactivateEmployee.family'),
                   tReason('deactivateEmployee.noCredit'),
                   tReason('deactivate.irreversible'),
                 ],

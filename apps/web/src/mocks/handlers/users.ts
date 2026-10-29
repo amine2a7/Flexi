@@ -210,6 +210,7 @@ export const userHandlers = [
     if (isResponse(account)) return account;
     const user = users().find((item) => item.id === params.userId);
     if (user === undefined) return problem(404, 'NOT_FOUND');
+    if (user.id === account.id || user.role === 'ADMIN') return problem(403, 'FORBIDDEN');
     record(user.id, account.displayName, 'users.resendInvitation', null);
     return HttpResponse.json<S['AdminUserDetail']>(
       detail(user, account.permissions.includes('userBalances.read')),

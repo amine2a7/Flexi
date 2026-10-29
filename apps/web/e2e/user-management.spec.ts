@@ -5,6 +5,32 @@ import { dismissTour, signIn } from './sign-in';
 
 const REASON = 'Départ de la société confirmé par les RH.';
 
+test('the company creates an employee (temporary password sent, status Invité)', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await signIn(page, 'entreprise@flexipay.test');
+  await page.goto('/fr/entreprise/employes');
+  await dismissTour(page);
+  await page.getByRole('button', { name: 'Ajouter un employé' }).click();
+  const dialog = page.getByRole('dialog');
+  const number = `E2E${String(Date.now()).slice(-6)}`;
+  await dialog.getByLabel('Matricule').fill(number);
+  await dialog.getByLabel('Prénom').fill('Amel');
+  await dialog.getByLabel('Nom', { exact: true }).fill('Testeur');
+  await dialog.getByLabel('E-mail').fill(`${number.toLowerCase()}@exemple.tn`);
+  await dialog.getByLabel('Téléphone').fill('+21622123456');
+  await dialog.getByRole('button', { name: "Créer l'employé" }).click();
+  await expect(page.getByText(/a été ajouté/)).toBeVisible();
+  await page
+    .getByRole('searchbox')
+    .or(page.getByLabel(/Rechercher/))
+    .first()
+    .fill(number);
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('row').filter({ hasText: number }).getByText('Invité')).toBeVisible();
+});
+
 test('the company suspends, reactivates then deactivates an employee', async ({ page }) => {
   test.setTimeout(180_000);
   await signIn(page, 'entreprise@flexipay.test');

@@ -30,7 +30,7 @@
       "effect": "The account will no longer sign in nor pay. Its sessions will end at once."
     },
     "suspendEmployee": {
-      "effect": "Its balance is kept but blocked: no payment and no allocation."
+      "effect": "Their balance is kept but blocked: no payment and no allocation. Their family members will be suspended with them."
     },
     "reactivate": {
       "title": "Reactivate {name}?",
@@ -46,13 +46,27 @@
     "deactivateEmployee": {
       "confirm": "Deactivate the employee",
       "grace": "The employee will be able to use the remaining balance for {days, plural, one {# day} other {# days}}, then the account will be closed.",
-      "noCredit": "No new credit can be allocated to them."
+      "noCredit": "No new credit can be allocated to them.",
+      "family": "Their family members will be deactivated with them."
     },
     "role": {
       "title": "Change the role of {name}?",
       "confirm": "Change the role",
       "effect": "The rights of the account will change at once; its sessions will end."
     },
-    "graceUnavailable": "The grace period could not be loaded."
+    "graceUnavailable": "The grace period could not be loaded.",
+    "reactivateEmployee": {
+      "effect": "Only the family members suspended with them will be reactivated."
+    },
+    "resend": {
+      "title": "Resend the invitation to {name}?",
+      "effect": "A new temporary password (72 h) will be e-mailed; their sessions will end.",
+      "confirm": "Resend the invitation"
+    },
+    "unlock": {
+      "title": "Unlock the PIN of {name}?",
+      "effect": "The employee will be able to pay with their PIN again and will be told.",
+      "confirm": "Unlock the PIN"
+    }
   }
 }

@@ -69,7 +69,12 @@ describe('what each status allows', () => {
 });
 
 describe('guards (decision B)', () => {
-  const superAdmin = { id: 'b', role: 'ADMIN' as const, subRole: 'SUPER_ADMIN' as const };
+  const superAdmin = {
+    id: 'b',
+    role: 'ADMIN' as const,
+    subRole: 'SUPER_ADMIN' as const,
+    active: true,
+  };
 
   it('nobody changes its own status or role', () => {
     expect(
@@ -101,7 +106,18 @@ describe('guards (decision B)', () => {
     expect(
       changeRefusal({
         actorId: 'a',
-        target: { id: 'c', role: 'ADMIN', subRole: 'FINANCE' },
+        target: { id: 'c', role: 'ADMIN', subRole: 'FINANCE', active: true },
+        activeSuperAdmins: 1,
+        action: 'DEACTIVATE',
+      }),
+    ).toBeNull();
+  });
+
+  it('a suspended super-admin is not the last active one: it may be deactivated', () => {
+    expect(
+      changeRefusal({
+        actorId: 'a',
+        target: { ...superAdmin, active: false },
         activeSuperAdmins: 1,
         action: 'DEACTIVATE',
       }),

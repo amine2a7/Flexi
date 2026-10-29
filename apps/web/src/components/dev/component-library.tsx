@@ -19,7 +19,8 @@ import { ConfirmDialog, Modal } from '@/components/ui/modal';
 import { QrCode } from '@/components/ui/qr-code';
 import { ResultScreen } from '@/components/ui/result-screen';
 import { EmptyState, ErrorState, LoadingBlock, Skeleton } from '@/components/ui/states';
-import { KNOWN_STATUSES, StatusBadge } from '@/components/ui/status-badge';
+import { ReasonDialog } from '@/components/ui/reason-dialog';
+import { KNOWN_STATUSES, StatusBadge, UserStatusBadge } from '@/components/ui/status-badge';
 import { Timeline } from '@/components/ui/timeline';
 import { ToastProvider, useToast } from '@/components/ui/toast';
 
@@ -129,6 +130,8 @@ export function ComponentLibrary() {
   const [tab, setTab] = useState<'one' | 'two'>('one');
   const [modalOpen, setModalOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [reasonOpen, setReasonOpen] = useState(false);
+  const [graceUntil] = useState(() => new Date(Date.now() + 30 * 86_400_000).toISOString());
   const [expiresAt] = useState(() => new Date(Date.now() + 60_000).toISOString());
 
   // The text size control changes the root font size (rem), restored when leaving the page.
@@ -152,6 +155,7 @@ export function ComponentLibrary() {
     'states',
     'table',
     'dialogs',
+    'users',
     'navigation',
     'misc',
   ] as const;
@@ -513,6 +517,35 @@ export function ComponentLibrary() {
                 setConfirmOpen(false);
               }}
             />
+          </Section>
+
+          <Section id="users" title={t('sections.users')}>
+            <div className="flex flex-wrap gap-2">
+              {['INVITED', 'ACTIVE', 'SUSPENDED', 'DEACTIVATED'].map((status) => (
+                <UserStatusBadge key={status} status={status} />
+              ))}
+              <UserStatusBadge status="DEACTIVATED" graceUntil={graceUntil} />
+            </div>
+            <Button
+              variant="danger"
+              onClick={() => {
+                setReasonOpen(true);
+              }}
+            >
+              {t('sample.openReason')}
+            </Button>
+            {reasonOpen ? (
+              <ReasonDialog
+                open
+                onOpenChange={setReasonOpen}
+                title={t('sample.confirmTitle')}
+                summary={[{ label: t('sample.label'), value: 'Amel T. (E-0042)' }]}
+                effects={[t('sample.hint')]}
+                warnings={[t('sample.emptyMessage')]}
+                confirmLabel={t('sample.action')}
+                onConfirm={() => Promise.resolve(undefined)}
+              />
+            ) : null}
           </Section>
 
           <Section id="navigation" title={t('sections.navigation')}>

@@ -56,7 +56,8 @@
       "table": "Tableau de données – NC.1",
       "dialogs": "Modales – NC.3",
       "navigation": "Onglets et historique – NC.4",
-      "misc": "Compte à rebours et QR – NC.8"
+      "misc": "Compte à rebours et QR – NC.8",
+      "users": "Comptes – statut et motif"
     },
     "sample": {
       "action": "Valider",
@@ -94,7 +95,8 @@
       "stepOne": "Demande créée",
       "stepTwo": "Demande validée",
       "stepRefused": "Demande refusée",
-      "qr": "Code QR de démonstration"
+      "qr": "Code QR de démonstration",
+      "openReason": "Ouvrir une confirmation avec motif"
     },
     "state": {
       "disabled": "Désactivé",

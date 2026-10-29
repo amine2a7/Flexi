@@ -13,6 +13,7 @@ const SECTIONS = [
   'states',
   'table',
   'dialogs',
+  'users',
   'navigation',
   'misc',
 ];

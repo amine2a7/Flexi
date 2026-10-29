@@ -7,8 +7,6 @@ import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
-import { errorMessageKey } from '@/lib/api/problem';
-import { messageKey } from '@/i18n/keys';
 import { useApiQuery } from '@/lib/api/use-api-query';
 import { formatDateTime } from '@/lib/format/date';
 import { useCan, useSession } from '@/lib/session/session-context';
@@ -16,15 +14,14 @@ import { Amount } from '@/components/ui/amount';
 import { Button, buttonClasses } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
 import { SelectField } from '@/components/ui/field';
-import { DescriptionList, PageHeader } from '@/components/ui/layout-blocks';
+import { Alert, DescriptionList, PageHeader } from '@/components/ui/layout-blocks';
 import { ReasonDialog } from '@/components/ui/reason-dialog';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { UserStatusBadge } from '@/components/ui/status-badge';
 import { Timeline } from '@/components/ui/timeline';
-import { useToast } from '@/components/ui/toast';
 
 type User = Schemas['AdminUserDetail'];
-type Action = 'suspend' | 'reactivate' | 'deactivate' | 'role';
+type Action = 'suspend' | 'reactivate' | 'deactivate' | 'role' | 'resend' | 'unlock';
 type SubRole = Schemas['SubRole'];
 
 const SUB_ROLES: Partial<Record<Schemas['Role'], readonly SubRole[]>> = {
@@ -68,16 +65,15 @@ function UserView({ user, onChange }: { user: User; onChange: () => void }) {
   const tReason = useTranslations('common.reason');
   const tRole = useTranslations('layout.role');
   const tSubRole = useTranslations('subRole');
-  const tRoot = useTranslations();
   const locale = useLocale();
-  const toast = useToast();
   const { me } = useSession();
   const canManage = useCan('users.manage');
   const canAdminRoles = useCan('users.adminRoles');
   const canSupport = useCan('users.support');
   const [dialog, setDialog] = useState<Action | undefined>(undefined);
   const [newRole, setNewRole] = useState<SubRole | ''>('');
-  const [busy, setBusy] = useState<'resend' | 'unlock' | undefined>(undefined);
+  // Result of the last change, kept on the page (spec §6: persistent, never a toast).
+  const [notice, setNotice] = useState<string | undefined>(undefined);
 
   const self = user.id === me.id;
   const manage = !self && canManage;
@@ -100,7 +96,11 @@ function UserView({ user, onChange }: { user: User; onChange: () => void }) {
     { key: 'deactivate', show: manage && user.status !== 'DEACTIVATED', variant: 'danger' },
   ];
   const visible = actions.filter((item) => item.show);
-  const showResend = !self && canSupport && (user.status === 'ACTIVE' || user.status === 'INVITED');
+  const showResend =
+    !self &&
+    canSupport &&
+    user.role !== 'ADMIN' &&
+    (user.status === 'ACTIVE' || user.status === 'INVITED');
   const showUnlock = canSupport && user.pinLocked;
   const nothing = visible.length === 0 && !canRole && !showResend && !showUnlock;
 
@@ -124,26 +124,21 @@ function UserView({ user, onChange }: { user: User; onChange: () => void }) {
                 body: { reason },
               });
     if (result.error !== undefined) return result.error;
-    toast.notify('success', t(`toast.${action}`));
+    setNotice(t(`toast.${action}`));
     onChange();
     return undefined;
   }
 
-  async function support(kind: 'resend' | 'unlock') {
-    setBusy(kind);
-    try {
-      const path = { params: { path: { userId: user.id } } };
-      const result =
-        kind === 'resend'
-          ? await getApi().POST('/v1/admin/users/{userId}/reset-invitation', path)
-          : await getApi().POST('/v1/admin/users/{userId}/unlock-pin', path);
-      if (result.error === undefined) {
-        toast.notify('success', t(`toast.${kind}`));
-        onChange();
-      } else toast.notify('error', tRoot(messageKey(errorMessageKey(result.error))));
-    } finally {
-      setBusy(undefined);
-    }
+  async function support(kind: 'resend' | 'unlock'): Promise<unknown> {
+    const path = { params: { path: { userId: user.id } } };
+    const result =
+      kind === 'resend'
+        ? await getApi().POST('/v1/admin/users/{userId}/reset-invitation', path)
+        : await getApi().POST('/v1/admin/users/{userId}/unlock-pin', path);
+    if (result.error !== undefined) return result.error;
+    setNotice(t(`toast.${kind}`));
+    onChange();
+    return undefined;
   }
 
   const deactivateWarnings = isEmployee
@@ -151,6 +146,7 @@ function UserView({ user, onChange }: { user: User; onChange: () => void }) {
         ...(user.graceDays === undefined
           ? []
           : [tReason('deactivateEmployee.grace', { days: user.graceDays })]),
+        tReason('deactivateEmployee.family'),
         tReason('deactivateEmployee.noCredit'),
         tReason('deactivate.irreversible'),
       ]
@@ -160,9 +156,14 @@ function UserView({ user, onChange }: { user: User; onChange: () => void }) {
       tReason('suspend.effect'),
       ...(isEmployee ? [tReason('suspendEmployee.effect')] : []),
     ],
-    reactivate: [tReason('reactivate.effect')],
+    reactivate: [
+      tReason('reactivate.effect'),
+      ...(isEmployee ? [tReason('reactivateEmployee.effect')] : []),
+    ],
     deactivate: isEmployee ? [] : [tReason('deactivate.effect')],
     role: [tReason('role.effect')],
+    resend: [tReason('resend.effect')],
+    unlock: [tReason('unlock.effect')],
   };
 
   return (
@@ -172,6 +173,11 @@ function UserView({ user, onChange }: { user: User; onChange: () => void }) {
         description={user.email}
         actions={<UserStatusBadge status={user.status} graceUntil={user.graceUntil} />}
       />
+      {notice !== undefined ? (
+        <div role="status" className="mb-6">
+          <Alert tone="success">{notice}</Alert>
+        </div>
+      ) : null}
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardTitle>{t('detail.account')}</CardTitle>
@@ -257,8 +263,9 @@ function UserView({ user, onChange }: { user: User; onChange: () => void }) {
                 {showResend ? (
                   <Button
                     variant="ghost"
-                    loading={busy === 'resend'}
-                    onClick={() => void support('resend')}
+                    onClick={() => {
+                      setDialog('resend');
+                    }}
                   >
                     {t('actions.resend')}
                   </Button>
@@ -266,8 +273,9 @@ function UserView({ user, onChange }: { user: User; onChange: () => void }) {
                 {showUnlock ? (
                   <Button
                     variant="ghost"
-                    loading={busy === 'unlock'}
-                    onClick={() => void support('unlock')}
+                    onClick={() => {
+                      setDialog('unlock');
+                    }}
                   >
                     {t('actions.unlock')}
                   </Button>
@@ -303,17 +311,21 @@ function UserView({ user, onChange }: { user: User; onChange: () => void }) {
           title={tReason(`${dialog}.title`, { name })}
           summary={[
             { label: tReason('person'), value: name },
-            dialog === 'role'
-              ? {
-                  label: `${tReason('from')} → ${tReason('to')}`,
-                  value: `${user.subRole === null ? '—' : tSubRole(user.subRole)} → ${newRole === '' ? '—' : tSubRole(newRole)}`,
-                }
-              : {
-                  label: `${tReason('from')} → ${tReason('to')}`,
-                  value: `${t(`statuses.${user.status}`)} → ${t(
-                    `statuses.${dialog === 'reactivate' ? 'ACTIVE' : dialog === 'suspend' ? 'SUSPENDED' : 'DEACTIVATED'}`,
-                  )}`,
-                },
+            ...(dialog === 'resend' || dialog === 'unlock'
+              ? []
+              : [
+                  dialog === 'role'
+                    ? {
+                        label: `${tReason('from')} → ${tReason('to')}`,
+                        value: `${user.subRole === null ? '—' : tSubRole(user.subRole)} → ${newRole === '' ? '—' : tSubRole(newRole)}`,
+                      }
+                    : {
+                        label: `${tReason('from')} → ${tReason('to')}`,
+                        value: `${t(`statuses.${user.status}`)} → ${t(
+                          `statuses.${dialog === 'reactivate' ? 'ACTIVE' : dialog === 'suspend' ? 'SUSPENDED' : 'DEACTIVATED'}`,
+                        )}`,
+                      },
+                ]),
           ]}
           effects={effects[dialog]}
           {...(dialog === 'deactivate' ? { warnings: deactivateWarnings } : {})}
@@ -326,7 +338,10 @@ function UserView({ user, onChange }: { user: User; onChange: () => void }) {
               : tReason(`${dialog}.confirm`)
           }
           confirmVariant={dialog === 'suspend' || dialog === 'deactivate' ? 'danger' : 'primary'}
-          onConfirm={(reason) => send(dialog, reason)}
+          withoutReason={dialog === 'resend' || dialog === 'unlock'}
+          onConfirm={(reason) =>
+            dialog === 'resend' || dialog === 'unlock' ? support(dialog) : send(dialog, reason)
+          }
         />
       ) : null}
     </>

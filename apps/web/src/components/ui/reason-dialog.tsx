@@ -1,6 +1,6 @@
 'use client';
 
-import { TriangleAlert } from 'lucide-react';
+import { Info, TriangleAlert } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useId, useState, type ReactNode } from 'react';
 import { errorMessageKey } from '@/lib/api/problem';
@@ -29,6 +29,8 @@ interface ReasonDialogProps {
   readonly blockedReason?: string;
   /** Sends the change; resolves with the API error to show, or undefined when done. */
   readonly onConfirm: (reason: string) => Promise<unknown>;
+  /** Confirmation without reason (resend invitation, unlock PIN: no reason in the contract). */
+  readonly withoutReason?: boolean;
 }
 
 /**
@@ -48,6 +50,7 @@ export function ReasonDialog({
   confirmVariant = 'danger',
   blockedReason,
   onConfirm,
+  withoutReason = false,
 }: ReasonDialogProps) {
   const t = useTranslations('common.reason');
   const tRoot = useTranslations();
@@ -59,7 +62,8 @@ export function ReasonDialog({
   const length = reason.trim().length;
   const tooShort = length < REASON_MIN;
   const tooLong = length > REASON_MAX;
-  const blocked = blockedReason ?? (tooShort ? t('min', { min: REASON_MIN }) : undefined);
+  const blocked =
+    blockedReason ?? (tooShort && !withoutReason ? t('min', { min: REASON_MIN }) : undefined);
 
   async function confirm() {
     if (blocked !== undefined || tooLong) return;
@@ -113,7 +117,8 @@ export function ReasonDialog({
       <div className="flex flex-col gap-4">
         <DescriptionList items={summary} />
         {effects.map((line) => (
-          <p key={line} className="text-body text-text">
+          <p key={line} className="flex items-start gap-2 text-body text-text">
+            <Info aria-hidden="true" className="size-icon-md shrink-0 text-info-text" />
             {line}
           </p>
         ))}
@@ -129,18 +134,25 @@ export function ReasonDialog({
             </ul>
           </Alert>
         ) : null}
-        <TextAreaField
-          label={t('label')}
-          hint={`${t('hint')} ${t('counter', { count: length, max: REASON_MAX })}`}
-          required
-          autoFocus
-          value={reason}
-          disabled={sending}
-          onChange={(event) => {
-            setReason(event.target.value);
-          }}
-          {...(tooLong ? { error: t('tooLong', { max: REASON_MAX }) } : {})}
-        />
+        {withoutReason ? null : (
+          <>
+            <TextAreaField
+              label={t('label')}
+              hint={t('hint')}
+              required
+              autoFocus
+              value={reason}
+              disabled={sending}
+              onChange={(event) => {
+                setReason(event.target.value);
+              }}
+              {...(tooLong ? { error: t('tooLong', { max: REASON_MAX }) } : {})}
+            />
+            <p className="text-caption text-text-muted" role="status" aria-live="polite">
+              <span dir="ltr">{t('counter', { count: length, max: REASON_MAX })}</span>
+            </p>
+          </>
+        )}
         {error !== undefined ? (
           <Alert tone="danger">{tRoot(messageKey(errorMessageKey(error)))}</Alert>
         ) : null}

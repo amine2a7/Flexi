@@ -56,7 +56,8 @@
       "table": "Data table – NC.1",
       "dialogs": "Dialogs – NC.3",
       "navigation": "Tabs and history – NC.4",
-      "misc": "Countdown and QR – NC.8"
+      "misc": "Countdown and QR – NC.8",
+      "users": "Accounts – status and reason"
     },
     "sample": {
       "action": "Confirm",
@@ -94,7 +95,8 @@
       "stepOne": "Request created",
       "stepTwo": "Request approved",
       "stepRefused": "Request refused",
-      "qr": "Demo QR code"
+      "qr": "Demo QR code",
+      "openReason": "Open a confirmation with reason"
     },
     "state": {
       "disabled": "Disabled",

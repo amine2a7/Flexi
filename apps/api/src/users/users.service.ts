@@ -209,6 +209,19 @@ export class UsersService {
       }
       await this.refuseUnsafe(tx, user, 'ROLE', subRole);
       if (user.subRole === subRole) return;
+      // The last active owner of a company or a merchant is never demoted (to confirm by Amine).
+      if (user.subRole === 'OWNER' && user.role !== 'ADMIN') {
+        const owners = await tx.user.count({
+          where: {
+            role: user.role,
+            subRole: 'OWNER',
+            status: 'ACTIVE',
+            ...(user.companyId === null ? {} : { companyId: user.companyId }),
+            ...(user.merchantId === null ? {} : { merchantId: user.merchantId }),
+          },
+        });
+        if (owners <= 1) throw problems.conflict();
+      }
       await tx.user.update({ where: { id }, data: { subRole } });
       await tx.session.updateMany({
         where: { userId: id, revokedAt: null },
@@ -232,6 +245,9 @@ export class UsersService {
   async resendInvitation(id: string, withBalance: boolean) {
     const target = await this.db.user((tx) => tx.user.findUnique({ where: { id } }));
     if (target === null) throw problems.notFound();
+    // Never one's own account, never an administrator: the support cannot close the sessions of
+    // the back office in a loop (securite S2-02).
+    if (target.id === principal().userId || target.role === 'ADMIN') throw problems.forbidden();
     if (target.status !== 'ACTIVE') throw problems.conflict();
     const [prepared] = await this.invitations.prepare([
       {
@@ -275,6 +291,11 @@ export class UsersService {
       await tx.employee.update({
         where: { id: employee.id },
         data: { pinFailures: 0, pinLockedUntil: null, pinLockLevel: 0, pinRequiresReauth: false },
+      });
+      // A stolen phone gets no new tries: the employee signs in again (securite S2-03).
+      await tx.session.updateMany({
+        where: { userId: id, revokedAt: null },
+        data: { revokedAt: new Date() },
       });
       await this.audit.recordFor(tx, 'users.unlockPin', id, user.displayName, null);
       return user;
@@ -339,6 +360,9 @@ export class UsersService {
     if (employee?.companyId !== companyId) return false;
     if (employee.user !== null) {
       const user = await this.lockUser(tx, employee.user.id);
+      // A suspension decided by an administrator is lifted by an administrator only (to confirm
+      // by Amine).
+      if (action === 'REACTIVATE') await this.refuseAdminSuspension(tx, user.id);
       await this.apply(tx, user, action, reason);
       return true;
     }
@@ -350,8 +374,32 @@ export class UsersService {
     return true;
   }
 
+  /**
+   * Locks the target; a super-admin target locks every super-admin row, in id order, so that two
+   * concurrent changes never remove the last active super-admin together (qualite, decision B).
+   */
+  private async refuseAdminSuspension(tx: Tx, userId: string): Promise<void> {
+    const last = await tx.auditLog.findFirst({
+      where: { subjectId: userId, action: 'users.suspend' },
+      orderBy: { occurredAt: 'desc' },
+    });
+    if (last?.actorUserId === null || last === null) return;
+    const actor = await tx.user.findUnique({
+      where: { id: last.actorUserId },
+      select: { role: true },
+    });
+    if (actor?.role === 'ADMIN') throw problems.forbidden();
+  }
+
   private async lockUser(tx: Tx, id: string): Promise<UserRow> {
-    await tx.$queryRaw`SELECT id FROM users WHERE id = ${id}::uuid FOR UPDATE`;
+    const [target] = await tx.$queryRaw<{ sub_role: string | null }[]>`
+      SELECT sub_role FROM users WHERE id = ${id}::uuid`;
+    if (target?.sub_role === 'SUPER_ADMIN') {
+      await tx.$queryRaw`
+        SELECT id FROM users WHERE role = 'ADMIN' AND sub_role = 'SUPER_ADMIN' ORDER BY id FOR UPDATE`;
+    } else {
+      await tx.$queryRaw`SELECT id FROM users WHERE id = ${id}::uuid FOR UPDATE`;
+    }
     const user = await tx.user.findUnique({ where: { id }, include: USER_INCLUDE });
     if (user === null) throw problems.notFound();
     return user;
@@ -372,7 +420,7 @@ export class UsersService {
         : 0;
     const refusal = changeRefusal({
       actorId: principal().userId,
-      target: user,
+      target: { ...user, active: user.status === 'ACTIVE' },
       activeSuperAdmins,
       action,
       ...(newSubRole === undefined ? {} : { newSubRole }),

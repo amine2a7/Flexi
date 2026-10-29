@@ -30,7 +30,7 @@
       "effect": "Le compte ne pourra plus se connecter ni payer. Ses sessions seront fermées immédiatement."
     },
     "suspendEmployee": {
-      "effect": "Son solde est conservé mais bloqué : aucun paiement ni aucune attribution."
+      "effect": "Son solde est conservé mais bloqué : aucun paiement ni aucune attribution. Les membres de sa famille seront suspendus avec lui."
     },
     "reactivate": {
       "title": "Réactiver {name} ?",
@@ -46,13 +46,27 @@
     "deactivateEmployee": {
       "confirm": "Désactiver l'employé",
       "grace": "L'employé pourra utiliser son solde restant pendant {days, plural, one {# jour} other {# jours}}, puis son compte sera fermé.",
-      "noCredit": "Aucun nouveau crédit ne pourra lui être attribué."
+      "noCredit": "Aucun nouveau crédit ne pourra lui être attribué.",
+      "family": "Les membres de sa famille seront désactivés avec lui."
     },
     "role": {
       "title": "Changer le rôle de {name} ?",
       "confirm": "Changer le rôle",
       "effect": "Les droits du compte changeront immédiatement ; ses sessions seront fermées."
     },
-    "graceUnavailable": "Le délai de grâce n'a pas pu être chargé."
+    "graceUnavailable": "Le délai de grâce n'a pas pu être chargé.",
+    "reactivateEmployee": {
+      "effect": "Seuls les membres de la famille suspendus avec lui seront réactivés."
+    },
+    "resend": {
+      "title": "Renvoyer l'invitation à {name} ?",
+      "effect": "Un nouveau mot de passe temporaire (72 h) lui sera envoyé par e-mail ; ses sessions seront fermées.",
+      "confirm": "Renvoyer l'invitation"
+    },
+    "unlock": {
+      "title": "Débloquer le PIN de {name} ?",
+      "effect": "L'employé pourra de nouveau payer avec son code PIN ; il en sera informé.",
+      "confirm": "Débloquer le PIN"
+    }
   }
 }

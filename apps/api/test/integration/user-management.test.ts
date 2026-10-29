@@ -287,4 +287,56 @@ describe('company: employees', () => {
     expect(row?.status).toBe('SUSPENDED');
     expect(JSON.stringify(list.body)).not.toContain(REASON.reason);
   });
+
+  it('a suspension by an administrator is never lifted by the company (to confirm)', async () => {
+    const superAdmin = await admin('SUPER_ADMIN');
+    const { company, employee, user } = await employeeAccount();
+    await superAdmin.client.call('POST', `/v1/admin/users/${user.id}/suspend`, { body: REASON });
+    const owner = await companyOwner(company.id);
+    const lifted = await owner.call('POST', `/v1/company/employees/${employee.id}/reactivate`, {
+      body: REASON,
+    });
+    expect(lifted.status).toBe(403);
+  });
+});
+
+describe('support limits (securite S2-02, S2-03)', () => {
+  it('never resets an administrator nor itself; unlocking a PIN closes the sessions', async () => {
+    const support = await admin('SUPPORT');
+    const other = await admin('FINANCE');
+    expect(
+      (await support.client.call('POST', `/v1/admin/users/${other.user.id}/reset-invitation`))
+        .status,
+    ).toBe(403);
+    expect(
+      (await support.client.call('POST', `/v1/admin/users/${support.user.id}/reset-invitation`))
+        .status,
+    ).toBe(403);
+    const { employee, user } = await employeeAccount();
+    const spender = await signedIn(base, user);
+    await db.system((tx) =>
+      tx.employee.update({ where: { id: employee.id }, data: { pinRequiresReauth: true } }),
+    );
+    expect(
+      (await support.client.call('POST', `/v1/admin/users/${user.id}/unlock-pin`)).status,
+    ).toBe(200);
+    expect((await spender.call('GET', '/v1/me')).status).toBe(401);
+  });
+
+  it('the last owner of a company is never demoted', async () => {
+    const superAdmin = await admin('SUPER_ADMIN');
+    const company = await createCompany(db);
+    const owner = await createUser(
+      db,
+      env,
+      'COMPANY',
+      { companyId: company.id },
+      'Seul P.',
+      'OWNER',
+    );
+    const demoted = await superAdmin.client.call('POST', `/v1/admin/users/${owner.id}/role`, {
+      body: { subRole: 'MANAGER', ...REASON },
+    });
+    expect(demoted.status).toBe(409);
+  });
 });

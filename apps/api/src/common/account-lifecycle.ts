@@ -62,7 +62,13 @@ export function canSignIn(
  */
 export function changeRefusal(input: {
   readonly actorId: string;
-  readonly target: { readonly id: string; readonly role: Role; readonly subRole: SubRole | null };
+  readonly target: {
+    readonly id: string;
+    readonly role: Role;
+    readonly subRole: SubRole | null;
+    /** Counted among the active super-admins (a suspended one removes nobody). */
+    readonly active: boolean;
+  };
   readonly activeSuperAdmins: number;
   readonly action: LifecycleAction | 'ROLE';
   readonly newSubRole?: SubRole;
@@ -73,7 +79,12 @@ export function changeRefusal(input: {
     action === 'SUSPEND' ||
     action === 'DEACTIVATE' ||
     (action === 'ROLE' && newSubRole !== 'SUPER_ADMIN');
-  if (target.subRole === 'SUPER_ADMIN' && removesSuperAdmin && activeSuperAdmins <= 1) {
+  if (
+    target.subRole === 'SUPER_ADMIN' &&
+    target.active &&
+    removesSuperAdmin &&
+    activeSuperAdmins <= 1
+  ) {
     return 'LAST_SUPER_ADMIN';
   }
   return null;
