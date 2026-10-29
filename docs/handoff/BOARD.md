@@ -3,7 +3,25 @@
 Tenu par le lead (`main`) à chaque étape. Statuts : À faire · En cours · En revue · Bloqué · Terminé.
 Préfixe `TEST-FIRST:` = tâche de tests écrits avant le code (tests rouges acceptés).
 
-## État courant (mis à jour le 2026-10-21) — À LIRE EN PREMIER
+## État courant (mis à jour le 2026-10-29) — À LIRE EN PREMIER
+
+**Mode continu** (décision du 2026-10-29) : plan de l'utilisateur du 2026-10-23 (étapes 0 à 6, web puis API mobile, pas de Flutter). Reprise : « Lis BOARD.md et continue le mode continu ». Méthode des contrôles d'accès : `/audit-acces`.
+
+| Étape 0 — tâche | Statut | Commits / reste |
+|---|---|---|
+| Décisions A-D, matrice C serveur + MSW | Terminé, securite **OK** (securite-matrice-c-2026-10-25) | 29987df, b680f18, 25b1114 (P1-01, P1-02) |
+| Specs e1 + navigation (« Opérations ») | Terminé | 0b1e690 |
+| Tri du code web non commité | Terminé (jeté : doublon `docs/design/connexion-ticket` ; `docs/design/carnet-tickets` laissé non suivi, maquettes sans `support.js`) | 1045a81 |
+| QY-03 b (créateur du commerçant n'approuve pas ses virements) | Terminé, tests verts ; revue securite à grouper | a37e727 (migration 0017) |
+| Contrôle d'accès web (menu, pages, boutons, MSW = serveur) | Terminé | bea0af5 |
+| Correctif `/entreprise` (montant animé négatif) | Terminé | 3637eb6 |
+| 2d Playwright par sous-rôle admin + balayage des pages | En cours (`e2e/admin-subroles.spec.ts`, `pages-sweep.spec.ts`, non commités) | relance en cours |
+| Hooks locaux (.claude, pre-push) | Terminé, H-01/H-02 acceptés | 13002bf |
+| B6 CI GitHub Actions | Commité ; **job sécurité rouge** tant que `pnpm audit -P` signale 2 Critique / 11 Haute | 17532c2 ; Trivy et Flutter reportés |
+| Montée de version des dépendances vulnérables (Next 16.4.x RCE, zod, prisma, express, undici) | **Bloqué : [DÉCISION] dépendances à valider par l'utilisateur** | |
+| Étapes 1 à 6 | À faire | |
+
+## État courant (mis à jour le 2026-10-21) — historique
 
 Mode économe (voir CLAUDE.md). Branche `feat/web`. Plan de l'utilisateur du 2026-10-21 (étapes 0 à 6, puis carnet de tickets).
 
