@@ -49,10 +49,14 @@ describe('administrator sub-roles (decision C)', () => {
 
   it('no administrator permission opens a company or merchant route', () => {
     const tenant = [
-      ...permissionsOf('COMPANY', 'OWNER'),
-      ...permissionsOf('MERCHANT', 'OWNER'),
-      ...permissionsOf('MERCHANT', 'CASHIER'),
+      ...(['OWNER', 'MANAGER', 'ACCOUNTANT', 'READ_ONLY'] as const).flatMap((sub) =>
+        permissionsOf('COMPANY', sub),
+      ),
+      ...(['OWNER', 'CASHIER', 'ACCOUNTANT'] as const).flatMap((sub) =>
+        permissionsOf('MERCHANT', sub),
+      ),
       ...permissionsOf('EMPLOYEE', null),
+      ...permissionsOf('FAMILY_MEMBER', null),
     ];
     for (const permission of admin('SUPER_ADMIN')) expect(tenant).not.toContain(permission);
   });

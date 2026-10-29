@@ -77,7 +77,8 @@ const EXPECTED: Record<string, Sub[]> = {
 };
 
 const adminRoutes = (await routes()).filter(
-  (route) => route.path.startsWith('/v1/admin') && !route.isPublic,
+  (route) =>
+    (route.path.startsWith('/v1/admin') || route.roles.includes('ADMIN')) && !route.isPublic,
 );
 
 describe('administrator matrix over HTTP (decision C)', () => {

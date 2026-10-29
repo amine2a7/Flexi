@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants.js';
-import { PERMISSIONS, PUBLIC } from '../src/common/decorators.js';
+import { PERMISSIONS, PUBLIC, ROLES } from '../src/common/decorators.js';
 
 const SRC = join(import.meta.dirname, '..', 'src');
 
@@ -25,6 +25,8 @@ export interface Route {
   readonly path: string;
   readonly isPublic: boolean;
   readonly permissions: unknown;
+  /** Roles of the route (`@Roles`), empty when none is set. */
+  readonly roles: readonly string[];
 }
 
 const join2 = (...parts: unknown[]) =>
@@ -59,6 +61,7 @@ export async function routes(): Promise<Route[]> {
           path: join2(base, Reflect.getMetadata(PATH_METADATA, handler)),
           isPublic: read(PUBLIC) === true,
           permissions: read(PERMISSIONS),
+          roles: Array.isArray(read(ROLES)) ? (read(ROLES) as string[]) : [],
         });
       }
     }
