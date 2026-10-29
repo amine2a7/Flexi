@@ -912,6 +912,86 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/company/employees/{employeeId}/suspend': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Suspendre un employé
+     * @description Solde conservé mais bloqué : aucun paiement, aucune attribution (décision e3). Permission `employees.manage`. Tracé dans l'audit.
+     */
+    post: operations['suspendEmployee'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/company/employees/{employeeId}/reactivate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Réactiver un employé suspendu
+     * @description Un employé désactivé ne se réactive jamais. Permission `employees.manage`. Tracé dans l'audit.
+     */
+    post: operations['reactivateEmployee'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/company/employees/{employeeId}/deactivate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Désactiver un employé (irréversible)
+     * @description Délai de grâce du paramétrage (30 jours par défaut) pendant lequel il ne peut que dépenser son solde restant ; aucune attribution. Permission `employees.manage`. Tracé dans l'audit.
+     */
+    post: operations['deactivateEmployee'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/company/employees/status-changes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Suspendre ou réactiver plusieurs employés (au plus une page)
+     * @description Désactivation jamais en masse (entreprise-employes.md §12.1). Chaque employé dont la transition est impossible est ignoré (`SKIPPED`). Permission `employees.manage`.
+     */
+    post: operations['changeEmployeesStatus'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/company/employees/import-previews': {
     parameters: {
       query?: never;
@@ -1566,6 +1646,170 @@ export interface paths {
     put?: never;
     /** Refuser un dossier KYC avec un motif (le compte reste inactif, `REJECTED`) */
     post: operations['rejectKycFile'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/users': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Utilisateurs de la plateforme (administrateurs, entreprises, commerçants, employés)
+     * @description Permission `users.read`. Aucun solde dans la liste. Le téléphone n'est jamais renvoyé.
+     */
+    get: operations['listUsers'];
+    put?: never;
+    /**
+     * Créer un administrateur (invitation par e-mail)
+     * @description Permission `users.adminRoles` (super-administrateur seul). Effet immédiat, sans double validation (décision A). Une adresse déjà inscrite renvoie la même réponse sans créer de compte (pas d'énumération, S04) : le titulaire est prévenu par e-mail.
+     */
+    post: operations['createAdministrator'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/users/{userId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Fiche d'un utilisateur et son historique
+     * @description Permission `users.read`. `balanceMillimes` n'est présent que pour un employé et avec `userBalances.read` (super-admin, Finance, Opérations ; jamais Support, décision D4).
+     */
+    get: operations['getUser'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/users/{userId}/suspend': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Suspendre un utilisateur
+     * @description Coupe la connexion et révoque les sessions ; le solde d'un employé est conservé mais bloqué (décision e3). Refus `403 FORBIDDEN` si la cible est soi-même ; `422 LAST_SUPER_ADMIN` si la cible est le dernier super-administrateur actif (décision B). Permission `users.manage`. Effet immédiat, sans double validation (décision A du 2026-10-23) ; tracé dans l'audit.
+     */
+    post: operations['suspendUser'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/users/{userId}/reactivate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Réactiver un utilisateur suspendu
+     * @description Un compte désactivé ne se réactive jamais. Permission `users.manage`. Effet immédiat, sans double validation (décision A du 2026-10-23) ; tracé dans l'audit.
+     */
+    post: operations['reactivateUser'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/users/{userId}/deactivate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Désactiver un utilisateur (irréversible)
+     * @description Employé : délai de grâce du paramétrage (30 jours par défaut, figé à la désactivation) pendant lequel il ne peut que dépenser son solde ; autres comptes : effet immédiat, sessions révoquées. Refus `403 FORBIDDEN` si la cible est soi-même ; `422 LAST_SUPER_ADMIN` si la cible est le dernier super-administrateur actif (décision B). Permission `users.manage`. Effet immédiat, sans double validation (décision A du 2026-10-23) ; tracé dans l'audit.
+     */
+    post: operations['deactivateUser'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/users/{userId}/role': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Changer le sous-rôle d'un utilisateur
+     * @description Administrateur : permission `users.adminRoles` ; utilisateur interne d'entreprise ou de commerçant : `users.manage` (décision D3). Refus `403 FORBIDDEN` si la cible est soi-même ; `422 LAST_SUPER_ADMIN` si la cible est le dernier super-administrateur actif (décision B). Permission `users.adminRoles`. Effet immédiat, sans double validation (décision A du 2026-10-23) ; tracé dans l'audit.
+     */
+    post: operations['changeUserRole'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/users/{userId}/reset-invitation': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Renvoyer l'invitation (nouveau mot de passe temporaire par e-mail)
+     * @description Compte invité ou actif seulement ; sessions fermées ; aucun secret dans la réponse. Permission `users.support` (super-admin, Support). Permission `users.support`. Effet immédiat, sans double validation (décision A du 2026-10-23) ; tracé dans l'audit.
+     */
+    post: operations['resendInvitation'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/users/{userId}/unlock-pin': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Débloquer le code PIN d'un employé
+     * @description Employé dont le PIN est bloqué seulement ; l'employé est notifié. Permission `users.support` (super-admin, Support). Permission `users.support`. Effet immédiat, sans double validation (décision A du 2026-10-23) ; tracé dans l'audit.
+     */
+    post: operations['unlockPin'];
     delete?: never;
     options?: never;
     head?: never;
@@ -2727,10 +2971,10 @@ export interface components {
     };
     /**
      * EmployeeStatus
-     * @description Employé — Invité (mot de passe temporaire), Actif, Suspendu.
+     * @description Employé — Invité (mot de passe temporaire), Actif, Suspendu, Désactivé (irréversible, délai de grâce jusqu'à `graceUntil`).
      * @enum {string}
      */
-    EmployeeStatus: 'INVITED' | 'ACTIVE' | 'SUSPENDED';
+    EmployeeStatus: 'INVITED' | 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED';
     /** Employee */
     Employee: {
       id: components['schemas']['Uuid'];
@@ -2742,6 +2986,11 @@ export interface components {
       phone: components['schemas']['PhoneNumber'];
       status: components['schemas']['EmployeeStatus'];
       monthAllocatedMillimes: components['schemas']['AmountMillimes'];
+      /**
+       * Format: date-time
+       * @description Fin du délai de grâce d'un employé désactivé (absent sinon).
+       */
+      graceUntil?: string;
     };
     /**
      * EmployeePage
@@ -3427,6 +3676,7 @@ export interface components {
       | 'IDEMPOTENCY_KEY_REUSED'
       | 'INSUFFICIENT_FUNDS'
       | 'LIMIT_EXCEEDED'
+      | 'LAST_SUPER_ADMIN'
       | 'PAYMENT_DECLINED'
       | 'RATE_LIMITED'
       | 'INTERNAL_ERROR'
@@ -3459,6 +3709,92 @@ export interface components {
        * @description Identifiant de corrélation, identique à l'en-tête `X-Request-Id`.
        */
       requestId: string;
+    };
+    /**
+     * UserStatus
+     * @description Invité (mot de passe temporaire non encore remplacé), Actif, Suspendu, Désactivé (irréversible ; employé : délai de grâce jusqu'à `graceUntil`).
+     * @enum {string}
+     */
+    UserStatus: 'INVITED' | 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED';
+    /** AdminUser */
+    AdminUser: {
+      id: components['schemas']['Uuid'];
+      displayName: string;
+      /** Format: email */
+      email: string;
+      role: components['schemas']['Role'];
+      subRole: components['schemas']['SubRole'] | null;
+      /** @description Entreprise ou commerçant du compte (absent pour un administrateur). */
+      tenant: {
+        id: components['schemas']['Uuid'];
+        name: string;
+      } | null;
+      status: components['schemas']['UserStatus'];
+      /** @description Fin du délai de grâce d'un employé désactivé. */
+      graceUntil: string | null;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    /** AdminUserDetail */
+    AdminUserDetail: components['schemas']['AdminUser'] & {
+      mfaEnabled: boolean;
+      /** @description PIN de paiement bloqué (employé seulement, sinon false). */
+      pinLocked: boolean;
+      /** @description Solde de l'employé ; absent sans `userBalances.read` (Support) ou hors employé. */
+      balanceMillimes?: components['schemas']['AmountMillimes'];
+      history: components['schemas']['UserAuditEntry'][];
+    };
+    /** UserAuditEntry */
+    UserAuditEntry: {
+      /** Format: date-time */
+      occurredAt: string;
+      actorName: string;
+      action: string;
+      reason: string | null;
+    };
+    /**
+     * AdminUserPage
+     * @description Liste paginée de AdminUser (§7).
+     */
+    AdminUserPage: {
+      data: components['schemas']['AdminUser'][];
+      page: components['schemas']['PageInfo'];
+    };
+    /**
+     * UserStatusChange
+     * @description Motif obligatoire d'un changement d'accès (bornes provisoires 10 à 500, à confirmer).
+     */
+    UserStatusChange: {
+      reason: string;
+    };
+    /** UserRoleChange */
+    UserRoleChange: {
+      subRole: components['schemas']['SubRole'];
+      reason: string;
+    };
+    /** AdminUserCreate */
+    AdminUserCreate: {
+      displayName: string;
+      /** Format: email */
+      email: string;
+      /** @enum {string} */
+      subRole: 'SUPER_ADMIN' | 'COMPLIANCE' | 'FINANCE' | 'SUPPORT';
+      reason: string;
+    };
+    /** EmployeeBulkStatusChange */
+    EmployeeBulkStatusChange: {
+      /** @enum {string} */
+      action: 'SUSPEND' | 'REACTIVATE';
+      employeeIds: components['schemas']['Uuid'][];
+      reason: string;
+    };
+    /** EmployeeBulkStatusResult */
+    EmployeeBulkStatusResult: {
+      results: {
+        employeeId: components['schemas']['Uuid'];
+        /** @enum {string} */
+        outcome: 'DONE' | 'SKIPPED';
+      }[];
     };
     /**
      * Problem
@@ -3704,6 +4040,16 @@ export interface components {
           | components['schemas']['InsufficientFundsProblem']
           | components['schemas']['LimitExceededProblem']
           | components['schemas']['Problem'];
+      };
+    };
+    /** @description Refus d'une règle de gestion (par exemple `LAST_SUPER_ADMIN`, dernier super-administrateur actif). */
+    UnprocessableRule: {
+      headers: {
+        'X-Request-Id': components['headers']['X-Request-Id'];
+        [name: string]: unknown;
+      };
+      content: {
+        'application/problem+json': components['schemas']['Problem'];
       };
     };
     /** @description Limite de débit atteinte (par IP, compte ou route). */
@@ -5460,6 +5806,174 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  suspendEmployee: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        employeeId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UserStatusChange'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Employee'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  reactivateEmployee: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        employeeId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UserStatusChange'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Employee'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  deactivateEmployee: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        employeeId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UserStatusChange'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Employee'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  changeEmployeesStatus: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EmployeeBulkStatusChange'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EmployeeBulkStatusResult'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   previewEmployeeImport: {
     parameters: {
       query?: never;
@@ -6736,6 +7250,365 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  listUsers: {
+    parameters: {
+      query?: {
+        /** @description Nombre maximal d'éléments par page. */
+        limit?: components['parameters']['Limit'];
+        /** @description Curseur opaque renvoyé par `page.nextCursor`. Absent pour la première page. */
+        cursor?: components['parameters']['Cursor'];
+        /**
+         * @description Demande le compteur borné `page.count` (§7). À n'envoyer qu'au premier chargement et à
+         *     chaque changement de filtre.
+         */
+        withCount?: components['parameters']['WithCount'];
+        role?: components['schemas']['Role'];
+        status?: components['schemas']['UserStatus'];
+        /** @description Recherche par nom ou e-mail (insensible à la casse). Jamais journalisée. */
+        q?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminUserPage'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  createAdministrator: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdminUserCreate'];
+      };
+    };
+    responses: {
+      /** @description Invitation envoyée (ou adresse déjà inscrite, réponse identique). */
+      202: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      409: components['responses']['Conflict'];
+      422: components['responses']['UnprocessableRule'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminUserDetail'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  suspendUser: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        userId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UserStatusChange'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminUserDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      422: components['responses']['UnprocessableRule'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  reactivateUser: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        userId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UserStatusChange'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminUserDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  deactivateUser: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        userId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UserStatusChange'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminUserDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      422: components['responses']['UnprocessableRule'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  changeUserRole: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        userId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UserRoleChange'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminUserDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      422: components['responses']['UnprocessableRule'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  resendInvitation: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        userId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminUserDetail'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  unlockPin: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        userId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminUserDetail'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   listAdminPayoutRequests: {
     parameters: {
       query?: {
@@ -7211,7 +8084,7 @@ export const merchantDocumentTypeValues: ReadonlyArray<
 > = ['COMMISSION_INVOICE', 'STATEMENT', 'CERTIFICATE'];
 export const employeeStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['EmployeeStatus']
-> = ['INVITED', 'ACTIVE', 'SUSPENDED'];
+> = ['INVITED', 'ACTIVE', 'SUSPENDED', 'DEACTIVATED'];
 export const importIssueCodeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['ImportIssueCode']
 > = ['REQUIRED', 'INVALID_FORMAT', 'DUPLICATE_IN_FILE', 'ALREADY_EXISTS'];
@@ -7283,6 +8156,7 @@ export const problemCodeValues: ReadonlyArray<
   'IDEMPOTENCY_KEY_REUSED',
   'INSUFFICIENT_FUNDS',
   'LIMIT_EXCEEDED',
+  'LAST_SUPER_ADMIN',
   'PAYMENT_DECLINED',
   'RATE_LIMITED',
   'INTERNAL_ERROR',
@@ -7290,6 +8164,18 @@ export const problemCodeValues: ReadonlyArray<
   'PIN_INVALID',
   'PIN_LOCKED',
 ];
+export const userStatusValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['UserStatus']
+> = ['INVITED', 'ACTIVE', 'SUSPENDED', 'DEACTIVATED'];
+export const adminUserCreateSubRoleValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['AdminUserCreate']['subRole']
+> = ['SUPER_ADMIN', 'COMPLIANCE', 'FINANCE', 'SUPPORT'];
+export const employeeBulkStatusChangeActionValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['EmployeeBulkStatusChange']['action']
+> = ['SUSPEND', 'REACTIVATE'];
+export const employeeBulkStatusResultResultsOutcomeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['EmployeeBulkStatusResult']['results']['outcome']
+> = ['DONE', 'SKIPPED'];
 export const fieldErrorCodeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['FieldErrorCode']
 > = [
