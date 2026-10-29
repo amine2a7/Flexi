@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { PHASE_DEVELOPMENT_SERVER } from 'next/constants';
 import createNextIntlPlugin from 'next-intl/plugin';
 import { buildStaticSecurityHeaders } from './src/lib/security/headers';
 
@@ -21,4 +22,11 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+// `*.dev.tsx` pages (component library) exist for `next dev` only: never routed nor bundled in a
+// build (dev-composants.md §2, checked by the build output test in test/build).
+export default function config(phase: string): NextConfig {
+  return withNextIntl({
+    ...nextConfig,
+    pageExtensions: phase === PHASE_DEVELOPMENT_SERVER ? ['dev.tsx', 'tsx', 'ts'] : ['tsx', 'ts'],
+  });
+}

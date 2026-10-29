@@ -20,5 +20,6 @@
   "INVITED": "Invited",
   "ACTIVE": "Active",
   "PENDING": "Pending",
-  "merchantReceivable": "Awaiting settlement"
+  "merchantReceivable": "Awaiting settlement",
+  "DEACTIVATED": "Deactivated"
 }

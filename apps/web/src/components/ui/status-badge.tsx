@@ -92,6 +92,9 @@ const API_TO_TOKEN: Record<string, string> = {
   EXPIRED: 'EXPIRE',
 };
 
+/** Every API status the badge knows (shown together by the component library). */
+export const KNOWN_STATUSES: readonly string[] = Object.keys(API_TO_TOKEN);
+
 /** Credit orders (OrderStatus): colour and icon of an existing token, label of the order circuit. */
 const ORDER_TOKENS: Record<string, string> = {
   AWAITING_CONFIRMATION: 'EN_ATTENTE',

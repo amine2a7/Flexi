@@ -25,5 +25,91 @@
     "scenarios": "Ajoutez ?mock=slow, ?mock=error ou ?mock=empty à l'adresse pour tester un chargement lent, une erreur ou une liste vide.",
     "realTitle": "Codes clients (API réelle)",
     "realSteps": "Ouvrez une fenêtre de navigation privée, connectez-vous avec beneficiaire@flexipay.test (code PIN 1234), puis Payer > Mon code : saisissez ici le code à 8 chiffres affiché (valable 60 s)."
+  },
+  "library": {
+    "title": "Bibliothèque de composants",
+    "description": "Développement uniquement : chaque composant dans ses états, avec des données fictives.",
+    "skip": "Aller aux composants",
+    "summary": "Sommaire",
+    "controls": {
+      "language": "Langue",
+      "width": "Largeur d'aperçu",
+      "textSize": "Taille du texte",
+      "reducedMotion": "Animations réduites",
+      "widths": {
+        "viewport-min": "Mobile (360 px)",
+        "md": "Tablette",
+        "lg": "Ordinateur",
+        "xl": "Grand écran",
+        "full": "Pleine largeur"
+      }
+    },
+    "sections": {
+      "buttons": "Boutons – C.1",
+      "fields": "Champs de saisie – C.2",
+      "badges": "Badges de statut – C.3",
+      "cards": "Cartes – C.4",
+      "toasts": "Notifications – C.5",
+      "amounts": "Montants – C.6",
+      "skeletons": "Squelettes – C.7",
+      "states": "États d'écran – C.8",
+      "table": "Tableau de données – NC.1",
+      "dialogs": "Modales – NC.3",
+      "navigation": "Onglets et historique – NC.4",
+      "misc": "Compte à rebours et QR – NC.8"
+    },
+    "sample": {
+      "action": "Valider",
+      "withIcon": "Ajouter",
+      "small": "Petit",
+      "label": "Référence",
+      "hint": "Texte d’aide de démonstration.",
+      "error": "Ce champ est obligatoire.",
+      "password": "Mot de passe",
+      "select": "Catégorie",
+      "placeholder": "Choisir…",
+      "optionA": "Première option",
+      "optionB": "Deuxième option",
+      "textarea": "Motif",
+      "amount": "Montant",
+      "creditTypes": "Types de crédit",
+      "kpi": "Solde total",
+      "cardTitle": "Détail du paiement",
+      "rate": "Taux de commission",
+      "rateNote": "Taux figé",
+      "sizes": "Tailles",
+      "signs": "Crédit et débit",
+      "gross": "Montant brut",
+      "commission": "Commission",
+      "net": "Net viré",
+      "emptyTitle": "Aucun élément",
+      "emptyMessage": "Les éléments apparaîtront ici.",
+      "resultTitle": "Opération réussie",
+      "tableCaption": "Paiements de démonstration",
+      "status": "Statut",
+      "openModal": "Ouvrir une modale",
+      "openConfirm": "Supprimer…",
+      "modalTitle": "Titre de la modale",
+      "confirmTitle": "Confirmer la suppression ?",
+      "stepOne": "Demande créée",
+      "stepTwo": "Demande validée",
+      "stepRefused": "Demande refusée",
+      "qr": "Code QR de démonstration"
+    },
+    "state": {
+      "disabled": "Désactivé",
+      "loading": "Chargement",
+      "succeeded": "Réussi",
+      "longText": "Texte très long",
+      "limits": "Zéro et montant maximal"
+    },
+    "toast": {
+      "success": "Paiement enregistré.",
+      "info": "Le règlement est prévu à J+2.",
+      "error": "Le paiement a échoué.",
+      "showSuccess": "Notification de succès",
+      "showInfo": "Notification d'information",
+      "showError": "Notification d'erreur"
+    }
   }
 }

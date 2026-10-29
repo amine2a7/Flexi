@@ -20,5 +20,6 @@
   "INVITED": "مدعو",
   "ACTIVE": "نشِط",
   "PENDING": "قيد الانتظار",
-  "merchantReceivable": "في انتظار التسوية"
+  "merchantReceivable": "في انتظار التسوية",
+  "DEACTIVATED": "معطّل"
 }

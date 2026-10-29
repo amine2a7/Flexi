@@ -20,5 +20,6 @@
   "INVITED": "Invité",
   "ACTIVE": "Actif",
   "PENDING": "En attente",
-  "merchantReceivable": "En attente de règlement"
+  "merchantReceivable": "En attente de règlement",
+  "DEACTIVATED": "Désactivé"
 }

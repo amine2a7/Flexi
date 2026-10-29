@@ -25,5 +25,91 @@
     "scenarios": "Add ?mock=slow, ?mock=error or ?mock=empty to the address to test slow loading, an error or an empty list.",
     "realTitle": "Customer codes (real API)",
     "realSteps": "Open a private window, sign in as beneficiaire@flexipay.test (PIN 1234), then Pay > My code: type here the 8-digit code shown (valid for 60 s)."
+  },
+  "library": {
+    "title": "Component library",
+    "description": "Development only: every component in its states, with fictitious data.",
+    "skip": "Skip to components",
+    "summary": "Contents",
+    "controls": {
+      "language": "Language",
+      "width": "Preview width",
+      "textSize": "Text size",
+      "reducedMotion": "Reduced motion",
+      "widths": {
+        "viewport-min": "Mobile (360 px)",
+        "md": "Tablet",
+        "lg": "Desktop",
+        "xl": "Large screen",
+        "full": "Full width"
+      }
+    },
+    "sections": {
+      "buttons": "Buttons – C.1",
+      "fields": "Input fields – C.2",
+      "badges": "Status badges – C.3",
+      "cards": "Cards – C.4",
+      "toasts": "Toasts – C.5",
+      "amounts": "Amounts – C.6",
+      "skeletons": "Skeletons – C.7",
+      "states": "Screen states – C.8",
+      "table": "Data table – NC.1",
+      "dialogs": "Dialogs – NC.3",
+      "navigation": "Tabs and history – NC.4",
+      "misc": "Countdown and QR – NC.8"
+    },
+    "sample": {
+      "action": "Confirm",
+      "withIcon": "Add",
+      "small": "Small",
+      "label": "Reference",
+      "hint": "Demo help text.",
+      "error": "This field is required.",
+      "password": "Password",
+      "select": "Category",
+      "placeholder": "Choose…",
+      "optionA": "First option",
+      "optionB": "Second option",
+      "textarea": "Reason",
+      "amount": "Amount",
+      "creditTypes": "Credit types",
+      "kpi": "Total balance",
+      "cardTitle": "Payment details",
+      "rate": "Commission rate",
+      "rateNote": "Frozen rate",
+      "sizes": "Sizes",
+      "signs": "Credit and debit",
+      "gross": "Gross amount",
+      "commission": "Commission",
+      "net": "Net transferred",
+      "emptyTitle": "No items",
+      "emptyMessage": "Items will appear here.",
+      "resultTitle": "Operation successful",
+      "tableCaption": "Demo payments",
+      "status": "Status",
+      "openModal": "Open a dialog",
+      "openConfirm": "Delete…",
+      "modalTitle": "Dialog title",
+      "confirmTitle": "Confirm deletion?",
+      "stepOne": "Request created",
+      "stepTwo": "Request approved",
+      "stepRefused": "Request refused",
+      "qr": "Demo QR code"
+    },
+    "state": {
+      "disabled": "Disabled",
+      "loading": "Loading",
+      "succeeded": "Succeeded",
+      "longText": "Very long text",
+      "limits": "Zero and maximum amount"
+    },
+    "toast": {
+      "success": "Payment recorded.",
+      "info": "Settlement is due in 2 days.",
+      "error": "The payment failed.",
+      "showSuccess": "Success toast",
+      "showInfo": "Information toast",
+      "showError": "Error toast"
+    }
   }
 }
