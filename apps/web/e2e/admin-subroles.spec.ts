@@ -7,6 +7,7 @@ const ALL = [
   '/admin',
   '/admin/commercants',
   '/admin/entreprises',
+  '/admin/utilisateurs',
   '/admin/kyc',
   '/admin/commandes',
   '/admin/virements',
@@ -37,7 +38,13 @@ const SUB_ROLES = [
   {
     name: 'Support',
     account: 'support@flexipay.test',
-    menu: ['/admin/commercants', '/admin/entreprises', '/admin/transactions', '/admin/messages'],
+    menu: [
+      '/admin/commercants',
+      '/admin/entreprises',
+      '/admin/utilisateurs',
+      '/admin/transactions',
+      '/admin/messages',
+    ],
     denied: ['/admin', '/admin/parametres', '/admin/audit', '/admin/commandes', '/admin/kyc'],
   },
 ];

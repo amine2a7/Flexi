@@ -30,7 +30,8 @@
     "kyc": "ملفات التحقق",
     "payouts": "تحويلات التجار",
     "transactions": "المعاملات",
-    "messages": "الرسائل"
+    "messages": "الرسائل",
+    "users": "المستخدمون"
   },
   "beneficiary": {
     "home": "الرئيسية",

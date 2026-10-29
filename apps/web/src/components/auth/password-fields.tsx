@@ -57,7 +57,9 @@ export function PasswordFields({
         autoComplete="new-password"
         value={password}
         error={serverError}
-        onChange={(event) => { onPassword(event.target.value); }}
+        onChange={(event) => {
+          onPassword(event.target.value);
+        }}
       />
       {rules.length > 0 ? (
         <ul
@@ -84,7 +86,9 @@ export function PasswordFields({
         autoComplete="new-password"
         value={confirmation}
         error={mismatch ? t('mismatch') : undefined}
-        onChange={(event) => { onConfirmation(event.target.value); }}
+        onChange={(event) => {
+          onConfirmation(event.target.value);
+        }}
       />
     </div>
   );

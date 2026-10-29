@@ -12,6 +12,7 @@ const PAGE_PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
   '/admin': ['dashboard.read'],
   '/admin/commercants': ['accounts.read'],
   '/admin/entreprises': ['accounts.read'],
+  '/admin/utilisateurs': ['users.read'],
   '/admin/kyc': ['kyc.read'],
   '/admin/commandes': ['creditOrders.read'],
   '/admin/virements': ['adminPayouts.read'],

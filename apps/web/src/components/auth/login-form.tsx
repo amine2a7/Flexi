@@ -104,7 +104,9 @@ export function LoginForm() {
           autoComplete="username"
           required
           value={identifier}
-          onChange={(event) => { setIdentifier(event.target.value); }}
+          onChange={(event) => {
+            setIdentifier(event.target.value);
+          }}
         />
         <TextField
           label={t('auth.login.password')}
@@ -113,7 +115,9 @@ export function LoginForm() {
           autoComplete="current-password"
           required
           value={password}
-          onChange={(event) => { setPassword(event.target.value); }}
+          onChange={(event) => {
+            setPassword(event.target.value);
+          }}
         />
         <Button
           type="submit"

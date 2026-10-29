@@ -24,5 +24,9 @@
   "REJETEE": "مرفوضة",
   "APPROUVEE": "مصادق عليها",
   "INCONNU": "حالة غير معروفة",
-  "REFUSEE": "مرفوضة"
+  "REFUSEE": "مرفوضة",
+  "ACTIF": "نشط",
+  "INVITE": "مدعو",
+  "DESACTIVE": "معطّل",
+  "DESACTIVE_GRACE": "معطّل — مهلة حتى {date}"
 }

@@ -30,7 +30,8 @@
     "kyc": "Dossiers KYC",
     "payouts": "Virements commerçants",
     "transactions": "Transactions",
-    "messages": "Messages"
+    "messages": "Messages",
+    "users": "Utilisateurs"
   },
   "beneficiary": {
     "home": "Accueil",

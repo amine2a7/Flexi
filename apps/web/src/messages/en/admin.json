@@ -322,5 +322,87 @@
     "amount": "Amount",
     "status": "Status",
     "empty": "No transactions for these filters"
+  },
+  "users": {
+    "title": "Users",
+    "description": "Every account of the platform: administrators, companies, merchants and employees.",
+    "create": "Create an administrator",
+    "search": "Search (name, e-mail)",
+    "role": "Role",
+    "roleAll": "All roles",
+    "status": "Status",
+    "caption": "Users of the platform",
+    "columns": {
+      "name": "Name",
+      "email": "E-mail",
+      "role": "Role",
+      "space": "Space",
+      "status": "Status"
+    },
+    "empty": "No user",
+    "emptyMessage": "Change the filters to widen the search.",
+    "statuses": {
+      "INVITED": "Invited",
+      "ACTIVE": "Active",
+      "SUSPENDED": "Suspended",
+      "DEACTIVATED": "Deactivated"
+    },
+    "platform": "FlexiPay",
+    "detail": {
+      "back": "Back to users",
+      "account": "Account",
+      "role": "Role",
+      "subRole": "Sub-role",
+      "space": "Space",
+      "createdAt": "Created on",
+      "mfa": "Two-step verification",
+      "mfaOn": "On",
+      "mfaOff": "Off",
+      "pin": "PIN",
+      "pinLocked": "Locked",
+      "pinOk": "Usable",
+      "balance": "Balance",
+      "actions": "Actions",
+      "noAction": "No action is possible on this account with your rights.",
+      "self": "You cannot change your own account.",
+      "newRole": "New sub-role",
+      "history": "Account history",
+      "historyEmpty": "No change recorded."
+    },
+    "actions": {
+      "suspend": "Suspend",
+      "reactivate": "Reactivate",
+      "deactivate": "Deactivate",
+      "role": "Change the role",
+      "resend": "Resend the invitation",
+      "unlock": "Unlock the PIN"
+    },
+    "toast": {
+      "suspend": "Account suspended.",
+      "reactivate": "Account reactivated.",
+      "deactivate": "Account deactivated.",
+      "role": "Role changed.",
+      "resend": "Invitation sent again.",
+      "unlock": "PIN unlocked. The employee is told.",
+      "created": "Invitation sent to {email}."
+    },
+    "history": {
+      "users_create": "Account created",
+      "users_suspend": "Account suspended",
+      "users_reactivate": "Account reactivated",
+      "users_deactivate": "Account deactivated",
+      "users_role": "Role changed",
+      "users_resendInvitation": "Invitation sent again",
+      "users_unlockPin": "PIN unlocked",
+      "other": "Account change"
+    },
+    "createForm": {
+      "title": "Create an administrator",
+      "description": "They will receive an e-mail invitation with a temporary password valid 72 hours.",
+      "name": "Display name",
+      "email": "E-mail",
+      "subRole": "Sub-role",
+      "submit": "Send the invitation"
+    }
   }
 }

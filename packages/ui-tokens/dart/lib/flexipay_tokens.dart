@@ -302,6 +302,30 @@ abstract final class FlexiStatus {
       bg: FlexiColors.dangerSoft,
       fg: FlexiColors.dangerText,
     ),
+    'ACTIF': FlexiStatusStyle(
+      labelKey: 'status.ACTIF',
+      icon: 'CircleCheck',
+      bg: FlexiColors.emeraldSoft,
+      fg: FlexiColors.emeraldText,
+    ),
+    'INVITE': FlexiStatusStyle(
+      labelKey: 'status.INVITE',
+      icon: 'Mail',
+      bg: FlexiColors.infoSoft,
+      fg: FlexiColors.infoText,
+    ),
+    'DESACTIVE': FlexiStatusStyle(
+      labelKey: 'status.DESACTIVE',
+      icon: 'UserX',
+      bg: FlexiColors.border,
+      fg: FlexiColors.neutralText,
+    ),
+    'DESACTIVE_GRACE': FlexiStatusStyle(
+      labelKey: 'status.DESACTIVE_GRACE',
+      icon: 'Hourglass',
+      bg: FlexiColors.warningSoft,
+      fg: FlexiColors.warningText,
+    ),
     'EN_LITIGE': FlexiStatusStyle(
       labelKey: 'status.EN_LITIGE',
       icon: 'Scale',

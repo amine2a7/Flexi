@@ -19,12 +19,17 @@ import {
   ShieldCheck,
   TimerOff,
   ArrowLeftRight,
+  Hourglass,
+  Mail,
+  UserX,
   type LucideIcon,
 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { messageKey } from '@/i18n/keys';
 import { cn } from '@/lib/cn';
 import { useReplay } from '@/lib/motion';
+import { formatCalendarDate } from '@/lib/format/date';
+import { useState } from 'react';
 
 interface StatusToken {
   readonly labelKey: string;
@@ -54,6 +59,9 @@ const ICONS: Record<string, LucideIcon> = {
   ShieldCheck,
   Send,
   CircleHelp,
+  Hourglass,
+  Mail,
+  UserX,
 };
 
 /** Statuses of the contract (English enums) -> status tokens of the charter (glossary names). */
@@ -109,12 +117,14 @@ const ORDER_TOKENS: Record<string, string> = {
 const CONTEXT_OVERRIDES: Record<string, Record<string, string>> = {
   approval: { REJECTED: 'REFUSEE', APPROVED: 'APPROUVEE' },
   payout: { REJECTED: 'REJETEE' },
+  // Account lifecycle (commun-statut-utilisateur.md §3.1).
+  user: { ACTIVE: 'ACTIF', INVITED: 'INVITE', SUSPENDED: 'SUSPENDU', DEACTIVATED: 'DESACTIVE' },
 };
 
 interface StatusBadgeProps {
   /** Status as sent by the API. */
   readonly status: string;
-  readonly context?: 'approval' | 'payout' | 'order';
+  readonly context?: 'approval' | 'payout' | 'order' | 'user';
   /** i18n key replacing the default label (e.g. merchant wording of A_REGLER, decision 2). */
   readonly labelKey?: string;
 }
@@ -148,6 +158,45 @@ export function StatusBadge({ status, context, labelKey }: StatusBadgeProps) {
           labelKey ?? (orderToken === undefined ? token.labelKey : `orders.status.${status}`),
         ),
       )}
+    </span>
+  );
+}
+
+/**
+ * Status of an account (commun-statut-utilisateur.md §3.1): a deactivated employee still in its
+ * grace period shows the end date as sent by the API (never a computed number of days).
+ */
+export function UserStatusBadge({
+  status,
+  graceUntil,
+}: {
+  status: string;
+  graceUntil?: string | null | undefined;
+}) {
+  const t = useTranslations();
+  const locale = useLocale();
+  // Moment of the first display (React rules: no clock read while rendering).
+  const [now] = useState(() => Date.now());
+  const inGrace =
+    status === 'DEACTIVATED' &&
+    graceUntil !== null &&
+    graceUntil !== undefined &&
+    Date.parse(graceUntil) > now;
+  const token = STATUS.DESACTIVE_GRACE;
+  if (!inGrace || token === undefined) return <StatusBadge status={status} context="user" />;
+  const Icon = ICONS[token.icon] ?? CircleHelp;
+  return (
+    <span
+      className={cn(
+        'inline-flex min-h-chip-height max-w-full items-start gap-1 rounded-badge px-2 py-1 text-caption font-label',
+        `bg-${token.bg}`,
+        `text-${token.fg}`,
+      )}
+    >
+      <Icon aria-hidden="true" className="size-icon-sm shrink-0" />
+      {t('status.DESACTIVE_GRACE', {
+        date: formatCalendarDate(graceUntil.slice(0, 10), locale),
+      })}
     </span>
   );
 }

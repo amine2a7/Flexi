@@ -322,5 +322,87 @@
     "amount": "Montant",
     "status": "Statut",
     "empty": "Aucune transaction pour ces filtres"
+  },
+  "users": {
+    "title": "Utilisateurs",
+    "description": "Tous les comptes de la plateforme : administrateurs, entreprises, commerçants et employés.",
+    "create": "Créer un administrateur",
+    "search": "Rechercher (nom, e-mail)",
+    "role": "Rôle",
+    "roleAll": "Tous les rôles",
+    "status": "Statut",
+    "caption": "Utilisateurs de la plateforme",
+    "columns": {
+      "name": "Nom",
+      "email": "E-mail",
+      "role": "Rôle",
+      "space": "Espace",
+      "status": "Statut"
+    },
+    "empty": "Aucun utilisateur",
+    "emptyMessage": "Modifiez les filtres pour élargir la recherche.",
+    "statuses": {
+      "INVITED": "Invité",
+      "ACTIVE": "Actif",
+      "SUSPENDED": "Suspendu",
+      "DEACTIVATED": "Désactivé"
+    },
+    "platform": "FlexiPay",
+    "detail": {
+      "back": "Retour aux utilisateurs",
+      "account": "Compte",
+      "role": "Rôle",
+      "subRole": "Sous-rôle",
+      "space": "Espace",
+      "createdAt": "Créé le",
+      "mfa": "Double authentification",
+      "mfaOn": "Activée",
+      "mfaOff": "Non activée",
+      "pin": "Code PIN",
+      "pinLocked": "Bloqué",
+      "pinOk": "Utilisable",
+      "balance": "Solde",
+      "actions": "Actions",
+      "noAction": "Aucune action possible sur ce compte avec vos droits.",
+      "self": "Vous ne pouvez pas modifier votre propre compte.",
+      "newRole": "Nouveau sous-rôle",
+      "history": "Historique du compte",
+      "historyEmpty": "Aucun changement enregistré."
+    },
+    "actions": {
+      "suspend": "Suspendre",
+      "reactivate": "Réactiver",
+      "deactivate": "Désactiver",
+      "role": "Changer le rôle",
+      "resend": "Renvoyer l'invitation",
+      "unlock": "Débloquer le PIN"
+    },
+    "toast": {
+      "suspend": "Compte suspendu.",
+      "reactivate": "Compte réactivé.",
+      "deactivate": "Compte désactivé.",
+      "role": "Rôle modifié.",
+      "resend": "Invitation renvoyée.",
+      "unlock": "PIN débloqué. L'employé en est informé.",
+      "created": "Invitation envoyée à {email}."
+    },
+    "history": {
+      "users_create": "Compte créé",
+      "users_suspend": "Compte suspendu",
+      "users_reactivate": "Compte réactivé",
+      "users_deactivate": "Compte désactivé",
+      "users_role": "Rôle modifié",
+      "users_resendInvitation": "Invitation renvoyée",
+      "users_unlockPin": "PIN débloqué",
+      "other": "Changement du compte"
+    },
+    "createForm": {
+      "title": "Créer un administrateur",
+      "description": "Il recevra une invitation par e-mail avec un mot de passe temporaire valable 72 heures.",
+      "name": "Nom affiché",
+      "email": "E-mail",
+      "subRole": "Sous-rôle",
+      "submit": "Envoyer l'invitation"
+    }
   }
 }

@@ -24,5 +24,9 @@
   "REJETEE": "Rejetée",
   "APPROUVEE": "Approuvée",
   "INCONNU": "Statut inconnu",
-  "REFUSEE": "Refusée"
+  "REFUSEE": "Refusée",
+  "ACTIF": "Actif",
+  "INVITE": "Invité",
+  "DESACTIVE": "Désactivé",
+  "DESACTIVE_GRACE": "Désactivé — délai de grâce jusqu'au {date}"
 }

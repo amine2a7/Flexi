@@ -13,6 +13,7 @@ import {
   Home,
   QrCode,
   ShieldCheck,
+  UserCog,
   UserRound,
   LayoutDashboard,
   Mail,
@@ -77,6 +78,7 @@ export const NAVIGATION: Partial<Record<Role, readonly NavItem[]>> = {
     { href: '/admin', labelKey: 'nav.admin.dashboard', icon: LayoutDashboard },
     { href: '/admin/commercants', labelKey: 'nav.admin.merchants', icon: Store },
     { href: '/admin/entreprises', labelKey: 'nav.admin.companies', icon: Building2 },
+    { href: '/admin/utilisateurs', labelKey: 'nav.admin.users', icon: UserCog },
     { href: '/admin/kyc', labelKey: 'nav.admin.kyc', icon: FileSearch, counter: 'adminKyc' },
     {
       href: '/admin/commandes',

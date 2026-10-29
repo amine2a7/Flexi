@@ -13,5 +13,46 @@
       "title": "Introuvable",
       "action": "Retour à l'accueil"
     }
+  },
+  "reason": {
+    "label": "Motif",
+    "hint": "Ce motif est conservé dans le journal d'audit.",
+    "counter": "{count} / {max} caractères",
+    "min": "Saisissez un motif d'au moins {min} caractères.",
+    "tooLong": "Le motif ne doit pas dépasser {max} caractères.",
+    "cancel": "Annuler",
+    "from": "Actuel",
+    "to": "Demandé",
+    "person": "Personne",
+    "suspend": {
+      "title": "Suspendre {name} ?",
+      "confirm": "Suspendre le compte",
+      "effect": "Le compte ne pourra plus se connecter ni payer. Ses sessions seront fermées immédiatement."
+    },
+    "suspendEmployee": {
+      "effect": "Son solde est conservé mais bloqué : aucun paiement ni aucune attribution."
+    },
+    "reactivate": {
+      "title": "Réactiver {name} ?",
+      "confirm": "Réactiver le compte",
+      "effect": "Le compte pourra de nouveau se connecter."
+    },
+    "deactivate": {
+      "title": "Désactiver {name} ?",
+      "confirm": "Désactiver le compte",
+      "effect": "Le compte sera désactivé. Il ne pourra plus se connecter.",
+      "irreversible": "Cette action est définitive. La désactivation ne peut pas être annulée."
+    },
+    "deactivateEmployee": {
+      "confirm": "Désactiver l'employé",
+      "grace": "L'employé pourra utiliser son solde restant pendant {days, plural, one {# jour} other {# jours}}, puis son compte sera fermé.",
+      "noCredit": "Aucun nouveau crédit ne pourra lui être attribué."
+    },
+    "role": {
+      "title": "Changer le rôle de {name} ?",
+      "confirm": "Changer le rôle",
+      "effect": "Les droits du compte changeront immédiatement ; ses sessions seront fermées."
+    },
+    "graceUnavailable": "Le délai de grâce n'a pas pu être chargé."
   }
 }

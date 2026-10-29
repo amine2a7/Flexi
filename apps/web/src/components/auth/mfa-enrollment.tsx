@@ -87,7 +87,9 @@ export function MfaEnrollment() {
           <input
             type="checkbox"
             checked={noted}
-            onChange={(event) => { setNoted(event.target.checked); }}
+            onChange={(event) => {
+              setNoted(event.target.checked);
+            }}
             className="size-icon-md"
           />
           {t('auth.recovery.noted')}
@@ -136,7 +138,9 @@ export function MfaEnrollment() {
               autoComplete="one-time-code"
               maxLength={6}
               value={code}
-              onChange={(event) => { setCode(event.target.value.replace(/\D/g, '')); }}
+              onChange={(event) => {
+                setCode(event.target.value.replace(/\D/g, ''));
+              }}
             />
             <Button type="submit" loading={submitting} disabled={!/^[0-9]{6}$/.test(code)}>
               {t('auth.enroll.submit')}

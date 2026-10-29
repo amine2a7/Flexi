@@ -60,7 +60,9 @@ export function ForgotPasswordForm() {
           hint={t('auth.login.identifierHint')}
           autoComplete="username"
           value={identifier}
-          onChange={(event) => { setIdentifier(event.target.value); }}
+          onChange={(event) => {
+            setIdentifier(event.target.value);
+          }}
         />
         <Button type="submit" loading={submitting} disabled={identifier.trim() === ''}>
           {t('auth.forgot.submit')}

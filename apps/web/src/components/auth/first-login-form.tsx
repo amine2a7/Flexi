@@ -46,7 +46,9 @@ export function FirstLoginForm() {
         setSoon(true);
       }
     }, 1000);
-    return () => { clearInterval(timer); };
+    return () => {
+      clearInterval(timer);
+    };
   }, [restrictedUntil, router]);
 
   async function onSubmit(event: SyntheticEvent) {

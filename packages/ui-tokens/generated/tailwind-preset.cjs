@@ -293,6 +293,34 @@ module.exports = {
         "bg": "danger-soft",
         "fg": "danger-text"
       },
+      "ACTIF": {
+        "label": "Actif",
+        "labelKey": "status.ACTIF",
+        "icon": "CircleCheck",
+        "bg": "emerald-soft",
+        "fg": "emerald-text"
+      },
+      "INVITE": {
+        "label": "Invité",
+        "labelKey": "status.INVITE",
+        "icon": "Mail",
+        "bg": "info-soft",
+        "fg": "info-text"
+      },
+      "DESACTIVE": {
+        "label": "Désactivé",
+        "labelKey": "status.DESACTIVE",
+        "icon": "UserX",
+        "bg": "border",
+        "fg": "neutral-text"
+      },
+      "DESACTIVE_GRACE": {
+        "label": "Désactivé — délai de grâce jusqu'au {date}",
+        "labelKey": "status.DESACTIVE_GRACE",
+        "icon": "Hourglass",
+        "bg": "warning-soft",
+        "fg": "warning-text"
+      },
       "EN_LITIGE": {
         "label": "En litige",
         "labelKey": "status.EN_LITIGE",

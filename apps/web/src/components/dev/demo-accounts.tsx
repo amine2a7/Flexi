@@ -26,15 +26,13 @@ export function DemoAccounts({ onPick }: DemoAccountsProps) {
           <li key={account.identifier}>
             <button
               type="button"
-              onClick={() => { onPick(account); }}
+              onClick={() => {
+                onPick(account);
+              }}
               className="flex w-full flex-col items-start rounded-button bg-surface px-3 py-2 text-start text-caption text-text hover:bg-bg"
             >
-              <span className="font-title">
-                {t(`accounts.${account.role}`)}
-              </span>
-              <span dir="ltr">
-                {`${account.identifier} · ${account.password}`}
-              </span>
+              <span className="font-title">{t(`accounts.${account.role}`)}</span>
+              <span dir="ltr">{`${account.identifier} · ${account.password}`}</span>
             </button>
           </li>
         ))}

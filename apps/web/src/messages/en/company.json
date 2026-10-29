@@ -93,7 +93,19 @@
     "created": "{name} has been added. A temporary password has been sent.",
     "duplicate": "An employee with this number or e-mail already exists.",
     "required": "Required field.",
-    "invalidFormat": "Invalid format."
+    "invalidFormat": "Invalid format.",
+    "lifecycle": {
+      "actions": "Actions",
+      "suspend": "Suspend",
+      "reactivate": "Reactivate",
+      "deactivate": "Deactivate",
+      "none": "No action",
+      "done": {
+        "suspend": "Employee suspended.",
+        "reactivate": "Employee reactivated.",
+        "deactivate": "Employee deactivated."
+      }
+    }
   },
   "import": {
     "title": "Import employees",

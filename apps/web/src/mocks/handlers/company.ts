@@ -222,7 +222,7 @@ export const companyHandlers = [
           employee.email,
         ),
       );
-    return HttpResponse.json<S['EmployeePage']>(paginate(items, request));
+    return HttpResponse.json<S['EmployeePage']>({ ...paginate(items, request), graceDays: 30 });
   }),
 
   http.post(apiUrl('/v1/company/employees'), async ({ request }) => {

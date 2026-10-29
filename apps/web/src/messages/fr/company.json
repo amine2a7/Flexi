@@ -93,7 +93,19 @@
     "created": "{name} a été ajouté. Un mot de passe temporaire lui a été envoyé.",
     "duplicate": "Un employé avec ce matricule ou cet e-mail existe déjà.",
     "required": "Champ obligatoire.",
-    "invalidFormat": "Format invalide."
+    "invalidFormat": "Format invalide.",
+    "lifecycle": {
+      "actions": "Actions",
+      "suspend": "Suspendre",
+      "reactivate": "Réactiver",
+      "deactivate": "Désactiver",
+      "none": "Aucune action",
+      "done": {
+        "suspend": "Employé suspendu.",
+        "reactivate": "Employé réactivé.",
+        "deactivate": "Employé désactivé."
+      }
+    }
   },
   "import": {
     "title": "Importer des employés",

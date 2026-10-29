@@ -32,7 +32,9 @@ export function SessionWatch({ onExpire }: { onExpire: () => Promise<void> }) {
     const timer = setInterval(() => {
       const idle = Date.now() - lastActivity.current;
       if (idle >= IDLE_MS) {
-        void onExpire().then(() => { router.replace('/session-expiree'); });
+        void onExpire().then(() => {
+          router.replace('/session-expiree');
+        });
       } else if (idle >= IDLE_MS - WARNING_MS) {
         setWarning(true);
       }

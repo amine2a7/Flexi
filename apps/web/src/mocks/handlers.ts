@@ -9,6 +9,7 @@ import { employeeHandlers } from './handlers/employee';
 import { merchantHandlers } from './handlers/merchant';
 import { orderHandlers } from './handlers/orders';
 import { permissionGate } from './handlers/permission-gate';
+import { userHandlers } from './handlers/users';
 import { apiUrl, MOCK_SESSION_COOKIE, restoreSession } from './handlers/util';
 
 // Runs before every route and falls through (returns nothing): restores the session after a reload.
@@ -35,6 +36,7 @@ export const handlers: RequestHandler[] = [
   ...orderHandlers,
   ...adminHandlers,
   ...adminOpsHandlers,
+  ...userHandlers,
   ...contactHandlers,
   notMocked,
 ];

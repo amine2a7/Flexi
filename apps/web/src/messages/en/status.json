@@ -24,5 +24,9 @@
   "REJETEE": "Rejected",
   "APPROUVEE": "Approved",
   "INCONNU": "Unknown status",
-  "REFUSEE": "Declined"
+  "REFUSEE": "Declined",
+  "ACTIF": "Active",
+  "INVITE": "Invited",
+  "DESACTIVE": "Deactivated",
+  "DESACTIVE_GRACE": "Deactivated — grace period until {date}"
 }

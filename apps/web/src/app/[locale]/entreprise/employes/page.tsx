@@ -17,13 +17,21 @@ import { TextField } from '@/components/ui/field';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { Modal } from '@/components/ui/modal';
-import { StatusBadge } from '@/components/ui/status-badge';
+import { ReasonDialog } from '@/components/ui/reason-dialog';
+import { UserStatusBadge } from '@/components/ui/status-badge';
 import { useToast } from '@/components/ui/toast';
 import { useCan, useCanOpen } from '@/lib/session/session-context';
 
 type Employee = Schemas['Employee'];
 type Draft = Schemas['EmployeeCreate'];
-const STATUSES: Schemas['EmployeeStatus'][] = ['ACTIVE', 'INVITED', 'SUSPENDED'];
+const STATUSES: Schemas['EmployeeStatus'][] = ['ACTIVE', 'INVITED', 'SUSPENDED', 'DEACTIVATED'];
+type Lifecycle = 'suspend' | 'reactivate' | 'deactivate';
+
+/** Transitions of an employee (commun-statut-utilisateur.md §3.1): none from DEACTIVATED. */
+function transitions(status: Schemas['EmployeeStatus']): Lifecycle[] {
+  if (status === 'DEACTIVATED') return [];
+  return status === 'SUSPENDED' ? ['reactivate', 'deactivate'] : ['suspend', 'deactivate'];
+}
 const FIELDS = ['employeeNumber', 'firstName', 'lastName', 'email', 'phone'] as const;
 const EMPTY: Draft = { employeeNumber: '', firstName: '', lastName: '', email: '', phone: '+216' };
 
@@ -37,20 +45,33 @@ export default function EmployeesPage() {
   const [filters, setFilters] = useState({ q: '', status: '' });
   const [adding, setAdding] = useState(false);
   const [refresh, setRefresh] = useState(0);
+  const [graceDays, setGraceDays] = useState<number | undefined>(undefined);
+  const [target, setTarget] = useState<{ employee: Employee; action: Lifecycle } | undefined>(
+    undefined,
+  );
+  const tLife = useTranslations('company.employees.lifecycle');
+  const tReason = useTranslations('common.reason');
+  const toast = useToast();
   const list = usePagedList(
     (cursor, withCount) =>
-      getApi().GET('/v1/company/employees', {
-        params: {
-          query: {
-            cursor,
-            withCount,
-            ...(filters.q === '' ? {} : { q: filters.q }),
-            ...(filters.status === ''
-              ? {}
-              : { status: filters.status as Schemas['EmployeeStatus'] }),
+      getApi()
+        .GET('/v1/company/employees', {
+          params: {
+            query: {
+              cursor,
+              withCount,
+              ...(filters.q === '' ? {} : { q: filters.q }),
+              ...(filters.status === ''
+                ? {}
+                : { status: filters.status as Schemas['EmployeeStatus'] }),
+            },
           },
-        },
-      }),
+        })
+        .then((result) => {
+          // Grace period a deactivation would apply, sent with the list (never computed here).
+          if (result.data?.graceDays !== undefined) setGraceDays(result.data.graceDays);
+          return result;
+        }),
     [filters, refresh],
   );
 
@@ -80,10 +101,54 @@ export default function EmployeesPage() {
     {
       key: 'status',
       header: t('status'),
-      cell: (row) => <StatusBadge status={row.status} />,
+      cell: (row) => <UserStatusBadge status={row.status} graceUntil={row.graceUntil} />,
       sortValue: (row) => row.status,
     },
+    ...(canManage
+      ? [
+          {
+            key: 'actions',
+            header: tLife('actions'),
+            align: 'end' as const,
+            cell: (row: Employee) => {
+              const available = transitions(row.status);
+              if (available.length === 0)
+                return <span className="text-caption text-text-muted">{tLife('none')}</span>;
+              return (
+                <span className="flex flex-wrap justify-end gap-2">
+                  {available.map((action) => (
+                    <Button
+                      key={action}
+                      size="sm"
+                      variant={action === 'deactivate' ? 'danger' : 'secondary'}
+                      onClick={() => {
+                        setTarget({ employee: row, action });
+                      }}
+                    >
+                      {tLife(action)}
+                    </Button>
+                  ))}
+                </span>
+              );
+            },
+          },
+        ]
+      : []),
   ];
+
+  async function changeStatus(employee: Employee, action: Lifecycle, reason: string) {
+    const options = { params: { path: { employeeId: employee.id } }, body: { reason } };
+    const result =
+      action === 'suspend'
+        ? await getApi().POST('/v1/company/employees/{employeeId}/suspend', options)
+        : action === 'reactivate'
+          ? await getApi().POST('/v1/company/employees/{employeeId}/reactivate', options)
+          : await getApi().POST('/v1/company/employees/{employeeId}/deactivate', options);
+    if (result.error !== undefined) return result.error;
+    toast.notify('success', tLife(`done.${action}`));
+    setRefresh((value) => value + 1);
+    return undefined;
+  }
 
   return (
     <>
@@ -147,6 +212,51 @@ export default function EmployeesPage() {
           setRefresh((value) => value + 1);
         }}
       />
+      {target !== undefined ? (
+        <ReasonDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setTarget(undefined);
+          }}
+          title={tReason(`${target.action}.title`, {
+            name: `${target.employee.firstName} ${target.employee.lastName}`,
+          })}
+          summary={[
+            {
+              label: tReason('person'),
+              value: `${target.employee.firstName} ${target.employee.lastName} (${target.employee.employeeNumber})`,
+            },
+          ]}
+          effects={
+            target.action === 'suspend'
+              ? [tReason('suspend.effect'), tReason('suspendEmployee.effect')]
+              : target.action === 'reactivate'
+                ? [tReason('reactivate.effect')]
+                : []
+          }
+          {...(target.action === 'deactivate'
+            ? {
+                warnings: [
+                  ...(graceDays === undefined
+                    ? []
+                    : [tReason('deactivateEmployee.grace', { days: graceDays })]),
+                  tReason('deactivateEmployee.noCredit'),
+                  tReason('deactivate.irreversible'),
+                ],
+              }
+            : {})}
+          {...(target.action === 'deactivate' && graceDays === undefined
+            ? { blockedReason: tReason('graceUnavailable') }
+            : {})}
+          confirmLabel={
+            target.action === 'deactivate'
+              ? tReason('deactivateEmployee.confirm')
+              : tReason(`${target.action}.confirm`)
+          }
+          confirmVariant={target.action === 'reactivate' ? 'primary' : 'danger'}
+          onConfirm={(reason) => changeStatus(target.employee, target.action, reason)}
+        />
+      ) : null}
     </>
   );
 }
