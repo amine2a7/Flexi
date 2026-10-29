@@ -48,11 +48,18 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Per-run secrets of the test API
         run: |
+          app_password="$(openssl rand -hex 24)"
+          session_secret="$(openssl rand -base64 32)"
+          data_key="$(openssl rand -base64 32)"
+          # Never printed in the logs (securite DC-03).
+          echo "::add-mask::$app_password"
+          echo "::add-mask::$session_secret"
+          echo "::add-mask::$data_key"
           {
             echo "PG_ADMIN_URL=postgresql://ci_owner:ci-${{ github.run_id }}-${{ github.run_attempt }}@localhost:5432/postgres"
-            echo "APP_DB_PASSWORD=$(openssl rand -hex 24)"
-            echo "SESSION_SECRET=$(openssl rand -base64 32)"
-            echo "DATA_ENCRYPTION_KEY=$(openssl rand -base64 32)"
+            echo "APP_DB_PASSWORD=$app_password"
+            echo "SESSION_SECRET=$session_secret"
+            echo "DATA_ENCRYPTION_KEY=$data_key"
           } >> "$GITHUB_ENV"
       - run: pnpm lint
       - run: pnpm typecheck
@@ -78,8 +85,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-      - name: pnpm audit (production dependencies)
-        run: pnpm audit -P --audit-level=moderate
+      # Blocking threshold of the threat model (SC-10): high and critical (securite DC-01).
+      - name: pnpm audit (shipped dependencies)
+        run: pnpm audit -P --audit-level=high
       - name: Semgrep
         run: |
           docker run --rm -v "$PWD:/src" -w /src semgrep/semgrep:1.100.0 \

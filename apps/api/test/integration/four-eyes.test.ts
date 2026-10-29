@@ -50,6 +50,11 @@ describe('four eyes', () => {
       },
     });
     expect(created.status).toBe(201);
+    // QY-03 b (securite QY-01): the creator is stored by the API itself, from the session.
+    const merchant = await db.system((tx) =>
+      tx.merchant.findUniqueOrThrow({ where: { id: String(created.body.id) } }),
+    );
+    expect(merchant.createdBy).toBe(author.user.id);
     const file = await db.system((tx) =>
       tx.kycFile.findFirstOrThrow({ where: { merchantId: String(created.body.id) } }),
     );
