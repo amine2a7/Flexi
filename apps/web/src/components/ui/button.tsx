@@ -27,7 +27,7 @@ export function buttonClasses(
 ): string {
   return cn(
     'inline-flex items-center justify-center gap-2 rounded-button font-title transition duration-fast ease-out',
-    'active:scale-press disabled:cursor-not-allowed disabled:opacity-disabled disabled:active:scale-100',
+    'active:scale-press disabled:cursor-not-allowed disabled:border-border disabled:bg-border disabled:text-text-muted disabled:shadow-none disabled:active:scale-100',
     VARIANTS[variant],
     SIZES[size],
     extra,

@@ -305,7 +305,8 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
             </Dialog.Root>
             <div className="flex min-w-0 flex-col">
               <p className="truncate text-label text-text">
-                {t('layout.hello', { name: me.displayName })}
+                {/* Isolated name: a Latin name never moves the punctuation of an Arabic sentence. */}
+                {t('layout.hello', { name: `⁨${me.displayName}⁩` })}
               </p>
               <p className="hidden truncate text-caption text-text-muted sm:block">
                 {t('layout.secure', { tenant: me.tenant?.label ?? t('app.name') })}

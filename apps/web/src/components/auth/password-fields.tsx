@@ -70,7 +70,7 @@ export function PasswordFields({
             <RuleItem ok={password.length >= min} label={t('minLength', { min })} />
           ) : null}
           {max !== undefined ? (
-            <RuleItem ok={password.length <= max} label={t('maxLength', { max })} />
+            <RuleItem ok={password.length > 0 && password.length <= max} label={t('maxLength', { max })} />
           ) : null}
           {rules.some((rule) => rule.code === 'NOT_COMPROMISED') ? (
             <RuleItem ok={undefined} label={t('notCompromised')} />
