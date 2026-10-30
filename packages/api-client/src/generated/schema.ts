@@ -1816,6 +1816,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/admin/fraud-alerts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Alertes de fraude (lecture seule)
+     * @description Permission `risk.read` (super-admin, Opérations ; décision C du 2026-10-23). Route prévue : l'API n'émet pas encore d'alertes (données de démonstration côté web).
+     */
+    get: operations['listFraudAlerts'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/disputes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Litiges (lecture seule)
+     * @description Permission `risk.read`. Litiges V1 (décision du 2026-10-21) : annulation par le commerçant sous 24 h ou écriture corrective tracée de l'administrateur (N2, à venir).
+     */
+    get: operations['listDisputes'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/admin/payout-requests': {
     parameters: {
       query?: never;
@@ -3799,6 +3839,51 @@ export interface components {
         /** @enum {string} */
         outcome: 'DONE' | 'SKIPPED';
       }[];
+    };
+    /**
+     * FraudAlertKind
+     * @enum {string}
+     */
+    FraudAlertKind: 'VELOCITY' | 'LARGE_AMOUNT' | 'REPEATED_REFUSALS' | 'PIN_LOCKS';
+    /**
+     * FraudAlertSeverity
+     * @enum {string}
+     */
+    FraudAlertSeverity: 'HIGH' | 'MEDIUM' | 'LOW';
+    /**
+     * DisputeStatus
+     * @enum {string}
+     */
+    DisputeStatus: 'OPEN' | 'RESOLVED' | 'REJECTED';
+    /** FraudAlert */
+    FraudAlert: {
+      id: components['schemas']['Uuid'];
+      kind: components['schemas']['FraudAlertKind'];
+      severity: components['schemas']['FraudAlertSeverity'];
+      /** @description Compte ou commerçant concerné (nom affiché, jamais de donnée sensible). */
+      subject: string;
+      occurredAt: components['schemas']['Timestamp'];
+      status: components['schemas']['FraudAlertStatus'];
+    };
+    /** FraudAlertPage */
+    FraudAlertPage: {
+      data: components['schemas']['FraudAlert'][];
+      page: components['schemas']['PageInfo'];
+    };
+    /** Dispute */
+    Dispute: {
+      id: components['schemas']['Uuid'];
+      paymentReference: string;
+      merchantName: string;
+      amountMillimes: components['schemas']['PositiveAmountMillimes'];
+      reason: string;
+      status: components['schemas']['DisputeStatus'];
+      openedAt: components['schemas']['Timestamp'];
+    };
+    /** DisputePage */
+    DisputePage: {
+      data: components['schemas']['Dispute'][];
+      page: components['schemas']['PageInfo'];
     };
     /**
      * Problem
@@ -7525,6 +7610,80 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  listFraudAlerts: {
+    parameters: {
+      query?: {
+        /** @description Nombre maximal d'éléments par page. */
+        limit?: components['parameters']['Limit'];
+        /** @description Curseur opaque renvoyé par `page.nextCursor`. Absent pour la première page. */
+        cursor?: components['parameters']['Cursor'];
+        /**
+         * @description Demande le compteur borné `page.count` (§7). À n'envoyer qu'au premier chargement et à
+         *     chaque changement de filtre.
+         */
+        withCount?: components['parameters']['WithCount'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FraudAlertPage'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  listDisputes: {
+    parameters: {
+      query?: {
+        /** @description Nombre maximal d'éléments par page. */
+        limit?: components['parameters']['Limit'];
+        /** @description Curseur opaque renvoyé par `page.nextCursor`. Absent pour la première page. */
+        cursor?: components['parameters']['Cursor'];
+        /**
+         * @description Demande le compteur borné `page.count` (§7). À n'envoyer qu'au premier chargement et à
+         *     chaque changement de filtre.
+         */
+        withCount?: components['parameters']['WithCount'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DisputePage'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   listAdminPayoutRequests: {
     parameters: {
       query?: {
@@ -8092,6 +8251,15 @@ export const employeeBulkStatusChangeActionValues: ReadonlyArray<
 export const employeeBulkStatusResultResultsOutcomeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['EmployeeBulkStatusResult']['results']['outcome']
 > = ['DONE', 'SKIPPED'];
+export const fraudAlertKindValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['FraudAlertKind']
+> = ['VELOCITY', 'LARGE_AMOUNT', 'REPEATED_REFUSALS', 'PIN_LOCKS'];
+export const fraudAlertSeverityValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['FraudAlertSeverity']
+> = ['HIGH', 'MEDIUM', 'LOW'];
+export const disputeStatusValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['DisputeStatus']
+> = ['OPEN', 'RESOLVED', 'REJECTED'];
 export const fieldErrorCodeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['FieldErrorCode']
 > = [

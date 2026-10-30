@@ -404,5 +404,58 @@
       "subRole": "الدور الفرعي",
       "submit": "إرسال الدعوة"
     }
+  },
+  "reporting": {
+    "title": "التقارير",
+    "description": "أحجام المنصة شهريًا والتوزيع حسب نوع الرصيد.",
+    "month": "الشهر",
+    "credited": "المودَع (د.ت)",
+    "payments": "المدفوع (د.ت)",
+    "export": "تصدير (CSV)",
+    "flowsTitle": "الأحجام شهريًا",
+    "flowsDescription": "الأرصدة المعتمدة للشركات والمدفوعات لدى التجار.",
+    "balanceTitle": "حجم اليوم",
+    "balanceDescription": "مدفوعات الشهر حسب نوع الرصيد.",
+    "emptyTitle": "لا توجد بيانات بعد",
+    "emptyMessage": "ستظهر مع أولى العمليات."
+  },
+  "security": {
+    "title": "الأمان والامتثال",
+    "description": "تنبيهات الاحتيال والنزاعات في المنصة.",
+    "readOnly": "للاطلاع فقط: معالجة التنبيهات والنزاعات تأتي مع وحدة النزاعات (N2).",
+    "tabAlerts": "تنبيهات الاحتيال",
+    "tabDisputes": "النزاعات",
+    "kind": "التنبيه",
+    "subject": "المعني",
+    "severity": "الخطورة",
+    "date": "التاريخ",
+    "status": "الحالة",
+    "payment": "الدفع",
+    "merchant": "التاجر",
+    "amount": "المبلغ",
+    "reason": "السبب",
+    "emptyAlerts": "لا توجد تنبيهات",
+    "emptyDisputes": "لا توجد نزاعات",
+    "kinds": {
+      "VELOCITY": "مدفوعات متقاربة جدًا",
+      "LARGE_AMOUNT": "مبلغ غير معتاد",
+      "REPEATED_REFUSALS": "رفض متكرر",
+      "PIN_LOCKS": "قفل متكرر للرمز السري"
+    },
+    "severities": {
+      "HIGH": "مرتفعة",
+      "MEDIUM": "متوسطة",
+      "LOW": "منخفضة"
+    },
+    "alertStatuses": {
+      "OPEN": "مفتوح",
+      "IN_PROGRESS": "قيد المعالجة",
+      "CLOSED": "مغلق"
+    },
+    "disputeStatuses": {
+      "OPEN": "مفتوح",
+      "RESOLVED": "محلول",
+      "REJECTED": "مرفوض"
+    }
   }
 }

@@ -9,6 +9,7 @@ import { employeeHandlers } from './handlers/employee';
 import { merchantHandlers } from './handlers/merchant';
 import { orderHandlers } from './handlers/orders';
 import { permissionGate } from './handlers/permission-gate';
+import { riskHandlers } from './handlers/risk';
 import { userHandlers } from './handlers/users';
 import { apiUrl, MOCK_SESSION_COOKIE, restoreSession } from './handlers/util';
 
@@ -37,6 +38,7 @@ export const handlers: RequestHandler[] = [
   ...adminHandlers,
   ...adminOpsHandlers,
   ...userHandlers,
+  ...riskHandlers,
   ...contactHandlers,
   notMocked,
 ];

@@ -15,6 +15,8 @@ const ALL = [
   '/admin/validations',
   '/admin/reglements',
   '/admin/transactions',
+  '/admin/securite',
+  '/admin/reporting',
   '/admin/audit',
   '/admin/messages',
   '/admin/parametres',
@@ -32,8 +34,8 @@ const SUB_ROLES = [
   {
     name: 'Finance',
     account: 'admin2@flexipay.test',
-    menu: without('/admin/messages'),
-    denied: ['/admin/messages'],
+    menu: without('/admin/messages', '/admin/securite'),
+    denied: ['/admin/messages', '/admin/securite'],
   },
   {
     name: 'Support',

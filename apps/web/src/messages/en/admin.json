@@ -404,5 +404,58 @@
       "subRole": "Sub-role",
       "submit": "Send the invitation"
     }
+  },
+  "reporting": {
+    "title": "Reporting",
+    "description": "Platform volumes per month and split by credit type.",
+    "month": "Month",
+    "credited": "Credited (TND)",
+    "payments": "Paid (TND)",
+    "export": "Export (CSV)",
+    "flowsTitle": "Volumes per month",
+    "flowsDescription": "Credits validated for companies and payments at merchants.",
+    "balanceTitle": "Today's volume",
+    "balanceDescription": "Payments of the month by credit type.",
+    "emptyTitle": "No data yet",
+    "emptyMessage": "It will appear with the first operations."
+  },
+  "security": {
+    "title": "Security & compliance",
+    "description": "Fraud alerts and disputes of the platform.",
+    "readOnly": "Read only: handling alerts and disputes comes with the disputes module (N2).",
+    "tabAlerts": "Fraud alerts",
+    "tabDisputes": "Disputes",
+    "kind": "Alert",
+    "subject": "Concerned",
+    "severity": "Severity",
+    "date": "Date",
+    "status": "Status",
+    "payment": "Payment",
+    "merchant": "Merchant",
+    "amount": "Amount",
+    "reason": "Reason",
+    "emptyAlerts": "No alert",
+    "emptyDisputes": "No dispute",
+    "kinds": {
+      "VELOCITY": "Payments too close together",
+      "LARGE_AMOUNT": "Unusual amount",
+      "REPEATED_REFUSALS": "Repeated refusals",
+      "PIN_LOCKS": "Repeated PIN locks"
+    },
+    "severities": {
+      "HIGH": "High",
+      "MEDIUM": "Medium",
+      "LOW": "Low"
+    },
+    "alertStatuses": {
+      "OPEN": "Open",
+      "IN_PROGRESS": "In progress",
+      "CLOSED": "Closed"
+    },
+    "disputeStatuses": {
+      "OPEN": "Open",
+      "RESOLVED": "Resolved",
+      "REJECTED": "Rejected"
+    }
   }
 }

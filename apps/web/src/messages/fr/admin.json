@@ -404,5 +404,58 @@
       "subRole": "Sous-rôle",
       "submit": "Envoyer l'invitation"
     }
+  },
+  "reporting": {
+    "title": "Reporting",
+    "description": "Volumes de la plateforme par mois et répartition par type de crédit.",
+    "month": "Mois",
+    "credited": "Crédité (TND)",
+    "payments": "Payé (TND)",
+    "export": "Exporter (CSV)",
+    "flowsTitle": "Volumes par mois",
+    "flowsDescription": "Crédits validés pour les entreprises et paiements chez les commerçants.",
+    "balanceTitle": "Volume du jour",
+    "balanceDescription": "Paiements du mois par type de crédit.",
+    "emptyTitle": "Pas encore de données",
+    "emptyMessage": "Elles apparaîtront avec les premières opérations."
+  },
+  "security": {
+    "title": "Sécurité & conformité",
+    "description": "Alertes de fraude et litiges de la plateforme.",
+    "readOnly": "Consultation seulement : le traitement des alertes et des litiges arrive avec le module litiges (N2).",
+    "tabAlerts": "Alertes de fraude",
+    "tabDisputes": "Litiges",
+    "kind": "Alerte",
+    "subject": "Concerné",
+    "severity": "Gravité",
+    "date": "Date",
+    "status": "Statut",
+    "payment": "Paiement",
+    "merchant": "Commerçant",
+    "amount": "Montant",
+    "reason": "Motif",
+    "emptyAlerts": "Aucune alerte",
+    "emptyDisputes": "Aucun litige",
+    "kinds": {
+      "VELOCITY": "Paiements trop rapprochés",
+      "LARGE_AMOUNT": "Montant inhabituel",
+      "REPEATED_REFUSALS": "Refus répétés",
+      "PIN_LOCKS": "PIN bloqué à répétition"
+    },
+    "severities": {
+      "HIGH": "Élevée",
+      "MEDIUM": "Moyenne",
+      "LOW": "Faible"
+    },
+    "alertStatuses": {
+      "OPEN": "Ouverte",
+      "IN_PROGRESS": "En cours",
+      "CLOSED": "Close"
+    },
+    "disputeStatuses": {
+      "OPEN": "Ouvert",
+      "RESOLVED": "Résolu",
+      "REJECTED": "Rejeté"
+    }
   }
 }

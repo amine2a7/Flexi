@@ -109,6 +109,8 @@ export const NAVIGATION: Partial<Record<Role, readonly NavItem[]>> = {
     },
     { href: '/admin/reglements', labelKey: 'nav.admin.settlements', icon: CalendarCheck },
     { href: '/admin/transactions', labelKey: 'nav.admin.transactions', icon: CreditCard },
+    { href: '/admin/securite', labelKey: 'nav.admin.security', icon: ShieldCheck },
+    { href: '/admin/reporting', labelKey: 'nav.admin.reporting', icon: ChartColumn },
     { href: '/admin/audit', labelKey: 'nav.admin.audit', icon: ScrollText },
     {
       href: '/admin/messages',

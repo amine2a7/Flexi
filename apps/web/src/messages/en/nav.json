@@ -37,7 +37,9 @@
     "payouts": "Merchant payouts",
     "transactions": "Transactions",
     "messages": "Messages",
-    "users": "Users"
+    "users": "Users",
+    "security": "Security & compliance",
+    "reporting": "Reporting"
   },
   "beneficiary": {
     "home": "Home",

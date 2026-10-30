@@ -37,7 +37,9 @@
     "payouts": "تحويلات التجار",
     "transactions": "المعاملات",
     "messages": "الرسائل",
-    "users": "المستخدمون"
+    "users": "المستخدمون",
+    "security": "الأمان والامتثال",
+    "reporting": "التقارير"
   },
   "beneficiary": {
     "home": "الرئيسية",

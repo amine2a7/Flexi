@@ -119,12 +119,23 @@ const CONTEXT_OVERRIDES: Record<string, Record<string, string>> = {
   payout: { REJECTED: 'REJETEE' },
   // Account lifecycle (commun-statut-utilisateur.md §3.1).
   user: { ACTIVE: 'ACTIF', INVITED: 'INVITE', SUSPENDED: 'SUSPENDU', DEACTIVATED: 'DESACTIVE' },
+  // Fraud alerts and disputes: severity and state with the colours of the charter.
+  risk: {
+    OPEN: 'SUSPECT',
+    IN_PROGRESS: 'EN_ATTENTE',
+    CLOSED: 'VALIDE',
+    RESOLVED: 'VALIDE',
+    REJECTED: 'REFUSE',
+    SEVERITY_HIGH: 'SUSPENDU',
+    SEVERITY_MEDIUM: 'SUSPECT',
+    SEVERITY_LOW: 'A_REGLER',
+  },
 };
 
 interface StatusBadgeProps {
   /** Status as sent by the API. */
   readonly status: string;
-  readonly context?: 'approval' | 'payout' | 'order' | 'user';
+  readonly context?: 'approval' | 'payout' | 'order' | 'user' | 'risk';
   /** i18n key replacing the default label (e.g. merchant wording of A_REGLER, decision 2). */
   readonly labelKey?: string;
 }

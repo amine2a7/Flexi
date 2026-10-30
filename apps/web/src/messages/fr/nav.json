@@ -37,7 +37,9 @@
     "payouts": "Virements commerçants",
     "transactions": "Transactions",
     "messages": "Messages",
-    "users": "Utilisateurs"
+    "users": "Utilisateurs",
+    "security": "Sécurité & conformité",
+    "reporting": "Reporting"
   },
   "beneficiary": {
     "home": "Accueil",
