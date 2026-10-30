@@ -150,7 +150,11 @@
       "REJECTED": "رفض الطلب"
     },
     "creditType": "نوع الرصيد",
-    "creditTypeHint": "يشمل التحويل مستحقات نوع واحد (عمولة هذا النوع)."
+    "creditTypeHint": "يشمل التحويل مستحقات نوع واحد (عمولة هذا النوع).",
+    "tabRequest": "طلب تحويل",
+    "tabTracking": "متابعة الطلبات",
+    "destination": "الوجهة",
+    "destinationHint": "الحساب البنكي المسجل (مخفي). لتغييره، تواصل مع FlexiPay."
   },
   "settlements": {
     "title": "التسويات والوثائق",

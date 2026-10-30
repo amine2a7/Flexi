@@ -150,7 +150,11 @@
       "REJECTED": "Demande rejetée"
     },
     "creditType": "Type de crédit",
-    "creditTypeHint": "Un virement porte sur les créances d’un seul type (commission du type)."
+    "creditTypeHint": "Un virement porte sur les créances d’un seul type (commission du type).",
+    "tabRequest": "Demander un virement",
+    "tabTracking": "Suivi des demandes",
+    "destination": "Destination",
+    "destinationHint": "Compte bancaire enregistré (masqué). Pour le changer, contactez FlexiPay."
   },
   "settlements": {
     "title": "Règlements et documents",

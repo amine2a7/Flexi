@@ -30,7 +30,8 @@ test('the net of the simulation is the net of the payout request', async ({ page
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('button', { name: /^Demander / }).click();
   await expect(dialog).toHaveCount(0);
-  // The new request (first of the list) carries the same net.
+  // The new request (first of the tracking list) carries the same net.
+  await page.getByRole('tab', { name: 'Suivi des demandes' }).click();
   await page
     .getByRole('link', { name: /VIR-|Voir/ })
     .first()

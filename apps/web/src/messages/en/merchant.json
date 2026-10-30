@@ -150,7 +150,11 @@
       "REJECTED": "Request rejected"
     },
     "creditType": "Credit type",
-    "creditTypeHint": "A payout covers the receivables of a single type (that type's commission)."
+    "creditTypeHint": "A payout covers the receivables of a single type (that type's commission).",
+    "tabRequest": "Request a payout",
+    "tabTracking": "Request tracking",
+    "destination": "Destination",
+    "destinationHint": "Registered bank account (masked). To change it, contact FlexiPay."
   },
   "settlements": {
     "title": "Settlements and documents",
