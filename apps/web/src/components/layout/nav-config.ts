@@ -78,6 +78,7 @@ export const NAVIGATION: Partial<Record<Role, readonly NavItem[]>> = {
     },
     { href: '/entreprise/attribution', labelKey: 'nav.company.allocation', icon: Wallet },
     { href: '/entreprise/factures', labelKey: 'nav.company.invoices', icon: Receipt },
+    { href: '/entreprise/reporting', labelKey: 'nav.company.reporting', icon: ChartColumn },
     { href: '/entreprise/parametres', labelKey: 'nav.company.settings', icon: Settings },
     { href: '/entreprise/support', labelKey: 'nav.company.support', icon: LifeBuoy },
   ],

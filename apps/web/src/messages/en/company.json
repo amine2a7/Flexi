@@ -182,5 +182,19 @@
     "total": "Amount",
     "status": "Status",
     "emptyTitle": "No invoices"
+  },
+  "reporting": {
+    "title": "Reporting",
+    "description": "Credits received and allocated per month, and your wallet by type.",
+    "month": "Month",
+    "credited": "Credited (TND)",
+    "allocated": "Allocated (TND)",
+    "export": "Export (CSV)",
+    "flowsTitle": "Credits per month",
+    "flowsDescription": "Credits received from your orders and allocated to your employees.",
+    "balanceTitle": "Current wallet",
+    "balanceDescription": "Split by credit type.",
+    "emptyTitle": "No data yet",
+    "emptyMessage": "It will appear after your first order."
   }
 }

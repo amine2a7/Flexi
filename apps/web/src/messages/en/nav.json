@@ -20,7 +20,8 @@
     "allocation": "Allocation",
     "invoices": "Invoices",
     "settings": "Settings",
-    "support": "Support"
+    "support": "Support",
+    "reporting": "Reporting"
   },
   "admin": {
     "dashboard": "Overview",

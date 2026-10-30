@@ -30,6 +30,7 @@ const PAGE_PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
   '/entreprise/commandes/nouvelle': ['orders.create'],
   '/entreprise/attribution': ['credits.allocate'],
   '/entreprise/factures': ['invoices.read'],
+  '/entreprise/reporting': ['balances.read'],
   '/commercant': ['stats.read'],
   '/commercant/encaissement': ['payments.collect'],
   '/commercant/historique': ['sales.read', 'sales.readToday'],

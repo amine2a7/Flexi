@@ -182,5 +182,19 @@
     "total": "Montant",
     "status": "Statut",
     "emptyTitle": "Aucune facture"
+  },
+  "reporting": {
+    "title": "Reporting",
+    "description": "Crédits reçus et attribués par mois, et votre portefeuille par type.",
+    "month": "Mois",
+    "credited": "Crédité (TND)",
+    "allocated": "Attribué (TND)",
+    "export": "Exporter (CSV)",
+    "flowsTitle": "Crédits par mois",
+    "flowsDescription": "Crédits reçus de vos commandes et attribués à vos employés.",
+    "balanceTitle": "Portefeuille actuel",
+    "balanceDescription": "Répartition par type de crédit.",
+    "emptyTitle": "Pas encore de données",
+    "emptyMessage": "Elles apparaîtront après votre première commande."
   }
 }
