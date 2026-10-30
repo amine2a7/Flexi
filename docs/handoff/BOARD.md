@@ -13,7 +13,7 @@ Inventaire et état écran par écran : `docs/design/etat-ecrans.md`. Ordre : Co
 | Commerçant | Terminé (Statistiques, Paramètres, Support ajoutés), revu, Hautes corrigées ; ouvert : Virements (séparer demande et suivi, carte Destination) |
 | Entreprise | Terminé (Reporting, Paramètres, Support ajoutés, 6 specs rétro), revu, Hautes corrigées |
 | Administrateur | Terminé (Sécurité & conformité, Reporting ajoutés, 13 specs rétro, contrat 0.6.0 en lecture seule), revu, Hautes corrigées |
-| Cohérence globale | Aucun texte ni style en dur (grep + tests de conventions) ; composants uniques (tableau, modale, select) ; `pages-sweep` **bloqué (environnement)** : des requêtes échappent à MSW sous Playwright et aboutissent au serveur d'un autre projet sur le port 3000 (2 essais) ; défaut connu du mock : enregistrement de la visite guidée |
+| Cohérence globale | Aucun texte ni style en dur ; composants uniques. `pages-sweep` **bloqué** (2026-10-31, 6 essais) : sous Playwright, le premier document chargé après une navigation complète émet ses requêtes hors MSW (le worker n'a pas encore ce client actif) ; corrigé : ports explicites (web 3101, API vide 3199), worker qui ne se désinscrit plus, réactivation du client, enregistrement de la visite guidée attendu ; reste : piste `@msw/playwright` (nouvelle dépendance à valider) ou passage des e2e sur l'API réelle de test |
 
 ## État courant (mis à jour le 2026-10-29) — À LIRE EN PREMIER
 

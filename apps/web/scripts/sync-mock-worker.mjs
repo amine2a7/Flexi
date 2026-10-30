@@ -1,6 +1,6 @@
 // Dev only: copies the MSW service worker into public/ (git-ignored, never committed).
 // `pnpm build` removes it (scripts/remove-mock-worker.mjs) so it can never ship to production.
-import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,4 +12,16 @@ if (!existsSync(source)) {
   throw new Error('msw service worker not found: run pnpm install');
 }
 mkdirSync(join(root, 'public'), { recursive: true });
-copyFileSync(source, join(root, 'public', 'mockServiceWorker.js'));
+// The worker unregisters itself when its last page closes, which a full navigation in a single
+// tab does: the next page then loads without a controller and its requests leave the mocks (they
+// reached a foreign server on port 3000). Kept registered instead; the integrity checksum is a
+// constant of the file, unchanged.
+const UNREGISTER = 'self.registration.unregister()';
+const worker = readFileSync(source, 'utf8');
+if (!worker.includes(UNREGISTER)) {
+  throw new Error('msw service worker changed: review the patch of sync-mock-worker.mjs');
+}
+writeFileSync(
+  join(root, 'public', 'mockServiceWorker.js'),
+  worker.replace(UNREGISTER, 'void 0 /* kept registered: see scripts/sync-mock-worker.mjs */'),
+);

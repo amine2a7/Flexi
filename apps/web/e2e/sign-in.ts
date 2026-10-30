@@ -20,7 +20,11 @@ export async function signIn(page: Page, account: string): Promise<void> {
 export async function dismissTour(page: Page): Promise<void> {
   await page.waitForLoadState('networkidle');
   if ((await page.getByRole('dialog').count()) === 0) return;
+  const recorded = page.waitForResponse((response) =>
+    response.url().includes('/v1/me/onboarding-tour'),
+  );
   await page.keyboard.press('Escape');
+  await recorded;
   // Closing records the tour as seen: wait for that request before leaving the page.
   await page.getByRole('dialog').waitFor({ state: 'detached' });
   await page.waitForLoadState('networkidle');

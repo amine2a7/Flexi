@@ -64,11 +64,13 @@ for (const [space, { account, pages }] of Object.entries(SPACES)) {
     const problems: string[] = [];
     page.on('pageerror', (error) => problems.push(`${current} | page error | ${error.message}`));
     page.on('console', (message) => {
-      // Known mock defect (BOARD, 2026-10-30): the tour record (POST /v1/me/onboarding-tour) and
-      // its network failure escape MSW under Playwright; every other console error fails.
-      const known = /onboarding-tour|Failed to load resource: net::ERR_FAILED/.test(message.text());
-      if (message.type() === 'error' && !known)
-        problems.push(`${current} | console | ${message.text()}`);
+      if (message.type() === 'error') problems.push(`${current} | console | ${message.text()}`);
+    });
+    page.on('requestfailed', (request) => {
+      const url = new URL(request.url());
+      if (url.pathname.startsWith('/v1/')) {
+        problems.push(`${current} | failed | ${request.method()} ${url.pathname}`);
+      }
     });
     page.on('response', (response) => {
       const url = new URL(response.url());

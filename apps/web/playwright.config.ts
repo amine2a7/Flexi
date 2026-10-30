@@ -1,7 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const DEV_PORT = 3001;
-const PROD_PORT = 3002;
+// Explicit ports, never 3000 (often used by another local server): the dev server of the suite
+// and an API origin where nothing listens, so a request escaping the mocks fails at once.
+const DEV_PORT = Number(process.env.E2E_WEB_PORT ?? 3101);
+const PROD_PORT = Number(process.env.E2E_BUILD_PORT ?? 3102);
+const UNUSED_API_ORIGIN = `http://localhost:${process.env.E2E_API_PORT ?? '3199'}`;
 const DEV_URL = `http://localhost:${String(DEV_PORT)}`;
 const PROD_URL = `http://localhost:${String(PROD_PORT)}`;
 
@@ -17,7 +20,8 @@ export default defineConfig({
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : [['list']],
   use: {
     // Full Chromium (new headless mode): no separate headless-shell download needed.
-    channel: 'chromium',
+    // E2E_CHANNEL=msedge on a machine without the Playwright Chromium (local Windows).
+    channel: process.env.E2E_CHANNEL ?? 'chromium',
     // The browser language drives the first redirect of / (Accept-Language); pin it for stable tests.
     locale: 'fr-FR',
     trace: 'retain-on-failure',
@@ -47,21 +51,27 @@ export default defineConfig({
     {
       command: 'pnpm dev',
       url: `${DEV_URL}/fr`,
+      env: { WEB_PORT: String(DEV_PORT), NEXT_PUBLIC_API_BASE_URL: UNUSED_API_ORIGIN },
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },
-    {
-      // `next build` directly: the `build` script deletes public/mockServiceWorker.js, which the dev
-      // server above needs while both run together (the script itself is covered by Vitest).
-      command: `pnpm exec next build && pnpm start -p ${String(PROD_PORT)}`,
-      url: `${PROD_URL}/fr`,
-      reuseExistingServer: !process.env.CI,
-      timeout: 240_000,
-      env: {
-        NEXT_DIST_DIR: '.next-e2e',
-        NEXT_PUBLIC_API_BASE_URL: 'https://api.example.test',
-        NEXT_TELEMETRY_DISABLED: '1',
-      },
-    },
+    // The built server (production-build tests) is skipped by E2E_SKIP_BUILD=1 (local runs).
+    ...(process.env.E2E_SKIP_BUILD === '1'
+      ? []
+      : [
+          {
+            // `next build` directly: the `build` script deletes public/mockServiceWorker.js, which the dev
+            // server above needs while both run together (the script itself is covered by Vitest).
+            command: `pnpm exec next build && pnpm start -p ${String(PROD_PORT)}`,
+            url: `${PROD_URL}/fr`,
+            reuseExistingServer: !process.env.CI,
+            timeout: 240_000,
+            env: {
+              NEXT_DIST_DIR: '.next-e2e',
+              NEXT_PUBLIC_API_BASE_URL: 'https://api.example.test',
+              NEXT_TELEMETRY_DISABLED: '1',
+            },
+          },
+        ]),
   ],
 });

@@ -24,13 +24,14 @@ const env = Object.fromEntries(
   Object.entries(process.env).filter(([name]) => !AGENT_ENV.test(name)),
 );
 
+// WEB_PORT: port of the dev server (3001 by default; the e2e suite uses its own, never 3000).
 // --real-api: no MSW, the pages call the local API (pnpm --filter @flexipay/api dev).
 const realApi = process.argv.includes('--real-api');
 if (realApi) env.NEXT_PUBLIC_API_MOCKING = 'disabled';
 const args = process.argv.slice(2).filter((arg) => arg !== '--real-api');
 const child = spawn(
   process.execPath,
-  [require.resolve('next/dist/bin/next'), 'dev', '-p', '3001', ...args],
+  [require.resolve('next/dist/bin/next'), 'dev', '-p', process.env.WEB_PORT ?? '3001', ...args],
   { cwd: root, env, stdio: 'inherit' },
 );
 

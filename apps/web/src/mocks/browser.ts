@@ -19,6 +19,23 @@ export function startMocking(): Promise<void> {
         if (new URL(request.url).origin === getApiOrigin()) print.error();
       },
     })
-    .then(() => undefined);
+    .then(() => {
+      keepActive();
+    });
   return started;
 }
+
+/**
+ * The worker keeps its active clients in memory and forgets them when the browser restarts it or
+ * when another tab of the same origin closes (it then bypasses every request: they reached the
+ * network). Telling it again every few seconds that this page mocks keeps every request mocked.
+ */
+function keepActive(): void {
+  const activate = () => {
+    navigator.serviceWorker.controller?.postMessage('MOCK_ACTIVATE');
+  };
+  setInterval(activate, REACTIVATE_MS);
+  document.addEventListener('visibilitychange', activate);
+}
+
+const REACTIVATE_MS = 3_000;
