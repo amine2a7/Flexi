@@ -99,6 +99,8 @@ const SPACES: Record<string, readonly Shot[]> = {
 };
 
 const space = process.env.CAPTURE_SPACE ?? 'commun';
+/** Comma-separated screen names to capture again (all by default). */
+const only = process.env.CAPTURE_ONLY?.split(',');
 
 for (const locale of LOCALES) {
   test(`captures ${space} (${locale})`, async ({ page }, info) => {
@@ -106,7 +108,9 @@ for (const locale of LOCALES) {
     const dir = join(OUT, space);
     mkdirSync(dir, { recursive: true });
     let signedAs: string | undefined;
-    for (const shot of SPACES[space] ?? []) {
+    for (const shot of (SPACES[space] ?? []).filter(
+      (item) => only === undefined || only.includes(item.name),
+    )) {
       if (shot.account !== undefined && shot.account !== signedAs) {
         await page.context().clearCookies();
         await signIn(page, shot.account);
@@ -131,4 +135,3 @@ for (const locale of LOCALES) {
     }
   });
 }
-
