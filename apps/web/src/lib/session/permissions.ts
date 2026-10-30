@@ -37,6 +37,7 @@ const PAGE_PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
   '/commercant/virements': ['payouts.read'],
   '/commercant/reglements': ['settlements.read'],
   '/commercant/mon-commerce': ['shop.read'],
+  '/commercant/statistiques': ['stats.read'],
 };
 
 /** True when the session holds one of the permissions. */

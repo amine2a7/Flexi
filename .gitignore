@@ -38,3 +38,6 @@ coverage/
 .claude/settings.local.json
 .turbo/
 *.tsbuildinfo
+
+# Visual captures (Playwright, local only: regenerate with e2e/captures.spec.ts)
+docs/design/captures/

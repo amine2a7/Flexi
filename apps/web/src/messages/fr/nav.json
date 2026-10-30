@@ -8,14 +8,19 @@
     "receivables": "Créances",
     "payouts": "Virements",
     "settlements": "Règlements",
-    "shop": "Mon commerce"
+    "shop": "Mon commerce",
+    "statistics": "Statistiques",
+    "settings": "Paramètres",
+    "support": "Support"
   },
   "company": {
     "dashboard": "Tableau de bord",
     "employees": "Employés",
     "orders": "Commandes",
     "allocation": "Attribution",
-    "invoices": "Factures"
+    "invoices": "Factures",
+    "settings": "Paramètres",
+    "support": "Support"
   },
   "admin": {
     "dashboard": "Supervision",

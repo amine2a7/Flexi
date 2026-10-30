@@ -22,6 +22,7 @@ import landing from './landing.json';
 import contact from './contact.json';
 import help from './help.json';
 import tour from './tour.json';
+import account from './account.json';
 import adminMessages from './adminMessages.json';
 
 const messages = {
@@ -50,6 +51,7 @@ const messages = {
   help: help,
   tour: tour,
   adminMessages: adminMessages,
+  account: account,
 };
 
 export default messages;

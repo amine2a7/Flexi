@@ -215,5 +215,23 @@
     },
     "open": "Ouvrir",
     "openPayment": "Ouvrir le paiement {reference}"
+  },
+  "statistics": {
+    "title": "Statistiques",
+    "description": "Vos encaissements et vos règlements des derniers mois.",
+    "today": "Encaissé aujourd'hui",
+    "todayCount": "{count, plural, =0 {Aucun paiement} one {# paiement} other {# paiements}}",
+    "receivables": "Créances à régler",
+    "nextSettlement": "Prochain règlement",
+    "none": "Aucun",
+    "rate": "Taux de commission",
+    "flowsTitle": "Encaissé et réglé par mois",
+    "flowsDescription": "Montants bruts encaissés et montants nets réglés sur votre compte.",
+    "seriesCollected": "Encaissé",
+    "seriesSettled": "Réglé",
+    "typesTitle": "Par type de crédit",
+    "typesDescription": "Encaissements du mois en cours.",
+    "emptyTitle": "Pas encore de statistiques",
+    "emptyMessage": "Elles apparaîtront après vos premiers encaissements."
   }
 }

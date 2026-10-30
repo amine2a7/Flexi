@@ -3,6 +3,8 @@ import type { NavCounter } from './nav-counters';
 import {
   ArrowLeftRight,
   Building2,
+  ChartColumn,
+  LifeBuoy,
   CalendarCheck,
   ClipboardCheck,
   CreditCard,
@@ -49,6 +51,9 @@ export const NAVIGATION: Partial<Record<Role, readonly NavItem[]>> = {
     { href: '/commercant/virements', labelKey: 'nav.merchant.payouts', icon: ArrowLeftRight },
     { href: '/commercant/reglements', labelKey: 'nav.merchant.settlements', icon: FileText },
     { href: '/commercant/mon-commerce', labelKey: 'nav.merchant.shop', icon: Store },
+    { href: '/commercant/statistiques', labelKey: 'nav.merchant.statistics', icon: ChartColumn },
+    { href: '/commercant/parametres', labelKey: 'nav.merchant.settings', icon: Settings },
+    { href: '/commercant/support', labelKey: 'nav.merchant.support', icon: LifeBuoy },
   ],
   EMPLOYEE: [
     { href: '/beneficiaire', labelKey: 'nav.beneficiary.home', icon: Home },
@@ -73,6 +78,8 @@ export const NAVIGATION: Partial<Record<Role, readonly NavItem[]>> = {
     },
     { href: '/entreprise/attribution', labelKey: 'nav.company.allocation', icon: Wallet },
     { href: '/entreprise/factures', labelKey: 'nav.company.invoices', icon: Receipt },
+    { href: '/entreprise/parametres', labelKey: 'nav.company.settings', icon: Settings },
+    { href: '/entreprise/support', labelKey: 'nav.company.support', icon: LifeBuoy },
   ],
   ADMIN: [
     { href: '/admin', labelKey: 'nav.admin.dashboard', icon: LayoutDashboard },

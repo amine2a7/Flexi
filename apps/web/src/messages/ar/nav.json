@@ -8,14 +8,19 @@
     "receivables": "المستحقات",
     "payouts": "التحويلات",
     "settlements": "التسويات",
-    "shop": "محلّي"
+    "shop": "محلّي",
+    "statistics": "الإحصائيات",
+    "settings": "الإعدادات",
+    "support": "الدعم"
   },
   "company": {
     "dashboard": "لوحة القيادة",
     "employees": "الموظفون",
     "orders": "الطلبيات",
     "allocation": "التوزيع",
-    "invoices": "الفواتير"
+    "invoices": "الفواتير",
+    "settings": "الإعدادات",
+    "support": "الدعم"
   },
   "admin": {
     "dashboard": "الإشراف",

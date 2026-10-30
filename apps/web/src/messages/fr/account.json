@@ -1,0 +1,33 @@
+{
+  "settings": {
+    "title": "Paramètres du compte",
+    "description": "Votre profil, votre langue et la sécurité de votre accès.",
+    "profile": "Profil",
+    "name": "Nom",
+    "role": "Rôle",
+    "space": "Espace",
+    "profileHint": "Pour modifier ces informations, contactez l'administrateur de votre organisation.",
+    "language": "Langue",
+    "languageHint": "Langue de l'interface sur cet appareil.",
+    "password": "Mot de passe",
+    "passwordHint": "Vos autres sessions seront fermées après le changement.",
+    "currentPassword": "Mot de passe actuel",
+    "passwordSubmit": "Changer le mot de passe",
+    "passwordDone": "Mot de passe modifié. Vos autres sessions ont été fermées.",
+    "mfa": "Double authentification",
+    "mfaStatus": "État",
+    "mfaOn": "Activée",
+    "mfaOff": "Non activée",
+    "recoveryCodes": "Codes de secours",
+    "recoveryRemaining": "{count, plural, =0 {Aucun code restant} one {# code restant} other {# codes restants}}",
+    "mfaHint": "Téléphone perdu : utilisez un code de secours, puis contactez votre administrateur."
+  },
+  "support": {
+    "title": "Support",
+    "description": "Les réponses aux questions fréquentes de votre espace, ou un message à l'équipe FlexiPay.",
+    "help": "Rubriques d'aide",
+    "helpHint": "Chaque rubrique ouvre la page d'aide à la bonne section.",
+    "contact": "Nous écrire",
+    "contactHint": "L'équipe FlexiPay vous répond par e-mail ou par téléphone."
+  }
+}

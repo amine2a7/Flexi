@@ -8,14 +8,19 @@
     "receivables": "Receivables",
     "payouts": "Payouts",
     "settlements": "Settlements",
-    "shop": "My shop"
+    "shop": "My shop",
+    "statistics": "Statistics",
+    "settings": "Settings",
+    "support": "Support"
   },
   "company": {
     "dashboard": "Dashboard",
     "employees": "Employees",
     "orders": "Orders",
     "allocation": "Allocation",
-    "invoices": "Invoices"
+    "invoices": "Invoices",
+    "settings": "Settings",
+    "support": "Support"
   },
   "admin": {
     "dashboard": "Overview",

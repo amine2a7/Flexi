@@ -215,5 +215,23 @@
     },
     "open": "Open",
     "openPayment": "Open payment {reference}"
+  },
+  "statistics": {
+    "title": "Statistics",
+    "description": "Your collections and settlements over the last months.",
+    "today": "Collected today",
+    "todayCount": "{count, plural, =0 {No payment} one {# payment} other {# payments}}",
+    "receivables": "Receivables to settle",
+    "nextSettlement": "Next settlement",
+    "none": "None",
+    "rate": "Commission rate",
+    "flowsTitle": "Collected and settled per month",
+    "flowsDescription": "Gross amounts collected and net amounts settled to your account.",
+    "seriesCollected": "Collected",
+    "seriesSettled": "Settled",
+    "typesTitle": "By credit type",
+    "typesDescription": "Collections of the current month.",
+    "emptyTitle": "No statistics yet",
+    "emptyMessage": "They will appear after your first collections."
   }
 }

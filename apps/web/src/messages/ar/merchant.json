@@ -215,5 +215,23 @@
     },
     "open": "فتح",
     "openPayment": "فتح الدفعة {reference}"
+  },
+  "statistics": {
+    "title": "الإحصائيات",
+    "description": "تحصيلاتك وتسوياتك خلال الأشهر الأخيرة.",
+    "today": "المحصّل اليوم",
+    "todayCount": "{count} عملية دفع",
+    "receivables": "المستحقات",
+    "nextSettlement": "التسوية القادمة",
+    "none": "لا يوجد",
+    "rate": "نسبة العمولة",
+    "flowsTitle": "المحصّل والمسوّى شهريًا",
+    "flowsDescription": "المبالغ الإجمالية المحصّلة والصافية المسوّاة في حسابك.",
+    "seriesCollected": "المحصّل",
+    "seriesSettled": "المسوّى",
+    "typesTitle": "حسب نوع الرصيد",
+    "typesDescription": "تحصيلات الشهر الحالي.",
+    "emptyTitle": "لا توجد إحصائيات بعد",
+    "emptyMessage": "ستظهر بعد أولى تحصيلاتك."
   }
 }
