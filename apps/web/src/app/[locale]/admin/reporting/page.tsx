@@ -110,9 +110,6 @@ export default function AdminReportingPage() {
           </Card>
           <Card>
             <CardTitle description={t('balanceDescription')}>{t('balanceTitle')}</CardTitle>
-            <div className="mb-4">
-              <Amount millimes={dashboard.data.todayVolumeMillimes} size="title" />
-            </div>
             <CreditTypeBreakdown items={dashboard.data.monthByCreditType} />
           </Card>
         </div>

@@ -414,8 +414,8 @@
     "export": "Exporter (CSV)",
     "flowsTitle": "Volumes par mois",
     "flowsDescription": "Crédits validés pour les entreprises et paiements chez les commerçants.",
-    "balanceTitle": "Volume du jour",
-    "balanceDescription": "Paiements du mois par type de crédit.",
+    "balanceTitle": "Paiements du mois par type",
+    "balanceDescription": "Répartition des paiements du mois en cours.",
     "emptyTitle": "Pas encore de données",
     "emptyMessage": "Elles apparaîtront avec les premières opérations."
   },

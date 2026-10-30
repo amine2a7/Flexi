@@ -68,9 +68,10 @@ export function ActivityList({ items, empty }: { items: readonly ActivityItem[];
         const content = (
           <>
             <span className="flex min-w-0 flex-col gap-1">
-              <span className="truncate text-label text-text">{item.title}</span>
+              {/* Isolated: a reference or a Latin name keeps its order in an Arabic page. */}
+              <bdi className="truncate text-label text-text">{item.title}</bdi>
               {item.subtitle !== undefined ? (
-                <span className="text-caption text-text-muted">{item.subtitle}</span>
+                <bdi className="text-caption text-text-muted">{item.subtitle}</bdi>
               ) : null}
             </span>
             <span className="flex shrink-0 flex-col items-end gap-1 text-label text-text">

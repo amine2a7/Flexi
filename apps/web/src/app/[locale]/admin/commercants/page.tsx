@@ -1,7 +1,7 @@
 'use client';
 
 import type { Schemas } from '@flexipay/api-client';
-import { Store } from 'lucide-react';
+import { ChevronRight, Store } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
@@ -9,7 +9,7 @@ import { getApi } from '@/lib/api/client';
 import { usePagedList } from '@/lib/api/use-paged-list';
 import { formatDateTime } from '@/lib/format/date';
 import { AccountForm } from '@/components/admin/account-form';
-import { Button } from '@/components/ui/button';
+import { Button, buttonClasses } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CommissionLabel, CreditTypeBadges } from '@/components/ui/credit-type';
 import { DataTable, type Column } from '@/components/ui/data-table';
@@ -84,6 +84,22 @@ export default function AdminMerchantsPage() {
       header: t('status'),
       cell: (row) => <StatusBadge status={row.status} />,
       sortValue: (row) => row.status,
+    },
+    {
+      key: 'open',
+      header: t('open'),
+      align: 'end',
+      card: 'footer',
+      cell: (row) => (
+        <Link
+          href={`/admin/commercants/${row.id}`}
+          className={buttonClasses('ghost', 'sm')}
+          aria-label={t('openMerchant', { name: row.name })}
+        >
+          {t('open')}
+          <ChevronRight aria-hidden="true" className="size-icon-sm rtl:rotate-180" />
+        </Link>
+      ),
     },
   ];
 

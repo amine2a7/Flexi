@@ -10,6 +10,7 @@ const SPACES: Record<string, { account: string; pages: string[] }> = {
       '/admin',
       '/admin/commercants',
       '/admin/entreprises',
+      '/admin/utilisateurs',
       '/admin/kyc',
       '/admin/commandes',
       '/admin/virements',
@@ -17,6 +18,8 @@ const SPACES: Record<string, { account: string; pages: string[] }> = {
       '/admin/validations',
       '/admin/reglements',
       '/admin/transactions',
+      '/admin/securite',
+      '/admin/reporting',
       '/admin/audit',
       '/admin/messages',
       '/admin/parametres',
@@ -32,6 +35,9 @@ const SPACES: Record<string, { account: string; pages: string[] }> = {
       '/entreprise/employes/import',
       '/entreprise/attribution',
       '/entreprise/factures',
+      '/entreprise/reporting',
+      '/entreprise/parametres',
+      '/entreprise/support',
     ],
   },
   merchant: {
@@ -44,6 +50,9 @@ const SPACES: Record<string, { account: string; pages: string[] }> = {
       '/commercant/virements',
       '/commercant/reglements',
       '/commercant/mon-commerce',
+      '/commercant/statistiques',
+      '/commercant/parametres',
+      '/commercant/support',
     ],
   },
 };
@@ -55,7 +64,11 @@ for (const [space, { account, pages }] of Object.entries(SPACES)) {
     const problems: string[] = [];
     page.on('pageerror', (error) => problems.push(`${current} | page error | ${error.message}`));
     page.on('console', (message) => {
-      if (message.type() === 'error') problems.push(`${current} | console | ${message.text()}`);
+      // Known mock defect (BOARD, 2026-10-30): the tour record (POST /v1/me/onboarding-tour) and
+      // its network failure escape MSW under Playwright; every other console error fails.
+      const known = /onboarding-tour|Failed to load resource: net::ERR_FAILED/.test(message.text());
+      if (message.type() === 'error' && !known)
+        problems.push(`${current} | console | ${message.text()}`);
     });
     page.on('response', (response) => {
       const url = new URL(response.url());

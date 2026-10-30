@@ -414,8 +414,8 @@
     "export": "تصدير (CSV)",
     "flowsTitle": "الأحجام شهريًا",
     "flowsDescription": "الأرصدة المعتمدة للشركات والمدفوعات لدى التجار.",
-    "balanceTitle": "حجم اليوم",
-    "balanceDescription": "مدفوعات الشهر حسب نوع الرصيد.",
+    "balanceTitle": "مدفوعات الشهر حسب النوع",
+    "balanceDescription": "توزيع مدفوعات الشهر الحالي.",
     "emptyTitle": "لا توجد بيانات بعد",
     "emptyMessage": "ستظهر مع أولى العمليات."
   },
