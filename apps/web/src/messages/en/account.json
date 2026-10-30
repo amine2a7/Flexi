@@ -19,7 +19,7 @@
     "mfaOn": "On",
     "mfaOff": "Off",
     "recoveryCodes": "Recovery codes",
-    "recoveryRemaining": "{count, plural, =0 {No code left} one {# code left} other {# codes left}}",
+    "recoveryRemaining": "{count, plural, one {# code left} other {# codes left}}",
     "mfaHint": "Lost phone: use a recovery code, then contact your administrator."
   },
   "support": {

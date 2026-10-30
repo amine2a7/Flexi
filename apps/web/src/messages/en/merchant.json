@@ -220,7 +220,7 @@
     "title": "Statistics",
     "description": "Your collections and settlements over the last months.",
     "today": "Collected today",
-    "todayCount": "{count, plural, =0 {No payment} one {# payment} other {# payments}}",
+    "todayCount": "{count, plural, one {# payment} other {# payments}}",
     "receivables": "Receivables to settle",
     "nextSettlement": "Next settlement",
     "none": "None",

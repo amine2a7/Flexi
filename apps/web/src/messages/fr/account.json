@@ -19,7 +19,7 @@
     "mfaOn": "Activée",
     "mfaOff": "Non activée",
     "recoveryCodes": "Codes de secours",
-    "recoveryRemaining": "{count, plural, =0 {Aucun code restant} one {# code restant} other {# codes restants}}",
+    "recoveryRemaining": "{count, plural, one {# code restant} other {# codes restants}}",
     "mfaHint": "Téléphone perdu : utilisez un code de secours, puis contactez votre administrateur."
   },
   "support": {

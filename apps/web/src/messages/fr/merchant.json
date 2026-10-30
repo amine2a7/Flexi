@@ -220,7 +220,7 @@
     "title": "Statistiques",
     "description": "Vos encaissements et vos règlements des derniers mois.",
     "today": "Encaissé aujourd'hui",
-    "todayCount": "{count, plural, =0 {Aucun paiement} one {# paiement} other {# paiements}}",
+    "todayCount": "{count, plural, one {# paiement} other {# paiements}}",
     "receivables": "Créances à régler",
     "nextSettlement": "Prochain règlement",
     "none": "Aucun",
