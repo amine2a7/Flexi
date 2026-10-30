@@ -9,10 +9,11 @@ Inventaire et état écran par écran : `docs/design/etat-ecrans.md`. Ordre : Co
 
 | Espace | Statut |
 |---|---|
-| Commun | En cours (captures puis revue) |
-| Commerçant | À faire : Statistiques, Paramètres, Support (specs + écrans), captures, revue |
-| Entreprise | À faire : 6 specs rétro, Reporting, Paramètres, Support, captures, revue |
-| Administrateur | À faire : 13 specs rétro, Sécurité & conformité, Reporting, captures, revue |
+| Commun | Terminé, revu sur captures, Hautes corrigées ; ouverts : champ MFA segmenté, position de la carte, logo partagé |
+| Commerçant | Terminé (Statistiques, Paramètres, Support ajoutés), revu, Hautes corrigées ; ouvert : Virements (séparer demande et suivi, carte Destination) |
+| Entreprise | Terminé (Reporting, Paramètres, Support ajoutés, 6 specs rétro), revu, Hautes corrigées |
+| Administrateur | Terminé (Sécurité & conformité, Reporting ajoutés, 13 specs rétro, contrat 0.6.0 en lecture seule), revu, Hautes corrigées |
+| Cohérence globale | Aucun texte ni style en dur (grep + tests de conventions) ; composants uniques (tableau, modale, select) ; `pages-sweep` **bloqué (environnement)** : des requêtes échappent à MSW sous Playwright et aboutissent au serveur d'un autre projet sur le port 3000 (2 essais) ; défaut connu du mock : enregistrement de la visite guidée |
 
 ## État courant (mis à jour le 2026-10-29) — À LIRE EN PREMIER
 
