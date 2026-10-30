@@ -1,6 +1,6 @@
 {
   "dashboard": {
-    "title": "Your credit portfolio",
+    "title": "Dashboard",
     "description": "Order credits, allocate them to your employees and follow their use.",
     "wallet": "Available balance",
     "walletHint": "Credits ready to be allocated",

@@ -1,7 +1,7 @@
 {
   "dashboard": {
-    "title": "Encaissez vos ventes sans papier",
-    "description": "Encaissez par code client, suivez vos créances et vos règlements à J+2.",
+    "title": "Tableau de bord",
+    "description": "Encaissez vos ventes sans papier : code client, créances et règlements à J+2.",
     "collect": "Encaisser un paiement",
     "today": "Encaissé aujourd'hui",
     "todayCount": "{count, plural, one {# paiement} other {# paiements}}",

@@ -48,7 +48,8 @@ export function Amount({ millimes, size = 'body', sign, className, countUp = fal
         className,
       )}
     >
-      <span aria-hidden="true">
+      {/* Amounts always stand out (charte §3): bold number, smaller muted currency. */}
+      <span aria-hidden="true" className="font-title">
         {prefix}
         {formatMillimes(shown, locale)}
       </span>

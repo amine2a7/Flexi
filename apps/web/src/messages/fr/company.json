@@ -1,6 +1,6 @@
 {
   "dashboard": {
-    "title": "Votre portefeuille de crédits",
+    "title": "Tableau de bord",
     "description": "Commandez des crédits, attribuez-les à vos employés et suivez leur utilisation.",
     "wallet": "Solde disponible",
     "walletHint": "Crédits prêts à être attribués",

@@ -28,3 +28,9 @@
     }
   }
 }
+
+/* RTL tables: each cell takes the direction of its own text, so a Latin name or reference keeps
+   its punctuation in place inside an Arabic page (« Sami B. », never « .Sami B »). */
+[dir='rtl'] td {
+  unicode-bidi: plaintext;
+}
