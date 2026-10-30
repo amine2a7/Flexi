@@ -636,9 +636,22 @@ describe('replays (N4)', () => {
       shop.call('POST', '/v1/merchant/payouts', { body, headers }),
       shop.call('POST', '/v1/merchant/payouts', { body, headers }),
     ]);
+    // One books the payout; the other is the same answer replayed, or told to retry (409 with
+    // Retry-After), never an error.
     const done = [first, second].filter((result) => result.status < 300);
     expect(done.length).toBeGreaterThanOrEqual(1);
     for (const result of done) expect(result.body.id).toBe(done[0]?.body.id);
+    for (const result of [first, second].filter((item) => item.status >= 300)) {
+      expect(result.status).toBe(409);
+      expect(result.body.code).toBe('IDEMPOTENCY_REQUEST_IN_PROGRESS');
+      expect(result.headers.get('retry-after')).not.toBeNull();
+    }
+    // Replayed later with the same key and body: the same answer, nothing more booked.
+    const before = await entries();
+    const later = await shop.call('POST', '/v1/merchant/payouts', { body, headers });
+    expect(later.status).toBe(done[0]?.status);
+    expect(later.body).toEqual(done[0]?.body);
+    expect(await entries()).toBe(before);
     const wallet = accounts.merchantWallet(merchant.id, 'RESTAURATION');
     expect(await db.system((tx) => ledger.balance(tx, wallet))).toBe(0n);
     const payouts = await db.system((tx) =>
@@ -649,6 +662,50 @@ describe('replays (N4)', () => {
       body: { quoteId: randomUUID() },
       headers,
     });
+    expect(reused.status).toBe(422);
+    expect(reused.body.code).toBe('IDEMPOTENCY_KEY_REUSED');
+  });
+
+  it('an allocation replayed with the same key credits the employee once', async () => {
+    const company = await createCompany(db);
+    const employee = await createEmployee(db, company.id);
+    await db.system((tx) =>
+      ledger.post(tx, {
+        type: 'ALLOCATION',
+        reference: 'TEST-N4',
+        entries: [
+          { account: accounts.bankEscrow(), direction: 'D', amount: 50_000n },
+          {
+            account: accounts.companyWallet(company.id, 'RESTAURATION'),
+            direction: 'C',
+            amount: 50_000n,
+          },
+        ],
+      }),
+    );
+    const owner = await signedIn(
+      base,
+      await createUser(db, env, 'COMPANY', { companyId: company.id }, 'Leïla M.', 'OWNER'),
+    );
+    const body = {
+      allocations: [
+        { employeeId: employee.id, creditType: 'RESTAURATION', amountMillimes: 15_000 },
+      ],
+    };
+    const headers = key();
+    const first = await owner.call('POST', '/v1/company/allocations', { body, headers });
+    expect(first.status).toBeLessThan(300);
+    const before = await entries();
+    const again = await owner.call('POST', '/v1/company/allocations', { body, headers });
+    expect(again.body).toEqual(first.body);
+    expect(await entries()).toBe(before);
+    const wallet = accounts.employeeWallet(employee.id, 'RESTAURATION');
+    expect(await db.system((tx) => ledger.balance(tx, wallet))).toBe(15_000n);
+    const reused = await owner.call('POST', '/v1/company/allocations', {
+      body: { allocations: [{ ...body.allocations[0], amountMillimes: 1_000 }] },
+      headers,
+    });
+    expect(reused.status).toBe(422);
     expect(reused.body.code).toBe('IDEMPOTENCY_KEY_REUSED');
   });
 

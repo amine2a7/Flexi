@@ -51,6 +51,8 @@ export default function CollectPage() {
   const [declined, setDeclined] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  // The state of the request could not be read: said, never a silent wait (ux, step 3).
+  const [pollFailed, setPollFailed] = useState(false);
   const [intentKey, setIntentKey] = useState(newIdempotencyKey);
   const dashboard = useApiQuery(() => getApi().GET('/v1/merchant/dashboard'), []);
   const profile = useApiQuery(() => getApi().GET('/v1/merchant/profile'), []);
@@ -68,8 +70,12 @@ export default function CollectPage() {
     const timer = setInterval(() => {
       void getApi()
         .GET('/v1/merchant/payments/{paymentId}', { params: { path: { paymentId: payment.id } } })
-        .then(({ data }) => {
+        .then(({ data, error: problem }) => {
+          setPollFailed(problem !== undefined);
           if (data !== undefined && data.status !== 'INITIATED') setPayment(data);
+        })
+        .catch(() => {
+          setPollFailed(true);
         });
     }, POLL_MS);
     return () => {
@@ -118,6 +124,8 @@ export default function CollectPage() {
         restart();
         toast.notify('info', t('cancelledToast'));
       } else setError(problem);
+    } catch (failure) {
+      setError(failure);
     } finally {
       setCancelling(false);
       setConfirmCancel(false);
@@ -171,6 +179,10 @@ export default function CollectPage() {
               <Hourglass aria-hidden="true" className="size-icon-lg text-info" />
               <h2 className="text-title text-text">{t('waitingTitle')}</h2>
               <p className="text-body text-text-muted">{t('waitingMessage')}</p>
+              {pollFailed ? <Alert tone="warning">{t('pollFailed')}</Alert> : null}
+              {error !== undefined ? (
+                <Alert tone="danger">{tRoot(messageKey(errorMessageKey(error)))}</Alert>
+              ) : null}
               <dl className="flex w-full flex-col gap-2 rounded-card-desktop bg-bg p-4 text-start">
                 <div className="flex justify-between gap-3">
                   <dt className="text-caption text-text-muted">{t('customer')}</dt>

@@ -129,18 +129,21 @@ export class IdempotencyService {
       const fence = randomUUID();
       const leaseUntil = new Date(now.getTime() + LEASE_MS);
       if (existing === undefined) {
-        await tx.idempotencyKey.create({
-          data: {
-            scope,
-            userId,
-            key,
-            fingerprint,
-            state: 'IN_PROGRESS',
-            fenceToken: fence,
-            leaseUntil,
-          },
-        });
-        return { fence };
+        // Two first requests with the same key at the same time: the row does not exist yet, so
+        // FOR UPDATE locked nothing; the unique key lets one insert, the other is told to retry
+        // (ledger-auditor N4), never a 500.
+        const inserted = await tx.$executeRaw`
+          INSERT INTO idempotency_keys (scope, user_id, key, fingerprint, state, fence_token, lease_until)
+          VALUES (${scope}, ${userId}::uuid, ${key}::uuid, ${fingerprint}, 'IN_PROGRESS'::"IdempotencyState", ${fence}::uuid, ${leaseUntil})
+          ON CONFLICT DO NOTHING`;
+        if (inserted === 1) return { fence };
+        const retry = Math.max(1, Math.ceil(LEASE_MS / 1000));
+        throw new ApiProblem(
+          409,
+          'IDEMPOTENCY_REQUEST_IN_PROGRESS',
+          { retryAfterSeconds: retry },
+          { 'Retry-After': String(retry) },
+        );
       }
       if (existing.fingerprint !== fingerprint) throw new ApiProblem(422, 'IDEMPOTENCY_KEY_REUSED');
       if (existing.state === 'DONE') {

@@ -71,7 +71,8 @@
     "qrLabel": "Merchant QR {code}",
     "creditType": "Credit type",
     "creditTypeHint": "The customer pays with the balance of this type only.",
-    "ruleNoteByType": "The amount is settled at D+2, less the commission of the credit type."
+    "ruleNoteByType": "The amount is settled at D+2, less the commission of the credit type.",
+    "pollFailed": "The state of the payment cannot be checked. Look at the history before collecting again."
   },
   "history": {
     "title": "Collection history",

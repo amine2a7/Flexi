@@ -97,6 +97,8 @@ export default function PayoutsPage() {
       } else {
         setError(problem);
       }
+    } catch (failure) {
+      setError(failure);
     } finally {
       setQuoting(false);
     }
@@ -121,6 +123,9 @@ export default function PayoutsPage() {
       setAmountText('');
       setRefresh((value) => value + 1);
       toast.notify('success', t('createdToast', { reference: data.reference }));
+    } catch (failure) {
+      setConfirming(false);
+      setError(failure);
     } finally {
       setSending(false);
     }

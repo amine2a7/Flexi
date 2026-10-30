@@ -71,7 +71,8 @@
     "qrLabel": "QR commerçant {code}",
     "creditType": "Type de crédit",
     "creditTypeHint": "Le client paie avec son solde de ce type uniquement.",
-    "ruleNoteByType": "Le montant sera réglé à J+2, commission du type de crédit déduite."
+    "ruleNoteByType": "Le montant sera réglé à J+2, commission du type de crédit déduite.",
+    "pollFailed": "Impossible de vérifier l'état du paiement. Consultez l'historique avant d'encaisser à nouveau."
   },
   "history": {
     "title": "Historique des encaissements",
