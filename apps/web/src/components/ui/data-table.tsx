@@ -16,6 +16,11 @@ export interface Column<Row> {
   readonly align?: 'start' | 'end';
   /** Makes the column sortable (on the rows shown): ISO dates, amounts in millimes, references. */
   readonly sortValue?: (row: Row) => string | number;
+  /**
+   * Place in the mobile card: `title` (top line, no label: name, status), `footer` (bottom, no
+   * label: row actions), `hidden` (table only). Default: a label / value line.
+   */
+  readonly card?: 'title' | 'footer' | 'hidden';
 }
 
 interface Sort {
@@ -184,14 +189,32 @@ export function DataTable<Row>({
               fresh.has(rowKey(row)) && 'fp-flash',
             )}
           >
+            {columns.some((column) => column.card === 'title') ? (
+              <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+                {columns
+                  .filter((column) => column.card === 'title')
+                  .map((column) => (
+                    <div key={column.key}>{column.cell(row)}</div>
+                  ))}
+              </div>
+            ) : null}
             <dl className="flex flex-col gap-2">
-              {columns.map((column) => (
-                <div key={column.key} className="flex items-center justify-between gap-3">
-                  <dt className="text-caption text-text-muted">{column.header}</dt>
-                  <dd className="text-end text-body">{column.cell(row)}</dd>
+              {columns
+                .filter((column) => column.card === undefined)
+                .map((column) => (
+                  <div key={column.key} className="flex items-center justify-between gap-3">
+                    <dt className="text-caption text-text-muted">{column.header}</dt>
+                    <dd className="text-end text-body">{column.cell(row)}</dd>
+                  </div>
+                ))}
+            </dl>
+            {columns
+              .filter((column) => column.card === 'footer')
+              .map((column) => (
+                <div key={column.key} className="mt-3 border-t border-border pt-3">
+                  {column.cell(row)}
                 </div>
               ))}
-            </dl>
           </li>
         ))}
       </ul>

@@ -80,6 +80,7 @@ export default function EmployeesPage() {
     {
       key: 'name',
       header: t('name'),
+      card: 'title',
       cell: (row) => (
         <span className="flex flex-col">
           <span className="font-label text-text">{`${row.firstName} ${row.lastName}`}</span>
@@ -91,7 +92,12 @@ export default function EmployeesPage() {
       sortValue: (row) => `${row.lastName} ${row.firstName}`,
     },
     { key: 'email', header: t('fields.email'), cell: (row) => <span dir="ltr">{row.email}</span> },
-    { key: 'phone', header: t('fields.phone'), cell: (row) => <span dir="ltr">{row.phone}</span> },
+    {
+      key: 'phone',
+      card: 'hidden',
+      header: t('fields.phone'),
+      cell: (row) => <span dir="ltr">{row.phone}</span>,
+    },
     {
       key: 'allocated',
       header: t('allocated'),
@@ -102,6 +108,7 @@ export default function EmployeesPage() {
     {
       key: 'status',
       header: t('status'),
+      card: 'title',
       cell: (row) => <UserStatusBadge status={row.status} graceUntil={row.graceUntil} />,
       sortValue: (row) => row.status,
     },
@@ -110,6 +117,7 @@ export default function EmployeesPage() {
           {
             key: 'actions',
             header: tLife('actions'),
+            card: 'footer' as const,
             align: 'end' as const,
             cell: (row: Employee) => {
               const available = transitions(row.status);
@@ -121,7 +129,7 @@ export default function EmployeesPage() {
                     <Button
                       key={action}
                       size="sm"
-                      variant={action === 'deactivate' ? 'danger' : 'secondary'}
+                      variant="ghost"
                       aria-label={`${tLife(action)} ${row.firstName} ${row.lastName}`}
                       onClick={() => {
                         setTarget({ employee: row, action });

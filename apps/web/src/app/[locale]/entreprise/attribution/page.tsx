@@ -215,7 +215,8 @@ export default function AllocationPage() {
             onPrevious={list.previous}
           />
         </Card>
-        <Card>
+        {/* Small screen: the action comes before the list of employees (ux, captures). */}
+        <Card className="order-first lg:order-none">
           <div className="flex flex-col gap-5">
             <CreditTypeSelect
               label={t('typeLabel')}

@@ -64,6 +64,7 @@ const PERMISSIONS = {
     ...BACK_OFFICE_READ,
     'settings.read',
     'messages.read',
+    'risk.read',
     'users.manage',
     'users.adminRoles',
     'users.support',
@@ -79,7 +80,7 @@ const PERMISSIONS = {
     'payouts.decide',
     'messages.handle',
   ],
-  COMPLIANCE: [...BACK_OFFICE_READ, 'kyc.decide', 'kycDocuments.read'],
+  COMPLIANCE: [...BACK_OFFICE_READ, 'kyc.decide', 'kycDocuments.read', 'risk.read'],
   FINANCE: [
     ...BACK_OFFICE_READ,
     'settings.read',

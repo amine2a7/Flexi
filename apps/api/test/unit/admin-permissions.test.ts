@@ -60,4 +60,11 @@ describe('administrator sub-roles (decision C)', () => {
     ];
     for (const permission of admin('SUPER_ADMIN')) expect(tenant).not.toContain(permission);
   });
+
+  it('fraud alerts and disputes are read by operations and the super-admin only', () => {
+    expect(admin('SUPER_ADMIN')).toContain('risk.read');
+    expect(admin('COMPLIANCE')).toContain('risk.read');
+    expect(admin('FINANCE')).not.toContain('risk.read');
+    expect(admin('SUPPORT')).not.toContain('risk.read');
+  });
 });

@@ -47,6 +47,7 @@ const ADMIN_ALL = [
   'messages.read',
   'users.read',
   'userBalances.read',
+  'risk.read',
   'users.manage',
   'users.adminRoles',
   'users.support',
@@ -103,7 +104,7 @@ export type Permission =
 const MATRIX: Record<Role, Partial<Record<SubRole | 'NONE', readonly Permission[]>>> = {
   ADMIN: {
     SUPER_ADMIN: ADMIN_ALL,
-    COMPLIANCE: [...ADMIN_BACK_OFFICE_READ, 'kyc.decide', 'kycDocuments.read'],
+    COMPLIANCE: [...ADMIN_BACK_OFFICE_READ, 'kyc.decide', 'kycDocuments.read', 'risk.read'],
     FINANCE: [
       ...ADMIN_BACK_OFFICE_READ,
       'settings.read',
