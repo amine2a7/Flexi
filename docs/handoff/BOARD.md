@@ -3,6 +3,17 @@
 Tenu par le lead (`main`) à chaque étape. Statuts : À faire · En cours · En revue · Bloqué · Terminé.
 Préfixe `TEST-FIRST:` = tâche de tests écrits avant le code (tests rouges acceptés).
 
+## Design web complet (objectif du 2026-10-30, mode continu) — À LIRE EN PREMIER
+
+Inventaire et état écran par écran : `docs/design/etat-ecrans.md`. Ordre : Commun → Commerçant → Entreprise → Administrateur ; captures FR/AR desktop/mobile dans `docs/design/captures/<espace>/` puis revue design + ux par espace. Étape 3 (Commerçant) : N3 en [DÉCISION] (recommandation : garder la règle 5) ; N4 terminé (ledger-auditor : corrigé l'accès simultané à une nouvelle clé).
+
+| Espace | Statut |
+|---|---|
+| Commun | En cours (captures puis revue) |
+| Commerçant | À faire : Statistiques, Paramètres, Support (specs + écrans), captures, revue |
+| Entreprise | À faire : 6 specs rétro, Reporting, Paramètres, Support, captures, revue |
+| Administrateur | À faire : 13 specs rétro, Sécurité & conformité, Reporting, captures, revue |
+
 ## État courant (mis à jour le 2026-10-29) — À LIRE EN PREMIER
 
 **Mode continu** (décision du 2026-10-29) : plan de l'utilisateur du 2026-10-23 (étapes 0 à 6, web puis API mobile, pas de Flutter). Reprise : « Lis BOARD.md et continue le mode continu ». Méthode des contrôles d'accès : `/audit-acces`.
