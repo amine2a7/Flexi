@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: FlexiPay API
-  version: 0.6.0
+  version: 0.7.0
   summary: Conventions transverses, authentification web et profil (WB2, espace Commun).
   description: |
     # Contrat d'API FlexiPay (version 0.2.2)
@@ -4343,6 +4343,207 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
+    post:
+      tags: [admin]
+      operationId: openDispute
+      summary: Ouvrir un litige sur un paiement (montant mis en réserve, exclu des règlements)
+      description: Permission `disputes.manage`. Paiement confirmé et dans aucune demande de virement (sinon 409).
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisputeOpen'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dispute'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/disputes/{disputeId}:
+    get:
+      tags: [admin]
+      operationId: getDispute
+      summary: Dossier d'un litige (instruction, notes)
+      description: Permission `risk.read`.
+      parameters:
+        - name: disputeId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisputeDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/disputes/{disputeId}/notes:
+    post:
+      tags: [admin]
+      operationId: addDisputeNote
+      summary: Ajouter une note d'instruction
+      description: Permission `disputes.manage` (super-admin, Opérations).
+      parameters:
+        - name: disputeId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisputeNoteCreate'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisputeNote'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/disputes/{disputeId}/reject:
+    post:
+      tags: [admin]
+      operationId: rejectDispute
+      summary: Rejeter un litige (le montant retourne au commerçant)
+      description: Permission `disputes.manage`. Écriture au ledger (libération de la réserve).
+      parameters:
+        - name: disputeId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionReason'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dispute'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/disputes/{disputeId}/accept:
+    post:
+      tags: [admin]
+      operationId: acceptDispute
+      summary: Accepter un litige (seconde validation Finance, puis remboursement)
+      description: Permission `disputes.manage`. Crée une demande `DISPUTE_REFUND` ; l'approbation (Finance, jamais l'initiateur) rembourse l'employé dans ses lots d'origine.
+      parameters:
+        - name: disputeId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionReason'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dispute'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/admin/payout-requests:
     get:
       tags: [admin]
@@ -7490,7 +7691,7 @@ components:
       title: ApprovalType
       description: Opération sensible soumise à double validation (règle 12).
       type: string
-      enum: [COMMISSION_RATE_CHANGE, SETTINGS_CHANGE]
+      enum: [COMMISSION_RATE_CHANGE, SETTINGS_CHANGE, DISPUTE_REFUND]
     Approval:
       title: Approval
       type: object
@@ -8270,8 +8471,9 @@ components:
       enum: [HIGH, MEDIUM, LOW]
     DisputeStatus:
       title: DisputeStatus
+      description: Litige — ouvert (montant mis en réserve), acceptation en attente de la seconde validation Finance, accepté (remboursé), rejeté (règlement normal).
       type: string
-      enum: [OPEN, RESOLVED, REJECTED]
+      enum: [OPEN, ACCEPTANCE_PENDING, ACCEPTED, REJECTED]
     FraudAlert:
       title: FraudAlert
       type: object
@@ -8309,13 +8511,18 @@ components:
       title: Dispute
       type: object
       additionalProperties: false
-      required: [id, paymentReference, merchantName, amountMillimes, reason, status, openedAt]
+      required: [id, reference, paymentReference, merchantName, creditType, amountMillimes, reason, status, openedAt, openedByName, dueAt, decisionReason, decidedAt]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          maxLength: 32
         paymentReference:
           type: string
           maxLength: 32
+        creditType:
+          $ref: '#/components/schemas/CreditType'
         merchantName:
           type: string
           maxLength: 120
@@ -8328,6 +8535,71 @@ components:
           $ref: '#/components/schemas/DisputeStatus'
         openedAt:
           $ref: '#/components/schemas/Timestamp'
+        openedByName:
+          type: string
+          maxLength: 120
+        dueAt:
+          description: Échéance cible de la décision (15 jours).
+          $ref: '#/components/schemas/Timestamp'
+        decisionReason:
+          oneOf:
+            - type: string
+              maxLength: 500
+            - type: 'null'
+        decidedAt:
+          oneOf:
+            - $ref: '#/components/schemas/Timestamp'
+            - type: 'null'
+    DisputeDetail:
+      title: DisputeDetail
+      allOf:
+        - $ref: '#/components/schemas/Dispute'
+        - type: object
+          required: [notes]
+          properties:
+            notes:
+              type: array
+              maxItems: 500
+              items:
+                $ref: '#/components/schemas/DisputeNote'
+    DisputeNote:
+      title: DisputeNote
+      type: object
+      additionalProperties: false
+      required: [id, authorName, text, createdAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        authorName:
+          type: string
+          maxLength: 120
+        text:
+          type: string
+          maxLength: 2000
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+    DisputeOpen:
+      title: DisputeOpen
+      type: object
+      additionalProperties: false
+      required: [paymentId, reason]
+      properties:
+        paymentId:
+          $ref: '#/components/schemas/Uuid'
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 500
+    DisputeNoteCreate:
+      title: DisputeNoteCreate
+      type: object
+      additionalProperties: false
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 2000
     DisputePage:
       title: DisputePage
       type: object

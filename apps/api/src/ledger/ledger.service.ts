@@ -56,6 +56,9 @@ export const accounts = {
     wallet('EMPLOYEE', 'EMPLOYEE_WALLET', employeeId, type),
   merchantWallet: (merchantId: string, type: CreditType) =>
     wallet('MERCHANT', 'MERCHANT_WALLET', merchantId, type),
+  /** Amount of a disputed payment, held out of the merchant wallet (N2): never settled. */
+  disputeHold: (merchantId: string, type: CreditType) =>
+    wallet('MERCHANT', 'DISPUTE_HOLD', merchantId, type),
 } as const;
 
 export interface EntryInput {

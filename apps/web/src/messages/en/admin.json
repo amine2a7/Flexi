@@ -135,7 +135,8 @@
     "own": "Initiated by you: another administrator must approve it.",
     "types": {
       "COMMISSION_RATE_CHANGE": "Rate change",
-      "SETTINGS_CHANGE": "Settings change"
+      "SETTINGS_CHANGE": "Settings change",
+      "DISPUTE_REFUND": "Dispute refund"
     },
     "approveTitle": "Approve this request?",
     "approveMessage": "The change will apply immediately and be logged.",
@@ -454,7 +455,8 @@
     },
     "disputeStatuses": {
       "OPEN": "Open",
-      "RESOLVED": "Resolved",
+      "ACCEPTANCE_PENDING": "Acceptance to validate",
+      "ACCEPTED": "Accepted (refunded)",
       "REJECTED": "Rejected"
     }
   }

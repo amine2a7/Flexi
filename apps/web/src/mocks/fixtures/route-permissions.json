@@ -101,6 +101,36 @@
   },
   {
     "method": "GET",
+    "path": "/v1/admin/disputes",
+    "permissions": ["risk.read"]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/admin/disputes",
+    "permissions": ["disputes.manage"]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/admin/disputes/:disputeId",
+    "permissions": ["risk.read"]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/admin/disputes/:disputeId/accept",
+    "permissions": ["disputes.manage"]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/admin/disputes/:disputeId/notes",
+    "permissions": ["disputes.manage"]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/admin/disputes/:disputeId/reject",
+    "permissions": ["disputes.manage"]
+  },
+  {
+    "method": "GET",
     "path": "/v1/admin/kyc-files",
     "permissions": ["kyc.read"]
   },

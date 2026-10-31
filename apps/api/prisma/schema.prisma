@@ -158,6 +158,14 @@ enum KycAction {
 enum ApprovalType {
   COMMISSION_RATE_CHANGE
   SETTINGS_CHANGE
+  DISPUTE_REFUND
+}
+
+enum DisputeStatus {
+  OPEN
+  ACCEPTANCE_PENDING
+  ACCEPTED
+  REJECTED
 }
 
 enum ApprovalStatus {
@@ -247,6 +255,7 @@ model Merchant {
   payoutQuotes      PayoutQuote[]
   documents         MerchantDocument[]
   kycFiles          KycFile[]
+  disputes          Dispute[]
 
   @@map("merchants")
 }
@@ -626,6 +635,8 @@ model Payment {
   employee Employee       @relation(fields: [employeeId], references: [id])
   events   PaymentEvent[]
 
+  dispute Dispute?
+
   @@index([merchantId, createdAt])
   @@index([employeeId, createdAt])
   @@index([status])
@@ -942,4 +953,44 @@ model CreditLot {
 
   @@index([accountId, expiresAt])
   @@map("credit_lots")
+}
+
+/// N2 dispute (decision of 2026-10-31): amount held out of the merchant wallet while investigated.
+model Dispute {
+  id                      String        @id @db.Uuid
+  reference               String        @unique @db.VarChar(32)
+  paymentId               String        @unique @map("payment_id") @db.Uuid
+  merchantId              String        @map("merchant_id") @db.Uuid
+  amountMillimes          BigInt        @map("amount_millimes")
+  reason                  String        @db.VarChar(500)
+  status                  DisputeStatus @default(OPEN)
+  openedBy                String        @map("opened_by") @db.Uuid
+  openedByName            String        @map("opened_by_name") @db.VarChar(120)
+  openedAt                DateTime      @default(now()) @map("opened_at") @db.Timestamptz(3)
+  dueAt                   DateTime      @map("due_at") @db.Timestamptz(3)
+  decisionReason          String?       @map("decision_reason") @db.VarChar(500)
+  decidedAt               DateTime?     @map("decided_at") @db.Timestamptz(3)
+  holdTransactionId       String        @map("hold_transaction_id") @db.Uuid
+  resolutionTransactionId String?       @map("resolution_transaction_id") @db.Uuid
+
+  payment  Payment       @relation(fields: [paymentId], references: [id])
+  merchant Merchant      @relation(fields: [merchantId], references: [id])
+  notes    DisputeNote[]
+
+  @@index([status, openedAt], map: "disputes_status_idx")
+  @@map("disputes")
+}
+
+model DisputeNote {
+  id         String   @id @db.Uuid
+  disputeId  String   @map("dispute_id") @db.Uuid
+  authorId   String   @map("author_id") @db.Uuid
+  authorName String   @map("author_name") @db.VarChar(120)
+  text       String   @db.VarChar(2000)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  dispute Dispute @relation(fields: [disputeId], references: [id])
+
+  @@index([disputeId, createdAt], map: "dispute_notes_dispute_idx")
+  @@map("dispute_notes")
 }

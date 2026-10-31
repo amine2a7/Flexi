@@ -4,6 +4,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { InvitationService } from '../auth/invitation.service.js';
 import { AuditService } from '../common/audit.service.js';
 import { FourEyesService } from '../common/four-eyes.service.js';
+import { DisputesService } from '../risk/disputes.service.js';
 import { uuidv7 } from '../common/crypto.js';
 import { DbService, type Tx } from '../common/db.service.js';
 import { toMillimes } from '../common/money.js';
@@ -102,6 +103,7 @@ export class AdminService {
     @Inject(Paginator) private readonly paginator: Paginator,
     @Inject(FILE_STORAGE) private readonly storage: FileStorage,
     @Inject(FourEyesService) private readonly fourEyes: FourEyesService,
+    @Inject(DisputesService) private readonly disputes: DisputesService,
     @Inject(PiiService) private readonly pii: PiiService,
     @Inject(InvitationService) private readonly invitations: InvitationService,
   ) {}
@@ -489,6 +491,9 @@ export class AdminService {
           where: { id: payload.profileId },
           data: { rateBps: payload.newRateBps, updatedAt: new Date() },
         });
+      } else if (approval.type === 'DISPUTE_REFUND') {
+        // Second validation of an accepted dispute: refund of the employee (N2).
+        await this.disputes.refund(tx, (approval.payload as { disputeId: string }).disputeId);
       } else {
         await this.applySettings(tx, approval.payload as unknown as PlatformSettingsInput);
       }
@@ -518,6 +523,10 @@ export class AdminService {
           rejectReason: reason,
         },
       });
+      if (approval.type === 'DISPUTE_REFUND') {
+        // Refund refused: the dispute goes back to investigation (N2).
+        await this.disputes.reopen(tx, (approval.payload as { disputeId: string }).disputeId);
+      }
       await this.audit.record(tx, 'approvals.reject', approval.subject);
       return approvalBody(updated, who.userId);
     });

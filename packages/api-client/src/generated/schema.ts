@@ -1849,7 +1849,91 @@ export interface paths {
      */
     get: operations['listDisputes'];
     put?: never;
+    /**
+     * Ouvrir un litige sur un paiement (montant mis en réserve, exclu des règlements)
+     * @description Permission `disputes.manage`. Paiement confirmé et dans aucune demande de virement (sinon 409).
+     */
+    post: operations['openDispute'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/disputes/{disputeId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Dossier d'un litige (instruction, notes)
+     * @description Permission `risk.read`.
+     */
+    get: operations['getDispute'];
+    put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/disputes/{disputeId}/notes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Ajouter une note d'instruction
+     * @description Permission `disputes.manage` (super-admin, Opérations).
+     */
+    post: operations['addDisputeNote'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/disputes/{disputeId}/reject': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Rejeter un litige (le montant retourne au commerçant)
+     * @description Permission `disputes.manage`. Écriture au ledger (libération de la réserve).
+     */
+    post: operations['rejectDispute'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/disputes/{disputeId}/accept': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Accepter un litige (seconde validation Finance, puis remboursement)
+     * @description Permission `disputes.manage`. Crée une demande `DISPUTE_REFUND` ; l'approbation (Finance, jamais l'initiateur) rembourse l'employé dans ses lots d'origine.
+     */
+    post: operations['acceptDispute'];
     delete?: never;
     options?: never;
     head?: never;
@@ -3451,7 +3535,7 @@ export interface components {
      * @description Opération sensible soumise à double validation (règle 12).
      * @enum {string}
      */
-    ApprovalType: 'COMMISSION_RATE_CHANGE' | 'SETTINGS_CHANGE';
+    ApprovalType: 'COMMISSION_RATE_CHANGE' | 'SETTINGS_CHANGE' | 'DISPUTE_REFUND';
     /** Approval */
     Approval: {
       id: components['schemas']['Uuid'];
@@ -3852,9 +3936,10 @@ export interface components {
     FraudAlertSeverity: 'HIGH' | 'MEDIUM' | 'LOW';
     /**
      * DisputeStatus
+     * @description Litige — ouvert (montant mis en réserve), acceptation en attente de la seconde validation Finance, accepté (remboursé), rejeté (règlement normal).
      * @enum {string}
      */
-    DisputeStatus: 'OPEN' | 'RESOLVED' | 'REJECTED';
+    DisputeStatus: 'OPEN' | 'ACCEPTANCE_PENDING' | 'ACCEPTED' | 'REJECTED';
     /** FraudAlert */
     FraudAlert: {
       id: components['schemas']['Uuid'];
@@ -3873,12 +3958,39 @@ export interface components {
     /** Dispute */
     Dispute: {
       id: components['schemas']['Uuid'];
+      reference: string;
       paymentReference: string;
+      creditType: components['schemas']['CreditType'];
       merchantName: string;
       amountMillimes: components['schemas']['PositiveAmountMillimes'];
       reason: string;
       status: components['schemas']['DisputeStatus'];
       openedAt: components['schemas']['Timestamp'];
+      openedByName: string;
+      /** @description Échéance cible de la décision (15 jours). */
+      dueAt: components['schemas']['Timestamp'];
+      decisionReason: string | null;
+      decidedAt: components['schemas']['Timestamp'] | null;
+    };
+    /** DisputeDetail */
+    DisputeDetail: components['schemas']['Dispute'] & {
+      notes: components['schemas']['DisputeNote'][];
+    };
+    /** DisputeNote */
+    DisputeNote: {
+      id: components['schemas']['Uuid'];
+      authorName: string;
+      text: string;
+      createdAt: components['schemas']['Timestamp'];
+    };
+    /** DisputeOpen */
+    DisputeOpen: {
+      paymentId: components['schemas']['Uuid'];
+      reason: string;
+    };
+    /** DisputeNoteCreate */
+    DisputeNoteCreate: {
+      text: string;
     };
     /** DisputePage */
     DisputePage: {
@@ -7684,6 +7796,194 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  openDispute: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DisputeOpen'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Dispute'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getDispute: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        disputeId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DisputeDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  addDisputeNote: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        disputeId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DisputeNoteCreate'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DisputeNote'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  rejectDispute: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        disputeId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DecisionReason'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Dispute'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  acceptDispute: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        disputeId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DecisionReason'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Dispute'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   listAdminPayoutRequests: {
     parameters: {
       query?: {
@@ -8189,7 +8489,7 @@ export const invoiceStatusValues: ReadonlyArray<
 > = ['PAID', 'UNPAID'];
 export const approvalTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['ApprovalType']
-> = ['COMMISSION_RATE_CHANGE', 'SETTINGS_CHANGE'];
+> = ['COMMISSION_RATE_CHANGE', 'SETTINGS_CHANGE', 'DISPUTE_REFUND'];
 export const kycStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['KycStatus']
 > = ['PENDING', 'APPROVED', 'REJECTED'];
@@ -8259,7 +8559,7 @@ export const fraudAlertSeverityValues: ReadonlyArray<
 > = ['HIGH', 'MEDIUM', 'LOW'];
 export const disputeStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['DisputeStatus']
-> = ['OPEN', 'RESOLVED', 'REJECTED'];
+> = ['OPEN', 'ACCEPTANCE_PENDING', 'ACCEPTED', 'REJECTED'];
 export const fieldErrorCodeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['FieldErrorCode']
 > = [

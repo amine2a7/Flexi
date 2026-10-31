@@ -135,7 +135,8 @@
     "own": "Initiée par vous : un autre administrateur doit la valider.",
     "types": {
       "COMMISSION_RATE_CHANGE": "Changement de taux",
-      "SETTINGS_CHANGE": "Modification du paramétrage"
+      "SETTINGS_CHANGE": "Modification du paramétrage",
+      "DISPUTE_REFUND": "Remboursement d'un litige"
     },
     "approveTitle": "Valider cette demande ?",
     "approveMessage": "La modification s'appliquera immédiatement et sera journalisée.",
@@ -454,7 +455,8 @@
     },
     "disputeStatuses": {
       "OPEN": "Ouvert",
-      "RESOLVED": "Résolu",
+      "ACCEPTANCE_PENDING": "Acceptation à valider",
+      "ACCEPTED": "Accepté (remboursé)",
       "REJECTED": "Rejeté"
     }
   }

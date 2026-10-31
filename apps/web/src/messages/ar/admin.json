@@ -135,7 +135,8 @@
     "own": "قدّمتها بنفسك: يجب أن يصادق عليها مشرف آخر.",
     "types": {
       "COMMISSION_RATE_CHANGE": "تغيير النسبة",
-      "SETTINGS_CHANGE": "تغيير الإعدادات"
+      "SETTINGS_CHANGE": "تغيير الإعدادات",
+      "DISPUTE_REFUND": "استرداد نزاع"
     },
     "approveTitle": "المصادقة على هذا الطلب؟",
     "approveMessage": "سيُطبَّق التغيير فورًا ويُسجَّل.",
@@ -454,7 +455,8 @@
     },
     "disputeStatuses": {
       "OPEN": "مفتوح",
-      "RESOLVED": "محلول",
+      "ACCEPTANCE_PENDING": "قبول بانتظار التحقق",
+      "ACCEPTED": "مقبول (مسترد)",
       "REJECTED": "مرفوض"
     }
   }
