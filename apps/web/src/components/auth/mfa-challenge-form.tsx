@@ -101,6 +101,9 @@ export function MfaChallengeForm() {
             inputMode="numeric"
             autoComplete="one-time-code"
             maxLength={6}
+            // Six digits read at a glance (review on captures): centred, spaced, fixed width.
+            className="text-center text-title tracking-widest tabular-nums"
+            dir="ltr"
             value={code}
             onChange={(event) => {
               setCode(event.target.value.replace(/\D/g, ''));

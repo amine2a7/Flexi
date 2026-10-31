@@ -121,14 +121,14 @@ const CONTEXT_OVERRIDES: Record<string, Record<string, string>> = {
   user: { ACTIVE: 'ACTIF', INVITED: 'INVITE', SUSPENDED: 'SUSPENDU', DEACTIVATED: 'DESACTIVE' },
   // Fraud alerts and disputes: severity and state with the colours of the charter.
   risk: {
-    OPEN: 'SUSPECT',
-    IN_PROGRESS: 'EN_ATTENTE',
+    OPEN: 'EN_ATTENTE',
+    IN_PROGRESS: 'A_REGLER',
     CLOSED: 'VALIDE',
     RESOLVED: 'VALIDE',
     REJECTED: 'REFUSE',
     SEVERITY_HIGH: 'SUSPENDU',
     SEVERITY_MEDIUM: 'SUSPECT',
-    SEVERITY_LOW: 'A_REGLER',
+    SEVERITY_LOW: 'EXPIRE',
   },
 };
 

@@ -422,7 +422,7 @@
   "security": {
     "title": "Security & compliance",
     "description": "Fraud alerts and disputes of the platform.",
-    "readOnly": "Read only: handling alerts and disputes comes with the disputes module (N2).",
+    "readOnly": "Read only for now: handling alerts (to review, in progress, closed, with a reason) and investigating disputes come with their routes.",
     "tabAlerts": "Fraud alerts",
     "tabDisputes": "Disputes",
     "kind": "Alert",

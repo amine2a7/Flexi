@@ -1,5 +1,6 @@
 'use client';
 
+import { ArrowLeft } from 'lucide-react';
 import type { Schemas } from '@flexipay/api-client';
 import { useTranslations } from 'next-intl';
 import { useId, useState, type ChangeEvent } from 'react';
@@ -105,6 +106,7 @@ export default function ImportPage() {
         description={t('description')}
         actions={
           <Link href="/entreprise/employes" className={buttonClasses('ghost')}>
+            <ArrowLeft aria-hidden="true" className="size-icon-sm rtl:-scale-x-100" />
             {t('back')}
           </Link>
         }

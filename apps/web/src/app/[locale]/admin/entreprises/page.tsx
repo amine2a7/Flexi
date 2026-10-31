@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { getApi } from '@/lib/api/client';
 import { usePagedList } from '@/lib/api/use-paged-list';
-import { formatDateTime } from '@/lib/format/date';
+import { formatCalendarDate } from '@/lib/format/date';
 import { AccountForm } from '@/components/admin/account-form';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -56,7 +56,7 @@ export default function AdminCompaniesPage() {
     {
       key: 'created',
       header: t('created'),
-      cell: (row) => formatDateTime(row.createdAt, locale),
+      cell: (row) => formatCalendarDate(row.createdAt.slice(0, 10), locale),
       sortValue: (row) => row.createdAt,
     },
     {

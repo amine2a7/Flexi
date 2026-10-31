@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
 import { usePagedList } from '@/lib/api/use-paged-list';
-import { formatDateTime } from '@/lib/format/date';
+import { formatCalendarDate } from '@/lib/format/date';
 import { AccountForm } from '@/components/admin/account-form';
 import { Button, buttonClasses } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -76,7 +76,7 @@ export default function AdminMerchantsPage() {
     {
       key: 'created',
       header: t('created'),
-      cell: (row) => formatDateTime(row.createdAt, locale),
+      cell: (row) => formatCalendarDate(row.createdAt.slice(0, 10), locale),
       sortValue: (row) => row.createdAt,
     },
     {

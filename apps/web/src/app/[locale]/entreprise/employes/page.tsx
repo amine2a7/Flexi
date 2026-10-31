@@ -175,7 +175,7 @@ export default function EmployeesPage() {
             ) : null}
             {canManage ? (
               <Button
-                variant="secondary"
+                variant="primary"
                 icon={<UserPlus aria-hidden="true" className="size-icon-sm" />}
                 onClick={() => {
                   setAdding(true);
@@ -185,7 +185,7 @@ export default function EmployeesPage() {
               </Button>
             ) : null}
             {canAllocate ? (
-              <Link href="/entreprise/attribution" className={buttonClasses('primary')}>
+              <Link href="/entreprise/attribution" className={buttonClasses('secondary')}>
                 <WalletCards aria-hidden="true" className="size-icon-sm" />
                 {tDashboard('allocate')}
               </Link>

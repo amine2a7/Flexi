@@ -32,7 +32,7 @@ export function LocaleSwitcher() {
                 )}
               >
                 {/* Short code on phones; the full endonym stays the accessible name. */}
-                <span className="sm:hidden" aria-hidden="true">
+                <span className="text-body-lg sm:hidden" aria-hidden="true">
                   {t(`language.short.${locale}`)}
                 </span>
                 <span className="sr-only sm:not-sr-only">{t(`language.${locale}`)}</span>

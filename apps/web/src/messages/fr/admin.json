@@ -422,7 +422,7 @@
   "security": {
     "title": "Sécurité & conformité",
     "description": "Alertes de fraude et litiges de la plateforme.",
-    "readOnly": "Consultation seulement : le traitement des alertes et des litiges arrive avec le module litiges (N2).",
+    "readOnly": "Consultation seulement pour le moment : le traitement des alertes (à examiner, en cours, fermée, avec motif) et l'instruction des litiges arrivent avec leurs routes.",
     "tabAlerts": "Alertes de fraude",
     "tabDisputes": "Litiges",
     "kind": "Alerte",

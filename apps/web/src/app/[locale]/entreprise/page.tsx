@@ -42,13 +42,13 @@ export default function CompanyDashboardPage() {
         actions={
           <>
             {canOrder ? (
-              <Link href="/entreprise/commandes/nouvelle" className={buttonClasses('secondary')}>
+              <Link href="/entreprise/commandes/nouvelle" className={buttonClasses('primary')}>
                 <ShoppingCart aria-hidden="true" className="size-icon-sm" />
                 {t('order')}
               </Link>
             ) : null}
             {canAllocate ? (
-              <Link href="/entreprise/attribution" className={buttonClasses('primary')}>
+              <Link href="/entreprise/attribution" className={buttonClasses('secondary')}>
                 <WalletCards aria-hidden="true" className="size-icon-sm" />
                 {t('allocate')}
               </Link>
