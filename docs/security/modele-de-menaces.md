@@ -205,3 +205,22 @@ Correctifs proposés (au lead, propriétaire de `.claude/` et `.gitignore`) :
 - CF-07 : retirer `Bash` de `ledger-auditor` ou documenter le risque accepté.
 - CF-08 : signature SSH des commits et exigence sur `main` (Should, avant la phase 1).
 - CF-09 : élargir le motif (`truncate( table)?`, `drop table( if exists)?`, `alter table … disable trigger`, guillemets) en le présentant comme aide.
+
+## 4. N2 – Litiges et alertes de fraude (2026-10-31)
+
+Revue : `docs/handoff/reviews/securite-n2-alertes-2026-10-31.md` (verdict OK).
+
+Actifs ajoutés : tables `disputes`, `dispute_notes` (motifs et notes d'enquête en texte libre), `fraud_alerts` ; comptes de retenue de litige et de dette commerçant ; approbation `DISPUTE_REFUND` ; statut de virement `ON_HOLD` ; seuils `platform_settings.fraud_rules`.
+
+| ID    | STRIDE | Menace                                                                                                  | Contrôle en place                                                                                     | État / constat         |
+| ----- | ------ | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------- |
+| N2-T1 | E      | Support ou Finance ouvre, décide ou lit un litige ou une alerte                                          | `risk.read`/`disputes.manage`/`alerts.manage` = SUPER_ADMIN + COMPLIANCE ; matrice HTTP testée        | Maîtrisé               |
+| N2-T2 | T/E    | Remboursement accordé par une seule personne (initiateur = approbateur)                                  | Approbation Finance, `ensureNotAuthor` sous verrou ; testé                                            | Maîtrisé               |
+| N2-T3 | T      | Seconde validation « aveugle » (Finance ne voit ni montant ni enquête) : collusion Opérations + employé | Aucun                                                                                                 | Ouvert S-N2-02 Moyenne |
+| N2-T4 | T      | Double remboursement par double approbation ou rejeu                                                     | Verrous approbation + litige, statuts revérifiés, `Idempotency-Key` obligatoire                       | Maîtrisé (test S-N2-06) |
+| N2-T5 | T      | Fonds en litige libérés au commerçant (second litige sur un virement retenu, course sur `payoutId`)      | Partiel                                                                                               | Ouvert S-N2-01 Moyenne, S-N2-03 Basse |
+| N2-T6 | I      | Données personnelles dans les alertes, motifs, logs                                                      | Prénom + initiale seulement ; identifiants internes non renvoyés ; log = compteur                     | Maîtrisé (texte libre des notes : consigne d'usage) |
+| N2-T7 | D      | Arrêt silencieux ou surcharge du job de détection                                                        | Fenêtre 20 min, regroupement, clé unique ; pas de validation des seuils ni d'index (statut, date)      | Ouvert S-N2-04, S-N2-05 Basse |
+| N2-T8 | R      | Action d'enquête ou de clôture non tracée                                                                | Audit de chaque transition dans la même transaction ; motif de clôture conservé                       | Maîtrisé               |
+| N2-T9 | I/T    | Accès direct aux tables hors application                                                                 | RLS `app_is_platform()`, aucun `DELETE`, notes en ajout seul                                          | Maîtrisé (FORCE RLS non vérifié) |
+| N2-T10 | D     | Agent interne qui gèle les virements d'un commerçant par des litiges en série                           | Audit ; échéance 15 jours non contraignante                                                           | Risque accepté (décision 2026-10-31), à surveiller |
