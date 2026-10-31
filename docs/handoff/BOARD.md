@@ -11,13 +11,13 @@ Préfixe `TEST-FIRST:` = tâche de tests écrits avant le code (tests rouges acc
 | A | pages-sweep vert | **Bloqué** | 1er document après navigation complète hors MSW (6 essais) ; piste `@msw/playwright` (dépendance à valider) |
 | B | Virements Commerçant (demande / suivi, carte Destination RIB masqué) | Fait | b5c5cf4 |
 | B | Écarts Moyens et Bas des revues sur captures | En cours (lot fait : 6998534) | reste : graphiques (valeurs, vide), onglets, densité mobile admin, historique des commissions, logo partagé |
-| C | N2 litiges | Fait, ledger-auditor corrigé (DISPUTED/REFUNDED, clé sur l'approbation) | 9c017f7, afedccc ; revue securite à faire |
+| C | N2 litiges (v2 : 30 jours, virement en attente, déduction au règlement, validité 30 j) | Fait | 9c017f7, afedccc, 02edc83 ; ledger-auditor et securite en cours |
 | C | Alertes de fraude (règles 1-3, job, traitement) | Fait | 4c22ab7 ; règles 4-5 attendent changement de RIB et appareils (étape D) |
 | C | Écrans Sécurité branchés sur l'API réelle (litiges, alertes, actions) | À faire | aujourd'hui en lecture seule + MSW |
 | C | Lots J+2 : adaptateur bancaire simulé + double validation Finance | À faire | lots existants (job), sans banque ni validation |
 | C | Factures PDF asynchrones | À faire | |
 | C | Notifications e-mail et SMS simulées (boîte d'envoi) | À faire | e-mail en fichiers existant, SMS absent |
-| D | API du mobile (QR, paiement, famille, historique, proximité, push, appareils, client Dart) | À faire | |
+| D | API du mobile (QR, paiement, famille, historique, proximité, push, appareils, client Dart) | **Reportée après la réunion client** (demande du 2026-10-31) | |
 | E | /audit-acces complet | À faire | |
 
 ## Design web complet (objectif du 2026-10-30, mode continu)
