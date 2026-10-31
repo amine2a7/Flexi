@@ -17,6 +17,7 @@ import { IdempotencyService } from '../common/idempotency.service.js';
 import { pathId, sendOutcome } from '../common/responses.js';
 import { parse } from '../common/validation.js';
 import { DisputesService } from './disputes.service.js';
+import { FraudService } from './fraud.service.js';
 
 const reasonBody = z.strictObject({ reason: z.string().trim().min(10).max(500) });
 const openBody = z.strictObject({
@@ -103,5 +104,32 @@ export class DisputesController {
       body: await this.disputes.accept(tx, id, reason),
     }));
     return sendOutcome(res, outcome);
+  }
+}
+
+/** Fraud alerts (decision of 2026-10-31): reading `risk.read`, handling `alerts.manage`. */
+@Roles('ADMIN')
+@Controller('v1/admin/fraud-alerts')
+export class FraudAlertsController {
+  constructor(@Inject(FraudService) private readonly fraud: FraudService) {}
+
+  @Can('risk.read')
+  @Get()
+  list(@Query() query: Record<string, unknown>) {
+    return this.fraud.list(query);
+  }
+
+  @Can('alerts.manage')
+  @Post(':alertId/start')
+  @HttpCode(200)
+  start(@Param('alertId') alertId: string) {
+    return this.fraud.start(pathId('alertId', alertId));
+  }
+
+  @Can('alerts.manage')
+  @Post(':alertId/close')
+  @HttpCode(200)
+  close(@Param('alertId') alertId: string, @Body() body: unknown) {
+    return this.fraud.close(pathId('alertId', alertId), parse(reasonBody, body).reason);
   }
 }

@@ -14,6 +14,7 @@ import type { CreditType } from '../generated/prisma/enums.js';
 import { LedgerService, accounts } from '../ledger/ledger.service.js';
 import { PaymentsService } from '../payments/payments.service.js';
 import { PayoutsService } from '../payouts/payouts.service.js';
+import { FraudService } from '../risk/fraud.service.js';
 
 const EVERY_MS = 10 * 60_000;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -35,6 +36,7 @@ export class JobsService implements OnApplicationBootstrap, OnApplicationShutdow
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(PayoutsService) private readonly payouts: PayoutsService,
     @Inject(PaymentsService) private readonly payments: PaymentsService,
+    @Inject(FraudService) private readonly fraud: FraudService,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -81,6 +83,7 @@ export class JobsService implements OnApplicationBootstrap, OnApplicationShutdow
       ['expiries', () => this.expireLots()],
       ['settlements', () => this.payouts.executeDueBatches()],
       ['requests', () => this.payments.expireStale()],
+      ['fraud', () => this.fraud.detect()],
     ] as const) {
       try {
         await job();

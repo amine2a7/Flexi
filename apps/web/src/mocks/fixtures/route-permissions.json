@@ -131,6 +131,21 @@
   },
   {
     "method": "GET",
+    "path": "/v1/admin/fraud-alerts",
+    "permissions": ["risk.read"]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/admin/fraud-alerts/:alertId/close",
+    "permissions": ["alerts.manage"]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/admin/fraud-alerts/:alertId/start",
+    "permissions": ["alerts.manage"]
+  },
+  {
+    "method": "GET",
     "path": "/v1/admin/kyc-files",
     "permissions": ["kyc.read"]
   },

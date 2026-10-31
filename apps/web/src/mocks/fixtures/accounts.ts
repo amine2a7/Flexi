@@ -66,6 +66,7 @@ const PERMISSIONS = {
     'messages.read',
     'risk.read',
     'disputes.manage',
+    'alerts.manage',
     'users.manage',
     'users.adminRoles',
     'users.support',
@@ -87,6 +88,7 @@ const PERMISSIONS = {
     'kycDocuments.read',
     'risk.read',
     'disputes.manage',
+    'alerts.manage',
   ],
   FINANCE: [
     ...BACK_OFFICE_READ,

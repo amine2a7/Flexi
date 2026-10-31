@@ -49,6 +49,7 @@ const ADMIN_ALL = [
   'userBalances.read',
   'risk.read',
   'disputes.manage',
+  'alerts.manage',
   'users.manage',
   'users.adminRoles',
   'users.support',
@@ -111,6 +112,7 @@ const MATRIX: Record<Role, Partial<Record<SubRole | 'NONE', readonly Permission[
       'kycDocuments.read',
       'risk.read',
       'disputes.manage',
+      'alerts.manage',
     ],
     FINANCE: [
       ...ADMIN_BACK_OFFICE_READ,
