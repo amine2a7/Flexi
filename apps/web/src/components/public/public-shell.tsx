@@ -11,11 +11,11 @@ export function PublicShell({ children }: { children: ReactNode }) {
   const t = useTranslations('landing');
   const tApp = useTranslations('app');
   const anchor =
-    'hidden min-h-touch-target-min items-center rounded-button px-3 text-label text-text-muted hover:text-navy md:inline-flex';
+    'hidden min-h-touch-target-min items-center rounded-button px-3 text-label text-on-navy-muted hover:text-on-navy md:inline-flex';
   return (
     <div className="flex min-h-screen flex-col bg-bg">
       <SkipLink />
-      <header className="border-b border-border bg-surface">
+      <header className="bg-navy">
         <div className="mx-auto flex w-full max-w-desktop-max-width items-center justify-between gap-3 px-4 py-2 lg:px-8">
           <Link href="/" className="flex items-center gap-2 rounded-button">
             <span
@@ -24,7 +24,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
             >
               <Zap className="size-icon-md" />
             </span>
-            <span className="text-title-sm text-navy">{tApp('name')}</span>
+            <span className="text-title-sm text-on-navy">{tApp('name')}</span>
           </Link>
           <nav aria-label={t('nav.label')} className="flex items-center gap-1">
             <Link href="/#comment" className={anchor}>
@@ -41,8 +41,10 @@ export function PublicShell({ children }: { children: ReactNode }) {
             </Link>
           </nav>
           <div className="flex items-center gap-2">
-            <LocaleSwitcher />
-            <Link href="/login" className={buttonClasses('primary', 'sm')}>
+            <div className="rounded-button bg-surface px-2">
+              <LocaleSwitcher />
+            </div>
+            <Link href="/login" className={buttonClasses('success', 'sm')}>
               <LogIn aria-hidden="true" className="size-icon-sm rtl:rotate-180" />
               <span className="hidden sm:inline">{t('nav.signIn')}</span>
               <span className="sr-only sm:hidden">{t('nav.signIn')}</span>

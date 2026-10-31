@@ -1,4 +1,4 @@
-import { CircleHelp } from 'lucide-react';
+import { CircleHelp, Zap } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { Link } from '@/i18n/navigation';
@@ -12,7 +12,13 @@ export function AuthShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen flex-col bg-bg">
       <SkipLink />
       <header className="flex items-center justify-between gap-3 px-4 py-4 lg:px-8">
-        <Link href="/" className="rounded-button">
+        <Link href="/" className="flex items-center gap-2 rounded-button">
+          <span
+            aria-hidden="true"
+            className="flex size-avatar-md items-center justify-center rounded-button bg-emerald text-on-emerald"
+          >
+            <Zap className="size-icon-md" />
+          </span>
           <span className="text-title text-navy">{t('app.name')}</span>
         </Link>
         <div className="flex items-center gap-2">
