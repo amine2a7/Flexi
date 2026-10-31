@@ -1,4 +1,13 @@
-import { Building2, Check, LogIn, Mail, Store, UserRound, type LucideIcon } from 'lucide-react';
+import {
+  Building2,
+  Check,
+  LogIn,
+  Mail,
+  Store,
+  Ticket,
+  UserRound,
+  type LucideIcon,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { ContactForm } from '@/components/public/contact-form';
@@ -13,6 +22,40 @@ const AUDIENCES: readonly { key: 'company' | 'merchant' | 'employee'; icon: Luci
 ];
 const STEPS = ['s1', 's2', 's3'] as const;
 
+/** The book of tickets of the hero (docs/design/carnet-tickets): one ticket per credit type. */
+function TicketBook() {
+  const t = useTranslations('landing');
+  return (
+    <div className="rounded-card-desktop bg-surface text-text shadow-card">
+      <div className="flex items-center justify-between gap-3 border-b-2 border-dashed border-border px-6 py-4">
+        <p className="text-micro uppercase tracking-widest text-text-muted">
+          {t('ticket.edition')}
+        </p>
+        <Ticket aria-hidden="true" className="size-icon-md text-emerald-text" />
+      </div>
+      <div className="flex flex-col gap-1 px-6 pt-4">
+        <p className="text-title text-navy">{t('ticket.book')}</p>
+        <p className="text-caption text-text-muted">
+          {t('ticket.count', { count: CREDIT_TYPES.length })}
+        </p>
+      </div>
+      <ul className="flex flex-col px-6 py-2">
+        {CREDIT_TYPES.map((type) => (
+          <li
+            key={type}
+            className="flex items-center justify-between gap-3 border-b border-dashed border-border py-3 last:border-b-0"
+          >
+            <CreditTypeBadge type={type} />
+            <span className="text-micro uppercase tracking-widest text-text-muted">
+              {t('ticket.valid')}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /** Public home: presentation, credit types, benefits per audience, 3 steps, contact form. */
 export default function LandingPage() {
   const t = useTranslations('landing');
@@ -20,23 +63,28 @@ export default function LandingPage() {
   return (
     <>
       <section className="bg-navy text-on-navy">
-        <div className="mx-auto flex w-full max-w-desktop-max-width flex-col gap-6 px-4 py-12 lg:px-8">
-          <p className="text-micro uppercase tracking-widest text-emerald">{t('hero.eyebrow')}</p>
-          <h1 className="max-w-form-max-width text-headline">{t('hero.title')}</h1>
-          <p className="max-w-form-max-width text-body-lg text-on-navy-muted">{t('hero.text')}</p>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/login" className={buttonClasses('success')}>
-              <LogIn aria-hidden="true" className="size-icon-md rtl:rotate-180" />
-              {t('hero.signIn')}
-            </Link>
-            <Link
-              href="/#contact"
-              className={buttonClasses('ghost', 'md', 'text-on-navy hover:bg-navy-deep')}
-            >
-              <Mail aria-hidden="true" className="size-icon-md" />
-              {t('hero.contact')}
-            </Link>
+        <div className="mx-auto grid w-full max-w-desktop-max-width gap-10 px-4 py-12 lg:grid-cols-2 lg:items-center lg:px-8">
+          <div className="flex flex-col gap-6">
+            <p className="text-micro uppercase tracking-widest text-emerald">{t('hero.eyebrow')}</p>
+            <h1 className="max-w-form-max-width text-headline">
+              {t('hero.title')} <span className="text-emerald">{t('hero.highlight')}</span>
+            </h1>
+            <p className="max-w-form-max-width text-body-lg text-on-navy-muted">{t('hero.text')}</p>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/login" className={buttonClasses('success')}>
+                <LogIn aria-hidden="true" className="size-icon-md rtl:rotate-180" />
+                {t('hero.signIn')}
+              </Link>
+              <Link
+                href="/#contact"
+                className={buttonClasses('ghost', 'md', 'text-on-navy hover:bg-navy-deep')}
+              >
+                <Mail aria-hidden="true" className="size-icon-md" />
+                {t('hero.contact')}
+              </Link>
+            </div>
           </div>
+          <TicketBook />
         </div>
       </section>
 
@@ -62,8 +110,11 @@ export default function LandingPage() {
           {AUDIENCES.map(({ key, icon: Icon }) => (
             <li
               key={key}
-              className="flex flex-col gap-4 rounded-card-desktop bg-surface p-6 shadow-card"
+              className="flex flex-col gap-4 rounded-card-desktop border-2 border-dashed border-border bg-surface p-6 shadow-card"
             >
+              <p className="border-b border-dashed border-border pb-3 text-micro uppercase tracking-widest text-text-muted">
+                {t(`ticket.${key}`)}
+              </p>
               <span
                 aria-hidden="true"
                 className="flex size-avatar-md items-center justify-center rounded-button bg-emerald-soft text-emerald-text"

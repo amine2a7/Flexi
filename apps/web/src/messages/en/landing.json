@@ -9,11 +9,12 @@
     "label": "Site navigation"
   },
   "hero": {
-    "eyebrow": "Digital meal vouchers and benefits",
-    "title": "Your benefits, in one click",
-    "text": "The company credits its employees in dinars, they pay at partner merchants with a QR code, and merchants are settled at D+2.",
+    "eyebrow": "Meal vouchers and employee benefits · Tunisia",
+    "title": "We opened the last book of vouchers.",
+    "text": "FlexiPay replaces paper vouchers with credits on the phone: meals, clothing, fuel and gifts. Merchants are paid at D+2.",
     "signIn": "Sign in",
-    "contact": "Contact us"
+    "contact": "Contact us",
+    "highlight": "Only pixels are left."
   },
   "types": {
     "title": "Four credit types, one balance each",
@@ -58,5 +59,14 @@
   "footer": {
     "rights": "© {year} FlexiPay. All rights reserved.",
     "country": "Service operated in Tunisia, amounts in dinars (TND)."
+  },
+  "ticket": {
+    "edition": "Book no. 1 · Last edition",
+    "book": "Book of vouchers",
+    "count": "{count} vouchers",
+    "valid": "Valid all over Tunisia",
+    "company": "Company voucher · You offer",
+    "merchant": "Merchant voucher · You collect",
+    "employee": "Beneficiary voucher · You enjoy"
   }
 }

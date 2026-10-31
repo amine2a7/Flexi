@@ -9,11 +9,12 @@
     "label": "Navigation du site"
   },
   "hero": {
-    "eyebrow": "Tickets-restaurant et avantages dématérialisés",
-    "title": "Vos avantages, en un clic",
-    "text": "L’entreprise crédite ses salariés en dinars, ils paient chez les commerçants partenaires avec un code QR, et les commerçants sont réglés à J+2.",
+    "eyebrow": "Titres-restaurant et avantages salariés · Tunisie",
+    "title": "On a ouvert le dernier carnet de tickets.",
+    "text": "FlexiPay remplace les tickets papier par des crédits sur téléphone : restauration, habillement, carburant et cadeaux. Les commerçants sont réglés à J+2.",
     "signIn": "Se connecter",
-    "contact": "Nous contacter"
+    "contact": "Nous contacter",
+    "highlight": "Il ne reste que des pixels."
   },
   "types": {
     "title": "Quatre types de crédit, un solde pour chacun",
@@ -58,5 +59,14 @@
   "footer": {
     "rights": "© {year} FlexiPay. Tous droits réservés.",
     "country": "Service opéré en Tunisie, montants en dinars (TND)."
+  },
+  "ticket": {
+    "edition": "Carnet n° 1 · Dernière édition",
+    "book": "Carnet de tickets",
+    "count": "{count} tickets",
+    "valid": "Valable partout en Tunisie",
+    "company": "Ticket entreprise · Vous offrez",
+    "merchant": "Ticket commerçant · Vous encaissez",
+    "employee": "Ticket bénéficiaire · Vous profitez"
   }
 }
