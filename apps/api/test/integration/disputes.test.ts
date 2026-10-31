@@ -167,12 +167,17 @@ describe('disputes (N2)', () => {
     );
     // The one who accepted never gives the second validation (four eyes).
     expect(
-      (await ops.client.call('POST', `/v1/admin/approvals/${approval.id}/approve`)).status,
+      (
+        await ops.client.call('POST', `/v1/admin/approvals/${approval.id}/approve`, {
+          headers: key(),
+        })
+      ).status,
     ).toBe(403);
     expect(await balance(employeeWallet)).toBe(75_000n);
     const approved = await finance.client.call(
       'POST',
       `/v1/admin/approvals/${approval.id}/approve`,
+      { headers: key() },
     );
     expect(approved.status).toBe(200);
     expect(await balance(employeeWallet)).toBe(100_000n);
@@ -229,5 +234,64 @@ describe('disputes (N2)', () => {
     });
     expect(refused.status).toBe(409);
     expect(await balance(accounts.merchantWallet(merchant.id, 'RESTAURATION'))).toBe(30_000n);
+  });
+
+  it('a disputed payment never joins a payout; the refunded payment is final', async () => {
+    const ops = await admin('COMPLIANCE');
+    const { merchant, payment } = await confirmedPayment(20_000);
+    await ops.client.call('POST', '/v1/admin/disputes', {
+      body: { paymentId: payment.id, ...REASON },
+      headers: key(),
+    });
+    const disputed = await db.system((tx) =>
+      tx.payment.findUniqueOrThrow({ where: { id: payment.id } }),
+    );
+    expect(disputed.status).toBe('DISPUTED');
+    // Nothing left to request: the amount is held.
+    const shop = await signedIn(
+      base,
+      await createUser(db, env, 'MERCHANT', { merchantId: merchant.id }, 'Sami B.'),
+    );
+    const quote = await shop.call('POST', '/v1/merchant/payout-quotes', {
+      body: { creditType: 'RESTAURATION', grossMillimes: 20_000 },
+    });
+    expect(quote.status).toBeGreaterThanOrEqual(400);
+  });
+
+  it('a super-admin who accepted never approves the refund (four eyes), and it needs a key', async () => {
+    const superAdmin = await admin('SUPER_ADMIN');
+    const finance = await admin('FINANCE');
+    const { payment } = await confirmedPayment(5_000);
+    const opened = await superAdmin.client.call('POST', '/v1/admin/disputes', {
+      body: { paymentId: payment.id, ...REASON },
+      headers: key(),
+    });
+    await superAdmin.client.call('POST', `/v1/admin/disputes/${String(opened.body.id)}/accept`, {
+      body: { reason: 'Double débit confirmé par le commerçant.' },
+      headers: key(),
+    });
+    const approval = await db.system((tx) =>
+      tx.approval.findFirstOrThrow({
+        where: {
+          type: 'DISPUTE_REFUND',
+          status: 'PENDING',
+          subject: { contains: String(opened.body.reference) },
+        },
+      }),
+    );
+    const own = await superAdmin.client.call('POST', `/v1/admin/approvals/${approval.id}/approve`, {
+      headers: key(),
+    });
+    expect(own.status).toBe(403);
+    const noKey = await finance.client.call('POST', `/v1/admin/approvals/${approval.id}/approve`);
+    expect(noKey.status).toBe(400);
+    const done = await finance.client.call('POST', `/v1/admin/approvals/${approval.id}/approve`, {
+      headers: key(),
+    });
+    expect(done.status).toBe(200);
+    const refunded = await db.system((tx) =>
+      tx.payment.findUniqueOrThrow({ where: { id: payment.id } }),
+    );
+    expect(refunded.status).toBe('REFUNDED');
   });
 });

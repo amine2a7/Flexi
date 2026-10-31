@@ -3313,6 +3313,7 @@ paths:
       description: |
         L'initiateur ne peut pas approuver sa propre demande : `403 FORBIDDEN` (règle 12).
       parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
         - name: approvalId
           in: path
           required: true
@@ -5744,7 +5745,7 @@ components:
       title: PaymentStatus
       description: Paiement — Initié, Confirmé, Réglé, Refusé, En litige (cahier v4.1 §8).
       type: string
-      enum: [INITIATED, CONFIRMED, SETTLED, REFUSED, DISPUTED]
+      enum: [INITIATED, CONFIRMED, SETTLED, REFUSED, DISPUTED, REFUNDED]
     PayoutRequestStatus:
       title: PayoutRequestStatus
       description: Demande de virement — Demandée, Contrôlée, Envoyée, Exécutée, Rejetée.

@@ -8,13 +8,15 @@ import {
   Post,
   Put,
   Query,
+  Req,
   Res,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { ContactService } from '../contact/contact.service.js';
 import { Can, Public, Roles } from '../common/decorators.js';
-import { pathId, sendFile } from '../common/responses.js';
+import { IdempotencyService } from '../common/idempotency.service.js';
+import { pathId, sendFile, sendOutcome } from '../common/responses.js';
 import {
   creditType,
   email,
@@ -70,6 +72,7 @@ export class AdminController {
   constructor(
     @Inject(AdminService) private readonly admin: AdminService,
     @Inject(ContactService) private readonly contact: ContactService,
+    @Inject(IdempotencyService) private readonly idempotency: IdempotencyService,
   ) {}
 
   @Can('dashboard.read')
@@ -174,8 +177,19 @@ export class AdminController {
   @Can('approvals.decide')
   @Post('approvals/:approvalId/approve')
   @HttpCode(200)
-  approve(@Param('approvalId') approvalId: string) {
-    return this.admin.approve(pathId('approvalId', approvalId));
+  async approve(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @Param('approvalId') approvalId: string,
+  ) {
+    const id = pathId('approvalId', approvalId);
+    if ((await this.admin.approvalType(id)) !== 'DISPUTE_REFUND') return this.admin.approve(id);
+    // A dispute refund moves money: the Idempotency-Key is required (rule 4, ledger-auditor N2-2).
+    const outcome = await this.idempotency.run(req, async (tx) => ({
+      status: 200,
+      body: await this.admin.approveIn(tx, id),
+    }));
+    return sendOutcome(res, outcome);
   }
 
   @Can('approvals.decide')

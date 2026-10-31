@@ -84,15 +84,17 @@ export class DisputesService {
   /** Opens a dispute on a confirmed payment that is in no payout request yet. */
   async open(tx: Tx, paymentId: string, reason: string) {
     const who = principal();
+    const found = await tx.payment.findUnique({ where: { id: paymentId } });
+    if (found === null) throw problems.notFound();
+    const wallet = accounts.merchantWallet(found.merchantId, found.creditType);
+    const hold = accounts.disputeHold(found.merchantId, found.creditType);
+    // Same order as a payout request: the accounts, then the payment row (ledger-auditor N2-4).
+    await this.ledger.lockAccounts(tx, [wallet, hold]);
     await tx.$queryRaw`SELECT id FROM payments WHERE id = ${paymentId}::uuid FOR UPDATE`;
-    const payment = await tx.payment.findUnique({ where: { id: paymentId } });
-    if (payment === null) throw problems.notFound();
+    const payment = await tx.payment.findUniqueOrThrow({ where: { id: paymentId } });
     // Settled, refused or already in a payout request: never disputed here (to confirm by Amine).
     if (payment.status !== 'CONFIRMED' || payment.payoutId !== null) throw problems.conflict();
     if ((await tx.dispute.count({ where: { paymentId } })) > 0) throw problems.conflict();
-    const wallet = accounts.merchantWallet(payment.merchantId, payment.creditType);
-    const hold = accounts.disputeHold(payment.merchantId, payment.creditType);
-    await this.ledger.lockAccounts(tx, [wallet, hold]);
     if ((await this.ledger.balance(tx, wallet)) < payment.amountMillimes) throw problems.conflict();
     const [sequence] = await tx.$queryRaw<
       { value: bigint }[]
@@ -107,6 +109,8 @@ export class DisputesService {
         { account: hold, direction: 'C', amount: payment.amountMillimes },
       ],
     });
+    // Disputed: out of the amounts to settle and of any payout request (ledger-auditor N2-1).
+    await tx.payment.update({ where: { id: paymentId }, data: { status: 'DISPUTED' } });
     const now = new Date();
     const dispute = await tx.dispute.create({
       data: {
@@ -169,6 +173,7 @@ export class DisputesService {
         { account: wallet, direction: 'C', amount: dispute.amountMillimes },
       ],
     });
+    await tx.payment.update({ where: { id: payment.id }, data: { status: 'CONFIRMED' } });
     const updated = await tx.dispute.update({
       where: { id },
       data: {
@@ -226,6 +231,16 @@ export class DisputesService {
        WHERE e.transaction_id = ${payment.transactionId}::uuid
          AND a.code = ${employeeWallet.code} AND e.direction = 'D'
        ORDER BY l.expires_at, e.id`;
+    // Every debit of the employee wallet must carry its lot: never a silent share (N2-3).
+    const [debited] = await tx.$queryRaw<{ total: bigint }[]>`
+      SELECT coalesce(sum(e.amount_millimes), 0)::bigint AS total
+        FROM ledger_entries e JOIN ledger_accounts a ON a.id = e.account_id
+       WHERE e.transaction_id = ${payment.transactionId}::uuid
+         AND a.code = ${employeeWallet.code} AND e.direction = 'D'`;
+    const lotted = parts.reduce((sum, part) => sum + part.amount, 0n);
+    if (debited?.total !== dispute.amountMillimes || lotted !== dispute.amountMillimes) {
+      throw new Error('dispute refund: payment debits do not match the disputed amount');
+    }
     const now = new Date();
     const valid = parts.filter((part) => part.expires_at.getTime() > now.getTime());
     const refunded = valid.reduce((sum, part) => sum + part.amount, 0n);
@@ -261,6 +276,7 @@ export class DisputesService {
         sourceTransactionId: posted.transactionId,
       });
     }
+    await tx.payment.update({ where: { id: payment.id }, data: { status: 'REFUNDED' } });
     await tx.dispute.update({
       where: { id },
       data: { status: 'ACCEPTED', decidedAt: now, resolutionTransactionId: posted.transactionId },

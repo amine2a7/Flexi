@@ -2562,7 +2562,7 @@ export interface components {
      * @description Paiement — Initié, Confirmé, Réglé, Refusé, En litige (cahier v4.1 §8).
      * @enum {string}
      */
-    PaymentStatus: 'INITIATED' | 'CONFIRMED' | 'SETTLED' | 'REFUSED' | 'DISPUTED';
+    PaymentStatus: 'INITIATED' | 'CONFIRMED' | 'SETTLED' | 'REFUSED' | 'DISPUTED' | 'REFUNDED';
     /**
      * PayoutRequestStatus
      * @description Demande de virement — Demandée, Contrôlée, Envoyée, Exécutée, Rejetée.
@@ -6948,7 +6948,15 @@ export interface operations {
   approveApproval: {
     parameters: {
       query?: never;
-      header?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
       path: {
         approvalId: components['schemas']['Uuid'];
       };
@@ -8414,7 +8422,7 @@ export const orderStatusValues: ReadonlyArray<
 ];
 export const paymentStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['PaymentStatus']
-> = ['INITIATED', 'CONFIRMED', 'SETTLED', 'REFUSED', 'DISPUTED'];
+> = ['INITIATED', 'CONFIRMED', 'SETTLED', 'REFUSED', 'DISPUTED', 'REFUNDED'];
 export const payoutRequestStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['PayoutRequestStatus']
 > = ['REQUESTED', 'CHECKED', 'SENT', 'EXECUTED', 'REJECTED'];

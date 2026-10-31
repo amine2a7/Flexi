@@ -21,5 +21,6 @@
   "ACTIVE": "نشِط",
   "PENDING": "قيد الانتظار",
   "merchantReceivable": "في انتظار التسوية",
-  "DEACTIVATED": "معطّل"
+  "DEACTIVATED": "معطّل",
+  "REFUNDED": "مسترد"
 }

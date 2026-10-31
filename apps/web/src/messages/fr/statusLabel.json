@@ -21,5 +21,6 @@
   "ACTIVE": "Actif",
   "PENDING": "En attente",
   "merchantReceivable": "En attente de règlement",
-  "DEACTIVATED": "Désactivé"
+  "DEACTIVATED": "Désactivé",
+  "REFUNDED": "Remboursé"
 }

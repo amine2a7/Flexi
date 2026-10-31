@@ -5,7 +5,7 @@ import { Check, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
-import { getApi } from '@/lib/api/client';
+import { getApi, newIdempotencyKey } from '@/lib/api/client';
 import { errorMessageKey } from '@/lib/api/problem';
 import { usePagedList } from '@/lib/api/use-paged-list';
 import { formatDateTime } from '@/lib/format/date';
@@ -199,7 +199,13 @@ function ApproveDialog({
     try {
       const { data, error: problem } = await getApi().POST(
         '/v1/admin/approvals/{approvalId}/approve',
-        { params: { path: { approvalId: approval.id } } },
+        {
+          params: {
+            path: { approvalId: approval.id },
+            // Required for a dispute refund (money): one key per decision.
+            header: { 'Idempotency-Key': newIdempotencyKey() },
+          },
+        },
       );
       if (data !== undefined) {
         toast.notify('success', t('approvedToast'));

@@ -215,7 +215,8 @@
       "CONFIRMED": "Payment confirmed by the customer",
       "SETTLED": "Amount settled to your account",
       "REFUSED": "Payment refused or cancelled",
-      "DISPUTED": "Payment disputed"
+      "DISPUTED": "Payment disputed",
+      "REFUNDED": "Payment refunded to the customer (dispute accepted)"
     },
     "open": "Open",
     "openPayment": "Open payment {reference}"

@@ -111,6 +111,7 @@ enum PaymentStatus {
   SETTLED
   REFUSED
   DISPUTED
+  REFUNDED
 }
 
 enum PaymentChannel {
@@ -159,6 +160,26 @@ enum ApprovalType {
   COMMISSION_RATE_CHANGE
   SETTINGS_CHANGE
   DISPUTE_REFUND
+}
+
+enum FraudAlertKind {
+  REPEATED_REFUSALS
+  MERCHANT_BURST
+  NEAR_DAILY_LIMIT
+  RIB_CHANGE_PAYOUT
+  NEW_DEVICE_PAYMENT
+}
+
+enum FraudAlertSeverity {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum FraudAlertStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
 }
 
 enum DisputeStatus {
@@ -440,6 +461,8 @@ model PlatformSettings {
   expiredCreditsDestination ExpiredCreditsDestination @default(PLATFORM_REVENUE) @map("expired_credits_destination")
   /// Grace period of a deactivated employee, in days (decision e3 of 2026-10-22).
   accountGraceDays          Int                       @default(30) @map("account_grace_days")
+  /// Thresholds of the fraud rules (decision of 2026-10-31), set by the super-admin.
+  fraudRules                Json                      @default("{\"refusedCount\":5,\"refusedMinutes\":10,\"merchantCount\":3,\"merchantMinutes\":5,\"limitPercent\":80,\"ribPayoutHours\":24}") @map("fraud_rules")
   updatedAt                 DateTime                  @default(now()) @map("updated_at") @db.Timestamptz(3)
 
   @@map("platform_settings")
@@ -993,4 +1016,23 @@ model DisputeNote {
 
   @@index([disputeId, createdAt], map: "dispute_notes_dispute_idx")
   @@map("dispute_notes")
+}
+
+/// Fraud alert (decision of 2026-10-31): detected by the job, never blocking, handled by Opérations.
+model FraudAlert {
+  id            String             @id @db.Uuid
+  kind          FraudAlertKind
+  severity      FraudAlertSeverity
+  subject       String             @db.VarChar(120)
+  subjectKey    String             @map("subject_key") @db.VarChar(160)
+  occurredAt    DateTime           @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  status        FraudAlertStatus   @default(OPEN)
+  handledBy     String?            @map("handled_by") @db.Uuid
+  handledByName String?            @map("handled_by_name") @db.VarChar(120)
+  closeReason   String?            @map("close_reason") @db.VarChar(500)
+  closedAt      DateTime?          @map("closed_at") @db.Timestamptz(3)
+
+  @@unique([kind, subjectKey])
+  @@index([status, occurredAt], map: "fraud_alerts_status_idx")
+  @@map("fraud_alerts")
 }

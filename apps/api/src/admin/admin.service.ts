@@ -477,8 +477,21 @@ export class AdminService {
 
   /** Four-eyes (rule 12): the initiator can never approve its own request. */
   async approve(id: string) {
+    return this.db.user((tx) => this.approveIn(tx, id));
+  }
+
+  /** Type of a request (a refund moves money: its approval needs an Idempotency-Key). */
+  async approvalType(id: string) {
+    const approval = await this.db.user((tx) =>
+      tx.approval.findUnique({ where: { id }, select: { type: true } }),
+    );
+    if (approval === null) throw problems.notFound();
+    return approval.type;
+  }
+
+  async approveIn(tx: Tx, id: string) {
     const who = principal();
-    return this.db.user(async (tx) => {
+    {
       // Approve and reject of the same request are served one after the other (securite S03).
       await tx.$queryRaw`SELECT id FROM approvals WHERE id = ${id}::uuid FOR UPDATE`;
       const approval = await tx.approval.findUnique({ where: { id } });
@@ -503,7 +516,7 @@ export class AdminService {
       });
       await this.audit.record(tx, 'approvals.approve', approval.subject);
       return approvalBody(updated, who.userId);
-    });
+    }
   }
 
   async reject(id: string, reason: string) {

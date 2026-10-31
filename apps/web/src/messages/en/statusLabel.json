@@ -21,5 +21,6 @@
   "ACTIVE": "Active",
   "PENDING": "Pending",
   "merchantReceivable": "Awaiting settlement",
-  "DEACTIVATED": "Deactivated"
+  "DEACTIVATED": "Deactivated",
+  "REFUNDED": "Refunded"
 }

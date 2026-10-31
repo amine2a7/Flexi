@@ -215,7 +215,8 @@
       "CONFIRMED": "Paiement confirmé par le client",
       "SETTLED": "Montant réglé sur votre compte",
       "REFUSED": "Paiement refusé ou annulé",
-      "DISPUTED": "Paiement en litige"
+      "DISPUTED": "Paiement en litige",
+      "REFUNDED": "Paiement remboursé au client (litige accepté)"
     },
     "open": "Ouvrir",
     "openPayment": "Ouvrir le paiement {reference}"
