@@ -3,7 +3,24 @@
 Tenu par le lead (`main`) à chaque étape. Statuts : À faire · En cours · En revue · Bloqué · Terminé.
 Préfixe `TEST-FIRST:` = tâche de tests écrits avant le code (tests rouges acceptés).
 
-## Design web complet (objectif du 2026-10-30, mode continu) — À LIRE EN PREMIER
+## Plan du 2026-10-31 (mode continu) — À LIRE EN PREMIER
+
+| Étape | Tâche | État | Commit / raison |
+|---|---|---|---|
+| A | Ports explicites e2e, worker MSW maintenu, visite guidée attendue, 64/64 captures | Fait | 52a75c4, 23a39c3 |
+| A | pages-sweep vert | **Bloqué** | 1er document après navigation complète hors MSW (6 essais) ; piste `@msw/playwright` (dépendance à valider) |
+| B | Virements Commerçant (demande / suivi, carte Destination RIB masqué) | Fait | b5c5cf4 |
+| B | Écarts Moyens et Bas des revues sur captures | En cours (lot fait : 6998534) | reste : graphiques (valeurs, vide), onglets, densité mobile admin, historique des commissions, logo partagé |
+| C | N2 litiges | Fait, ledger-auditor corrigé (DISPUTED/REFUNDED, clé sur l'approbation) | 9c017f7, afedccc ; revue securite à faire |
+| C | Alertes de fraude (règles 1-3, job, traitement) | Fait | 4c22ab7 ; règles 4-5 attendent changement de RIB et appareils (étape D) |
+| C | Écrans Sécurité branchés sur l'API réelle (litiges, alertes, actions) | À faire | aujourd'hui en lecture seule + MSW |
+| C | Lots J+2 : adaptateur bancaire simulé + double validation Finance | À faire | lots existants (job), sans banque ni validation |
+| C | Factures PDF asynchrones | À faire | |
+| C | Notifications e-mail et SMS simulées (boîte d'envoi) | À faire | e-mail en fichiers existant, SMS absent |
+| D | API du mobile (QR, paiement, famille, historique, proximité, push, appareils, client Dart) | À faire | |
+| E | /audit-acces complet | À faire | |
+
+## Design web complet (objectif du 2026-10-30, mode continu)
 
 Inventaire et état écran par écran : `docs/design/etat-ecrans.md`. Ordre : Commun → Commerçant → Entreprise → Administrateur ; captures FR/AR desktop/mobile dans `docs/design/captures/<espace>/` puis revue design + ux par espace. Étape 3 (Commerçant) : N3 en [DÉCISION] (recommandation : garder la règle 5) ; N4 terminé (ledger-auditor : corrigé l'accès simultané à une nouvelle clé).
 
