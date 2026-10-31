@@ -1,17 +1,9 @@
-import {
-  Building2,
-  Check,
-  LogIn,
-  Mail,
-  Store,
-  Ticket,
-  UserRound,
-  type LucideIcon,
-} from 'lucide-react';
+import { Building2, Store, UserRound, type LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { ContactForm } from '@/components/public/contact-form';
 import { buttonClasses } from '@/components/ui/button';
+import { TicketBook } from '@/components/public/ticket-book';
 import { CreditTypeBadge } from '@/components/ui/credit-type';
 import { CREDIT_TYPES } from '@/lib/credit-types';
 
@@ -22,40 +14,6 @@ const AUDIENCES: readonly { key: 'company' | 'merchant' | 'employee'; icon: Luci
 ];
 const STEPS = ['s1', 's2', 's3'] as const;
 
-/** The book of tickets of the hero (docs/design/carnet-tickets): one ticket per credit type. */
-function TicketBook() {
-  const t = useTranslations('landing');
-  return (
-    <div className="rounded-card-desktop bg-surface text-text shadow-card">
-      <div className="flex items-center justify-between gap-3 border-b-2 border-dashed border-border px-6 py-4">
-        <p className="text-micro uppercase tracking-widest text-text-muted">
-          {t('ticket.edition')}
-        </p>
-        <Ticket aria-hidden="true" className="size-icon-md text-emerald-text" />
-      </div>
-      <div className="flex flex-col gap-1 px-6 pt-4">
-        <p className="text-title text-navy">{t('ticket.book')}</p>
-        <p className="text-caption text-text-muted">
-          {t('ticket.count', { count: CREDIT_TYPES.length })}
-        </p>
-      </div>
-      <ul className="flex flex-col px-6 py-2">
-        {CREDIT_TYPES.map((type) => (
-          <li
-            key={type}
-            className="flex items-center justify-between gap-3 border-b border-dashed border-border py-3 last:border-b-0"
-          >
-            <CreditTypeBadge type={type} />
-            <span className="text-micro uppercase tracking-widest text-text-muted">
-              {t('ticket.valid')}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 /** Public home: presentation, credit types, benefits per audience, 3 steps, contact form. */
 export default function LandingPage() {
   const t = useTranslations('landing');
@@ -63,24 +21,28 @@ export default function LandingPage() {
   return (
     <>
       <section className="bg-navy text-on-navy">
-        <div className="mx-auto grid w-full max-w-desktop-max-width gap-10 px-4 py-12 lg:grid-cols-2 lg:items-center lg:px-8">
+        <div className="mx-auto grid w-full max-w-desktop-max-width gap-12 px-4 py-12 lg:grid-cols-2 lg:items-center lg:px-8 lg:py-16">
           <div className="flex flex-col gap-6">
-            <p className="text-micro uppercase tracking-widest text-emerald">{t('hero.eyebrow')}</p>
-            <h1 className="max-w-form-max-width text-headline">
+            <p className="text-micro font-label uppercase tracking-widest text-emerald">
+              {t('hero.eyebrow')}
+            </p>
+            <h1 className="font-display text-display-md lg:text-display">
               {t('hero.title')} <span className="text-emerald">{t('hero.highlight')}</span>
             </h1>
             <p className="max-w-form-max-width text-body-lg text-on-navy-muted">{t('hero.text')}</p>
             <div className="flex flex-wrap gap-3">
-              <Link href="/login" className={buttonClasses('success')}>
-                <LogIn aria-hidden="true" className="size-icon-md rtl:rotate-180" />
-                {t('hero.signIn')}
+              <Link href="/#contact" className={buttonClasses('success')}>
+                {t('hero.company')}
               </Link>
               <Link
                 href="/#contact"
-                className={buttonClasses('ghost', 'md', 'text-on-navy hover:bg-navy-deep')}
+                className={buttonClasses(
+                  'ghost',
+                  'md',
+                  'border border-on-navy-muted text-on-navy hover:bg-navy-deep',
+                )}
               >
-                <Mail aria-hidden="true" className="size-icon-md" />
-                {t('hero.contact')}
+                {t('hero.merchant')}
               </Link>
             </div>
           </div>
@@ -104,32 +66,36 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="avantages" className="mx-auto w-full max-w-desktop-max-width px-4 py-12 lg:px-8">
-        <h2 className="mb-6 text-title text-text">{t('benefits.title')}</h2>
+      <section
+        id="avantages"
+        className="mx-auto w-full max-w-desktop-max-width px-4 py-12 lg:px-8 lg:py-16"
+      >
+        <p className="mb-2 text-micro font-label uppercase tracking-widest text-emerald-text">
+          {t('forWho.eyebrow')}
+        </p>
+        <h2 className="mb-8 font-display text-display-md text-navy">{t('forWho.title')}</h2>
         <ul className="grid gap-6 md:grid-cols-3">
           {AUDIENCES.map(({ key, icon: Icon }) => (
             <li
               key={key}
-              className="flex flex-col gap-4 rounded-card-desktop border-2 border-dashed border-border bg-surface p-6 shadow-card"
+              className="flex flex-col rounded-card-desktop border border-paper-line bg-paper text-navy shadow-card"
             >
-              <p className="border-b border-dashed border-border pb-3 text-micro uppercase tracking-widest text-text-muted">
-                {t(`ticket.${key}`)}
-              </p>
-              <span
-                aria-hidden="true"
-                className="flex size-avatar-md items-center justify-center rounded-button bg-emerald-soft text-emerald-text"
-              >
-                <Icon className="size-icon-md" />
-              </span>
-              <h3 className="text-title-sm text-text">{t(`benefits.${key}.title`)}</h3>
-              <ul className="flex flex-col gap-2">
-                {(['p1', 'p2', 'p3'] as const).map((point) => (
-                  <li key={point} className="flex gap-2 text-body text-text-muted">
-                    <Check aria-hidden="true" className="size-icon-sm shrink-0 text-emerald-text" />
-                    {t(`benefits.${key}.${point}`)}
-                  </li>
-                ))}
-              </ul>
+              <div className="flex items-center justify-between gap-3 border-b-2 border-dashed border-paper-line px-6 py-4">
+                <p className="font-ticket text-micro uppercase text-paper-ink">
+                  {t(`forWho.${key}.tag`)}
+                </p>
+                <Icon aria-hidden="true" className="size-icon-md text-emerald-text" />
+              </div>
+              <div className="flex flex-1 flex-col gap-3 p-6">
+                <h3 className="font-display text-display-md">{t(`forWho.${key}.title`)}</h3>
+                <p className="text-body text-paper-ink">{t(`forWho.${key}.text`)}</p>
+                <Link
+                  href={key === 'employee' ? '/login' : '/#contact'}
+                  className="mt-auto inline-flex min-h-touch-target-min items-center text-label text-emerald-text underline-offset-4 hover:underline"
+                >
+                  {t(`forWho.${key}.cta`)}
+                </Link>
+              </div>
             </li>
           ))}
         </ul>

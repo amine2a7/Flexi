@@ -1,6 +1,7 @@
 {
   "$description": "Source unique des tokens FlexiPay. Génère Tailwind (web) et ThemeData (Flutter). Ne jamais coder de valeur en dur.",
   "$changelog": [
+    "2026-10-31 (maquettes carnet-tickets) : couleurs paper (#FFFCF3, fond des tickets), paper-line (#D9D2BC, perforations et bordures des tickets), paper-ink (#7A7360, texte secondaire sur paper, 4,6:1) ; tailles display (56) et display-md (40) pour les titres condensés de la landing et de la connexion.",
     "2026-10-14 (animations.md) : groupe motion structuré en duration (fast, base, slow, emphasis et les durées nommées des 16 animations), easing (out, in, spring), distance et scale ; toast-duration devient duration.toast, skeleton duration.skeleton (1 200 ms).",
     "2026-10-13 (décision) : 4 types de crédit (Restauration, Habillement, Carburant, Cadeaux). Couleurs type-* (plein pour barres et graphiques, -soft fond de pastille, -text texte AA sur -soft : 6,4 / 7,6 / 6,5 / 6,7:1 ; plein sur blanc ≥ 3:1) et groupe credit-type (icône Lucide, clé i18n, couleurs).",
     "2026-10-11 (design, WD2) : ajout des tailles table-row-height (56), chip-height (32, zone tactile étendue à 44), modal-max-width (480), modal-max-width-lg (720), auth-card-max-width (440), form-max-width (640), qr-code (192), viewport-min (360, largeur minimale supportée) pour les composants tableau, filtre actif, modale, écrans d'authentification, formulaires et QR d'enrôlement MFA. Aucune couleur modifiée.",
@@ -46,6 +47,9 @@
     "on-navy":     { "value": "#FFFFFF", "usage": "Texte sur fond navy" },
     "on-navy-muted":{ "value": "#CBD5E1", "usage": "Texte secondaire sur navy (11,43:1) et navy-deep (8,32:1). Remplace text-muted/text-faint sur fond sombre" },
     "on-danger":   { "value": "#FFFFFF", "usage": "Texte sur fond danger (4,83:1)" },
+    "paper":       { "value": "#FFFCF3", "usage": "Fond des tickets (landing, connexion)" },
+    "paper-line":  { "value": "#D9D2BC", "usage": "Perforations et bordures des tickets (décoratif)" },
+    "paper-ink":   { "value": "#7A7360", "usage": "Texte secondaire sur paper (4,6:1)" },
     "overlay":     { "value": "rgba(11,29,51,0.5)", "usage": "Voile derrière modale et tiroir" }
   },
   "color-dark": {
@@ -70,6 +74,8 @@
     "title-sm": { "size": 18, "line": 24, "weight": 600 },
     "title":    { "size": 22, "line": 28, "weight": 600 },
     "headline": { "size": 28, "line": 34, "weight": 700 },
+    "display":  { "size": 56, "line": 54, "weight": 700 },
+    "display-md": { "size": 40, "line": 40, "weight": 700 },
     "amount":   { "size": 32, "line": 36, "weight": 700 },
     "amount-xl":{ "size": 40, "line": 44, "weight": 700 },
     "currency": { "size": 14, "line": 20, "weight": 500 }

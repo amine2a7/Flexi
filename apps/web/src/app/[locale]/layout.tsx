@@ -8,7 +8,7 @@ import { getDirection } from '@/i18n/direction';
 import { routing } from '@/i18n/routing';
 import { cn } from '@/lib/cn';
 import { MockGate } from '@/mocks/mock-gate';
-import { fontArabic, fontSans } from '../fonts';
+import { fontArabic, fontDisplay, fontSans, fontTicket } from '../fonts';
 import '../globals.css';
 
 interface LocaleLayoutProps {
@@ -35,7 +35,12 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
     <html
       lang={locale}
       dir={getDirection(locale)}
-      className={cn(fontSans.variable, fontArabic.variable)}
+      className={cn(
+        fontSans.variable,
+        fontArabic.variable,
+        fontDisplay.variable,
+        fontTicket.variable,
+      )}
     >
       <body>
         <NextIntlClientProvider>

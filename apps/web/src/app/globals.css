@@ -34,3 +34,31 @@
 [dir='rtl'] td {
   unicode-bidi: plaintext;
 }
+
+/* "Carnet de tickets" mockups (docs/design/carnet-tickets): condensed titles, ticket numbers and
+   barcode. Arabic keeps its own family (the condensed and mono fonts have no Arabic glyphs). */
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display), var(--font-sans), theme('fontFamily.sans');
+  }
+  .font-ticket {
+    font-family: var(--font-ticket), ui-monospace, monospace;
+    letter-spacing: 0.06em;
+  }
+  html[lang='ar'] .font-display,
+  html[lang='ar'] .font-ticket {
+    font-family: var(--font-ar), theme('fontFamily.ar');
+    letter-spacing: normal;
+  }
+  .ticket-barcode {
+    background: repeating-linear-gradient(
+      90deg,
+      theme('colors.navy') 0 2px,
+      transparent 2px 4px,
+      theme('colors.navy') 4px 5px,
+      transparent 5px 8px,
+      theme('colors.navy') 8px 11px,
+      transparent 11px 13px
+    );
+  }
+}

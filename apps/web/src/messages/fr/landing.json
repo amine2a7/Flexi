@@ -11,10 +11,10 @@
   "hero": {
     "eyebrow": "Titres-restaurant et avantages salariés · Tunisie",
     "title": "On a ouvert le dernier carnet de tickets.",
-    "text": "FlexiPay remplace les tickets papier par des crédits sur téléphone : restauration, habillement, carburant et cadeaux. Les commerçants sont réglés à J+2.",
-    "signIn": "Se connecter",
-    "contact": "Nous contacter",
-    "highlight": "Il ne reste que des pixels."
+    "text": "FlexiPay remplace les tickets papier par des crédits sur téléphone : restauration, habillement, carburant et cadeaux. Détachez les tickets pour voir comment ça marche.",
+    "highlight": "Il ne reste que des pixels.",
+    "company": "Équiper mon entreprise",
+    "merchant": "Devenir commerçant partenaire"
   },
   "types": {
     "title": "Quatre types de crédit, un solde pour chacun",
@@ -60,13 +60,62 @@
     "rights": "© {year} FlexiPay. Tous droits réservés.",
     "country": "Service opéré en Tunisie, montants en dinars (TND)."
   },
-  "ticket": {
-    "edition": "Carnet n° 1 · Dernière édition",
-    "book": "Carnet de tickets",
-    "count": "{count} tickets",
-    "valid": "Valable partout en Tunisie",
-    "company": "Ticket entreprise · Vous offrez",
-    "merchant": "Ticket commerçant · Vous encaissez",
-    "employee": "Ticket bénéficiaire · Vous profitez"
+  "book": {
+    "number": "Ticket {n}/{total}",
+    "detach": "Détacher le ticket",
+    "reopen": "Rouvrir le carnet",
+    "left": "Tickets restants : {count}",
+    "t1": {
+      "tag": "L’entreprise",
+      "title": "Une entreprise commande ses crédits",
+      "text": "Elle choisit les montants par type et fait un virement. FlexiPay vérifie, puis crédite. Aucun carnet à imprimer, aucun coursier.",
+      "fine": "Ne jetez pas ce ticket : il est en pixels."
+    },
+    "t2": {
+      "tag": "La répartition",
+      "title": "Elle les distribue à ses équipes",
+      "text": "En quelques clics, ou par fichier pour 500 personnes d’un coup. Chacun reçoit ses soldes, séparés par type.",
+      "fine": "Plus jamais « il me manque un carnet »."
+    },
+    "t3": {
+      "tag": "Le bénéficiaire",
+      "title": "Le bénéficiaire paie avec son téléphone",
+      "text": "Il montre son code au commerçant et confirme avec son PIN. Le montant exact, au millime près.",
+      "fine": "Pas de monnaie rendue en bonbons."
+    },
+    "t4": {
+      "tag": "Le commerçant",
+      "title": "Le commerçant est payé à J+2",
+      "text": "Les encaissements s’additionnent tout seuls. Il demande son virement, la commission est déjà calculée.",
+      "fine": "Le soir, on ne compte plus les tickets."
+    },
+    "t5": {
+      "tag": "La fin",
+      "title": "C’était le dernier ticket papier",
+      "text": "Le carnet est vide. Le reste se passe sur FlexiPay : rejoignez-nous ou glissez-nous un ticket de contact.",
+      "fine": "Fin du carnet. Début de FlexiPay."
+    }
+  },
+  "forWho": {
+    "eyebrow": "Pour qui",
+    "title": "Un carnet, trois façons de s’en servir",
+    "company": {
+      "tag": "Ticket entreprise",
+      "title": "Vous offrez",
+      "text": "Commandez des crédits par virement, répartissez-les entre vos équipes par type, et suivez tout en temps réel. Fini les carnets à distribuer le 1er du mois.",
+      "cta": "Équiper mon entreprise →"
+    },
+    "employee": {
+      "tag": "Ticket bénéficiaire",
+      "title": "Vous profitez",
+      "text": "Vos soldes par type sur votre téléphone. Vous montrez votre code, vous tapez votre PIN, c’est payé. Au millime près, sans monnaie rendue en bonbons.",
+      "cta": "Activer mon compte →"
+    },
+    "merchant": {
+      "tag": "Ticket commerçant",
+      "title": "Vous encaissez",
+      "text": "Un QR à la caisse, un paiement validé en quelques secondes, un virement à J+2. Plus de tickets à compter le soir ni à déposer en agence.",
+      "cta": "Devenir partenaire →"
+    }
   }
 }

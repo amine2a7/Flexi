@@ -43,6 +43,9 @@ module.exports = {
       "on-navy": "#FFFFFF",
       "on-navy-muted": "#CBD5E1",
       "on-danger": "#FFFFFF",
+      "paper": "#FFFCF3",
+      "paper-line": "#D9D2BC",
+      "paper-ink": "#7A7360",
       "overlay": "rgba(11,29,51,0.5)",
       "dark": {
         "bg": "#0B1220",
@@ -126,6 +129,20 @@ module.exports = {
         "1.75rem",
         {
           "lineHeight": "2.125rem",
+          "fontWeight": "700"
+        }
+      ],
+      "display": [
+        "3.5rem",
+        {
+          "lineHeight": "3.375rem",
+          "fontWeight": "700"
+        }
+      ],
+      "display-md": [
+        "2.5rem",
+        {
+          "lineHeight": "2.5rem",
           "fontWeight": "700"
         }
       ],

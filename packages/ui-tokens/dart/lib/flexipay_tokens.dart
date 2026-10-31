@@ -43,6 +43,9 @@ abstract final class FlexiColors {
   static const Color onNavy = Color(0xFFFFFFFF);
   static const Color onNavyMuted = Color(0xFFCBD5E1);
   static const Color onDanger = Color(0xFFFFFFFF);
+  static const Color paper = Color(0xFFFFFCF3);
+  static const Color paperLine = Color(0xFFD9D2BC);
+  static const Color paperInk = Color(0xFF7A7360);
   static const Color overlay = Color.fromRGBO(11, 29, 51, 0.5);
 }
 
@@ -230,6 +233,20 @@ abstract final class FlexiTypeScale {
     fontFamilyFallback: FlexiFont.familyFallback,
     fontSize: 28,
     height: 34 / 28,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle display = TextStyle(
+    fontFamily: FlexiFont.family,
+    fontFamilyFallback: FlexiFont.familyFallback,
+    fontSize: 56,
+    height: 54 / 56,
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle displayMd = TextStyle(
+    fontFamily: FlexiFont.family,
+    fontFamilyFallback: FlexiFont.familyFallback,
+    fontSize: 40,
+    height: 40 / 40,
     fontWeight: FontWeight.w700,
   );
   static const TextStyle amount = TextStyle(

@@ -11,10 +11,10 @@
   "hero": {
     "eyebrow": "Meal vouchers and employee benefits · Tunisia",
     "title": "We opened the last book of vouchers.",
-    "text": "FlexiPay replaces paper vouchers with credits on the phone: meals, clothing, fuel and gifts. Merchants are paid at D+2.",
-    "signIn": "Sign in",
-    "contact": "Contact us",
-    "highlight": "Only pixels are left."
+    "text": "FlexiPay replaces paper vouchers with credits on the phone: meals, clothing, fuel and gifts. Tear off the vouchers to see how it works.",
+    "highlight": "Only pixels are left.",
+    "company": "Equip my company",
+    "merchant": "Become a partner merchant"
   },
   "types": {
     "title": "Four credit types, one balance each",
@@ -60,13 +60,62 @@
     "rights": "© {year} FlexiPay. All rights reserved.",
     "country": "Service operated in Tunisia, amounts in dinars (TND)."
   },
-  "ticket": {
-    "edition": "Book no. 1 · Last edition",
-    "book": "Book of vouchers",
-    "count": "{count} vouchers",
-    "valid": "Valid all over Tunisia",
-    "company": "Company voucher · You offer",
-    "merchant": "Merchant voucher · You collect",
-    "employee": "Beneficiary voucher · You enjoy"
+  "book": {
+    "number": "Voucher {n}/{total}",
+    "detach": "Tear off the voucher",
+    "reopen": "Reopen the book",
+    "left": "Vouchers left: {count}",
+    "t1": {
+      "tag": "The company",
+      "title": "A company orders its credits",
+      "text": "It chooses the amounts per type and makes a transfer. FlexiPay checks, then credits. No book to print, no courier.",
+      "fine": "Do not throw this voucher away: it is made of pixels."
+    },
+    "t2": {
+      "tag": "The allocation",
+      "title": "It shares them with its teams",
+      "text": "In a few clicks, or by file for 500 people at once. Everyone gets their balances, split by type.",
+      "fine": "Never again “I am missing a book”."
+    },
+    "t3": {
+      "tag": "The beneficiary",
+      "title": "The beneficiary pays with the phone",
+      "text": "They show their code to the merchant and confirm with their PIN. The exact amount, to the millime.",
+      "fine": "No change given in sweets."
+    },
+    "t4": {
+      "tag": "The merchant",
+      "title": "The merchant is paid at D+2",
+      "text": "Payments add up on their own. The merchant requests the transfer, the commission is already computed.",
+      "fine": "No more counting vouchers at night."
+    },
+    "t5": {
+      "tag": "The end",
+      "title": "That was the last paper voucher",
+      "text": "The book is empty. The rest happens on FlexiPay: join us or slip us a contact voucher.",
+      "fine": "End of the book. Start of FlexiPay."
+    }
+  },
+  "forWho": {
+    "eyebrow": "For whom",
+    "title": "One book, three ways to use it",
+    "company": {
+      "tag": "Company voucher",
+      "title": "You offer",
+      "text": "Order credits by transfer, share them between your teams by type, and follow everything in real time. No more books to hand out on the 1st of the month.",
+      "cta": "Equip my company →"
+    },
+    "employee": {
+      "tag": "Beneficiary voucher",
+      "title": "You enjoy",
+      "text": "Your balances per type on your phone. Show your code, type your PIN, it is paid. To the millime, without change given in sweets.",
+      "cta": "Activate my account →"
+    },
+    "merchant": {
+      "tag": "Merchant voucher",
+      "title": "You collect",
+      "text": "A QR at the till, a payment confirmed in seconds, a transfer at D+2. No more vouchers to count at night or to drop at the bank.",
+      "cta": "Become a partner →"
+    }
   }
 }
