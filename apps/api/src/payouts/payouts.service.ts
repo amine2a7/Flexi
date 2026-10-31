@@ -45,6 +45,7 @@ function payoutBody(payout: PayoutRequest) {
     commissionRateBps: payout.commissionRateBps,
     commissionMillimes: toMillimes(payout.commissionMillimes),
     netMillimes: toMillimes(payout.netMillimes),
+    deductedMillimes: toMillimes(payout.deductedMillimes),
     requestedAt: payout.requestedAt.toISOString(),
   };
 }
@@ -716,14 +717,41 @@ export class PayoutsService {
             data: { status: 'EXECUTED' },
           });
           if (moved.count !== 1) continue;
+          // A merchant debt (accepted dispute on a paid payment) is deducted from what the bank
+          // sends (decision of 2026-10-31); the payout records it.
+          const debtAccount = accounts.merchantDebt(payout.merchantId);
+          await this.ledger.lockAccounts(tx, [
+            accounts.payoutPayable(),
+            accounts.bankPayment(),
+            debtAccount,
+          ]);
+          const debt = await this.ledger.balance(tx, debtAccount);
+          const deducted = debt < payout.netMillimes ? debt : payout.netMillimes;
           await this.ledger.post(tx, {
             type: 'PAYOUT_EXECUTED',
             reference: payout.reference,
             entries: [
               { account: accounts.payoutPayable(), direction: 'D', amount: payout.netMillimes },
-              { account: accounts.bankPayment(), direction: 'C', amount: payout.netMillimes },
+              ...(payout.netMillimes - deducted > 0n
+                ? [
+                    {
+                      account: accounts.bankPayment(),
+                      direction: 'C' as const,
+                      amount: payout.netMillimes - deducted,
+                    },
+                  ]
+                : []),
+              ...(deducted > 0n
+                ? [{ account: debtAccount, direction: 'C' as const, amount: deducted }]
+                : []),
             ],
           });
+          if (deducted > 0n) {
+            await tx.payoutRequest.update({
+              where: { id: payout.id },
+              data: { deductedMillimes: deducted },
+            });
+          }
           const now = new Date();
           await tx.payoutEvent.createMany({
             data: [

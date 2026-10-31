@@ -57,6 +57,16 @@ export const accounts = {
   merchantWallet: (merchantId: string, type: CreditType) =>
     wallet('MERCHANT', 'MERCHANT_WALLET', merchantId, type),
   /** Amount of a disputed payment, held out of the merchant wallet (N2): never settled. */
+  /** What a merchant owes FlexiPay (accepted dispute on a paid payment), deducted from the next
+   *  settlement (decision of 2026-10-31). Asset, never negative. */
+  merchantDebt: (merchantId: string): AccountRef => ({
+    code: `MERCHANT_DEBT:${merchantId}`,
+    kind: 'ASSET',
+    ownerType: 'MERCHANT',
+    ownerId: merchantId,
+    creditType: null,
+    nonNegative: true,
+  }),
   disputeHold: (merchantId: string, type: CreditType) =>
     wallet('MERCHANT', 'DISPUTE_HOLD', merchantId, type),
 } as const;

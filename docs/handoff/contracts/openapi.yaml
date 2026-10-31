@@ -5750,7 +5750,7 @@ components:
       title: PayoutRequestStatus
       description: Demande de virement — Demandée, Contrôlée, Envoyée, Exécutée, Rejetée.
       type: string
-      enum: [REQUESTED, CHECKED, SENT, EXECUTED, REJECTED]
+      enum: [REQUESTED, CHECKED, SENT, EXECUTED, REJECTED, ON_HOLD]
     ApprovalStatus:
       title: ApprovalStatus
       description: Approbation (double validation, approbateur ≠ initiateur) — En attente, Approuvée, Refusée.
@@ -6459,6 +6459,9 @@ components:
         commissionRateBps:
           $ref: '#/components/schemas/RateBps'
         commissionMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        deductedMillimes:
+          description: Dette du commerçant (litige accepté sur un paiement déjà viré) déduite à l'exécution de ce virement.
           $ref: '#/components/schemas/AmountMillimes'
         netMillimes:
           $ref: '#/components/schemas/AmountMillimes'

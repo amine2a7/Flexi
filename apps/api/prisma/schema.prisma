@@ -125,6 +125,7 @@ enum PayoutStatus {
   SENT
   EXECUTED
   REJECTED
+  ON_HOLD
 }
 
 enum SettlementStatus {
@@ -727,6 +728,8 @@ model PayoutRequest {
   iban               String // encrypted (AES-256-GCM)
   batchId            String?      @map("batch_id") @db.Uuid
   transactionId      String?      @map("transaction_id") @db.Uuid
+  /// Merchant debt (accepted dispute on a paid payment) deducted from this payout when executed.
+  deductedMillimes   BigInt       @default(0) @map("deducted_millimes")
   requestedAt        DateTime     @default(now()) @map("requested_at") @db.Timestamptz(3)
 
   merchant Merchant         @relation(fields: [merchantId], references: [id])
@@ -993,7 +996,11 @@ model Dispute {
   dueAt                   DateTime      @map("due_at") @db.Timestamptz(3)
   decisionReason          String?       @map("decision_reason") @db.VarChar(500)
   decidedAt               DateTime?     @map("decided_at") @db.Timestamptz(3)
-  holdTransactionId       String        @map("hold_transaction_id") @db.Uuid
+  holdTransactionId       String?       @map("hold_transaction_id") @db.Uuid
+  /// Payout put on hold by the dispute and its status before (restored when rejected).
+  heldPayoutId            String?       @map("held_payout_id") @db.Uuid
+  heldPayoutStatus        String?       @map("held_payout_status") @db.VarChar(20)
+  paymentPreviousStatus   String        @default("CONFIRMED") @map("payment_previous_status") @db.VarChar(20)
   resolutionTransactionId String?       @map("resolution_transaction_id") @db.Uuid
 
   payment  Payment       @relation(fields: [paymentId], references: [id])

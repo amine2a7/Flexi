@@ -116,7 +116,7 @@ const ORDER_TOKENS: Record<string, string> = {
 /** Contract enums whose glossary token differs by context (approval REJECTED -> REFUSEE). */
 const CONTEXT_OVERRIDES: Record<string, Record<string, string>> = {
   approval: { REJECTED: 'REFUSEE', APPROVED: 'APPROUVEE' },
-  payout: { REJECTED: 'REJETEE' },
+  payout: { REJECTED: 'REJETEE', ON_HOLD: 'EN_LITIGE' },
   // Account lifecycle (commun-statut-utilisateur.md §3.1).
   user: { ACTIVE: 'ACTIF', INVITED: 'INVITE', SUSPENDED: 'SUSPENDU', DEACTIVATED: 'DESACTIVE' },
   // Fraud alerts and disputes: severity and state with the colours of the charter.

@@ -308,7 +308,8 @@
       "CHECKED": "Demande validée par FlexiPay",
       "SENT": "Virement envoyé à la banque",
       "EXECUTED": "Virement exécuté",
-      "REJECTED": "Demande refusée"
+      "REJECTED": "Demande refusée",
+      "ON_HOLD": "Mis en attente : litige en cours sur un paiement"
     }
   },
   "transactions": {

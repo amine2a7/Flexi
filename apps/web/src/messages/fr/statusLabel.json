@@ -22,5 +22,6 @@
   "PENDING": "En attente",
   "merchantReceivable": "En attente de règlement",
   "DEACTIVATED": "Désactivé",
-  "REFUNDED": "Remboursé"
+  "REFUNDED": "Remboursé",
+  "ON_HOLD": "En attente — litige en cours"
 }

@@ -147,7 +147,8 @@
       "CHECKED": "Request checked by FlexiPay",
       "SENT": "Transfer sent to the bank",
       "EXECUTED": "Transfer executed: funds in your account",
-      "REJECTED": "Request rejected"
+      "REJECTED": "Request rejected",
+      "ON_HOLD": "On hold — dispute in progress on one of your payments"
     },
     "creditType": "Credit type",
     "creditTypeHint": "A payout covers the receivables of a single type (that type's commission).",

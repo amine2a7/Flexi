@@ -2568,7 +2568,7 @@ export interface components {
      * @description Demande de virement — Demandée, Contrôlée, Envoyée, Exécutée, Rejetée.
      * @enum {string}
      */
-    PayoutRequestStatus: 'REQUESTED' | 'CHECKED' | 'SENT' | 'EXECUTED' | 'REJECTED';
+    PayoutRequestStatus: 'REQUESTED' | 'CHECKED' | 'SENT' | 'EXECUTED' | 'REJECTED' | 'ON_HOLD';
     /**
      * ApprovalStatus
      * @description Approbation (double validation, approbateur ≠ initiateur) — En attente, Approuvée, Refusée.
@@ -2935,6 +2935,8 @@ export interface components {
       grossMillimes: components['schemas']['PositiveAmountMillimes'];
       commissionRateBps: components['schemas']['RateBps'];
       commissionMillimes: components['schemas']['AmountMillimes'];
+      /** @description Dette du commerçant (litige accepté sur un paiement déjà viré) déduite à l'exécution de ce virement. */
+      deductedMillimes?: components['schemas']['AmountMillimes'];
       netMillimes: components['schemas']['AmountMillimes'];
       requestedAt: components['schemas']['Timestamp'];
       /** @description RIB masqué (4 derniers chiffres). */
@@ -8425,7 +8427,7 @@ export const paymentStatusValues: ReadonlyArray<
 > = ['INITIATED', 'CONFIRMED', 'SETTLED', 'REFUSED', 'DISPUTED', 'REFUNDED'];
 export const payoutRequestStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['PayoutRequestStatus']
-> = ['REQUESTED', 'CHECKED', 'SENT', 'EXECUTED', 'REJECTED'];
+> = ['REQUESTED', 'CHECKED', 'SENT', 'EXECUTED', 'REJECTED', 'ON_HOLD'];
 export const approvalStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['ApprovalStatus']
 > = ['PENDING', 'APPROVED', 'REJECTED'];

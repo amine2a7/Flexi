@@ -147,7 +147,8 @@
       "CHECKED": "Demande contrôlée par FlexiPay",
       "SENT": "Virement envoyé à la banque",
       "EXECUTED": "Virement exécuté : fonds sur votre compte",
-      "REJECTED": "Demande rejetée"
+      "REJECTED": "Demande rejetée",
+      "ON_HOLD": "En attente — litige en cours sur un de vos paiements"
     },
     "creditType": "Type de crédit",
     "creditTypeHint": "Un virement porte sur les créances d’un seul type (commission du type).",

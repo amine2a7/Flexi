@@ -308,7 +308,8 @@
       "CHECKED": "Request approved by FlexiPay",
       "SENT": "Transfer sent to the bank",
       "EXECUTED": "Transfer executed",
-      "REJECTED": "Request rejected"
+      "REJECTED": "Request rejected",
+      "ON_HOLD": "On hold: dispute on a payment"
     }
   },
   "transactions": {

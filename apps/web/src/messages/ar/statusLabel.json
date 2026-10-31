@@ -22,5 +22,6 @@
   "PENDING": "قيد الانتظار",
   "merchantReceivable": "في انتظار التسوية",
   "DEACTIVATED": "معطّل",
-  "REFUNDED": "مسترد"
+  "REFUNDED": "مسترد",
+  "ON_HOLD": "معلّق — نزاع جارٍ"
 }
