@@ -6,7 +6,7 @@ async function submitPassword(page: Page, account: string, password: string): Pr
   await page.goto('/fr/login');
   await page.getByLabel('E-mail ou téléphone').fill(account);
   await page.getByLabel('Mot de passe', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Se connecter' }).click();
+  await page.getByRole('button', { name: 'Composter mon ticket' }).click();
 }
 
 /** True when the API mock answers (the first sign-in test changes the account). */
@@ -20,7 +20,9 @@ async function mocked(page: Page): Promise<boolean> {
 test.describe('sign-in', () => {
   test('a wrong password is refused without saying which part is wrong', async ({ page }) => {
     await submitPassword(page, 'commercant@flexipay.test', 'Mauvais-mot-2026');
-    await expect(page.getByText('Identifiant ou mot de passe incorrect.')).toBeVisible();
+    await expect(
+      page.getByText('Identifiant ou mot de passe incorrect', { exact: true }),
+    ).toBeVisible();
     await expect(page).toHaveURL(/\/fr\/login/);
   });
 
@@ -37,12 +39,19 @@ test.describe('sign-in', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
+  test('empty fields keep the button active and say what is missing', async ({ page }) => {
+    await page.goto('/fr/login');
+    await page.getByRole('button', { name: 'Composter mon ticket' }).click();
+    await expect(page.getByText('Saisissez votre e-mail ou votre téléphone.')).toBeVisible();
+    await expect(page.getByText('Saisissez votre mot de passe.')).toBeVisible();
+  });
+
   test('a protected page without session goes to sign-in and back after it', async ({ page }) => {
     await page.goto('/fr/entreprise/factures');
     await expect(page).toHaveURL(/\/fr\/login\?returnTo=/);
     await page.getByLabel('E-mail ou téléphone').fill('entreprise@flexipay.test');
     await page.getByLabel('Mot de passe', { exact: true }).fill(PASSWORD);
-    await page.getByRole('button', { name: 'Se connecter' }).click();
+    await page.getByRole('button', { name: 'Composter mon ticket' }).click();
     await page.getByLabel('Code à 6 chiffres').fill(MFA);
     await page.getByRole('button', { name: 'Vérifier' }).click();
     await expect(page).toHaveURL(/\/fr\/entreprise\/factures$/);

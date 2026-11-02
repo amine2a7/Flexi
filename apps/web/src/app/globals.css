@@ -35,6 +35,11 @@
   unicode-bidi: plaintext;
 }
 
+/* Arabic letters are joined: letter spacing would break the words. */
+[dir='rtl'] .tracking-widest {
+  letter-spacing: normal;
+}
+
 /* "Carnet de tickets" mockups (docs/design/carnet-tickets): condensed titles, ticket numbers and
    barcode. Arabic keeps its own family (the condensed and mono fonts have no Arabic glyphs). */
 @layer utilities {

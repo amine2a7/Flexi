@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, type SyntheticEvent } from 'react';
+import { cn } from '@/lib/cn';
 import { Link, useRouter } from '@/i18n/navigation';
 import { messageKey } from '@/i18n/keys';
 import { getApi, setCsrfToken } from '@/lib/api/client';
@@ -24,6 +25,15 @@ const DemoAccounts =
     ? dynamic(() => import('@/components/dev/demo-accounts').then((module) => module.DemoAccounts))
     : null;
 
+/** Time to read the stamp before the next screen (none when animations are reduced). */
+const STAMP_MS = 600;
+function readStamp(): Promise<void> {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return Promise.resolve();
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, STAMP_MS);
+  });
+}
+
 export function LoginForm() {
   const t = useTranslations();
   const router = useRouter();
@@ -33,6 +43,8 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<unknown>(undefined);
+  const [missing, setMissing] = useState({ identifier: false, password: false });
+  const [stamp, setStamp] = useState<'ok' | 'refused' | undefined>(undefined);
   const [windowExpired] = useState(() => getAuthFlow().passwordWindowExpired === true);
 
   useEffect(() => {
@@ -43,8 +55,12 @@ export function LoginForm() {
 
   async function onSubmit(event: SyntheticEvent) {
     event.preventDefault();
+    const empty = { identifier: identifier.trim() === '', password: password === '' };
+    setMissing(empty);
+    if (empty.identifier || empty.password) return;
     setSubmitting(true);
     setError(undefined);
+    setStamp(undefined);
     try {
       const { data, error: problem } = await getApi().POST('/v1/auth/login', {
         params: { header: WEB_CHANNEL_HEADER },
@@ -53,8 +69,11 @@ export function LoginForm() {
       if (data === undefined) {
         setError(problem);
         setPassword('');
+        if (asProblem(problem)?.code === 'INVALID_CREDENTIALS') setStamp('refused');
         return;
       }
+      setStamp('ok');
+      await readStamp();
       if (data.nextStep === 'MFA_CHALLENGE') {
         updateAuthFlow({
           challengeId: data.challengeId,
@@ -96,13 +115,31 @@ export function LoginForm() {
             : t(messageKey(errorMessageKey(shownError)))}
         </Alert>
       ) : null}
-      <form onSubmit={(event) => void onSubmit(event)} className="flex flex-col gap-5" noValidate>
+      <form
+        onSubmit={(event) => void onSubmit(event)}
+        className="relative flex flex-col gap-5"
+        noValidate
+      >
+        {stamp !== undefined ? (
+          <p
+            role="status"
+            className={cn(
+              'pointer-events-none absolute end-4 top-1/3 z-10 -rotate-6 rounded-button border-4 bg-paper px-3 py-1 font-ticket text-title uppercase animate-pop motion-reduce:animate-none',
+              stamp === 'ok'
+                ? 'border-emerald-text text-emerald-text'
+                : 'border-danger-text text-danger-text',
+            )}
+          >
+            {t(`auth.login.stamp.${stamp}`)}
+          </p>
+        ) : null}
         <TextField
           label={t('auth.login.identifier')}
           hint={t('auth.login.identifierHint')}
           name="identifier"
           autoComplete="username"
           required
+          error={missing.identifier ? t('auth.login.identifierRequired') : undefined}
           value={identifier}
           onChange={(event) => {
             setIdentifier(event.target.value);
@@ -114,16 +151,13 @@ export function LoginForm() {
           type="password"
           autoComplete="current-password"
           required
+          error={missing.password ? t('auth.login.passwordRequired') : undefined}
           value={password}
           onChange={(event) => {
             setPassword(event.target.value);
           }}
         />
-        <Button
-          type="submit"
-          loading={submitting}
-          disabled={identifier.trim() === '' || password === ''}
-        >
+        <Button type="submit" loading={submitting}>
           {t('auth.login.submit')}
         </Button>
       </form>
