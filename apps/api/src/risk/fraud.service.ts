@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { z } from 'zod';
 import { AuditService } from '../common/audit.service.js';
 import { uuidv7 } from '../common/crypto.js';
 import { DbService, type Tx } from '../common/db.service.js';
@@ -24,6 +25,17 @@ const DEFAULT_RULES: FraudRules = {
   limitPercent: 80,
   ribPayoutHours: 24,
 };
+/** Bounded thresholds: an invalid value falls back on its default, a rule is never switched off. */
+const fraudRules = z
+  .object({
+    refusedCount: z.number().int().min(1).max(1000).catch(DEFAULT_RULES.refusedCount),
+    refusedMinutes: z.number().int().min(1).max(1440).catch(DEFAULT_RULES.refusedMinutes),
+    merchantCount: z.number().int().min(1).max(1000).catch(DEFAULT_RULES.merchantCount),
+    merchantMinutes: z.number().int().min(1).max(1440).catch(DEFAULT_RULES.merchantMinutes),
+    limitPercent: z.number().int().min(1).max(100).catch(DEFAULT_RULES.limitPercent),
+    ribPayoutHours: z.number().int().min(1).max(720).catch(DEFAULT_RULES.ribPayoutHours),
+  })
+  .catch(DEFAULT_RULES);
 /** Look-back of a run: twice the job period, so that no window is missed between two runs. */
 const LOOK_BACK_MINUTES = 20;
 
@@ -143,7 +155,7 @@ export class FraudService {
 
   private async rules(tx: Tx): Promise<FraudRules> {
     const settings = await tx.platformSettings.findUnique({ where: { id: 1 } });
-    return { ...DEFAULT_RULES, ...((settings?.fraudRules ?? {}) as Partial<FraudRules>) };
+    return fraudRules.parse({ ...DEFAULT_RULES, ...(settings?.fraudRules as object | null) });
   }
 
   /** Rule 1: more than N refused payments in M minutes for the same employee. */

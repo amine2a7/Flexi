@@ -2,12 +2,20 @@ import { Inject, Injectable } from '@nestjs/common';
 import { AuditService } from '../common/audit.service.js';
 import { uuidv7 } from '../common/crypto.js';
 import { DbService, type Tx } from '../common/db.service.js';
-import { toMillimes } from '../common/money.js';
+import { commissionOf, toMillimes } from '../common/money.js';
 import { Paginator, type Page } from '../common/pagination.js';
 import { problems } from '../common/problem.js';
 import { principal } from '../common/request-context.js';
-import { LedgerService, accounts } from '../ledger/ledger.service.js';
-import type { Dispute, DisputeNote, Merchant, Payment } from '../generated/prisma/client.js';
+import { LedgerService, accounts, type EntryInput } from '../ledger/ledger.service.js';
+import { nextBatch } from '../payouts/settlement-batch.js';
+import type {
+  CreditType,
+  Dispute,
+  DisputeNote,
+  Merchant,
+  Payment,
+  PayoutRequest,
+} from '../generated/prisma/client.js';
 
 /** Target of a decision (decision of 2026-10-31). */
 const DECISION_DAYS = 15;
@@ -16,6 +24,8 @@ const DISPUTABLE_DAYS = 30;
 /** Refunded credits are valid 30 days at least from the refund (decision of 2026-10-31). */
 const REFUND_VALIDITY_DAYS = 30;
 const DAY_MS = 86_400_000;
+/** A dispute still in progress keeps its payout on hold. */
+const ACTIVE = ['OPEN', 'ACCEPTANCE_PENDING'] as const;
 
 type DisputeRow = Dispute & { payment: Payment; merchant: Merchant; notes?: DisputeNote[] };
 
@@ -38,10 +48,10 @@ function disputeBody(dispute: DisputeRow) {
 }
 
 /**
- * N2 disputes (decision of 2026-10-31). Opening moves the payment amount from the merchant wallet
- * to its dispute hold account (never in a settlement); rejecting moves it back; accepting asks
- * Finance for the second validation (approval DISPUTE_REFUND), whose approval refunds the employee
- * into its credit lots of origin (same expiry; an expired share follows the expired-credit rule).
+ * N2 disputes (decisions of 2026-10-31 and 2026-11-02). Opening moves the payment amount from the
+ * merchant wallet to its dispute hold account, or puts its payout on hold; rejecting gives it back;
+ * accepting asks Finance for the second validation (approval DISPUTE_REFUND), whose approval
+ * refunds the employee. Lock order everywhere: every account at once, then dispute, payout, payment.
  */
 @Injectable()
 export class DisputesService {
@@ -75,7 +85,7 @@ export class DisputesService {
       if (dispute === null) throw problems.notFound();
       return {
         ...disputeBody(dispute),
-        notes: (dispute.notes ?? []).map((note) => ({
+        notes: dispute.notes.map((note) => ({
           id: note.id,
           authorName: note.authorName,
           text: note.text,
@@ -98,11 +108,11 @@ export class DisputesService {
     const hold = accounts.disputeHold(found.merchantId, found.creditType);
     // Same order as a payout request: the accounts, then the payout and payment rows (N2-4).
     await this.ledger.lockAccounts(tx, [wallet, hold]);
-    if (found.payoutId !== null) {
-      await tx.$queryRaw`SELECT id FROM payout_requests WHERE id = ${found.payoutId}::uuid FOR UPDATE`;
-    }
+    if (found.payoutId !== null) await this.lockPayout(tx, found.payoutId);
     await tx.$queryRaw`SELECT id FROM payments WHERE id = ${paymentId}::uuid FOR UPDATE`;
     const payment = await tx.payment.findUniqueOrThrow({ where: { id: paymentId } });
+    // The payout read above is the one locked: a request may have just taken the payment.
+    if (payment.payoutId !== found.payoutId) throw problems.conflict();
     if (payment.status !== 'CONFIRMED' && payment.status !== 'SETTLED') throw problems.conflict();
     const confirmedAt = payment.confirmedAt ?? payment.createdAt;
     if (Date.now() - confirmedAt.getTime() > DISPUTABLE_DAYS * DAY_MS) throw problems.conflict();
@@ -131,19 +141,12 @@ export class DisputesService {
         ],
       });
       holdTransactionId = posted.transactionId;
-    } else if (payout !== null && (payout.status === 'REQUESTED' || payout.status === 'CHECKED')) {
+    } else if (
+      payout !== null &&
+      (payout.status === 'REQUESTED' || payout.status === 'CHECKED' || payout.status === 'ON_HOLD')
+    ) {
       // In a payout not yet paid: the payout waits for the decision (« En attente — litige »).
-      heldPayout = { id: payout.id, status: payout.status };
-      await tx.payoutRequest.update({ where: { id: payout.id }, data: { status: 'ON_HOLD' } });
-      await tx.payoutEvent.create({
-        data: {
-          id: uuidv7(),
-          payoutId: payout.id,
-          status: 'ON_HOLD',
-          reason: reference,
-          actorId: who.userId,
-        },
-      });
+      heldPayout = await this.holdPayout(tx, payout, reference, who.userId);
     }
     // Otherwise already paid: nothing moves until the decision (debt deducted if accepted).
     await tx.payment.update({ where: { id: paymentId }, data: { status: 'DISPUTED' } });
@@ -198,13 +201,13 @@ export class DisputesService {
 
   /** Rejected: everything goes back as before (held amount, held payout, payment status). */
   async reject(tx: Tx, id: string, reason: string) {
+    const { merchantId, creditType } = await this.paymentOf(tx, id);
+    const wallet = accounts.merchantWallet(merchantId, creditType);
+    const hold = accounts.disputeHold(merchantId, creditType);
+    await this.ledger.lockAccounts(tx, [wallet, hold]);
     const dispute = await this.lockOpen(tx, id);
-    const payment = dispute.payment;
     let resolution: string | null = null;
     if (dispute.holdTransactionId !== null) {
-      const wallet = accounts.merchantWallet(payment.merchantId, payment.creditType);
-      const hold = accounts.disputeHold(payment.merchantId, payment.creditType);
-      await this.ledger.lockAccounts(tx, [wallet, hold]);
       const posted = await this.ledger.post(tx, {
         type: 'DISPUTE_RELEASE',
         reference: dispute.reference,
@@ -216,25 +219,8 @@ export class DisputesService {
       });
       resolution = posted.transactionId;
     }
-    if (dispute.heldPayoutId !== null && dispute.heldPayoutStatus !== null) {
-      await tx.payoutRequest.updateMany({
-        where: { id: dispute.heldPayoutId, status: 'ON_HOLD' },
-        data: { status: dispute.heldPayoutStatus as 'REQUESTED' | 'CHECKED' },
-      });
-      await tx.payoutEvent.create({
-        data: {
-          id: uuidv7(),
-          payoutId: dispute.heldPayoutId,
-          status: dispute.heldPayoutStatus as 'REQUESTED' | 'CHECKED',
-          reason: dispute.reference,
-          actorId: principal().userId,
-        },
-      });
-    }
-    await tx.payment.update({
-      where: { id: payment.id },
-      data: { status: dispute.paymentPreviousStatus as 'CONFIRMED' | 'SETTLED' },
-    });
+    if (dispute.heldPayoutId !== null) await this.releasePayout(tx, dispute);
+    await this.restorePayment(tx, dispute);
     const updated = await tx.dispute.update({
       where: { id },
       data: {
@@ -274,19 +260,26 @@ export class DisputesService {
 
   /**
    * Second validation given (AdminService.approve): the employee is refunded into credit lots of
-   * the expiry of origin, but valid 30 days at least from the refund (decision of 2026-10-31).
-   * Source of the refund: the held amount (free payment); the merchant wallet after the reversal of
-   * the held payout (rejected, the merchant requests again: to confirm by Amine); a merchant debt
-   * deducted from the next settlement (payment already paid). One balanced transaction.
+   * the expiry of origin, but valid 30 days at least from the refund (decision of 2026-10-31). One
+   * balanced transaction, its debits depend on where the money is at the decision (refundDebits).
    */
   async refund(tx: Tx, id: string): Promise<void> {
+    const { employeeId, merchantId, creditType } = await this.paymentOf(tx, id);
+    const employeeWallet = accounts.employeeWallet(employeeId, creditType);
+    await this.ledger.lockAccounts(tx, [
+      employeeWallet,
+      accounts.merchantWallet(merchantId, creditType),
+      accounts.disputeHold(merchantId, creditType),
+      accounts.merchantDebt(merchantId),
+      accounts.merchantCommission(),
+      accounts.payoutPayable(),
+    ]);
     await tx.$queryRaw`SELECT id FROM disputes WHERE id = ${id}::uuid FOR UPDATE`;
     const dispute = await tx.dispute.findUnique({ where: { id }, include: { payment: true } });
     if (dispute?.status !== 'ACCEPTANCE_PENDING') throw problems.conflict();
     const payment = dispute.payment;
     if (payment.transactionId === null) throw problems.conflict();
     const who = principal();
-    const employeeWallet = accounts.employeeWallet(payment.employeeId, payment.creditType);
     const parts = await tx.$queryRaw<{ amount: bigint; expires_at: Date }[]>`
       SELECT e.amount_millimes AS amount, l.expires_at
         FROM ledger_entries e
@@ -306,14 +299,13 @@ export class DisputesService {
       throw new Error('dispute refund: payment debits do not match the disputed amount');
     }
     const now = new Date();
-    const source = await this.refundSource(tx, dispute, who.userId);
-    await this.ledger.lockAccounts(tx, [source, employeeWallet]);
+    const { debits, commission } = await this.refundDebits(tx, dispute, who.userId);
     const posted = await this.ledger.post(tx, {
       type: 'DISPUTE_REFUND',
       reference: dispute.reference,
       userId: who.userId,
       entries: [
-        { account: source, direction: 'D', amount: dispute.amountMillimes },
+        ...debits,
         { account: employeeWallet, direction: 'C', amount: dispute.amountMillimes },
       ],
     });
@@ -330,55 +322,208 @@ export class DisputesService {
     await tx.payment.update({ where: { id: payment.id }, data: { status: 'REFUNDED' } });
     await tx.dispute.update({
       where: { id },
-      data: { status: 'ACCEPTED', decidedAt: now, resolutionTransactionId: posted.transactionId },
+      data: {
+        status: 'ACCEPTED',
+        decidedAt: now,
+        resolutionTransactionId: posted.transactionId,
+        commissionReversedMillimes: commission,
+      },
     });
     await this.audit.record(tx, 'disputes.refund', dispute.reference);
   }
 
-  /** Account the refund is taken from (see refund). */
-  private async refundSource(
+  /**
+   * Debits of the refund, from where the money is: the held amount (free payment); the merchant
+   * wallet after the reversal of the held payout (rejected, the merchant requests again: to confirm
+   * by Amine); paid to the merchant, its commission cancelled (decision of 2026-11-02) and the rest
+   * a debt deducted from the next settlement.
+   */
+  private async refundDebits(
     tx: Tx,
-    dispute: {
-      reference: string;
-      holdTransactionId: string | null;
-      heldPayoutId: string | null;
-      payment: {
-        merchantId: string;
-        creditType: 'RESTAURATION' | 'HABILLEMENT' | 'CARBURANT' | 'CADEAUX';
-      };
-    },
+    dispute: Dispute & { payment: Payment },
     actorId: string,
-  ) {
+  ): Promise<{ debits: EntryInput[]; commission: bigint }> {
     const { merchantId, creditType } = dispute.payment;
-    if (dispute.holdTransactionId !== null) return accounts.disputeHold(merchantId, creditType);
+    const amount = dispute.amountMillimes;
+    if (dispute.holdTransactionId !== null) {
+      const account = accounts.disputeHold(merchantId, creditType);
+      return { debits: [{ account, direction: 'D', amount }], commission: 0n };
+    }
     if (dispute.heldPayoutId !== null) {
-      await tx.$queryRaw`SELECT id FROM payout_requests WHERE id = ${dispute.heldPayoutId}::uuid FOR UPDATE`;
-      const payout = await tx.payoutRequest.findUniqueOrThrow({
-        where: { id: dispute.heldPayoutId },
+      await this.reverseHeldPayout(tx, dispute, actorId);
+      const account = accounts.merchantWallet(merchantId, creditType);
+      return { debits: [{ account, direction: 'D', amount }], commission: 0n };
+    }
+    const commission = await this.commissionToCancel(tx, dispute);
+    const debt = amount - commission;
+    return {
+      debits: [
+        ...(debt > 0n
+          ? [{ account: accounts.merchantDebt(merchantId), direction: 'D' as const, amount: debt }]
+          : []),
+        ...(commission > 0n
+          ? [
+              {
+                account: accounts.merchantCommission(),
+                direction: 'D' as const,
+                amount: commission,
+              },
+            ]
+          : []),
+      ],
+      commission,
+    };
+  }
+
+  /**
+   * The held payout is reversed: its gross goes back to the merchant wallet. The amount of every
+   * other dispute on it is held at once, so that it never comes back free to the merchant.
+   */
+  private async reverseHeldPayout(
+    tx: Tx,
+    dispute: Dispute & { payment: Payment },
+    actorId: string,
+  ): Promise<void> {
+    if (dispute.heldPayoutId === null) return;
+    await this.lockPayout(tx, dispute.heldPayoutId);
+    const payout = await tx.payoutRequest.findUniqueOrThrow({
+      where: { id: dispute.heldPayoutId },
+    });
+    if (payout.status !== 'ON_HOLD') throw problems.conflict();
+    if (payout.transactionId !== null) {
+      await this.ledger.reverse(
+        tx,
+        payout.transactionId,
+        `${payout.reference}-${dispute.reference}`,
+      );
+    }
+    await tx.payment.updateMany({ where: { payoutId: payout.id }, data: { payoutId: null } });
+    await tx.payoutRequest.update({ where: { id: payout.id }, data: { status: 'REJECTED' } });
+    await tx.payoutEvent.create({
+      data: {
+        id: uuidv7(),
+        payoutId: payout.id,
+        status: 'REJECTED',
+        reason: dispute.reference,
+        actorId,
+      },
+    });
+    const others = await tx.dispute.findMany({
+      where: { heldPayoutId: payout.id, status: { in: [...ACTIVE] }, id: { not: dispute.id } },
+    });
+    const { merchantId, creditType } = dispute.payment;
+    for (const other of others) {
+      const posted = await this.ledger.post(tx, {
+        type: 'DISPUTE_HOLD',
+        reference: other.reference,
+        userId: actorId,
+        entries: [
+          {
+            account: accounts.merchantWallet(merchantId, creditType),
+            direction: 'D',
+            amount: other.amountMillimes,
+          },
+          {
+            account: accounts.disputeHold(merchantId, creditType),
+            direction: 'C',
+            amount: other.amountMillimes,
+          },
+        ],
       });
-      if (payout.status !== 'ON_HOLD') throw problems.conflict();
-      // The held payout is reversed: its gross goes back to the merchant wallet.
-      if (payout.transactionId !== null) {
-        await this.ledger.reverse(
-          tx,
-          payout.transactionId,
-          `${payout.reference}-${dispute.reference}`,
-        );
-      }
-      await tx.payment.updateMany({ where: { payoutId: payout.id }, data: { payoutId: null } });
-      await tx.payoutRequest.update({ where: { id: payout.id }, data: { status: 'REJECTED' } });
-      await tx.payoutEvent.create({
+      await tx.dispute.update({
+        where: { id: other.id },
         data: {
-          id: uuidv7(),
-          payoutId: payout.id,
-          status: 'REJECTED',
-          reason: dispute.reference,
-          actorId,
+          holdTransactionId: posted.transactionId,
+          heldPayoutId: null,
+          heldPayoutStatus: null,
         },
       });
-      return accounts.merchantWallet(merchantId, creditType);
     }
-    return accounts.merchantDebt(merchantId);
+  }
+
+  /**
+   * Commission of a paid payment at the frozen rate of its payout, without ever cancelling more
+   * than the payout took (the rounding of several shares could add up to more).
+   */
+  private async commissionToCancel(
+    tx: Tx,
+    dispute: Dispute & { payment: Payment },
+  ): Promise<bigint> {
+    if (dispute.payment.payoutId === null) return 0n;
+    const payout = await tx.payoutRequest.findUnique({ where: { id: dispute.payment.payoutId } });
+    if (payout === null) return 0n;
+    const done = await tx.dispute.aggregate({
+      _sum: { commissionReversedMillimes: true },
+      where: { status: 'ACCEPTED', payment: { payoutId: payout.id } },
+    });
+    const left = payout.commissionMillimes - (done._sum.commissionReversedMillimes ?? 0n);
+    const share = commissionOf(dispute.amountMillimes, payout.commissionRateBps);
+    return share < left ? share : left;
+  }
+
+  /** First dispute: the payout leaves its batch and waits. Next ones keep its status of origin. */
+  private async holdPayout(
+    tx: Tx,
+    payout: PayoutRequest,
+    reference: string,
+    actorId: string,
+  ): Promise<{ id: string; status: string }> {
+    if (payout.status === 'ON_HOLD') {
+      const held = await tx.dispute.findFirst({
+        where: { heldPayoutId: payout.id, status: { in: [...ACTIVE] } },
+      });
+      const status = held?.heldPayoutStatus ?? null;
+      if (status === null) throw problems.conflict();
+      return { id: payout.id, status };
+    }
+    await tx.payoutRequest.update({
+      where: { id: payout.id },
+      data: { status: 'ON_HOLD', batchId: null },
+    });
+    await tx.payoutEvent.create({
+      data: { id: uuidv7(), payoutId: payout.id, status: 'ON_HOLD', reason: reference, actorId },
+    });
+    return { id: payout.id, status: payout.status };
+  }
+
+  /** The last open dispute closed: the payout resumes, checked ones in the next batch. */
+  private async releasePayout(tx: Tx, dispute: Dispute): Promise<void> {
+    if (dispute.heldPayoutId === null) return;
+    await this.lockPayout(tx, dispute.heldPayoutId);
+    const payout = await tx.payoutRequest.findUniqueOrThrow({
+      where: { id: dispute.heldPayoutId },
+    });
+    if (payout.status !== 'ON_HOLD') return;
+    const others = await tx.dispute.count({
+      where: { heldPayoutId: payout.id, status: { in: [...ACTIVE] }, id: { not: dispute.id } },
+    });
+    if (others > 0) return;
+    const status = dispute.heldPayoutStatus === 'CHECKED' ? 'CHECKED' : 'REQUESTED';
+    const batchId = status === 'CHECKED' ? (await nextBatch(tx)).id : null;
+    await tx.payoutRequest.update({ where: { id: payout.id }, data: { status, batchId } });
+    await tx.payoutEvent.create({
+      data: {
+        id: uuidv7(),
+        payoutId: payout.id,
+        status,
+        reason: dispute.reference,
+        actorId: principal().userId,
+      },
+    });
+  }
+
+  /** Back to its status, settled if its payout was executed during the dispute. */
+  private async restorePayment(tx: Tx, dispute: Dispute & { payment: Payment }): Promise<void> {
+    const { payment } = dispute;
+    const payout =
+      payment.payoutId === null
+        ? null
+        : await tx.payoutRequest.findUnique({ where: { id: payment.payoutId } });
+    const status =
+      payout?.status === 'EXECUTED'
+        ? 'SETTLED'
+        : (dispute.paymentPreviousStatus as 'CONFIRMED' | 'SETTLED');
+    await tx.payment.update({ where: { id: payment.id }, data: { status } });
   }
 
   /** Second validation refused: the dispute goes back to investigation. */
@@ -387,6 +532,23 @@ export class DisputesService {
       where: { id, status: 'ACCEPTANCE_PENDING' },
       data: { status: 'OPEN', decisionReason: null },
     });
+  }
+
+  private async lockPayout(tx: Tx, id: string): Promise<void> {
+    await tx.$queryRaw`SELECT id FROM payout_requests WHERE id = ${id}::uuid FOR UPDATE`;
+  }
+
+  /** Who the dispute concerns, read before any lock: its accounts are locked first. */
+  private async paymentOf(
+    tx: Tx,
+    id: string,
+  ): Promise<{ employeeId: string; merchantId: string; creditType: CreditType }> {
+    const dispute = await tx.dispute.findUnique({
+      where: { id },
+      select: { payment: { select: { employeeId: true, merchantId: true, creditType: true } } },
+    });
+    if (dispute === null) throw problems.notFound();
+    return dispute.payment;
   }
 
   private async lockOpen(tx: Tx, id: string): Promise<DisputeRow> {

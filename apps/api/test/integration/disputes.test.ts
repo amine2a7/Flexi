@@ -10,6 +10,7 @@ import { listen } from './http.js';
 loadTestEnv();
 const { loadEnv } = await import('../../src/config/env.js');
 const { PayoutsService } = await import('../../src/payouts/payouts.service.js');
+const { commissionOf } = await import('../../src/common/money.js');
 const { ownerClient } = await import('./setup.js');
 const { createApp } = await import('../../src/app.factory.js');
 const { DbService } = await import('../../src/common/db.service.js');
@@ -20,7 +21,7 @@ const { createCompany, createEmployee, createUser, sealed, seedSettings, signedI
 
 const env = loadEnv();
 const db = new DbService(env);
-const app = await createApp(env, false);
+let app = await createApp(env, false);
 const ledger = new LedgerService();
 const PIN = '4826';
 let base = '';
@@ -36,9 +37,19 @@ afterAll(async () => {
 
 const key = () => ({ 'Idempotency-Key': randomUUID() });
 const REASON = { reason: 'Paiement contesté par le bénéficiaire.' };
-const admin = async (subRole: 'SUPER_ADMIN' | 'COMPLIANCE' | 'FINANCE' | 'SUPPORT') => {
+type SubRole = 'SUPER_ADMIN' | 'COMPLIANCE' | 'FINANCE' | 'SUPPORT';
+const signIn = async (subRole: SubRole) => {
   const user = await createUser(db, env, 'ADMIN', {}, `Admin ${subRole}`, subRole);
   return { user, client: await signedIn(base, user) };
+};
+/** One session per role: signing in is limited per minute. */
+const admins = new Map<SubRole, ReturnType<typeof signIn>>();
+const admin = (subRole: SubRole) => {
+  const known = admins.get(subRole);
+  if (known !== undefined) return known;
+  const client = signIn(subRole);
+  admins.set(subRole, client);
+  return client;
 };
 const balance = (account: ReturnType<typeof accounts.merchantWallet>) =>
   db.system((tx) => ledger.balance(tx, account));
@@ -111,6 +122,109 @@ async function confirmedPayment(amount: number) {
   );
   return { employee, merchant, payment, payer };
 }
+
+/** Payment of the same employee at the same shop. */
+const pay = async (
+  payer: Awaited<ReturnType<typeof confirmedPayment>>['payer'],
+  merchantCode: string,
+  amount: number,
+) => {
+  const paid = await payer.call('POST', '/v1/employee/payments', {
+    body: { merchantCode, creditType: 'RESTAURATION', amountMillimes: amount, pin: PIN },
+    headers: key(),
+  });
+  expect(paid.status).toBeLessThan(300);
+  return db.system((tx) =>
+    tx.payment.findFirstOrThrow({
+      where: { reference: String(paid.body.reference) },
+    }),
+  );
+};
+const shopOf = async (merchantId: string) =>
+  signedIn(base, await createUser(db, env, 'MERCHANT', { merchantId }, 'Sami B.'));
+type Shop = Awaited<ReturnType<typeof shopOf>>;
+const requestPayout = async (shop: Shop, gross: number) => {
+  const quote = await shop.call('POST', '/v1/merchant/payout-quotes', {
+    body: { creditType: 'RESTAURATION', grossMillimes: gross },
+  });
+  const requested = await shop.call('POST', '/v1/merchant/payouts', {
+    body: { quoteId: quote.body.quoteId },
+    headers: key(),
+  });
+  expect(requested.status).toBeLessThan(300);
+  return requested.body;
+};
+const approvePayout = async (finance: Awaited<ReturnType<typeof admin>>, payoutId: string) => {
+  const approved = await finance.client.call(
+    'POST',
+    `/v1/admin/payout-requests/${payoutId}/approve`,
+    {
+      headers: key(),
+    },
+  );
+  expect(approved.status).toBe(200);
+  return String(approved.body.batchId);
+};
+/** The settlement date of the batch has come: the job executes it. */
+const runBatch = async (batchId: string) => {
+  const owner = await ownerClient();
+  await owner.query('UPDATE settlement_batches SET settlement_date = current_date WHERE id = $1', [
+    batchId,
+  ]);
+  await owner.end();
+  await app.get(PayoutsService).executeDueBatches();
+};
+const openDispute = async (ops: Awaited<ReturnType<typeof admin>>, paymentId: string) => {
+  const opened = await ops.client.call('POST', '/v1/admin/disputes', {
+    body: { paymentId, ...REASON },
+    headers: key(),
+  });
+  expect(opened.status).toBe(201);
+  return opened.body;
+};
+const rejectDispute = async (ops: Awaited<ReturnType<typeof admin>>, id: string) => {
+  const rejected = await ops.client.call('POST', `/v1/admin/disputes/${id}/reject`, {
+    body: { reason: 'Le paiement est conforme au ticket de caisse.' },
+    headers: key(),
+  });
+  expect(rejected.status).toBe(200);
+};
+/** Accepted by Opérations, approved by Finance. */
+const refundDispute = async (
+  ops: Awaited<ReturnType<typeof admin>>,
+  finance: Awaited<ReturnType<typeof admin>>,
+  dispute: Record<string, unknown>,
+) => {
+  const accepted = await ops.client.call(
+    'POST',
+    `/v1/admin/disputes/${String(dispute.id)}/accept`,
+    {
+      body: { reason: 'Double débit confirmé par le commerçant.' },
+      headers: key(),
+    },
+  );
+  expect(accepted.status).toBe(200);
+  const approval = await db.system((tx) =>
+    tx.approval.findFirstOrThrow({
+      where: {
+        type: 'DISPUTE_REFUND',
+        status: 'PENDING',
+        subject: { contains: String(dispute.reference) },
+      },
+    }),
+  );
+  const done = await finance.client.call('POST', `/v1/admin/approvals/${approval.id}/approve`, {
+    headers: key(),
+  });
+  expect(done.status).toBe(200);
+  return approval.id;
+};
+const reconciled = async () => {
+  const report = await db.system((tx) => ledger.reconcile(tx));
+  expect(report.mismatches).toEqual([]);
+  expect(report.lotMismatches).toEqual([]);
+  expect(report.ok).toBe(true);
+};
 
 describe('disputes (N2)', () => {
   it('opening holds the amount out of the merchant wallet; rejecting gives it back', async () => {
@@ -326,22 +440,181 @@ describe('disputes (N2)', () => {
     expect(back.body.status).toBe('REQUESTED');
   });
 
-  it('an accepted dispute on a paid payment is deducted from the next settlement', async () => {
+  it('an accepted dispute on a paid payment cancels its commission; the rest is a debt deducted from the next settlement', async () => {
     const ops = await admin('COMPLIANCE');
     const finance = await admin('FINANCE');
     const { employee, merchant, payment, payer } = await confirmedPayment(20_000);
-    await db.system((tx) =>
-      tx.payment.update({
-        where: { id: payment.id },
-        data: { status: 'SETTLED', payoutId: randomUUID() },
-      }),
+    const shop = await shopOf(merchant.id);
+    const paid = await requestPayout(shop, 20_000);
+    await runBatch(await approvePayout(finance, String(paid.id)));
+    const commission = commissionOf(20_000n, Number(paid.commissionRateBps));
+    expect(commission).toBeGreaterThan(0n);
+    const revenue = () => db.system((tx) => ledger.balance(tx, accounts.merchantCommission()));
+    const debt = () => db.system((tx) => ledger.balance(tx, accounts.merchantDebt(merchant.id)));
+    const before = await revenue();
+    const dispute = await openDispute(ops, payment.id);
+    await refundDispute(ops, finance, dispute);
+    expect(await balance(accounts.employeeWallet(employee.id, 'RESTAURATION'))).toBe(100_000n);
+    expect(await revenue()).toBe(before - commission);
+    expect(await debt()).toBe(20_000n - commission);
+    await reconciled();
+    // Next settlement of the merchant: the debt is deducted from what the bank sends.
+    await pay(payer, merchant.paymentCode, 50_000);
+    const next = await requestPayout(shop, 50_000);
+    await runBatch(await approvePayout(finance, String(next.id)));
+    expect(await debt()).toBe(0n);
+    const settled = await shop.call('GET', `/v1/merchant/payouts/${String(next.id)}`);
+    expect(settled.body.deductedMillimes).toBe(Number(20_000n - commission));
+    await reconciled();
+  });
+
+  it('a debt larger than a settlement is deducted over two settlements', async () => {
+    const ops = await admin('COMPLIANCE');
+    const finance = await admin('FINANCE');
+    const { merchant, payment, payer } = await confirmedPayment(40_000);
+    const shop = await shopOf(merchant.id);
+    const paid = await requestPayout(shop, 40_000);
+    await runBatch(await approvePayout(finance, String(paid.id)));
+    const dispute = await openDispute(ops, payment.id);
+    await refundDispute(ops, finance, dispute);
+    const debt = () => db.system((tx) => ledger.balance(tx, accounts.merchantDebt(merchant.id)));
+    const owed = await debt();
+    await pay(payer, merchant.paymentCode, 20_000);
+    const first = await requestPayout(shop, 20_000);
+    await runBatch(await approvePayout(finance, String(first.id)));
+    const firstPaid = await shop.call('GET', `/v1/merchant/payouts/${String(first.id)}`);
+    expect(firstPaid.body.deductedMillimes).toBe(firstPaid.body.netMillimes);
+    expect(await debt()).toBe(owed - BigInt(Number(firstPaid.body.netMillimes)));
+    await pay(payer, merchant.paymentCode, 40_000);
+    const second = await requestPayout(shop, 40_000);
+    await runBatch(await approvePayout(finance, String(second.id)));
+    expect(await debt()).toBe(0n);
+    await reconciled();
+  });
+});
+
+describe('disputes and payouts (N2)', () => {
+  beforeAll(async () => {
+    await app.close();
+    app = await createApp(env, false);
+    base = await listen(app);
+    admins.clear();
+  });
+
+  it('a payout held after its check leaves its batch; rejected later, it joins the next batch and is paid', async () => {
+    const ops = await admin('COMPLIANCE');
+    const finance = await admin('FINANCE');
+    const { merchant, payment } = await confirmedPayment(30_000);
+    const shop = await shopOf(merchant.id);
+    const payout = await requestPayout(shop, 30_000);
+    const batchId = await approvePayout(finance, String(payout.id));
+    const dispute = await openDispute(ops, payment.id);
+    // The batch goes out without the held payout.
+    await runBatch(batchId);
+    const held = await db.system((tx) =>
+      tx.payoutRequest.findUniqueOrThrow({ where: { id: String(payout.id) } }),
     );
-    const opened = await ops.client.call('POST', '/v1/admin/disputes', {
-      body: { paymentId: payment.id, ...REASON },
-      headers: key(),
-    });
-    expect(opened.status).toBe(201);
-    await ops.client.call('POST', `/v1/admin/disputes/${String(opened.body.id)}/accept`, {
+    expect(held.status).toBe('ON_HOLD');
+    expect(held.batchId).toBeNull();
+    await rejectDispute(ops, String(dispute.id));
+    const back = await db.system((tx) =>
+      tx.payoutRequest.findUniqueOrThrow({ where: { id: String(payout.id) } }),
+    );
+    expect(back.status).toBe('CHECKED');
+    expect(back.batchId).not.toBeNull();
+    expect(back.batchId).not.toBe(batchId);
+    await runBatch(String(back.batchId));
+    const done = await shop.call('GET', `/v1/merchant/payouts/${String(payout.id)}`);
+    expect(done.body.status).toBe('EXECUTED');
+    const settled = await db.system((tx) =>
+      tx.payment.findUniqueOrThrow({ where: { id: payment.id } }),
+    );
+    expect(settled.status).toBe('SETTLED');
+    await reconciled();
+  });
+
+  it('a payout stays held until the last open dispute on it is closed', async () => {
+    const ops = await admin('COMPLIANCE');
+    const { merchant, payment, payer } = await confirmedPayment(10_000);
+    const other = await pay(payer, merchant.paymentCode, 20_000);
+    const shop = await shopOf(merchant.id);
+    const payout = await requestPayout(shop, 30_000);
+    const first = await openDispute(ops, payment.id);
+    const second = await openDispute(ops, other.id);
+    await rejectDispute(ops, String(first.id));
+    const stillHeld = await shop.call('GET', `/v1/merchant/payouts/${String(payout.id)}`);
+    expect(stillHeld.body.status).toBe('ON_HOLD');
+    await rejectDispute(ops, String(second.id));
+    const released = await shop.call('GET', `/v1/merchant/payouts/${String(payout.id)}`);
+    expect(released.body.status).toBe('REQUESTED');
+  });
+
+  it('two disputes on a payout: the first refund reverses it and holds the second amount, never a double debit', async () => {
+    const ops = await admin('COMPLIANCE');
+    const finance = await admin('FINANCE');
+    const { employee, merchant, payment, payer } = await confirmedPayment(10_000);
+    const other = await pay(payer, merchant.paymentCode, 20_000);
+    const shop = await shopOf(merchant.id);
+    const payout = await requestPayout(shop, 30_000);
+    const first = await openDispute(ops, payment.id);
+    const second = await openDispute(ops, other.id);
+    await refundDispute(ops, finance, first);
+    const wallet = accounts.merchantWallet(merchant.id, 'RESTAURATION');
+    const hold = accounts.disputeHold(merchant.id, 'RESTAURATION');
+    // Reversed payout: 30 000 back, 10 000 refunded, 20 000 held for the open dispute.
+    expect((await shop.call('GET', `/v1/merchant/payouts/${String(payout.id)}`)).body.status).toBe(
+      'REJECTED',
+    );
+    expect(await balance(wallet)).toBe(0n);
+    expect(await balance(hold)).toBe(20_000n);
+    await refundDispute(ops, finance, second);
+    expect(await balance(hold)).toBe(0n);
+    expect(await balance(wallet)).toBe(0n);
+    expect(await balance(accounts.employeeWallet(employee.id, 'RESTAURATION'))).toBe(100_000n);
+    const debt = await db.system((tx) => ledger.balance(tx, accounts.merchantDebt(merchant.id)));
+    expect(debt).toBe(0n);
+    await reconciled();
+  });
+
+  it('after the first refund, the second dispute rejected frees its amount for the merchant', async () => {
+    const ops = await admin('COMPLIANCE');
+    const finance = await admin('FINANCE');
+    const { merchant, payment, payer } = await confirmedPayment(10_000);
+    const other = await pay(payer, merchant.paymentCode, 20_000);
+    const shop = await shopOf(merchant.id);
+    await requestPayout(shop, 30_000);
+    const first = await openDispute(ops, payment.id);
+    const second = await openDispute(ops, other.id);
+    await refundDispute(ops, finance, first);
+    await rejectDispute(ops, String(second.id));
+    expect(await balance(accounts.merchantWallet(merchant.id, 'RESTAURATION'))).toBe(20_000n);
+    const row = await db.system((tx) => tx.payment.findUniqueOrThrow({ where: { id: other.id } }));
+    expect(row.status).toBe('CONFIRMED');
+    expect(row.payoutId).toBeNull();
+    await reconciled();
+  });
+
+  it('a rejected dispute on a paid payment leaves it settled', async () => {
+    const ops = await admin('COMPLIANCE');
+    const finance = await admin('FINANCE');
+    const { merchant, payment } = await confirmedPayment(20_000);
+    const shop = await shopOf(merchant.id);
+    const paid = await requestPayout(shop, 20_000);
+    await runBatch(await approvePayout(finance, String(paid.id)));
+    const dispute = await openDispute(ops, payment.id);
+    await rejectDispute(ops, String(dispute.id));
+    const row = await db.system((tx) =>
+      tx.payment.findUniqueOrThrow({ where: { id: payment.id } }),
+    );
+    expect(row.status).toBe('SETTLED');
+  });
+
+  it('two simultaneous approvals refund once; the same key replays the same answer', async () => {
+    const ops = await admin('COMPLIANCE');
+    const finance = await admin('FINANCE');
+    const { employee, payment } = await confirmedPayment(10_000);
+    const dispute = await openDispute(ops, payment.id);
+    await ops.client.call('POST', `/v1/admin/disputes/${String(dispute.id)}/accept`, {
       body: { reason: 'Double débit confirmé par le commerçant.' },
       headers: key(),
     });
@@ -350,52 +623,43 @@ describe('disputes (N2)', () => {
         where: {
           type: 'DISPUTE_REFUND',
           status: 'PENDING',
-          subject: { contains: String(opened.body.reference) },
+          subject: { contains: String(dispute.reference) },
         },
       }),
     );
-    await finance.client.call('POST', `/v1/admin/approvals/${approval.id}/approve`, {
-      headers: key(),
-    });
+    const url = `/v1/admin/approvals/${approval.id}/approve`;
+    const headers = key();
+    const answers = await Promise.all([
+      finance.client.call('POST', url, { headers: key() }),
+      finance.client.call('POST', url, { headers: key() }),
+    ]);
+    expect(answers.filter((answer) => answer.status === 200).length).toBe(1);
     expect(await balance(accounts.employeeWallet(employee.id, 'RESTAURATION'))).toBe(100_000n);
-    const debt = () => db.system((tx) => ledger.balance(tx, accounts.merchantDebt(merchant.id)));
-    expect(await debt()).toBe(20_000n);
-    // Next settlement of the merchant: the debt is deducted from what the bank sends.
-    await payer.call('POST', '/v1/employee/payments', {
-      body: {
-        merchantCode: merchant.paymentCode,
-        creditType: 'RESTAURATION',
-        amountMillimes: 50_000,
-        pin: PIN,
-      },
+    const first = await finance.client.call('POST', url, { headers });
+    const replay = await finance.client.call('POST', url, { headers });
+    expect(replay.status).toBe(first.status);
+    expect(await balance(accounts.employeeWallet(employee.id, 'RESTAURATION'))).toBe(100_000n);
+    await reconciled();
+  });
+
+  it('Finance reads the dispute file, read-only, and never the fraud alerts', async () => {
+    const ops = await admin('COMPLIANCE');
+    const finance = await admin('FINANCE');
+    const { payment } = await confirmedPayment(10_000);
+    const dispute = await openDispute(ops, payment.id);
+    const id = String(dispute.id);
+    expect((await finance.client.call('GET', '/v1/admin/disputes')).status).toBe(200);
+    expect((await finance.client.call('GET', `/v1/admin/disputes/${id}`)).status).toBe(200);
+    expect((await finance.client.call('GET', '/v1/admin/fraud-alerts')).status).toBe(403);
+    const note = await finance.client.call('POST', `/v1/admin/disputes/${id}/notes`, {
+      body: { text: 'Essai de note.' },
+    });
+    expect(note.status).toBe(403);
+    const reject = await finance.client.call('POST', `/v1/admin/disputes/${id}/reject`, {
+      body: { reason: 'Le paiement est conforme au ticket de caisse.' },
       headers: key(),
     });
-    const shop = await signedIn(
-      base,
-      await createUser(db, env, 'MERCHANT', { merchantId: merchant.id }, 'Sami B.'),
-    );
-    const quote = await shop.call('POST', '/v1/merchant/payout-quotes', {
-      body: { creditType: 'RESTAURATION', grossMillimes: 50_000 },
-    });
-    const requested = await shop.call('POST', '/v1/merchant/payouts', {
-      body: { quoteId: quote.body.quoteId },
-      headers: key(),
-    });
-    const approved = await finance.client.call(
-      'POST',
-      `/v1/admin/payout-requests/${String(requested.body.id)}/approve`,
-      { headers: key() },
-    );
-    const owner = await ownerClient();
-    await owner.query(
-      'UPDATE settlement_batches SET settlement_date = current_date WHERE id = $1',
-      [approved.body.batchId],
-    );
-    await owner.end();
-    await app.get(PayoutsService).executeDueBatches();
-    expect(await debt()).toBe(0n);
-    const paid = await shop.call('GET', `/v1/merchant/payouts/${String(requested.body.id)}`);
-    expect(paid.body.deductedMillimes).toBe(20_000);
+    expect(reject.status).toBe(403);
   });
 
   it('refunded credits are valid 30 days at least, even when their lot expired', async () => {

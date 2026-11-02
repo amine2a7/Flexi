@@ -665,6 +665,7 @@ model Payment {
   @@index([employeeId, createdAt])
   @@index([status])
   @@index([employeeId, status, expiresAt], map: "payments_employee_status_idx")
+  @@index([status, createdAt], map: "payments_status_created_idx")
   @@map("payments")
 }
 
@@ -735,6 +736,7 @@ model PayoutRequest {
   merchant Merchant         @relation(fields: [merchantId], references: [id])
   batch    SettlementBatch? @relation(fields: [batchId], references: [id])
   events   PayoutEvent[]
+  disputes Dispute[]
 
   @@index([merchantId, requestedAt])
   @@index([status])
@@ -1002,10 +1004,13 @@ model Dispute {
   heldPayoutStatus        String?       @map("held_payout_status") @db.VarChar(20)
   paymentPreviousStatus   String        @default("CONFIRMED") @map("payment_previous_status") @db.VarChar(20)
   resolutionTransactionId String?       @map("resolution_transaction_id") @db.Uuid
+  /// Commission cancelled with the refund of a paid payment (decision of 2026-11-02).
+  commissionReversedMillimes BigInt     @default(0) @map("commission_reversed_millimes")
 
-  payment  Payment       @relation(fields: [paymentId], references: [id])
-  merchant Merchant      @relation(fields: [merchantId], references: [id])
-  notes    DisputeNote[]
+  payment    Payment        @relation(fields: [paymentId], references: [id])
+  merchant   Merchant       @relation(fields: [merchantId], references: [id])
+  heldPayout PayoutRequest? @relation(fields: [heldPayoutId], references: [id])
+  notes      DisputeNote[]
 
   @@index([status, openedAt], map: "disputes_status_idx")
   @@map("disputes")

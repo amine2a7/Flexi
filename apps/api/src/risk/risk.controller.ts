@@ -27,7 +27,7 @@ const openBody = z.strictObject({
 const noteBody = z.strictObject({ text: z.string().trim().min(1).max(2000) });
 
 /**
- * Sécurité & conformité (decisions of 2026-10-31): disputes (N2). Reading `risk.read`, handling
+ * Sécurité & conformité (decisions of 2026-10-31): disputes (N2). Reading `disputes.read` (Finance too, decision of 2026-11-02), handling
  * `disputes.manage` (super-admin, Opérations); the refund is approved by Finance (approvals).
  */
 @Roles('ADMIN')
@@ -38,13 +38,13 @@ export class DisputesController {
     @Inject(IdempotencyService) private readonly idempotency: IdempotencyService,
   ) {}
 
-  @Can('risk.read')
+  @Can('disputes.read')
   @Get()
   list(@Query() query: Record<string, unknown>) {
     return this.disputes.list(query);
   }
 
-  @Can('risk.read')
+  @Can('disputes.read')
   @Get(':disputeId')
   detail(@Param('disputeId') disputeId: string) {
     return this.disputes.detail(pathId('disputeId', disputeId));

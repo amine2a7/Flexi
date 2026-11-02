@@ -9,7 +9,6 @@ import { Paginator, type Page } from '../common/pagination.js';
 import { ApiProblem, problems, validationFailed } from '../common/problem.js';
 import { principal } from '../common/request-context.js';
 import {
-  addDays,
   businessDay,
   dateOnly,
   dayOf,
@@ -26,6 +25,7 @@ import type {
 } from '../generated/prisma/client.js';
 import { InsufficientFundsError, LedgerService, accounts } from '../ledger/ledger.service.js';
 import { merchantPayment } from '../payments/payments.service.js';
+import { nextBatch } from './settlement-batch.js';
 import { CREDIT_TYPES, SettingsService } from '../platform/settings.service.js';
 
 const QUOTE_TTL_MS = 10 * 60_000;
@@ -571,29 +571,7 @@ export class PayoutsService {
       select: { createdBy: true },
     });
     await this.fourEyes.ensureNotAuthor(merchant.createdBy, `virement ${payout.reference}`);
-    const today = businessDay();
-    // The batch is locked while the payout joins it: the settlement job (SKIP LOCKED) leaves it
-    // for its next run instead of executing it without this payout (ledger-auditor N1).
-    const [open] = await tx.$queryRaw<{ id: string }[]>`
-      SELECT id FROM settlement_batches
-       WHERE status = 'SCHEDULED' AND settlement_date > ${dateOnly(today)}::date
-       ORDER BY settlement_date LIMIT 1 FOR UPDATE`;
-    let batch =
-      open === undefined
-        ? null
-        : await tx.settlementBatch.findUniqueOrThrow({ where: { id: open.id } });
-    if (batch === null) {
-      const [sequence] = await tx.$queryRaw<
-        { value: bigint }[]
-      >`SELECT nextval('batch_reference_seq') AS value`;
-      batch = await tx.settlementBatch.create({
-        data: {
-          id: uuidv7(),
-          reference: `LOT-${today.slice(0, 4)}-${String(sequence?.value ?? 0n)}`,
-          settlementDate: dateOnly(addDays(today, 2)),
-        },
-      });
-    }
+    const batch = await nextBatch(tx);
     await tx.payoutRequest.update({
       where: { id },
       data: { status: 'CHECKED', batchId: batch.id },
@@ -712,19 +690,19 @@ export class PayoutsService {
           where: { batchId: id, status: { in: ['CHECKED', 'SENT'] } },
         });
         for (const payout of payouts) {
-          const moved = await tx.payoutRequest.updateMany({
-            where: { id: payout.id, status: { in: ['CHECKED', 'SENT'] } },
-            data: { status: 'EXECUTED' },
-          });
-          if (moved.count !== 1) continue;
           // A merchant debt (accepted dispute on a paid payment) is deducted from what the bank
-          // sends (decision of 2026-10-31); the payout records it.
+          // sends (decision of 2026-10-31); the payout records it. Accounts first, as everywhere.
           const debtAccount = accounts.merchantDebt(payout.merchantId);
           await this.ledger.lockAccounts(tx, [
             accounts.payoutPayable(),
             accounts.bankPayment(),
             debtAccount,
           ]);
+          const moved = await tx.payoutRequest.updateMany({
+            where: { id: payout.id, status: { in: ['CHECKED', 'SENT'] } },
+            data: { status: 'EXECUTED' },
+          });
+          if (moved.count !== 1) continue;
           const debt = await this.ledger.balance(tx, debtAccount);
           const deducted = debt < payout.netMillimes ? debt : payout.netMillimes;
           await this.ledger.post(tx, {
