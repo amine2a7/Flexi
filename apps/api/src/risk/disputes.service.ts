@@ -147,6 +147,8 @@ export class DisputesService {
     ) {
       // In a payout not yet paid: the payout waits for the decision (« En attente — litige »).
       heldPayout = await this.holdPayout(tx, payout, reference, who.userId);
+    } else if (payout !== null && payout.status !== 'EXECUTED' && payout.status !== 'SENT') {
+      throw problems.conflict();
     }
     // Otherwise already paid: nothing moves until the decision (debt deducted if accepted).
     await tx.payment.update({ where: { id: paymentId }, data: { status: 'DISPUTED' } });
@@ -390,13 +392,8 @@ export class DisputesService {
       where: { id: dispute.heldPayoutId },
     });
     if (payout.status !== 'ON_HOLD') throw problems.conflict();
-    if (payout.transactionId !== null) {
-      await this.ledger.reverse(
-        tx,
-        payout.transactionId,
-        `${payout.reference}-${dispute.reference}`,
-      );
-    }
+    if (payout.transactionId === null) throw new Error('held payout without its ledger entry');
+    await this.ledger.reverse(tx, payout.transactionId, `${payout.reference}-${dispute.reference}`);
     await tx.payment.updateMany({ where: { payoutId: payout.id }, data: { payoutId: null } });
     await tx.payoutRequest.update({ where: { id: payout.id }, data: { status: 'REJECTED' } });
     await tx.payoutEvent.create({

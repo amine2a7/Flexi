@@ -384,6 +384,7 @@ export class LedgerService {
     ok: boolean;
     mismatches: string[];
     lotMismatches: string[];
+    holdMismatches: string[];
     totalDebits: bigint;
     totalCredits: bigint;
   }> {
@@ -413,10 +414,28 @@ export class LedgerService {
         ) s ON true
        WHERE a.owner_type = 'EMPLOYEE' AND s.lots <> b.balance_millimes
        ORDER BY a.code`;
+    // Dispute holds: each one equals the amounts of the disputes in progress that hold it.
+    const holdMismatches = await tx.$queryRaw<{ code: string }[]>`
+      SELECT a.code FROM ledger_accounts a
+        JOIN account_balances b ON b.account_id = a.id
+        LEFT JOIN LATERAL (
+          SELECT coalesce(sum(d.amount_millimes), 0)::bigint AS held
+            FROM disputes d JOIN payments p ON p.id = d.payment_id
+           WHERE d.hold_transaction_id IS NOT NULL
+             AND d.status IN ('OPEN', 'ACCEPTANCE_PENDING')
+             AND d.merchant_id = a.owner_id AND p.credit_type = a.credit_type
+        ) s ON true
+       WHERE a.code LIKE 'DISPUTE_HOLD:%' AND s.held <> b.balance_millimes
+       ORDER BY a.code`;
     return {
-      ok: mismatches.length === 0 && lotMismatches.length === 0 && totalDebits === totalCredits,
+      ok:
+        mismatches.length === 0 &&
+        lotMismatches.length === 0 &&
+        holdMismatches.length === 0 &&
+        totalDebits === totalCredits,
       mismatches: mismatches.map((row) => row.code),
       lotMismatches: lotMismatches.map((row) => row.code),
+      holdMismatches: holdMismatches.map((row) => row.code),
       totalDebits,
       totalCredits,
     };

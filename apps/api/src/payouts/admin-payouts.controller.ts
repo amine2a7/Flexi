@@ -31,7 +31,9 @@ export class AdminPayoutsController {
   list(@Query() query: Record<string, unknown>) {
     const filters = parse(
       z.object({
-        status: z.enum(['REQUESTED', 'CHECKED', 'SENT', 'EXECUTED', 'REJECTED']).optional(),
+        status: z
+          .enum(['REQUESTED', 'CHECKED', 'ON_HOLD', 'SENT', 'EXECUTED', 'REJECTED'])
+          .optional(),
         creditType: creditType.optional(),
         q: z.string().max(100).optional(),
       }),

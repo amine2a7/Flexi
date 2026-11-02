@@ -26,7 +26,7 @@ import { CREDIT_TYPES } from '../platform/settings.service.js';
 import { PayoutsService } from './payouts.service.js';
 
 const paymentStatus = z.enum(['INITIATED', 'CONFIRMED', 'SETTLED', 'REFUSED', 'DISPUTED']);
-const payoutStatus = z.enum(['REQUESTED', 'CHECKED', 'SENT', 'EXECUTED', 'REJECTED']);
+const payoutStatus = z.enum(['REQUESTED', 'CHECKED', 'ON_HOLD', 'SENT', 'EXECUTED', 'REJECTED']);
 
 @Roles('MERCHANT')
 @Controller('v1/merchant')

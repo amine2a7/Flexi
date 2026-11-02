@@ -587,6 +587,14 @@ export class PayoutsService {
   /** Rejected with a reason: the request entry is reversed (the merchant gets its balance back). */
   async reject(tx: Tx, id: string, reason: string) {
     {
+      // Same order as a dispute: the accounts of the reversal, then the payout.
+      const found = await tx.payoutRequest.findUnique({ where: { id } });
+      if (found === null) throw problems.notFound();
+      await this.ledger.lockAccounts(tx, [
+        accounts.merchantWallet(found.merchantId, found.creditType),
+        accounts.payoutPayable(),
+        accounts.merchantCommission(),
+      ]);
       await this.lockPayout(tx, id);
       const payout = await this.loadAdmin(tx, id);
       if (payout.status !== 'REQUESTED') throw problems.conflict();
@@ -687,19 +695,21 @@ export class PayoutsService {
              FOR UPDATE SKIP LOCKED`;
         if (claimed.length === 0) return;
         const payouts = await tx.payoutRequest.findMany({
-          where: { batchId: id, status: { in: ['CHECKED', 'SENT'] } },
+          where: { batchId: id, status: 'CHECKED' },
         });
+        // Accounts first and all at once, as everywhere (ledger-auditor C4).
+        await this.ledger.lockAccounts(tx, [
+          accounts.payoutPayable(),
+          accounts.bankPayment(),
+          ...payouts.map((payout) => accounts.merchantDebt(payout.merchantId)),
+        ]);
         for (const payout of payouts) {
           // A merchant debt (accepted dispute on a paid payment) is deducted from what the bank
-          // sends (decision of 2026-10-31); the payout records it. Accounts first, as everywhere.
+          // sends (decision of 2026-10-31); the payout records it.
           const debtAccount = accounts.merchantDebt(payout.merchantId);
-          await this.ledger.lockAccounts(tx, [
-            accounts.payoutPayable(),
-            accounts.bankPayment(),
-            debtAccount,
-          ]);
+          // A payout held meanwhile left the batch and is not executed.
           const moved = await tx.payoutRequest.updateMany({
-            where: { id: payout.id, status: { in: ['CHECKED', 'SENT'] } },
+            where: { id: payout.id, batchId: id, status: 'CHECKED' },
             data: { status: 'EXECUTED' },
           });
           if (moved.count !== 1) continue;
