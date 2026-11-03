@@ -57,13 +57,18 @@ export class JobsService implements OnApplicationBootstrap, OnApplicationShutdow
 
   /**
    * Reconciliation (spec 02 §5): every balance equals its entries, the books are balanced, the
-   * lots of each employee wallet add up to its balance. A gap is a critical alert: audit entry and
+   * lots of each employee wallet add up to its balance, each dispute hold equals the disputes in
+   * progress that hold it. A gap is a critical alert: audit entry and
    * error log naming the accounts, never an amount.
    */
   async reconcileBooks(): Promise<boolean> {
     const result = await this.db.system((tx) => this.ledger.reconcile(tx));
     if (result.ok) return true;
-    const accountsInError = [...result.mismatches, ...result.lotMismatches];
+    const accountsInError = [
+      ...result.mismatches,
+      ...result.lotMismatches,
+      ...result.holdMismatches,
+    ];
     this.logger.error(
       `ledger reconciliation failed: ${String(accountsInError.length)} account(s), books balanced: ${String(result.totalDebits === result.totalCredits)}`,
     );

@@ -11,6 +11,7 @@ loadTestEnv();
 const { loadEnv } = await import('../../src/config/env.js');
 const { PayoutsService } = await import('../../src/payouts/payouts.service.js');
 const { commissionOf } = await import('../../src/common/money.js');
+const { JobsService } = await import('../../src/jobs/jobs.service.js');
 const { ownerClient } = await import('./setup.js');
 const { createApp } = await import('../../src/app.factory.js');
 const { DbService } = await import('../../src/common/db.service.js');
@@ -232,6 +233,14 @@ const reconciled = async () => {
   expect(report.lotMismatches).toEqual([]);
   expect(report.holdMismatches).toEqual([]);
   expect(report.ok).toBe(true);
+};
+
+/** Signing in is limited per minute and per app: each group of tests gets its own app. */
+const freshApp = async () => {
+  await app.close();
+  app = await createApp(env, false);
+  base = await listen(app);
+  admins.clear();
 };
 
 describe('disputes (N2)', () => {
@@ -502,12 +511,7 @@ describe('disputes (N2)', () => {
 });
 
 describe('disputes and payouts (N2)', () => {
-  beforeAll(async () => {
-    await app.close();
-    app = await createApp(env, false);
-    base = await listen(app);
-    admins.clear();
-  });
+  beforeAll(freshApp);
 
   it('a payout held after its check leaves its batch; rejected later, it joins the next batch and is paid', async () => {
     const ops = await admin('COMPLIANCE');
@@ -618,6 +622,10 @@ describe('disputes and payouts (N2)', () => {
     expect(row.status).toBe('SETTLED');
     await reconciled();
   });
+});
+
+describe('disputes: concurrency, cumul and reconciliation (N2)', () => {
+  beforeAll(freshApp);
 
   it('two simultaneous approvals refund once', async () => {
     const ops = await admin('COMPLIANCE');
@@ -756,6 +764,35 @@ describe('disputes and payouts (N2)', () => {
     expect(opened.status).toBe(201);
     const after = await shop.call('GET', `/v1/merchant/payouts/${String(payout.id)}`);
     expect(['ON_HOLD', 'EXECUTED']).toContain(after.body.status);
+    await reconciled();
+  });
+
+  it('a dispute hold without its dispute is a reconciliation alert', async () => {
+    const { merchant } = await confirmedPayment(20_000);
+    const hold = accounts.disputeHold(merchant.id, 'RESTAURATION');
+    const posted = await db.system((tx) =>
+      ledger.post(tx, {
+        type: 'TEST_HOLD_GAP',
+        reference: 'TEST-HOLD-GAP',
+        entries: [
+          { account: accounts.bankEscrow(), direction: 'D', amount: 5_000n },
+          { account: hold, direction: 'C', amount: 5_000n },
+        ],
+      }),
+    );
+    const report = await db.system((tx) => ledger.reconcile(tx));
+    expect(report.ok).toBe(false);
+    expect(report.holdMismatches).toEqual([hold.code]);
+    expect(await app.get(JobsService).reconcileBooks()).toBe(false);
+    const alert = await db.system((tx) =>
+      tx.auditLog.findFirst({
+        where: { action: 'ledger.reconcileFailed' },
+        orderBy: { occurredAt: 'desc' },
+      }),
+    );
+    expect(alert?.target).toContain(hold.code.slice(0, 40));
+    // The gap is removed: the other test files check that the books reconcile.
+    await db.system((tx) => ledger.reverse(tx, posted.transactionId, 'TEST-HOLD-GAP-OUT'));
     await reconciled();
   });
 

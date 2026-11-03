@@ -3,7 +3,30 @@
 Tenu par le lead (`main`) à chaque étape. Statuts : À faire · En cours · En revue · Bloqué · Terminé.
 Préfixe `TEST-FIRST:` = tâche de tests écrits avant le code (tests rouges acceptés).
 
-## Plan du 2026-10-31 (mode continu) — À LIRE EN PREMIER
+## Plan du 2026-11-03 « terminer le web » (mode continu) — À LIRE EN PREMIER
+
+Carte des fichiers par module : `docs/handoff/carte-fichiers.md`. Décisions du jour : `decisions.md` (2026-11-03) et ADR 0004.
+
+| # | Tâche | État | Commit / raison |
+|---|---|---|---|
+| 0 | Argent N2 (2 Hautes ledger-auditor, commission annulée, Finance lit le litige) | Fait | 0f5ed56, edf19b2 |
+| 0 | Landing + connexion (« Composter mon ticket », tampon, AR) | Fait | 0f2c404, 1a20cc7 |
+| 1 | BOARD, correctif R1 (contrôle DISPUTE_HOLD dans le job), revue securite N2 | En cours | |
+| 2 | Écrans Sécurité sur l'API réelle (litiges, alertes, actions par rôle) | En cours | code écrit, e2e à faire passer |
+| 3 | Grille de commission (modèle, anti-chevauchement, ligne par défaut, migration des profils, TVA/timbre/seuil) | À faire | TEST-FIRST |
+| 4 | Calcul serveur commission + TVA + timbre, écritures séparées, taux figés | À faire | TEST-FIRST, ledger-auditor |
+| 5 | Fenêtre « Commission » à l'étape 2 (entreprise, commerçant) | À faire | spec design d'abord |
+| 6 | Simulations détaillées (commande, virement) | À faire | |
+| 7 | Fiches entreprise/commerçant modifiables, historique, grille et RIB en double validation | À faire | /audit-acces |
+| 8 | R2 : contrôle quotidien wallets = somme des écritures | À faire | |
+| 9 | Lots J+2, banque simulée, double validation Finance | À faire | |
+| 10 | Factures PDF (commission, TVA, timbre) | À faire | |
+| 11 | Données de démo réalistes | À faire | |
+| 12 | Contrôles finaux | À faire | |
+| 13 | Description de la PR feat/web → main (sans push) | À faire | |
+| — | Reporté : notifications simulées, écarts design Moyens/Bas, anciens constats Moyens ; `qs` 6.16.2 dès le 2026-11-10 | Reporté | demande du 2026-11-03 |
+
+## Plan du 2026-10-31 (mode continu) — historique
 
 | Étape | Tâche | État | Commit / raison |
 |---|---|---|---|
