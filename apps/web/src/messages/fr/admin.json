@@ -323,7 +323,11 @@
     "category": "Catégorie",
     "amount": "Montant",
     "status": "Statut",
-    "empty": "Aucune transaction pour ces filtres"
+    "empty": "Aucune transaction pour ces filtres",
+    "actions": "Actions",
+    "openDispute": "Ouvrir un litige",
+    "disputeTitle": "Ouvrir un litige sur {reference}",
+    "disputeEffect": "Le paiement est exclu du règlement ; s’il est dans un virement non payé, ce virement est mis en attente jusqu’à la décision."
   },
   "users": {
     "title": "Utilisateurs",
@@ -424,7 +428,6 @@
   "security": {
     "title": "Sécurité & conformité",
     "description": "Alertes de fraude et litiges de la plateforme.",
-    "readOnly": "Consultation seulement pour le moment : le traitement des alertes (à examiner, en cours, fermée, avec motif) et l'instruction des litiges arrivent avec leurs routes.",
     "tabAlerts": "Alertes de fraude",
     "tabDisputes": "Litiges",
     "kind": "Alerte",
@@ -439,10 +442,11 @@
     "emptyAlerts": "Aucune alerte",
     "emptyDisputes": "Aucun litige",
     "kinds": {
-      "VELOCITY": "Paiements trop rapprochés",
-      "LARGE_AMOUNT": "Montant inhabituel",
       "REPEATED_REFUSALS": "Refus répétés",
-      "PIN_LOCKS": "PIN bloqué à répétition"
+      "MERCHANT_BURST": "Paiements rapprochés chez un commerçant",
+      "NEAR_DAILY_LIMIT": "Paiement proche du plafond journalier",
+      "RIB_CHANGE_PAYOUT": "RIB modifié puis virement",
+      "NEW_DEVICE_PAYMENT": "Nouvel appareil puis paiement"
     },
     "severities": {
       "HIGH": "Élevée",
@@ -450,15 +454,46 @@
       "LOW": "Faible"
     },
     "alertStatuses": {
-      "OPEN": "Ouverte",
+      "OPEN": "À examiner",
       "IN_PROGRESS": "En cours",
-      "CLOSED": "Close"
+      "CLOSED": "Fermée"
     },
     "disputeStatuses": {
       "OPEN": "Ouvert",
       "ACCEPTANCE_PENDING": "Acceptation à valider",
       "ACCEPTED": "Accepté (remboursé)",
       "REJECTED": "Rejeté"
-    }
+    },
+    "descriptionFinance": "Dossiers de litige, en lecture seule : le remboursement s’approuve dans Validations.",
+    "handledBy": "Traité par",
+    "actions": "Actions",
+    "alertStart": "Prendre en charge",
+    "alertClose": "Fermer",
+    "alertFailed": "Cette alerte n’a pas pu être prise en charge. Rechargez la liste et réessayez.",
+    "alertCloseTitle": "Fermer cette alerte",
+    "alertCloseEffect": "L’alerte passe à « Fermée » et le motif est conservé. Elle ne se rouvre pas.",
+    "dispute": "Litige",
+    "back": "Retour à Sécurité & conformité",
+    "disputeTitle": "Litige {reference}",
+    "disputeDescription": "Dossier d’instruction : montant, motif, notes et décision.",
+    "pendingTitle": "En attente de la seconde validation",
+    "pendingText": "L’acceptation doit être approuvée par Finance avant tout remboursement.",
+    "pendingLink": "Ouvrir les validations",
+    "creditType": "Type de crédit",
+    "openedBy": "Ouvert par",
+    "openedAt": "Ouvert le",
+    "dueAt": "Décision attendue avant le",
+    "decisionReason": "Motif de la décision",
+    "decidedAt": "Décidé le",
+    "accept": "Accepter le litige",
+    "reject": "Rejeter le litige",
+    "acceptTitle": "Accepter le litige {reference}",
+    "rejectTitle": "Rejeter le litige {reference}",
+    "acceptEffect": "Finance doit approuver cette acceptation. Le bénéficiaire est remboursé seulement après cette seconde validation.",
+    "rejectEffect": "Le montant et le virement retenus sont libérés : le commerçant retrouve son règlement normal.",
+    "notes": "Notes d’instruction",
+    "notesEmpty": "Aucune note pour le moment.",
+    "noteLabel": "Ajouter une note",
+    "noteAdd": "Ajouter"
   }
 }

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: FlexiPay API
-  version: 0.7.0
+  version: 0.8.0
   summary: Conventions transverses, authentification web et profil (WB2, espace Commun).
   description: |
     # Contrat d'API FlexiPay (version 0.2.2)
@@ -4280,10 +4280,10 @@ paths:
     get:
       tags: [admin]
       operationId: listFraudAlerts
-      summary: Alertes de fraude (lecture seule)
+      summary: Alertes de fraude
       description: >-
-        Permission `risk.read` (super-admin, Opérations ; décision C du 2026-10-23). Route prévue :
-        l'API n'émet pas encore d'alertes (données de démonstration côté web).
+        Permission `risk.read` (super-admin, Opérations ; décision C du 2026-10-23). Alertes levées
+        par le job de détection (règles de départ du 2026-10-31).
       parameters:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Cursor'
@@ -4310,13 +4310,87 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/admin/fraud-alerts/{alertId}/start:
+    post:
+      tags: [admin]
+      operationId: startFraudAlert
+      summary: Prendre en charge une alerte de fraude
+      description: Permission `alerts.manage`. Ouverte vers en cours ; journalisé.
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FraudAlert'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/admin/fraud-alerts/{alertId}/close:
+    post:
+      tags: [admin]
+      operationId: closeFraudAlert
+      summary: Fermer une alerte de fraude avec un motif
+      description: Permission `alerts.manage`. Motif journalisé ; une alerte fermée ne se rouvre pas.
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionReason'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FraudAlert'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /v1/admin/disputes:
     get:
       tags: [admin]
       operationId: listDisputes
       summary: Litiges (lecture seule)
       description: >-
-        Permission `risk.read`. Litiges V1 (décision du 2026-10-21) : annulation par le commerçant
+        Permission `disputes.read`. Litiges V1 (décision du 2026-10-21) : annulation par le commerçant
         sous 24 h ou écriture corrective tracée de l'administrateur (N2, à venir).
       parameters:
         - $ref: '#/components/parameters/Limit'
@@ -4386,7 +4460,7 @@ paths:
       tags: [admin]
       operationId: getDispute
       summary: Dossier d'un litige (instruction, notes)
-      description: Permission `risk.read`.
+      description: Permission `disputes.read`.
       parameters:
         - name: disputeId
           in: path
@@ -8468,7 +8542,7 @@ components:
     FraudAlertKind:
       title: FraudAlertKind
       type: string
-      enum: [VELOCITY, LARGE_AMOUNT, REPEATED_REFUSALS, PIN_LOCKS]
+      enum: [REPEATED_REFUSALS, MERCHANT_BURST, NEAR_DAILY_LIMIT, RIB_CHANGE_PAYOUT, NEW_DEVICE_PAYMENT]
     FraudAlertSeverity:
       title: FraudAlertSeverity
       type: string
@@ -8482,7 +8556,7 @@ components:
       title: FraudAlert
       type: object
       additionalProperties: false
-      required: [id, kind, severity, subject, occurredAt, status]
+      required: [id, kind, severity, subject, occurredAt, status, handledByName, closeReason]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -8498,6 +8572,13 @@ components:
           $ref: '#/components/schemas/Timestamp'
         status:
           $ref: '#/components/schemas/FraudAlertStatus'
+        handledByName:
+          description: Personne qui traite ou a fermé l'alerte.
+          type: [string, 'null']
+          maxLength: 120
+        closeReason:
+          type: [string, 'null']
+          maxLength: 500
     FraudAlertPage:
       title: FraudAlertPage
       type: object

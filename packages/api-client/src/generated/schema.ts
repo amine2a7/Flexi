@@ -1824,12 +1824,52 @@ export interface paths {
       cookie?: never;
     };
     /**
-     * Alertes de fraude (lecture seule)
-     * @description Permission `risk.read` (super-admin, Opérations ; décision C du 2026-10-23). Route prévue : l'API n'émet pas encore d'alertes (données de démonstration côté web).
+     * Alertes de fraude
+     * @description Permission `risk.read` (super-admin, Opérations ; décision C du 2026-10-23). Alertes levées par le job de détection (règles de départ du 2026-10-31).
      */
     get: operations['listFraudAlerts'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/fraud-alerts/{alertId}/start': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Prendre en charge une alerte de fraude
+     * @description Permission `alerts.manage`. Ouverte vers en cours ; journalisé.
+     */
+    post: operations['startFraudAlert'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/fraud-alerts/{alertId}/close': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Fermer une alerte de fraude avec un motif
+     * @description Permission `alerts.manage`. Motif journalisé ; une alerte fermée ne se rouvre pas.
+     */
+    post: operations['closeFraudAlert'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1845,7 +1885,7 @@ export interface paths {
     };
     /**
      * Litiges (lecture seule)
-     * @description Permission `risk.read`. Litiges V1 (décision du 2026-10-21) : annulation par le commerçant sous 24 h ou écriture corrective tracée de l'administrateur (N2, à venir).
+     * @description Permission `disputes.read`. Litiges V1 (décision du 2026-10-21) : annulation par le commerçant sous 24 h ou écriture corrective tracée de l'administrateur (N2, à venir).
      */
     get: operations['listDisputes'];
     put?: never;
@@ -1869,7 +1909,7 @@ export interface paths {
     };
     /**
      * Dossier d'un litige (instruction, notes)
-     * @description Permission `risk.read`.
+     * @description Permission `disputes.read`.
      */
     get: operations['getDispute'];
     put?: never;
@@ -3930,7 +3970,12 @@ export interface components {
      * FraudAlertKind
      * @enum {string}
      */
-    FraudAlertKind: 'VELOCITY' | 'LARGE_AMOUNT' | 'REPEATED_REFUSALS' | 'PIN_LOCKS';
+    FraudAlertKind:
+      | 'REPEATED_REFUSALS'
+      | 'MERCHANT_BURST'
+      | 'NEAR_DAILY_LIMIT'
+      | 'RIB_CHANGE_PAYOUT'
+      | 'NEW_DEVICE_PAYMENT';
     /**
      * FraudAlertSeverity
      * @enum {string}
@@ -3951,6 +3996,9 @@ export interface components {
       subject: string;
       occurredAt: components['schemas']['Timestamp'];
       status: components['schemas']['FraudAlertStatus'];
+      /** @description Personne qui traite ou a fermé l'alerte. */
+      handledByName: string | null;
+      closeReason: string | null;
     };
     /** FraudAlertPage */
     FraudAlertPage: {
@@ -7769,6 +7817,68 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  startFraudAlert: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        alertId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FraudAlert'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+    };
+  };
+  closeFraudAlert: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        alertId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DecisionReason'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FraudAlert'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+    };
+  };
   listDisputes: {
     parameters: {
       query?: {
@@ -8563,7 +8673,13 @@ export const employeeBulkStatusResultResultsOutcomeValues: ReadonlyArray<
 > = ['DONE', 'SKIPPED'];
 export const fraudAlertKindValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['FraudAlertKind']
-> = ['VELOCITY', 'LARGE_AMOUNT', 'REPEATED_REFUSALS', 'PIN_LOCKS'];
+> = [
+  'REPEATED_REFUSALS',
+  'MERCHANT_BURST',
+  'NEAR_DAILY_LIMIT',
+  'RIB_CHANGE_PAYOUT',
+  'NEW_DEVICE_PAYMENT',
+];
 export const fraudAlertSeverityValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['FraudAlertSeverity']
 > = ['HIGH', 'MEDIUM', 'LOW'];

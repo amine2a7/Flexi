@@ -2,6 +2,7 @@
 .next/
 .next-test/
 .next-e2e/
+.next-build/
 next-env.d.ts
 *.tsbuildinfo
 # Generated at dev time only (scripts/sync-mock-worker.mjs), never shipped

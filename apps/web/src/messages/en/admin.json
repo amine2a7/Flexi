@@ -323,7 +323,11 @@
     "category": "Category",
     "amount": "Amount",
     "status": "Status",
-    "empty": "No transactions for these filters"
+    "empty": "No transactions for these filters",
+    "actions": "Actions",
+    "openDispute": "Open a dispute",
+    "disputeTitle": "Open a dispute on {reference}",
+    "disputeEffect": "The payment leaves settlement; if it is in an unpaid payout, that payout is put on hold until the decision."
   },
   "users": {
     "title": "Users",
@@ -424,7 +428,6 @@
   "security": {
     "title": "Security & compliance",
     "description": "Fraud alerts and disputes of the platform.",
-    "readOnly": "Read only for now: handling alerts (to review, in progress, closed, with a reason) and investigating disputes come with their routes.",
     "tabAlerts": "Fraud alerts",
     "tabDisputes": "Disputes",
     "kind": "Alert",
@@ -439,10 +442,11 @@
     "emptyAlerts": "No alert",
     "emptyDisputes": "No dispute",
     "kinds": {
-      "VELOCITY": "Payments too close together",
-      "LARGE_AMOUNT": "Unusual amount",
       "REPEATED_REFUSALS": "Repeated refusals",
-      "PIN_LOCKS": "Repeated PIN locks"
+      "MERCHANT_BURST": "Close payments at a merchant",
+      "NEAR_DAILY_LIMIT": "Payment near the daily limit",
+      "RIB_CHANGE_PAYOUT": "Bank details changed, then payout",
+      "NEW_DEVICE_PAYMENT": "New device, then payment"
     },
     "severities": {
       "HIGH": "High",
@@ -450,7 +454,7 @@
       "LOW": "Low"
     },
     "alertStatuses": {
-      "OPEN": "Open",
+      "OPEN": "To review",
       "IN_PROGRESS": "In progress",
       "CLOSED": "Closed"
     },
@@ -459,6 +463,37 @@
       "ACCEPTANCE_PENDING": "Acceptance to validate",
       "ACCEPTED": "Accepted (refunded)",
       "REJECTED": "Rejected"
-    }
+    },
+    "descriptionFinance": "Dispute files, read-only: the refund is approved in Approvals.",
+    "handledBy": "Handled by",
+    "actions": "Actions",
+    "alertStart": "Take over",
+    "alertClose": "Close",
+    "alertFailed": "This alert could not be taken over. Reload the list and try again.",
+    "alertCloseTitle": "Close this alert",
+    "alertCloseEffect": "The alert becomes “Closed” and the reason is kept. It does not reopen.",
+    "dispute": "Dispute",
+    "back": "Back to Security & compliance",
+    "disputeTitle": "Dispute {reference}",
+    "disputeDescription": "Investigation file: amount, reason, notes and decision.",
+    "pendingTitle": "Waiting for the second validation",
+    "pendingText": "Finance must approve the acceptance before any refund.",
+    "pendingLink": "Open approvals",
+    "creditType": "Credit type",
+    "openedBy": "Opened by",
+    "openedAt": "Opened on",
+    "dueAt": "Decision due before",
+    "decisionReason": "Reason of the decision",
+    "decidedAt": "Decided on",
+    "accept": "Accept the dispute",
+    "reject": "Reject the dispute",
+    "acceptTitle": "Accept dispute {reference}",
+    "rejectTitle": "Reject dispute {reference}",
+    "acceptEffect": "Finance must approve this acceptance. The beneficiary is refunded only after this second validation.",
+    "rejectEffect": "The held amount and payout are released: the merchant goes back to normal settlement.",
+    "notes": "Investigation notes",
+    "notesEmpty": "No note yet.",
+    "noteLabel": "Add a note",
+    "noteAdd": "Add"
   }
 }
