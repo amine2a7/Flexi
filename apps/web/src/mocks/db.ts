@@ -466,7 +466,18 @@ function buildAdmin(now: number, merchantRate: number) {
     city: index === 0 ? 'Tunis' : random.pick(CITIES),
     status: index === 0 ? 'APPROVED' : random.next() < 0.85 ? 'APPROVED' : 'PENDING_KYC',
     employeesCount: index === 0 ? 84 : random.int(12, 640),
-    commissionGrid: defaultGrid(150, now - 120 * DAY),
+    // Demo grids (decision of 2026-11-03): the demo company and one company in four have tranches.
+    commissionGrid:
+      index % 4 === 0
+        ? {
+            tiers: [
+              { rateBps: 150, minMillimes: null, maxMillimes: null },
+              { rateBps: 120, minMillimes: 20_000_000, maxMillimes: 49_999_999 },
+              { rateBps: 100, minMillimes: 50_000_000, maxMillimes: null },
+            ],
+            effectiveFrom: iso(now - 120 * DAY),
+          }
+        : defaultGrid(150, now - 120 * DAY),
     createdAt: iso(now - random.int(5, 500) * DAY),
   }));
 
