@@ -14,8 +14,8 @@ Carte des fichiers par module : `docs/handoff/carte-fichiers.md`. Décisions du 
 | 1 | BOARD, correctif R1 (contrôle DISPUTE_HOLD dans le job), revue securite N2 | Fait | b028b78 ; securite OK (reste S-N2-04 Basse : isoler les règles de fraude) |
 | 2 | Écrans Sécurité sur l'API réelle (litiges, alertes, actions par rôle) | Fait | 17348f4 ; e2e security.spec vert (1er essai) |
 | 3 | Grille de commission (modèle, anti-chevauchement, ligne par défaut, migration des profils, TVA/timbre/seuil) | Fait | 0f2a903 ; securite OK (S-GC-02 Basse acceptée : restauration du rôle dans une transaction déjà annulée) |
-| 4 | Calcul serveur commission + TVA + timbre, écritures séparées, taux figés | En cours | TEST-FIRST, ledger-auditor ; calcul partagé fait (packages/shared/src/fees.ts) |
-| 5 | Fenêtre « Commission » à l'étape 2 (entreprise, commerçant) | À faire | spec design d'abord |
+| 4 | Calcul serveur commission + TVA + timbre, écritures séparées, taux figés | Fait | f52afed ; ledger-auditor OK (Basses à reprendre en tâche 9 : totaux de lot TVA/timbre, verrou du devis avant les comptes ; [DÉCISION] éventuelle : commande alignée sur le devis) |
+| 5 | Fenêtre « Commission » à l'étape 2 (entreprise, commerçant) | En cours | spec design d'abord |
 | 6 | Simulations détaillées (commande, virement) | À faire | |
 | 7 | Fiches entreprise/commerçant modifiables, historique, grille et RIB en double validation | À faire | /audit-acces |
 | 8 | R2 : contrôle quotidien wallets = somme des écritures | À faire | |
