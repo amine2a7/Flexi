@@ -155,7 +155,9 @@
     "tabRequest": "Request a payout",
     "tabTracking": "Request tracking",
     "destination": "Destination",
-    "destinationHint": "Registered bank account (masked). To change it, contact FlexiPay."
+    "destinationHint": "Registered bank account (masked). To change it, contact FlexiPay.",
+    "requestAgain": "Request again",
+    "requestAgainFor": "Request the payout {reference} again"
   },
   "settlements": {
     "title": "Settlements and documents",

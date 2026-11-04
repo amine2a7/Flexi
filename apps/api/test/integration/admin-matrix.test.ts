@@ -51,6 +51,7 @@ const EXPECTED: Record<string, Sub[]> = {
   'AdminController.companies': ALL,
   'AdminController.createCompany': SUPER,
   'AdminController.gridChangeRequest': MONEY,
+  'AdminController.batchReleaseRequest': MONEY,
   'AdminController.approvals': BACK_OFFICE,
   'AdminController.approve': MONEY,
   'AdminController.reject': MONEY,

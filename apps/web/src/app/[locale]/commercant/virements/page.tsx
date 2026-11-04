@@ -11,7 +11,7 @@ import { asProblem, errorMessageKey } from '@/lib/api/problem';
 import { useApiQuery } from '@/lib/api/use-api-query';
 import { usePagedList } from '@/lib/api/use-paged-list';
 import { formatDateTime } from '@/lib/format/date';
-import { formatMillimesWithCurrency, formatRateBps } from '@/lib/format/money';
+import { formatMillimes, formatMillimesWithCurrency, formatRateBps } from '@/lib/format/money';
 import { parseMillimes } from '@/lib/format/money-input';
 import { Amount, AmountBreakdown } from '@/components/ui/amount';
 import { Button, buttonClasses } from '@/components/ui/button';
@@ -186,14 +186,31 @@ export default function PayoutsPage() {
       header: t('action'),
       align: 'end',
       cell: (row) => (
-        <Link
+        <div className="flex justify-end gap-2">
+          {row.status === 'REJECTED' && canRequest ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              aria-label={t('requestAgainFor', { reference: row.reference })}
+              onClick={() => {
+                setCreditType(row.creditType);
+                setAmountText(formatMillimes(row.grossMillimes, locale));
+                setQuote(undefined);
+                setTab('request');
+              }}
+            >
+              {t('requestAgain')}
+            </Button>
+          ) : null}
+          <Link
           href={`/commercant/virements/${row.id}`}
           className={buttonClasses('ghost', 'sm')}
           aria-label={t('openPayout', { reference: row.reference })}
         >
           {t('open')}
           <ChevronRight aria-hidden="true" className="size-icon-sm rtl:rotate-180" />
-        </Link>
+          </Link>
+        </div>
       ),
     },
   ];

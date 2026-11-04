@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: FlexiPay API
-  version: 0.11.0
+  version: 0.12.0
   summary: Conventions transverses, authentification web et profil (WB2, espace Commun).
   description: |
     # Contrat d'API FlexiPay (version 0.2.2)
@@ -5003,6 +5003,50 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/admin/settlements/{batchId}/release-requests:
+    post:
+      tags: [admin]
+      operationId: requestBatchRelease
+      summary: Demander la libération d'un lot (double validation Finance, tâche 9)
+      description: Seul un lot libéré part à la banque à sa date. Une demande à la fois (409).
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionReason'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Approval'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/admin/settlements/{batchId}:
     get:
       tags: [admin]
@@ -6827,6 +6871,13 @@ components:
       description: Règlement J+2 — Prévu, Payé (provisoire).
       type: string
       enum: [SCHEDULED, PAID]
+    SettlementBatchStatus:
+      title: SettlementBatchStatus
+      description: |
+        Lot de règlement (tâche 9) : prévu ; libéré par Finance en double validation ; ordre envoyé
+        à la banque ; payé (retour de la banque rapproché).
+      type: string
+      enum: [SCHEDULED, RELEASED, SENT, PAID]
     Settlement:
       title: Settlement
       type: object
@@ -8172,7 +8223,7 @@ components:
       title: ApprovalType
       description: Opération sensible soumise à double validation (règle 12).
       type: string
-      enum: [COMMISSION_RATE_CHANGE, SETTINGS_CHANGE, DISPUTE_REFUND, COMMISSION_GRID_CHANGE, IBAN_CHANGE]
+      enum: [COMMISSION_RATE_CHANGE, SETTINGS_CHANGE, DISPUTE_REFUND, COMMISSION_GRID_CHANGE, IBAN_CHANGE, BATCH_RELEASE]
     Approval:
       title: Approval
       type: object
@@ -8250,7 +8301,7 @@ components:
       title: SettlementBatch
       type: object
       additionalProperties: false
-      required: [id, reference, settlementDate, merchantsCount, grossMillimes, commissionMillimes, netMillimes, status]
+      required: [id, reference, settlementDate, merchantsCount, grossMillimes, commissionMillimes, vatMillimes, stampDutyMillimes, netMillimes, status]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -8269,15 +8320,21 @@ components:
           $ref: '#/components/schemas/AmountMillimes'
         commissionMillimes:
           $ref: '#/components/schemas/AmountMillimes'
+        vatMillimes:
+          description: TVA retenue sur les virements du lot.
+          $ref: '#/components/schemas/AmountMillimes'
+        stampDutyMillimes:
+          description: Timbres retenus sur les virements du lot.
+          $ref: '#/components/schemas/AmountMillimes'
         netMillimes:
           $ref: '#/components/schemas/AmountMillimes'
         status:
-          $ref: '#/components/schemas/SettlementStatus'
+          $ref: '#/components/schemas/SettlementBatchStatus'
     SettlementBatchDetail:
       title: SettlementBatchDetail
       type: object
       additionalProperties: false
-      required: [id, reference, settlementDate, merchantsCount, grossMillimes, commissionMillimes, netMillimes, status, payouts]
+      required: [id, reference, settlementDate, merchantsCount, grossMillimes, commissionMillimes, vatMillimes, stampDutyMillimes, netMillimes, status, releasedAt, sentAt, bankReference, payouts]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -8296,10 +8353,32 @@ components:
           $ref: '#/components/schemas/AmountMillimes'
         commissionMillimes:
           $ref: '#/components/schemas/AmountMillimes'
+        vatMillimes:
+          description: TVA retenue sur les virements du lot.
+          $ref: '#/components/schemas/AmountMillimes'
+        stampDutyMillimes:
+          description: Timbres retenus sur les virements du lot.
+          $ref: '#/components/schemas/AmountMillimes'
         netMillimes:
           $ref: '#/components/schemas/AmountMillimes'
         status:
-          $ref: '#/components/schemas/SettlementStatus'
+          $ref: '#/components/schemas/SettlementBatchStatus'
+        releasedAt:
+          description: Libéré par Finance en double validation (`null` avant).
+          oneOf:
+            - $ref: '#/components/schemas/Timestamp'
+            - type: 'null'
+        sentAt:
+          description: Ordre transmis à la banque (simulée).
+          oneOf:
+            - $ref: '#/components/schemas/Timestamp'
+            - type: 'null'
+        bankReference:
+          description: Référence de l'ordre à la banque, après son retour.
+          oneOf:
+            - type: string
+              maxLength: 40
+            - type: 'null'
         payouts:
           description: Virements validés qui composent le lot (sommes égales aux totaux du lot).
           type: array

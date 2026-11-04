@@ -93,6 +93,7 @@ const API_TO_TOKEN: Record<string, string> = {
   PENDING: 'EN_ATTENTE',
   // Settlement, invoice, employee and receivable states
   SCHEDULED: 'A_REGLER',
+  RELEASED: 'VALIDE',
   UNPAID: 'A_REGLER',
   RECEIVABLE: 'A_REGLER',
   ACTIVE: 'VALIDE',

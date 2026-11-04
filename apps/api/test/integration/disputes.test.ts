@@ -170,7 +170,7 @@ const approvePayout = async (finance: Awaited<ReturnType<typeof admin>>, payoutI
 /** The settlement date of the batch has come: the job executes it. */
 const runBatch = async (batchId: string) => {
   const owner = await ownerClient();
-  await owner.query('UPDATE settlement_batches SET settlement_date = current_date WHERE id = $1', [
+  await owner.query(`UPDATE settlement_batches SET settlement_date = current_date, status = 'RELEASED' WHERE id = $1`, [
     batchId,
   ]);
   await owner.end();
@@ -758,7 +758,7 @@ describe('disputes: concurrency, cumul and reconciliation (N2)', () => {
     const batchId = await approvePayout(finance, String(payout.id));
     const owner = await ownerClient();
     await owner.query(
-      'UPDATE settlement_batches SET settlement_date = current_date WHERE id = $1',
+      `UPDATE settlement_batches SET settlement_date = current_date, status = 'RELEASED' WHERE id = $1`,
       [batchId],
     );
     await owner.end();

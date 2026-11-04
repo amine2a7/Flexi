@@ -155,7 +155,9 @@
     "tabRequest": "Demander un virement",
     "tabTracking": "Suivi des demandes",
     "destination": "Destination",
-    "destinationHint": "Compte bancaire enregistré (masqué). Pour le changer, contactez FlexiPay."
+    "destinationHint": "Compte bancaire enregistré (masqué). Pour le changer, contactez FlexiPay.",
+    "requestAgain": "Redemander",
+    "requestAgainFor": "Redemander le virement {reference}"
   },
   "settlements": {
     "title": "Règlements et documents",

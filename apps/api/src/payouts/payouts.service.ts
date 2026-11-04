@@ -27,6 +27,13 @@ import type {
 import { InsufficientFundsError, LedgerService, accounts } from '../ledger/ledger.service.js';
 import { merchantPayment } from '../payments/payments.service.js';
 import { nextBatch } from './settlement-batch.js';
+import { OutboxService } from '../common/outbox.service.js';
+import {
+  BANK_ADAPTER,
+  type BankAdapter,
+  type BankOrderLine,
+  type BankReturnLine,
+} from './bank.adapter.js';
 import { CREDIT_TYPES, SettingsService } from '../platform/settings.service.js';
 
 const QUOTE_TTL_MS = 10 * 60_000;
@@ -92,6 +99,8 @@ export class PayoutsService {
     @Inject(FourEyesService) private readonly fourEyes: FourEyesService,
     @Inject(PiiService) private readonly pii: PiiService,
     @Inject(Paginator) private readonly paginator: Paginator,
+    @Inject(BANK_ADAPTER) private readonly bank: BankAdapter,
+    @Inject(OutboxService) private readonly outbox: OutboxService,
   ) {}
 
   private merchantId(): string {
@@ -485,7 +494,8 @@ export class PayoutsService {
           id: payout.batch.id,
           reference: payout.batch.reference,
           date: payout.batch.settlementDate,
-          status: payout.batch.status,
+          // The merchant sees a batch to settle until the bank paid it (released, sent: still to come).
+          status: payout.batch.status === 'PAID' ? 'PAID' : 'SCHEDULED',
           count: 0,
           gross: 0n,
           commission: 0n,
@@ -657,6 +667,10 @@ export class PayoutsService {
       commissionMillimes: toMillimes(
         payouts.reduce((sum, payout) => sum + payout.commissionMillimes, 0n),
       ),
+      vatMillimes: toMillimes(payouts.reduce((sum, payout) => sum + payout.vatMillimes, 0n)),
+      stampDutyMillimes: toMillimes(
+        payouts.reduce((sum, payout) => sum + payout.stampDutyMillimes, 0n),
+      ),
       netMillimes: toMillimes(payouts.reduce((sum, payout) => sum + payout.netMillimes, 0n)),
     };
   }
@@ -702,6 +716,9 @@ export class PayoutsService {
         reference: batch.reference,
         settlementDate: dayOf(batch.settlementDate),
         status: batch.status,
+        releasedAt: batch.releasedAt?.toISOString() ?? null,
+        sentAt: batch.sentAt?.toISOString() ?? null,
+        bankReference: batch.bankReference,
         ...this.batchTotals(payouts),
         payouts: payouts.map((row) => adminPayout(row, this.pii)),
       };
@@ -709,81 +726,134 @@ export class PayoutsService {
   }
 
   /**
-   * Settlement job (D+2): every scheduled batch whose date has come is executed — each payout is
-   * sent then executed (payable debited, payment account credited), its payments become SETTLED.
+   * Settlement job (D+2, task 9): every batch RELEASED by Finance (four eyes) whose date has come
+   * goes to the bank. Order: each payout SENT, the merchant debt deducted, payable debited and
+   * payment account credited (decision « SENT » of 2026-11-02). Return of the bank: paid -> EXECUTED
+   * and its payments SETTLED; rejected -> both entries reversed, the payout REJECTED and the
+   * merchant told (he requests again). Then the batch is PAID (reconciled with the bank return).
    */
   async executeDueBatches(): Promise<number> {
     const due = await this.db.system((tx) =>
       tx.settlementBatch.findMany({
-        where: { status: 'SCHEDULED', settlementDate: { lte: dateOnly(businessDay()) } },
+        where: { status: 'RELEASED', settlementDate: { lte: dateOnly(businessDay()) } },
         select: { id: true },
       }),
     );
+    let done = 0;
     for (const { id } of due) {
-      await this.db.system(async (tx) => {
-        // Executed once, even if the job runs twice at the same time (ledger-auditor C3): the
-        // batch is locked while still scheduled, or skipped.
-        const claimed = await tx.$queryRaw<{ id: string }[]>`
-          SELECT id FROM settlement_batches WHERE id = ${id}::uuid AND status = 'SCHEDULED'
-             FOR UPDATE SKIP LOCKED`;
-        if (claimed.length === 0) return;
-        const payouts = await tx.payoutRequest.findMany({
-          where: { batchId: id, status: 'CHECKED' },
+      const order = await this.sendBatch(id);
+      if (order === undefined) continue;
+      const { bankReference } = await this.bank.send(order.reference, order.lines);
+      const results = await this.bank.returnOf(bankReference, order.lines);
+      await this.applyBankReturn(id, bankReference, results);
+      done += 1;
+    }
+    if (done > 0) this.logger.log(`settlement batches executed: ${String(done)}`);
+    return done;
+  }
+
+  /** The order of a batch: claimed once (ledger-auditor C3), each payout SENT and posted. */
+  private async sendBatch(id: string) {
+    return this.db.system(async (tx) => {
+      const claimed = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM settlement_batches WHERE id = ${id}::uuid AND status = 'RELEASED'
+           FOR UPDATE SKIP LOCKED`;
+      if (claimed.length === 0) return undefined;
+      const batch = await tx.settlementBatch.findUniqueOrThrow({ where: { id } });
+      const payouts = await tx.payoutRequest.findMany({ where: { batchId: id, status: 'CHECKED' } });
+      // Accounts first and all at once, as everywhere (ledger-auditor C4).
+      await this.ledger.lockAccounts(tx, [
+        accounts.payoutPayable(),
+        accounts.bankPayment(),
+        ...payouts.map((payout) => accounts.merchantDebt(payout.merchantId)),
+      ]);
+      const lines: BankOrderLine[] = [];
+      for (const payout of payouts) {
+        // A payout held meanwhile left the batch and is not sent.
+        const moved = await tx.payoutRequest.updateMany({
+          where: { id: payout.id, batchId: id, status: 'CHECKED' },
+          data: { status: 'SENT' },
         });
-        // Accounts first and all at once, as everywhere (ledger-auditor C4).
-        await this.ledger.lockAccounts(tx, [
-          accounts.payoutPayable(),
-          accounts.bankPayment(),
-          ...payouts.map((payout) => accounts.merchantDebt(payout.merchantId)),
-        ]);
-        for (const payout of payouts) {
-          // A merchant debt (accepted dispute on a paid payment) is deducted from what the bank
-          // sends (decision of 2026-10-31); the payout records it.
-          const debtAccount = accounts.merchantDebt(payout.merchantId);
-          // A payout held meanwhile left the batch and is not executed.
-          const moved = await tx.payoutRequest.updateMany({
-            where: { id: payout.id, batchId: id, status: 'CHECKED' },
-            data: { status: 'EXECUTED' },
+        if (moved.count !== 1) continue;
+        // A merchant debt (accepted dispute on a paid payment) is deducted from what the bank
+        // sends (decision of 2026-10-31); the payout records it.
+        const debtAccount = accounts.merchantDebt(payout.merchantId);
+        const debt = await this.ledger.balance(tx, debtAccount);
+        const deducted = debt < payout.netMillimes ? debt : payout.netMillimes;
+        await this.ledger.post(tx, {
+          type: 'PAYOUT_EXECUTED',
+          reference: payout.reference,
+          entries: [
+            { account: accounts.payoutPayable(), direction: 'D', amount: payout.netMillimes },
+            ...(payout.netMillimes - deducted > 0n
+              ? [
+                  {
+                    account: accounts.bankPayment(),
+                    direction: 'C' as const,
+                    amount: payout.netMillimes - deducted,
+                  },
+                ]
+              : []),
+            ...(deducted > 0n
+              ? [{ account: debtAccount, direction: 'C' as const, amount: deducted }]
+              : []),
+          ],
+        });
+        if (deducted > 0n)
+          await tx.payoutRequest.update({
+            where: { id: payout.id },
+            data: { deductedMillimes: deducted },
           });
-          if (moved.count !== 1) continue;
-          const debt = await this.ledger.balance(tx, debtAccount);
-          const deducted = debt < payout.netMillimes ? debt : payout.netMillimes;
-          await this.ledger.post(tx, {
-            type: 'PAYOUT_EXECUTED',
+        await tx.payoutEvent.create({
+          data: { id: uuidv7(), payoutId: payout.id, status: 'SENT', occurredAt: new Date() },
+        });
+        if (payout.netMillimes - deducted > 0n)
+          lines.push({
+            payoutId: payout.id,
             reference: payout.reference,
-            entries: [
-              { account: accounts.payoutPayable(), direction: 'D', amount: payout.netMillimes },
-              ...(payout.netMillimes - deducted > 0n
-                ? [
-                    {
-                      account: accounts.bankPayment(),
-                      direction: 'C' as const,
-                      amount: payout.netMillimes - deducted,
-                    },
-                  ]
-                : []),
-              ...(deducted > 0n
-                ? [{ account: debtAccount, direction: 'C' as const, amount: deducted }]
-                : []),
-            ],
+            iban: this.pii.open(payout.iban),
+            amountMillimes: payout.netMillimes - deducted,
           });
-          if (deducted > 0n) {
-            await tx.payoutRequest.update({
-              where: { id: payout.id },
-              data: { deductedMillimes: deducted },
-            });
-          }
-          const now = new Date();
-          await tx.payoutEvent.createMany({
-            data: [
-              { id: uuidv7(), payoutId: payout.id, status: 'SENT', occurredAt: now },
-              {
-                id: uuidv7(),
-                payoutId: payout.id,
-                status: 'EXECUTED',
-                occurredAt: new Date(now.getTime() + 1),
-              },
-            ],
+      }
+      await tx.settlementBatch.update({
+        where: { id },
+        data: { status: 'SENT', sentAt: new Date() },
+      });
+      await this.audit.record(tx, 'settlements.send', batch.reference, 'Système');
+      return { reference: batch.reference, lines, sent: payouts.map((payout) => payout.id) };
+    });
+  }
+
+  /** Return of the bank: paid or rejected per transfer, then the batch is reconciled (PAID). */
+  private async applyBankReturn(
+    id: string,
+    bankReference: string,
+    results: readonly BankReturnLine[],
+  ): Promise<void> {
+    const rejected: { merchantId: string; reference: string; reason: string }[] = [];
+    await this.db.system(async (tx) => {
+      const sent = await tx.payoutRequest.findMany({ where: { batchId: id, status: 'SENT' } });
+      const byId = new Map(results.map((line) => [line.payoutId, line]));
+      // Every account a rejection may reverse, locked first and at once.
+      await this.ledger.lockAccounts(tx, [
+        accounts.payoutPayable(),
+        accounts.bankPayment(),
+        accounts.merchantCommission(),
+        accounts.vatCollected(),
+        accounts.stampDuty(),
+        ...sent.flatMap((payout) => [
+          accounts.merchantDebt(payout.merchantId),
+          accounts.merchantWallet(payout.merchantId, payout.creditType),
+        ]),
+      ]);
+      const now = new Date();
+      for (const payout of sent) {
+        // A payout fully covered by a debt has no bank line: it is paid by the deduction.
+        const result = byId.get(payout.id) ?? { payoutId: payout.id, paid: true };
+        if (result.paid) {
+          await tx.payoutRequest.update({ where: { id: payout.id }, data: { status: 'EXECUTED' } });
+          await tx.payoutEvent.create({
+            data: { id: uuidv7(), payoutId: payout.id, status: 'EXECUTED', occurredAt: now },
           });
           const settled = await tx.payment.findMany({
             where: { payoutId: payout.id, status: 'CONFIRMED' },
@@ -801,12 +871,52 @@ export class PayoutsService {
               occurredAt: now,
             })),
           });
+          continue;
         }
-        await tx.settlementBatch.update({ where: { id }, data: { status: 'PAID' } });
-        await this.audit.record(tx, 'settlements.execute', id, 'Système');
+        // Rejected by the bank: the order and the request are reversed (the merchant gets its
+        // balance and its debt back), the payout is rejected and the merchant requests again.
+        const executed = await tx.ledgerTransaction.findFirst({
+          where: { reference: payout.reference, type: 'PAYOUT_EXECUTED', reversesId: null },
+          select: { id: true },
+        });
+        if (executed !== null)
+          await this.ledger.reverse(tx, executed.id, `${payout.reference}-BANK`);
+        if (payout.transactionId !== null)
+          await this.ledger.reverse(tx, payout.transactionId, `${payout.reference}-RET`);
+        await tx.payment.updateMany({ where: { payoutId: payout.id }, data: { payoutId: null } });
+        await tx.payoutRequest.update({
+          where: { id: payout.id },
+          data: { status: 'REJECTED', deductedMillimes: 0n },
+        });
+        const reason = result.reason ?? 'Rejet bancaire';
+        await tx.payoutEvent.create({
+          data: { id: uuidv7(), payoutId: payout.id, status: 'REJECTED', reason, occurredAt: now },
+        });
+        rejected.push({ merchantId: payout.merchantId, reference: payout.reference, reason });
+      }
+      await tx.settlementBatch.update({ where: { id }, data: { status: 'PAID', bankReference } });
+      await this.audit.record(tx, 'settlements.execute', id, 'Système');
+    });
+    for (const line of rejected) await this.notifyCancelled(line.merchantId, line.reference, line.reason);
+  }
+
+  /**
+   * The merchant is told that a payout was cancelled (rejected by the bank, or reversed by an
+   * accepted dispute, decision of 2026-11-04) and that he can request it again (simulated e-mail).
+   */
+  async notifyCancelled(merchantId: string, reference: string, reason: string): Promise<void> {
+    const owners = await this.db.system((tx) =>
+      tx.user.findMany({
+        where: { merchantId, subRole: 'OWNER', status: 'ACTIVE' },
+        select: { email: true },
+      }),
+    );
+    for (const owner of owners) {
+      await this.outbox.send({
+        to: owner.email,
+        subject: `Virement ${reference} annulé`,
+        text: `Votre virement ${reference} a été annulé (${reason}). Le montant est de nouveau disponible : vous pouvez le redemander depuis l'écran Virements.\n${this.outbox.webOrigin()}/fr/commercant/virements`,
       });
     }
-    if (due.length > 0) this.logger.log(`settlement batches executed: ${String(due.length)}`);
-    return due.length;
   }
 }

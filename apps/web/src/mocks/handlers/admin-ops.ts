@@ -326,7 +326,39 @@ export const adminOpsHandlers = [
     if (isResponse(account)) return account;
     const batch = db.admin.batches.find((item) => item.id === params.batchId);
     if (batch === undefined) return problem(404, 'NOT_FOUND');
-    return HttpResponse.json<S['SettlementBatchDetail']>({ ...batch, payouts: ensureLines(batch) });
+    return HttpResponse.json<S['SettlementBatchDetail']>({
+      ...batch,
+      releasedAt: batch.status === 'SCHEDULED' ? null : `${batch.settlementDate}T08:00:00.000Z`,
+      sentAt: batch.status === 'PAID' ? `${batch.settlementDate}T09:00:00.000Z` : null,
+      bankReference: batch.status === 'PAID' ? `SIM-${batch.reference.slice(4)}` : null,
+      payouts: ensureLines(batch),
+    });
+  }),
+
+  http.post(apiUrl('/v1/admin/settlements/:batchId/release-requests'), async ({ request, params }) => {
+    const account = await guardWrite(request, 'ADMIN');
+    if (isResponse(account)) return account;
+    const batch = db.admin.batches.find((item) => item.id === params.batchId);
+    if (batch === undefined) return problem(404, 'NOT_FOUND');
+    const body = (await request.json()) as S['DecisionReason'];
+    const pending = db.admin.approvals.some(
+      (approval) => approval.status === 'PENDING' && approval.type === 'BATCH_RELEASE' && approval.subject === batch.reference,
+    );
+    if (batch.status !== 'SCHEDULED' || pending) return problem(409, 'RESOURCE_STATE_CONFLICT');
+    const approval = {
+      id: crypto.randomUUID(),
+      type: 'BATCH_RELEASE' as const,
+      status: 'PENDING' as const,
+      subject: batch.reference,
+      reason: body.reason.trim(),
+      initiatorName: account.displayName,
+      initiatorId: account.id,
+      createdAt: new Date().toISOString(),
+    };
+    db.admin.approvals.unshift(approval);
+    audit('settlements.releaseRequest', batch.reference);
+    const { initiatorId, ...rest } = approval;
+    return HttpResponse.json<S['Approval']>({ ...rest, initiatedByMe: initiatorId === account.id }, { status: 201 });
   }),
 
   http.get(apiUrl('/v1/admin/transactions'), async ({ request }) => {

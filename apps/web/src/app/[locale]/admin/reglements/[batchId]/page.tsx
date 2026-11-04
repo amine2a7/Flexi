@@ -3,24 +3,30 @@
 import type { Schemas } from '@flexipay/api-client';
 import { ArrowLeft, Banknote, Percent, Store, Wallet } from 'lucide-react';
 import { useParams } from 'next/navigation';
+import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
 import { useApiQuery } from '@/lib/api/use-api-query';
 import { formatCalendarDate } from '@/lib/format/date';
 import { Amount } from '@/components/ui/amount';
-import { buttonClasses } from '@/components/ui/button';
+import { Button, buttonClasses } from '@/components/ui/button';
 import { Card, CardTitle, StatCard } from '@/components/ui/card';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { PageHeader } from '@/components/ui/layout-blocks';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { ReasonDialog } from '@/components/ui/reason-dialog';
+import { useToast } from '@/components/ui/toast';
+import { useCan } from '@/lib/session/session-context';
+
 
 /** Settlement batch: totals and the validated payouts that compose it. */
 export default function SettlementBatchPage() {
   const { batchId } = useParams<{ batchId: string }>();
   const t = useTranslations('admin.settlements');
   const tPayouts = useTranslations('admin.payouts');
+  const canRelease = useCan('payouts.decide');
   const locale = useLocale();
   const batch = useApiQuery(
     () => getApi().GET('/v1/admin/settlements/{batchId}', { params: { path: { batchId } } }),
@@ -94,8 +100,22 @@ export default function SettlementBatchPage() {
           <PageHeader
             title={t('detailTitle', { reference: batch.data.reference })}
             description={formatCalendarDate(batch.data.settlementDate, locale)}
-            actions={<StatusBadge status={batch.data.status} />}
+            actions={
+              <div className="flex items-center gap-3">
+                <StatusBadge status={batch.data.status} />
+                {batch.data.status === 'SCHEDULED' && canRelease ? (
+                  <ReleaseButton batchId={batch.data.id} onDone={batch.reload} />
+                ) : null}
+              </div>
+            }
           />
+          <p className="mb-6 text-body text-text-muted">
+            {batch.data.status === 'SCHEDULED'
+              ? t('releaseNeeded')
+              : batch.data.bankReference !== null
+                ? t('bankReturned', { reference: batch.data.bankReference })
+                : t('released')}
+          </p>
           <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
               label={t('merchants')}
@@ -110,6 +130,16 @@ export default function SettlementBatchPage() {
             <StatCard
               label={t('commission')}
               value={<Amount millimes={batch.data.commissionMillimes} size="title" />}
+              icon={<Percent className="size-icon-md" />}
+            />
+            <StatCard
+              label={t('taxes')}
+              value={
+                <Amount
+                  millimes={batch.data.vatMillimes + batch.data.stampDutyMillimes}
+                  size="title"
+                />
+              }
               icon={<Percent className="size-icon-md" />}
             />
             <StatCard
@@ -130,6 +160,47 @@ export default function SettlementBatchPage() {
             />
           </Card>
         </>
+      ) : null}
+    </>
+  );
+}
+
+/** Finance asks the release of the batch; another administrator approves it (four eyes). */
+function ReleaseButton({ batchId, onDone }: { batchId: string; onDone: () => void }) {
+  const t = useTranslations('admin.settlements');
+  const toast = useToast();
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button
+        size="sm"
+        onClick={() => {
+          setOpen(true);
+        }}
+      >
+        {t('release')}
+      </Button>
+      {open ? (
+        <ReasonDialog
+          open
+          onOpenChange={setOpen}
+          title={t('releaseTitle')}
+          summary={[]}
+          effects={[t('releaseDescription')]}
+          confirmLabel={t('release')}
+          confirmVariant="primary"
+          onConfirm={async (reason) => {
+            const { data, error } = await getApi().POST(
+              '/v1/admin/settlements/{batchId}/release-requests',
+              { params: { path: { batchId } }, body: { reason } },
+            );
+            if (data === undefined) return error;
+            toast.notify('success', t('releaseRequested'));
+            setOpen(false);
+            onDone();
+            return undefined;
+          }}
+        />
       ) : null}
     </>
   );

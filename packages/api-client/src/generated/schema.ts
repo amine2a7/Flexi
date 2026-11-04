@@ -2136,6 +2136,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/admin/settlements/{batchId}/release-requests': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Demander la libération d'un lot (double validation Finance, tâche 9)
+     * @description Seul un lot libéré part à la banque à sa date. Une demande à la fois (409).
+     */
+    post: operations['requestBatchRelease'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/admin/settlements/{batchId}': {
     parameters: {
       query?: never;
@@ -3107,6 +3127,13 @@ export interface components {
      * @enum {string}
      */
     SettlementStatus: 'SCHEDULED' | 'PAID';
+    /**
+     * SettlementBatchStatus
+     * @description Lot de règlement (tâche 9) : prévu ; libéré par Finance en double validation ; ordre envoyé
+     *     à la banque ; payé (retour de la banque rapproché).
+     * @enum {string}
+     */
+    SettlementBatchStatus: 'SCHEDULED' | 'RELEASED' | 'SENT' | 'PAID';
     /** Settlement */
     Settlement: {
       id: components['schemas']['Uuid'];
@@ -3767,7 +3794,8 @@ export interface components {
       | 'SETTINGS_CHANGE'
       | 'DISPUTE_REFUND'
       | 'COMMISSION_GRID_CHANGE'
-      | 'IBAN_CHANGE';
+      | 'IBAN_CHANGE'
+      | 'BATCH_RELEASE';
     /** Approval */
     Approval: {
       id: components['schemas']['Uuid'];
@@ -3811,8 +3839,12 @@ export interface components {
       merchantsCount: number;
       grossMillimes: components['schemas']['AmountMillimes'];
       commissionMillimes: components['schemas']['AmountMillimes'];
+      /** @description TVA retenue sur les virements du lot. */
+      vatMillimes: components['schemas']['AmountMillimes'];
+      /** @description Timbres retenus sur les virements du lot. */
+      stampDutyMillimes: components['schemas']['AmountMillimes'];
       netMillimes: components['schemas']['AmountMillimes'];
-      status: components['schemas']['SettlementStatus'];
+      status: components['schemas']['SettlementBatchStatus'];
     };
     /** SettlementBatchDetail */
     SettlementBatchDetail: {
@@ -3823,8 +3855,18 @@ export interface components {
       merchantsCount: number;
       grossMillimes: components['schemas']['AmountMillimes'];
       commissionMillimes: components['schemas']['AmountMillimes'];
+      /** @description TVA retenue sur les virements du lot. */
+      vatMillimes: components['schemas']['AmountMillimes'];
+      /** @description Timbres retenus sur les virements du lot. */
+      stampDutyMillimes: components['schemas']['AmountMillimes'];
       netMillimes: components['schemas']['AmountMillimes'];
-      status: components['schemas']['SettlementStatus'];
+      status: components['schemas']['SettlementBatchStatus'];
+      /** @description Libéré par Finance en double validation (`null` avant). */
+      releasedAt: components['schemas']['Timestamp'] | null;
+      /** @description Ordre transmis à la banque (simulée). */
+      sentAt: components['schemas']['Timestamp'] | null;
+      /** @description Référence de l'ordre à la banque, après son retour. */
+      bankReference: string | null;
       /** @description Virements validés qui composent le lot (sommes égales aux totaux du lot). */
       payouts: components['schemas']['AdminPayoutRequest'][];
     };
@@ -8658,6 +8700,41 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  requestBatchRelease: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        batchId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DecisionReason'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Approval'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   getSettlementBatch: {
     parameters: {
       query?: never;
@@ -8933,6 +9010,9 @@ export const employeeOperationStatusValues: ReadonlyArray<
 export const settlementStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['SettlementStatus']
 > = ['SCHEDULED', 'PAID'];
+export const settlementBatchStatusValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['SettlementBatchStatus']
+> = ['SCHEDULED', 'RELEASED', 'SENT', 'PAID'];
 export const merchantDocumentTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['MerchantDocumentType']
 > = ['COMMISSION_INVOICE', 'STATEMENT', 'CERTIFICATE'];
@@ -8980,6 +9060,7 @@ export const approvalTypeValues: ReadonlyArray<
   'DISPUTE_REFUND',
   'COMMISSION_GRID_CHANGE',
   'IBAN_CHANGE',
+  'BATCH_RELEASE',
 ];
 export const kycStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['KycStatus']

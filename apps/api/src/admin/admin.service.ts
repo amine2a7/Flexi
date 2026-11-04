@@ -661,6 +661,37 @@ export class AdminService {
     return this.accountRecord(owner);
   }
 
+  /**
+   * Release of a settlement batch (task 9): Finance asks, ANOTHER administrator approves; only a
+   * released batch goes to the bank at its date.
+   */
+  async requestBatchRelease(batchId: string, reason: string) {
+    const who = principal();
+    return this.db.user(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM settlement_batches WHERE id = ${batchId}::uuid FOR UPDATE`;
+      const batch = await tx.settlementBatch.findUnique({ where: { id: batchId } });
+      if (batch === null) throw problems.notFound();
+      if (batch.status !== 'SCHEDULED') throw problems.conflict();
+      const pending = await tx.approval.findFirst({
+        where: { status: 'PENDING', type: 'BATCH_RELEASE', payload: { path: ['batchId'], equals: batchId } },
+      });
+      if (pending !== null) throw problems.conflict();
+      const approval = await tx.approval.create({
+        data: {
+          id: uuidv7(),
+          type: 'BATCH_RELEASE',
+          subject: batch.reference,
+          payload: { batchId },
+          reason,
+          initiatorId: who.userId,
+          initiatorName: who.displayName,
+        },
+      });
+      await this.audit.record(tx, 'settlements.releaseRequest', batch.reference);
+      return approvalBody(approval, who.userId, this.pii);
+    });
+  }
+
   /** A RIB change is a request applied when ANOTHER administrator approves it (four eyes). */
   async requestIbanChange(merchantId: string, iban: string, reason: string) {
     const who = principal();
@@ -752,6 +783,14 @@ export class AdminService {
           createdBy: approval.initiatorId,
         });
         await this.recordChange(tx, payload.owner, ['commissionGrid'], approval.reason);
+      } else if (approval.type === 'BATCH_RELEASE') {
+        const { batchId } = approval.payload as { batchId: string };
+        await tx.$queryRaw`SELECT id FROM settlement_batches WHERE id = ${batchId}::uuid FOR UPDATE`;
+        const released = await tx.settlementBatch.updateMany({
+          where: { id: batchId, status: 'SCHEDULED' },
+          data: { status: 'RELEASED', releasedAt: new Date() },
+        });
+        if (released.count !== 1) throw problems.conflict();
       } else if (approval.type === 'IBAN_CHANGE') {
         // The RIB applies to the payouts requested from now on (a request keeps its IBAN).
         const payload = approval.payload as unknown as IbanChangePayload;

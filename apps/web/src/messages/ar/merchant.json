@@ -155,7 +155,9 @@
     "tabRequest": "طلب تحويل",
     "tabTracking": "متابعة الطلبات",
     "destination": "الوجهة",
-    "destinationHint": "الحساب البنكي المسجل (مخفي). لتغييره، تواصل مع FlexiPay."
+    "destinationHint": "الحساب البنكي المسجل (مخفي). لتغييره، تواصل مع FlexiPay.",
+    "requestAgain": "إعادة الطلب",
+    "requestAgainFor": "إعادة طلب التحويل {reference}"
   },
   "settlements": {
     "title": "التسويات والوثائق",

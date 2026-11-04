@@ -141,7 +141,8 @@
       "SETTINGS_CHANGE": "Settings change",
       "DISPUTE_REFUND": "Dispute refund",
       "COMMISSION_GRID_CHANGE": "Grid change",
-      "IBAN_CHANGE": "Bank account change"
+      "IBAN_CHANGE": "Bank account change",
+      "BATCH_RELEASE": "Batch release"
     },
     "approveTitle": "Approve this request?",
     "approveMessage": "The change will apply immediately and be logged.",
@@ -172,7 +173,15 @@
     "payoutsTitle": "Payouts of the batch",
     "merchant": "Merchant",
     "iban": "IBAN",
-    "action": "Action"
+    "action": "Action",
+    "release": "Ask for the release",
+    "releaseTitle": "Release the batch",
+    "releaseDescription": "Another administrator must approve the release; the batch then goes to the bank on its date.",
+    "releaseRequested": "Request sent. Another administrator must approve it.",
+    "releaseNeeded": "Batch to release by Finance (four eyes) before it goes to the bank.",
+    "released": "Batch released: the order goes to the bank on its date.",
+    "bankReturned": "Bank return reconciled (order {reference}).",
+    "taxes": "VAT and stamp duties"
   },
   "audit": {
     "title": "Audit log",

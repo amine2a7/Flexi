@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { AuditService } from '../common/audit.service.js';
 import { uuidv7 } from '../common/crypto.js';
 import { DbService, type Tx } from '../common/db.service.js';
+import { OutboxService } from '../common/outbox.service.js';
 import { commissionOf, toMillimes } from '../common/money.js';
 import { Paginator, type Page } from '../common/pagination.js';
 import { problems } from '../common/problem.js';
@@ -60,6 +61,7 @@ export class DisputesService {
     @Inject(Paginator) private readonly paginator: Paginator,
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(LedgerService) private readonly ledger: LedgerService,
+    @Inject(OutboxService) private readonly outbox: OutboxService,
   ) {}
 
   async list(query: Record<string, unknown>): Promise<Page<unknown>> {
@@ -414,6 +416,19 @@ export class DisputesService {
         actorId,
       },
     });
+    // The merchant is told and requests the payout again (decision of 2026-11-04). Simulated
+    // e-mail (a file of var/outbox), never a provider inside a transaction.
+    const owners = await tx.user.findMany({
+      where: { merchantId: payout.merchantId, subRole: 'OWNER', status: 'ACTIVE' },
+      select: { email: true },
+    });
+    for (const owner of owners)
+      await this.outbox.send({
+        to: owner.email,
+        subject: `Virement ${payout.reference} annulé`,
+        text: `Votre virement ${payout.reference} a été annulé à la suite du litige ${dispute.reference} accepté. Le reste du montant est de nouveau disponible : vous pouvez le redemander depuis l'écran Virements.
+${this.outbox.webOrigin()}/fr/commercant/virements`,
+      });
     const others = await tx.dispute.findMany({
       where: { heldPayoutId: payout.id, status: { in: [...ACTIVE] }, id: { not: dispute.id } },
     });

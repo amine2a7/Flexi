@@ -130,6 +130,8 @@ enum PayoutStatus {
 
 enum SettlementStatus {
   SCHEDULED
+  RELEASED
+  SENT
   PAID
 }
 
@@ -163,6 +165,7 @@ enum ApprovalType {
   COMMISSION_GRID_CHANGE
   DISPUTE_REFUND
   IBAN_CHANGE
+  BATCH_RELEASE
 }
 
 enum FraudAlertKind {
@@ -820,6 +823,10 @@ model SettlementBatch {
   reference      String           @unique @db.VarChar(32)
   settlementDate DateTime         @map("settlement_date") @db.Date
   status         SettlementStatus @default(SCHEDULED)
+  /// Finance released it (four eyes), the bank received its order, the reference of that order.
+  releasedAt     DateTime?        @map("released_at") @db.Timestamptz(3)
+  sentAt         DateTime?        @map("sent_at") @db.Timestamptz(3)
+  bankReference  String?          @map("bank_reference") @db.VarChar(40)
   createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
 
   payouts PayoutRequest[]

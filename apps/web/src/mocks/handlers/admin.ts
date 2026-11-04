@@ -385,6 +385,10 @@ export const adminHandlers = [
         db.merchant.rateBps = defaultRateOf(grid) ?? db.merchant.rateBps;
       }
     }
+    if (approval.type === 'BATCH_RELEASE') {
+      const batch = db.admin.batches.find((item) => item.reference === approval.subject);
+      if (batch?.status === 'SCHEDULED') batch.status = 'RELEASED';
+    }
     if (approval.type === 'IBAN_CHANGE' && approval.owner !== undefined && 'merchantId' in approval.owner) {
       const owner = approval.owner;
       if (owner.merchantId === MERCHANT_TENANT.id && approval.maskedIban !== undefined)

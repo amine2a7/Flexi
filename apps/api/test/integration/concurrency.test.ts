@@ -200,7 +200,7 @@ describe('concurrent decisions on one financial object', () => {
     );
     const owner = await ownerClient();
     await owner.query(
-      `UPDATE settlement_batches SET settlement_date = current_date WHERE id = $1`,
+      `UPDATE settlement_batches SET settlement_date = current_date, status = 'RELEASED' WHERE id = $1`,
       [approved.body.batchId],
     );
     await owner.end();

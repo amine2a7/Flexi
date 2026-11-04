@@ -345,7 +345,7 @@ describe('payout and settlement', () => {
     // The batch date comes: the settlement job executes it.
     const owner = await ownerClient();
     await owner.query(
-      `UPDATE settlement_batches SET settlement_date = current_date WHERE id = $1`,
+      `UPDATE settlement_batches SET settlement_date = current_date, status = 'RELEASED' WHERE id = $1`,
       [approved.body.batchId],
     );
     await owner.end();
@@ -555,6 +555,98 @@ const freshApp = async () => {
   app = await createApp(env, false);
   base = await listen(app);
 };
+
+describe('settlement batches: Finance release in four eyes, simulated bank (task 9)', () => {
+  beforeAll(freshApp);
+
+  /** A payout of 30 TND approved into its batch; the IBAN of the shop decides the bank return. */
+  async function approvedPayout(iban?: string) {
+    const { client: employee } = await fundedEmployee(30_000n);
+    const merchant = await createMerchant();
+    if (iban !== undefined)
+      await db.system((tx) => tx.merchant.update({ where: { id: merchant.id }, data: { iban: sealed(iban) } }));
+    const shop = await merchantClient(merchant.id);
+    await employee.call('POST', '/v1/employee/payments', {
+      body: { merchantCode: merchant.paymentCode, creditType: 'RESTAURATION', amountMillimes: 30_000, pin: PIN },
+      headers: key(),
+    });
+    const quote = await shop.call('POST', '/v1/merchant/payout-quotes', {
+      body: { creditType: 'RESTAURATION', grossMillimes: 30_000 },
+    });
+    const requested = await shop.call('POST', '/v1/merchant/payouts', {
+      body: { quoteId: quote.body.quoteId },
+      headers: key(),
+    });
+    const finance = await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Finance A.', 'FINANCE'));
+    const approved = await finance.call('POST', `/v1/admin/payout-requests/${String(requested.body.id)}/approve`, {
+      headers: key(),
+    });
+    return { merchant, shop, finance, payoutId: String(requested.body.id), batchId: String(approved.body.batchId) };
+  }
+
+  const dueToday = async (batchId: string) => {
+    const owner = await ownerClient();
+    await owner.query('UPDATE settlement_batches SET settlement_date = current_date WHERE id = $1', [batchId]);
+    await owner.end();
+  };
+
+  it('a batch leaves only once Finance released it in four eyes', async () => {
+    const { finance, batchId, payoutId, shop } = await approvedPayout();
+    await dueToday(batchId);
+    // Not released: the job leaves it.
+    await app.get(PayoutsService).executeDueBatches();
+    expect((await shop.call('GET', `/v1/merchant/payouts/${payoutId}`)).body.status).toBe('CHECKED');
+    const requested = await finance.call('POST', `/v1/admin/settlements/${batchId}/release-requests`, {
+      body: { reason: 'Lot contrôlé' },
+    });
+    expect(requested.status).toBe(201);
+    expect(requested.body).toMatchObject({ type: 'BATCH_RELEASE', status: 'PENDING' });
+    const id = String(requested.body.id);
+    expect((await finance.call('POST', `/v1/admin/approvals/${id}/approve`)).status).toBe(403);
+    const second = await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Finance B.', 'FINANCE'));
+    expect((await second.call('POST', `/v1/admin/approvals/${id}/approve`)).status).toBe(200);
+    expect((await finance.call('GET', `/v1/admin/settlements/${batchId}`)).body.status).toBe('RELEASED');
+    await app.get(PayoutsService).executeDueBatches();
+    const batch = await finance.call('GET', `/v1/admin/settlements/${batchId}`);
+    expect(batch.body).toMatchObject({ status: 'PAID' });
+    expect(String(batch.body.bankReference)).toMatch(/^SIM-/);
+    expect((await shop.call('GET', `/v1/merchant/payouts/${payoutId}`)).body.status).toBe('EXECUTED');
+    const books = await db.system((tx) => ledger.reconcile(tx));
+    expect(books.ok).toBe(true);
+  });
+
+  it('a transfer rejected by the bank is reversed: the merchant gets its balance back and is told', async () => {
+    const { merchant, shop, batchId, payoutId } = await approvedPayout('TN5912345678901234560000');
+    const owner = await ownerClient();
+    await owner.query(`UPDATE settlement_batches SET settlement_date = current_date, status = 'RELEASED' WHERE id = $1`, [batchId]);
+    await owner.end();
+    await app.get(PayoutsService).executeDueBatches();
+    const detail = await shop.call('GET', `/v1/merchant/payouts/${payoutId}`);
+    expect(detail.body.status).toBe('REJECTED');
+    expect((detail.body.history as { status: string; reason?: string }[]).at(-1)).toMatchObject({
+      status: 'REJECTED',
+      reason: 'Compte clôturé',
+    });
+    expect(
+      await db.system((tx) => ledger.balance(tx, accounts.merchantWallet(merchant.id, 'RESTAURATION'))),
+    ).toBe(30_000n);
+    expect((await shop.call('GET', '/v1/merchant/receivables')).body.totalMillimes).toBe(30_000);
+    const books = await db.system((tx) => ledger.reconcile(tx));
+    expect(books.ok).toBe(true);
+  });
+
+  it('a released batch cannot be released twice', async () => {
+    const { finance, batchId } = await approvedPayout();
+    const first = await finance.call('POST', `/v1/admin/settlements/${batchId}/release-requests`, {
+      body: { reason: 'Lot contrôlé' },
+    });
+    expect(first.status).toBe(201);
+    const again = await finance.call('POST', `/v1/admin/settlements/${batchId}/release-requests`, {
+      body: { reason: 'Doublon' },
+    });
+    expect(again.status).toBe(409);
+  });
+});
 
 describe('expired credits (destination set by the administrator, decision of 2026-10-14)', () => {
   beforeAll(freshApp);

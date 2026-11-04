@@ -532,14 +532,19 @@ function buildAdmin(now: number, merchantRate: number) {
   const batches: S['SettlementBatch'][] = Array.from({ length: 42 }, (_, index) => {
     const gross = amount(random, 18_000_000, 96_000_000, 1_000);
     const commission = commissionOf(gross, 190);
+    const merchantsCount = random.int(28, 46);
+    const vat = commissionOf(commission, 1_900);
+    const stamp = merchantsCount * 1_000;
     return {
       id: random.uuid(),
       reference: `LOT-${calendarDate(now + (2 - index) * DAY).replaceAll('-', '')}`,
       settlementDate: calendarDate(now + (2 - index) * DAY),
-      merchantsCount: random.int(28, 46),
+      merchantsCount,
       grossMillimes: gross,
       commissionMillimes: commission,
-      netMillimes: gross - commission,
+      vatMillimes: vat,
+      stampDutyMillimes: stamp,
+      netMillimes: gross - commission - vat - stamp,
       status: index < 2 ? 'SCHEDULED' : 'PAID',
     };
   });

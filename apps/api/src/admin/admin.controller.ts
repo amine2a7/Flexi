@@ -233,6 +233,14 @@ export class AdminController {
     );
   }
 
+  @Can('payouts.decide')
+  @Post('settlements/:batchId/release-requests')
+  @HttpCode(201)
+  batchReleaseRequest(@Param('batchId') batchId: string, @Body() body: unknown) {
+    const input = parse(z.strictObject({ reason }), body);
+    return this.admin.requestBatchRelease(pathId('batchId', batchId), input.reason);
+  }
+
   @Can('approvals.read')
   @Get('approvals')
   approvals(@Query() query: Record<string, unknown>) {
