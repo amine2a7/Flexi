@@ -56,10 +56,7 @@
       "email": "E-mail du responsable",
       "city": "Ville",
       "required": "Champ obligatoire.",
-      "invalidFormat": "Format invalide.",
-      "defaultRate": "Taux de commission par défaut (%)",
-      "defaultRateHint": "Ligne par défaut de la grille. Exemple : 2 pour 2 %.",
-      "defaultRateInvalid": "Saisissez un taux entre 0 et 100 %, 2 décimales au plus."
+      "invalidFormat": "Format invalide."
     },
     "submit": "Créer le commerçant",
     "createdToast": "{name} a été créé (en attente KYC). Invitation envoyée au responsable.",
@@ -94,10 +91,7 @@
       "email": "E-mail du responsable",
       "city": "Ville",
       "required": "Champ obligatoire.",
-      "invalidFormat": "Format invalide.",
-      "defaultRate": "Taux de commission par défaut (%)",
-      "defaultRateHint": "Ligne par défaut de la grille. Exemple : 2 pour 2 %.",
-      "defaultRateInvalid": "Saisissez un taux entre 0 et 100 %, 2 décimales au plus."
+      "invalidFormat": "Format invalide."
     },
     "submit": "Créer l'entreprise",
     "createdToast": "{name} a été créée (en attente KYC). Invitation envoyée au responsable.",
@@ -510,5 +504,38 @@
     "notesEmpty": "Aucune note pour le moment.",
     "noteLabel": "Ajouter une note",
     "noteAdd": "Ajouter"
+  },
+  "commissionWindow": {
+    "stepInfo": "Informations",
+    "stepCommission": "Commission",
+    "stepOf": "Étape {step} sur 2 · {name}",
+    "continue": "Continuer",
+    "back": "Retour",
+    "defaultRate": "Taux par défaut (%)",
+    "defaultRateHint": "Appliqué quand aucune tranche ne correspond. Exemple : 2 pour 2 %.",
+    "tranches": "Tranches",
+    "tranche": "Tranche {number}",
+    "rate": "Taux (%)",
+    "from": "De (TND)",
+    "to": "À (TND)",
+    "toHint": "Vide : sans limite. Bornes incluses.",
+    "addTranche": "Ajouter une tranche",
+    "removeTranche": "Supprimer la tranche {number}",
+    "preview": "Aperçu du calcul",
+    "previewAmount": "Montant d'exemple (TND)",
+    "previewNote": "Aperçu indicatif : le montant officiel est calculé par FlexiPay.",
+    "lineAmount": "Montant",
+    "lineCommission": "Commission",
+    "lineVat": "TVA sur la commission",
+    "lineStamp": "Timbre fiscal",
+    "lineTotal": "Total à payer",
+    "lineNet": "Net viré",
+    "errors": {
+      "overlap": "Cette tranche chevauche une autre tranche (les bornes sont incluses).",
+      "bounds": "Le montant « De » doit être inférieur ou égal au montant « À ».",
+      "noBound": "Indiquez au moins « De » ou « À » : la ligne sans bornes est le taux par défaut.",
+      "rate": "Saisissez un taux entre 0 et 100 %, 2 décimales au plus.",
+      "amount": "Saisissez un montant en TND, 3 décimales au plus."
+    }
   }
 }

@@ -56,10 +56,7 @@
       "email": "Manager e-mail",
       "city": "City",
       "required": "Required field.",
-      "invalidFormat": "Invalid format.",
-      "defaultRate": "Default commission rate (%)",
-      "defaultRateHint": "Default line of the grid. Example: 2 for 2 %.",
-      "defaultRateInvalid": "Enter a rate between 0 and 100 %, 2 decimals at most."
+      "invalidFormat": "Invalid format."
     },
     "submit": "Create the merchant",
     "createdToast": "{name} was created (KYC pending). Invitation sent to the owner.",
@@ -94,10 +91,7 @@
       "email": "Manager e-mail",
       "city": "City",
       "required": "Required field.",
-      "invalidFormat": "Invalid format.",
-      "defaultRate": "Default commission rate (%)",
-      "defaultRateHint": "Default line of the grid. Example: 2 for 2 %.",
-      "defaultRateInvalid": "Enter a rate between 0 and 100 %, 2 decimals at most."
+      "invalidFormat": "Invalid format."
     },
     "submit": "Create the company",
     "createdToast": "{name} was created (KYC pending). Invitation sent to the owner.",
@@ -510,5 +504,38 @@
     "notesEmpty": "No note yet.",
     "noteLabel": "Add a note",
     "noteAdd": "Add"
+  },
+  "commissionWindow": {
+    "stepInfo": "Information",
+    "stepCommission": "Commission",
+    "stepOf": "Step {step} of 2 · {name}",
+    "continue": "Continue",
+    "back": "Back",
+    "defaultRate": "Default rate (%)",
+    "defaultRateHint": "Applied when no tranche matches. Example: 2 for 2 %.",
+    "tranches": "Tranches",
+    "tranche": "Tranche {number}",
+    "rate": "Rate (%)",
+    "from": "From (TND)",
+    "to": "To (TND)",
+    "toHint": "Empty: no limit. Bounds included.",
+    "addTranche": "Add a tranche",
+    "removeTranche": "Remove tranche {number}",
+    "preview": "Computation preview",
+    "previewAmount": "Example amount (TND)",
+    "previewNote": "Indicative preview: the official amount is computed by FlexiPay.",
+    "lineAmount": "Amount",
+    "lineCommission": "Commission",
+    "lineVat": "VAT on the commission",
+    "lineStamp": "Stamp duty",
+    "lineTotal": "Total to pay",
+    "lineNet": "Net transferred",
+    "errors": {
+      "overlap": "This tranche overlaps another one (bounds are included).",
+      "bounds": "The « From » amount must be lower than or equal to the « To » amount.",
+      "noBound": "Enter at least « From » or « To »: the line without bounds is the default rate.",
+      "rate": "Enter a rate between 0 and 100 %, 2 decimals at most.",
+      "amount": "Enter an amount in TND, 3 decimals at most."
+    }
   }
 }
