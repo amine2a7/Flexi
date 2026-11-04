@@ -1288,7 +1288,11 @@ export interface paths {
     delete?: never;
     options?: never;
     head?: never;
-    patch?: never;
+    /**
+     * Modifier les informations du commerçant à tout moment (décision du 2026-11-03)
+     * @description La grille et le RIB passent par une demande en double validation.
+     */
+    patch: operations['updateMerchant'];
     trace?: never;
   };
   '/v1/admin/merchants/{merchantId}/credit-types': {
@@ -1332,6 +1336,74 @@ export interface paths {
     options?: never;
     head?: never;
     patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/merchants/{merchantId}/record': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Fiche du commerçant (contact, grille, historique, demandes en attente) */
+    get: operations['getMerchantRecord'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/merchants/{merchantId}/iban-change-requests': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Demander un changement de RIB (double validation ; vaut pour les virements futurs) */
+    post: operations['requestIbanChange'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/companies/{companyId}/record': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Fiche de l'entreprise (contact, grille, historique, demandes en attente) */
+    get: operations['getCompanyRecord'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/companies/{companyId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Modifier les informations de l'entreprise à tout moment (décision du 2026-11-03) */
+    patch: operations['updateCompany'];
     trace?: never;
   };
   '/v1/admin/commission-grids/change-requests': {
@@ -3112,6 +3184,71 @@ export interface components {
       effectiveFrom: components['schemas']['Timestamp'];
     };
     /**
+     * AccountRecord
+     * @description Fiche d'une entreprise ou d'un commerçant (décision du 2026-11-03).
+     */
+    AccountRecord: {
+      id: components['schemas']['Uuid'];
+      /** @enum {string} */
+      kind: 'COMPANY' | 'MERCHANT';
+      name: string;
+      city: string;
+      status: components['schemas']['AccountStatus'];
+      email: string;
+      /** @description Téléphone, seulement pour les administrateurs qui peuvent le modifier (sinon `null`). */
+      phone: components['schemas']['PhoneNumber'] | null;
+      category?: components['schemas']['MerchantCategory'];
+      address?: string;
+      /** @description RIB masqué du commerçant (4 derniers chiffres), `null` sans RIB. */
+      maskedIban?: string | null;
+      /** @description Grille en vigueur (`null` sans `commissions.read`). */
+      commissionGrid: components['schemas']['CommissionGrid'] | null;
+      /** @description Versions de la grille, de la plus récente à la plus ancienne (`commissions.read`). */
+      gridVersions: components['schemas']['CommissionGrid'][];
+      /** @description Changements de la fiche (noms des champs seulement, jamais leurs valeurs). */
+      history: components['schemas']['AccountChange'][];
+      /** @description Demandes en attente de seconde validation (grille, RIB). */
+      requests: components['schemas']['Approval'][];
+      createdAt: components['schemas']['Timestamp'];
+    };
+    /** AccountChange */
+    AccountChange: {
+      occurredAt: components['schemas']['Timestamp'];
+      actorName: string;
+      fields: (
+        'name' | 'city' | 'address' | 'category' | 'phone' | 'email' | 'iban' | 'commissionGrid'
+      )[];
+      reason?: string;
+    };
+    /** MerchantUpdate */
+    MerchantUpdate: {
+      name?: string;
+      category?: components['schemas']['MerchantCategory'];
+      city?: string;
+      address?: string;
+      phone?: components['schemas']['PhoneNumber'];
+      /** Format: email */
+      email?: string;
+      /** @description Motif (historique), facultatif. */
+      reason?: string;
+    };
+    /** CompanyUpdate */
+    CompanyUpdate: {
+      name?: string;
+      city?: string;
+      phone?: components['schemas']['PhoneNumber'];
+      /** Format: email */
+      email?: string;
+      /** @description Motif (historique), facultatif. */
+      reason?: string;
+    };
+    /** IbanChangeRequest */
+    IbanChangeRequest: {
+      /** @description TN + 22 chiffres. Jamais renvoyé en clair (`maskedIban`). */
+      iban: string;
+      reason: string;
+    };
+    /**
      * CommissionGridChangeRequest
      * @description Exactement une entité, `companyId` ou `merchantId`.
      */
@@ -3626,7 +3763,11 @@ export interface components {
      * @enum {string}
      */
     ApprovalType:
-      'COMMISSION_RATE_CHANGE' | 'SETTINGS_CHANGE' | 'DISPUTE_REFUND' | 'COMMISSION_GRID_CHANGE';
+      | 'COMMISSION_RATE_CHANGE'
+      | 'SETTINGS_CHANGE'
+      | 'DISPUTE_REFUND'
+      | 'COMMISSION_GRID_CHANGE'
+      | 'IBAN_CHANGE';
     /** Approval */
     Approval: {
       id: components['schemas']['Uuid'];
@@ -3636,6 +3777,8 @@ export interface components {
       subject: string;
       oldRateBps?: components['schemas']['RateBps'];
       newRateBps?: components['schemas']['RateBps'];
+      /** @description Nouveau RIB masqué (IBAN_CHANGE). */
+      maskedIban?: string;
       /** @description Grille en vigueur (`null` sans grille) et grille proposée (COMMISSION_GRID_CHANGE). */
       commissionGrid?: {
         previous: components['schemas']['CommissionTierList'] | null;
@@ -6856,6 +6999,41 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  updateMerchant: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        merchantId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MerchantUpdate'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AccountRecord'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   setMerchantCreditTypes: {
     parameters: {
       query?: never;
@@ -6962,6 +7140,138 @@ export interface operations {
       400: components['responses']['BadRequest'];
       401: components['responses']['Unauthorized'];
       403: components['responses']['Forbidden'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getMerchantRecord: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        merchantId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AccountRecord'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  requestIbanChange: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        merchantId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['IbanChangeRequest'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Approval'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getCompanyRecord: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        companyId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AccountRecord'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  updateCompany: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        companyId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CompanyUpdate'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AccountRecord'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
       409: components['responses']['Conflict'];
       429: components['responses']['TooManyRequests'];
       500: components['responses']['InternalError'];
@@ -8625,6 +8935,12 @@ export const settlementStatusValues: ReadonlyArray<
 export const merchantDocumentTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['MerchantDocumentType']
 > = ['COMMISSION_INVOICE', 'STATEMENT', 'CERTIFICATE'];
+export const accountRecordKindValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['AccountRecord']['kind']
+> = ['COMPANY', 'MERCHANT'];
+export const accountChangeFieldsValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['AccountChange']['fields']
+> = ['name', 'city', 'address', 'category', 'phone', 'email', 'iban', 'commissionGrid'];
 export const employeeStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['EmployeeStatus']
 > = ['INVITED', 'ACTIVE', 'SUSPENDED', 'DEACTIVATED'];
@@ -8657,7 +8973,13 @@ export const invoiceStatusValues: ReadonlyArray<
 > = ['PAID', 'UNPAID'];
 export const approvalTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['ApprovalType']
-> = ['COMMISSION_RATE_CHANGE', 'SETTINGS_CHANGE', 'DISPUTE_REFUND', 'COMMISSION_GRID_CHANGE'];
+> = [
+  'COMMISSION_RATE_CHANGE',
+  'SETTINGS_CHANGE',
+  'DISPUTE_REFUND',
+  'COMMISSION_GRID_CHANGE',
+  'IBAN_CHANGE',
+];
 export const kycStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['KycStatus']
 > = ['PENDING', 'APPROVED', 'REJECTED'];

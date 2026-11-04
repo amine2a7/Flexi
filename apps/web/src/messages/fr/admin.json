@@ -140,7 +140,8 @@
       "COMMISSION_RATE_CHANGE": "Changement de taux",
       "SETTINGS_CHANGE": "Modification du paramétrage",
       "DISPUTE_REFUND": "Remboursement d'un litige",
-      "COMMISSION_GRID_CHANGE": "Changement de grille"
+      "COMMISSION_GRID_CHANGE": "Changement de grille",
+      "IBAN_CHANGE": "Changement de RIB"
     },
     "approveTitle": "Valider cette demande ?",
     "approveMessage": "La modification s'appliquera immédiatement et sera journalisée.",
@@ -536,6 +537,49 @@
       "noBound": "Indiquez au moins « De » ou « À » : la ligne sans bornes est le taux par défaut.",
       "rate": "Saisissez un taux entre 0 et 100 %, 2 décimales au plus.",
       "amount": "Saisissez un montant en TND, 3 décimales au plus."
+    }
+  },
+  "record": {
+    "contact": "Informations",
+    "edit": "Modifier",
+    "commission": "Commission",
+    "changeGrid": "Changer la grille",
+    "iban": "RIB",
+    "changeIban": "Changer le RIB",
+    "noIban": "Aucun RIB",
+    "futureOnly": "Un changement passe en double validation et ne vaut que pour les commandes et virements futurs.",
+    "pending": "En attente de la seconde validation : {list}.",
+    "history": "Historique des changements",
+    "noHistory": "Aucun changement depuis la création.",
+    "changedBy": "{date} · {name}",
+    "created": "Créé le",
+    "backCompanies": "Retour aux entreprises",
+    "editTitle": "Modifier {name}",
+    "editDescription": "Tous les changements sont tracés dans l’historique et le journal d’audit.",
+    "duplicate": "Un compte porte déjà ce nom.",
+    "reason": "Motif",
+    "reasonOptional": "Facultatif, visible dans l’historique.",
+    "reasonRequired": "Indiquez le motif : il est visible par l’administrateur qui validera.",
+    "save": "Enregistrer",
+    "saved": "Fiche mise à jour.",
+    "gridTitle": "Changer la grille de {name}",
+    "fourEyes": "La demande doit être validée par un autre administrateur.",
+    "sendForApproval": "Envoyer pour validation",
+    "requested": "Demande envoyée. Un autre administrateur doit la valider.",
+    "alreadyPending": "Une demande est déjà en attente pour ce compte.",
+    "ibanTitle": "Changer le RIB",
+    "ibanLabel": "Nouveau RIB (IBAN)",
+    "ibanHint": "TN suivi de 22 chiffres.",
+    "ibanInvalid": "Saisissez un IBAN tunisien : TN suivi de 22 chiffres.",
+    "fields": {
+      "name": "Nom",
+      "city": "Ville",
+      "address": "Adresse",
+      "category": "Catégorie",
+      "phone": "Téléphone",
+      "email": "E-mail",
+      "iban": "RIB",
+      "commissionGrid": "Grille de commission"
     }
   }
 }

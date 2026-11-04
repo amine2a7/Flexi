@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: FlexiPay API
-  version: 0.10.0
+  version: 0.11.0
   summary: Conventions transverses, authentification web et profil (WB2, espace Commun).
   description: |
     # Contrat d'API FlexiPay (version 0.2.2)
@@ -3037,6 +3037,49 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
   /v1/admin/merchants/{merchantId}:
+    patch:
+      tags: [admin]
+      operationId: updateMerchant
+      summary: Modifier les informations du commerçant à tout moment (décision du 2026-11-03)
+      description: La grille et le RIB passent par une demande en double validation.
+      parameters:
+        - name: merchantId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MerchantUpdate'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
     get:
       tags: [admin]
       operationId: getMerchantAccount
@@ -3192,6 +3235,166 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/merchants/{merchantId}/record:
+    get:
+      tags: [admin]
+      operationId: getMerchantRecord
+      summary: Fiche du commerçant (contact, grille, historique, demandes en attente)
+      parameters:
+        - name: merchantId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/merchants/{merchantId}/iban-change-requests:
+    post:
+      tags: [admin]
+      operationId: requestIbanChange
+      summary: Demander un changement de RIB (double validation ; vaut pour les virements futurs)
+      parameters:
+        - name: merchantId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IbanChangeRequest'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Approval'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/companies/{companyId}/record:
+    get:
+      tags: [admin]
+      operationId: getCompanyRecord
+      summary: Fiche de l'entreprise (contact, grille, historique, demandes en attente)
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/companies/{companyId}:
+    patch:
+      tags: [admin]
+      operationId: updateCompany
+      summary: Modifier les informations de l'entreprise à tout moment (décision du 2026-11-03)
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyUpdate'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
         '429':
@@ -6770,6 +6973,158 @@ components:
           $ref: '#/components/schemas/CommissionTierList'
         effectiveFrom:
           $ref: '#/components/schemas/Timestamp'
+    AccountRecord:
+      title: AccountRecord
+      description: Fiche d'une entreprise ou d'un commerçant (décision du 2026-11-03).
+      type: object
+      additionalProperties: false
+      required: [id, kind, name, city, status, email, phone, commissionGrid, gridVersions, history, requests, createdAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        kind:
+          type: string
+          enum: [COMPANY, MERCHANT]
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        city:
+          type: string
+          maxLength: 80
+        status:
+          $ref: '#/components/schemas/AccountStatus'
+        email:
+          type: string
+          maxLength: 254
+        phone:
+          description: Téléphone, seulement pour les administrateurs qui peuvent le modifier (sinon `null`).
+          oneOf:
+            - $ref: '#/components/schemas/PhoneNumber'
+            - type: 'null'
+        category:
+          $ref: '#/components/schemas/MerchantCategory'
+        address:
+          type: string
+          maxLength: 200
+        maskedIban:
+          description: RIB masqué du commerçant (4 derniers chiffres), `null` sans RIB.
+          oneOf:
+            - type: string
+              maxLength: 40
+            - type: 'null'
+        commissionGrid:
+          description: Grille en vigueur (`null` sans `commissions.read`).
+          oneOf:
+            - $ref: '#/components/schemas/CommissionGrid'
+            - type: 'null'
+        gridVersions:
+          description: Versions de la grille, de la plus récente à la plus ancienne (`commissions.read`).
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/CommissionGrid'
+        history:
+          description: Changements de la fiche (noms des champs seulement, jamais leurs valeurs).
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/AccountChange'
+        requests:
+          description: Demandes en attente de seconde validation (grille, RIB).
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/Approval'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+    AccountChange:
+      title: AccountChange
+      type: object
+      additionalProperties: false
+      required: [occurredAt, actorName, fields]
+      properties:
+        occurredAt:
+          $ref: '#/components/schemas/Timestamp'
+        actorName:
+          type: string
+          maxLength: 120
+        fields:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            enum: [name, city, address, category, phone, email, iban, commissionGrid]
+        reason:
+          type: string
+          maxLength: 500
+    MerchantUpdate:
+      title: MerchantUpdate
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        category:
+          $ref: '#/components/schemas/MerchantCategory'
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+        address:
+          type: string
+          maxLength: 200
+        phone:
+          $ref: '#/components/schemas/PhoneNumber'
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        reason:
+          description: Motif (historique), facultatif.
+          type: string
+          minLength: 1
+          maxLength: 500
+    CompanyUpdate:
+      title: CompanyUpdate
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+        phone:
+          $ref: '#/components/schemas/PhoneNumber'
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        reason:
+          description: Motif (historique), facultatif.
+          type: string
+          minLength: 1
+          maxLength: 500
+    IbanChangeRequest:
+      title: IbanChangeRequest
+      type: object
+      additionalProperties: false
+      required: [iban, reason]
+      properties:
+        iban:
+          description: TN + 22 chiffres. Jamais renvoyé en clair (`maskedIban`).
+          type: string
+          pattern: '^TN[0-9]{22}$'
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
     CommissionGridChangeRequest:
       title: CommissionGridChangeRequest
       description: Exactement une entité, `companyId` ou `merchantId`.
@@ -7817,7 +8172,7 @@ components:
       title: ApprovalType
       description: Opération sensible soumise à double validation (règle 12).
       type: string
-      enum: [COMMISSION_RATE_CHANGE, SETTINGS_CHANGE, DISPUTE_REFUND, COMMISSION_GRID_CHANGE]
+      enum: [COMMISSION_RATE_CHANGE, SETTINGS_CHANGE, DISPUTE_REFUND, COMMISSION_GRID_CHANGE, IBAN_CHANGE]
     Approval:
       title: Approval
       type: object
@@ -7839,6 +8194,10 @@ components:
           $ref: '#/components/schemas/RateBps'
         newRateBps:
           $ref: '#/components/schemas/RateBps'
+        maskedIban:
+          description: Nouveau RIB masqué (IBAN_CHANGE).
+          type: string
+          maxLength: 40
         commissionGrid:
           description: Grille en vigueur (`null` sans grille) et grille proposée (COMMISSION_GRID_CHANGE).
           type: object

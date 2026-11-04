@@ -31,6 +31,39 @@ function gridOf(tiers: S['CommissionTier'][] | undefined): S['CommissionGrid'] |
   return tiers === undefined ? null : { tiers, effectiveFrom: new Date().toISOString() };
 }
 
+/** Record of the MSW db (no history nor personal data kept in the mocks). */
+function recordOf(
+  account: S['MerchantAccount'] | S['CompanyAccount'],
+  accountId: string,
+): S['AccountRecord'] {
+  const merchant = 'category' in account ? account : undefined;
+  const requests = db.admin.approvals
+    .filter(
+      (approval) =>
+        approval.status === 'PENDING' &&
+        approval.owner !== undefined &&
+        Object.values(approval.owner).includes(account.id),
+    )
+    .map((approval) => publicApproval(approval, accountId));
+  return {
+    id: account.id,
+    kind: merchant === undefined ? 'COMPANY' : 'MERCHANT',
+    name: account.name,
+    city: account.city,
+    status: account.status,
+    email: `contact@${account.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.test`,
+    phone: '+21671000000',
+    ...(merchant === undefined
+      ? {}
+      : { category: merchant.category, address: '', maskedIban: '•••• 4821' }),
+    commissionGrid: account.commissionGrid,
+    gridVersions: account.commissionGrid === null ? [] : [account.commissionGrid],
+    history: [],
+    requests,
+    createdAt: account.createdAt,
+  };
+}
+
 function requiredFields(body: Record<string, unknown>, fields: readonly string[]) {
   return fields
     .filter((field) => typeof body[field] !== 'string' || body[field].trim() === '')
@@ -217,6 +250,72 @@ export const adminHandlers = [
     return HttpResponse.json<S['CompanyAccount']>(company, { status: 201 });
   }),
 
+  // Records (decision of 2026-11-03): read, edit, RIB change request (MSW: no history kept).
+  http.get(apiUrl('/v1/admin/merchants/:merchantId/record'), async ({ params }) => {
+    const account = await guardRead('ADMIN');
+    if (isResponse(account)) return account;
+    const merchant = db.admin.merchants.find((item) => item.id === params.merchantId);
+    if (merchant === undefined) return problem(404, 'NOT_FOUND');
+    return HttpResponse.json<S['AccountRecord']>(recordOf(merchant, account.id));
+  }),
+
+  http.get(apiUrl('/v1/admin/companies/:companyId/record'), async ({ params }) => {
+    const account = await guardRead('ADMIN');
+    if (isResponse(account)) return account;
+    const company = db.admin.companies.find((item) => item.id === params.companyId);
+    if (company === undefined) return problem(404, 'NOT_FOUND');
+    return HttpResponse.json<S['AccountRecord']>(recordOf(company, account.id));
+  }),
+
+  http.patch(apiUrl('/v1/admin/merchants/:merchantId'), async ({ request, params }) => {
+    const account = await guardWrite(request, 'ADMIN');
+    if (isResponse(account)) return account;
+    const merchant = db.admin.merchants.find((item) => item.id === params.merchantId);
+    if (merchant === undefined) return problem(404, 'NOT_FOUND');
+    const body = (await request.json()) as S['MerchantUpdate'];
+    if (body.name !== undefined) merchant.name = body.name.trim();
+    if (body.city !== undefined) merchant.city = body.city.trim();
+    if (body.category !== undefined) merchant.category = body.category;
+    audit('merchants.update', merchant.name);
+    return HttpResponse.json<S['AccountRecord']>(recordOf(merchant, account.id));
+  }),
+
+  http.patch(apiUrl('/v1/admin/companies/:companyId'), async ({ request, params }) => {
+    const account = await guardWrite(request, 'ADMIN');
+    if (isResponse(account)) return account;
+    const company = db.admin.companies.find((item) => item.id === params.companyId);
+    if (company === undefined) return problem(404, 'NOT_FOUND');
+    const body = (await request.json()) as S['CompanyUpdate'];
+    if (body.name !== undefined) company.name = body.name.trim();
+    if (body.city !== undefined) company.city = body.city.trim();
+    audit('companies.update', company.name);
+    return HttpResponse.json<S['AccountRecord']>(recordOf(company, account.id));
+  }),
+
+  http.post(apiUrl('/v1/admin/merchants/:merchantId/iban-change-requests'), async ({ request, params }) => {
+    const account = await guardWrite(request, 'ADMIN');
+    if (isResponse(account)) return account;
+    const merchant = db.admin.merchants.find((item) => item.id === params.merchantId);
+    if (merchant === undefined) return problem(404, 'NOT_FOUND');
+    const body = (await request.json()) as S['IbanChangeRequest'];
+    if (!/^TN[0-9]{22}$/.test(body.iban)) return validationProblem([{ pointer: '/iban', code: 'INVALID_FORMAT' }]);
+    const approval: MockApproval = {
+      id: crypto.randomUUID(),
+      type: 'IBAN_CHANGE',
+      status: 'PENDING',
+      subject: merchant.name,
+      maskedIban: `•••• ${body.iban.slice(-4)}`,
+      reason: body.reason.trim(),
+      initiatorName: account.displayName,
+      initiatorId: account.id,
+      owner: { merchantId: merchant.id },
+      createdAt: new Date().toISOString(),
+    };
+    db.admin.approvals.unshift(approval);
+    audit('merchants.ibanRequest', merchant.name);
+    return HttpResponse.json<S['Approval']>(publicApproval(approval, account.id), { status: 201 });
+  }),
+
   http.post(apiUrl('/v1/admin/commission-grids/change-requests'), async ({ request }) => {
     const account = await guardWrite(request, 'ADMIN');
     if (isResponse(account)) return account;
@@ -285,6 +384,11 @@ export const adminHandlers = [
         db.merchant.profile.commissionGrid = grid;
         db.merchant.rateBps = defaultRateOf(grid) ?? db.merchant.rateBps;
       }
+    }
+    if (approval.type === 'IBAN_CHANGE' && approval.owner !== undefined && 'merchantId' in approval.owner) {
+      const owner = approval.owner;
+      if (owner.merchantId === MERCHANT_TENANT.id && approval.maskedIban !== undefined)
+        db.merchant.profile.maskedIban = approval.maskedIban;
     }
     if (approval.type === 'SETTINGS_CHANGE' && approval.settings !== undefined)
       db.admin.settings = approval.settings;

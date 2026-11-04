@@ -5,6 +5,7 @@ import {
   HttpCode,
   Inject,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -126,6 +127,65 @@ export class AdminController {
       pathId('merchantId', merchantId),
       parse(z.strictObject({ acceptedCreditTypes: types }), body).acceptedCreditTypes,
     );
+  }
+
+  @Can('accounts.read')
+  @Get('merchants/:merchantId/record')
+  merchantRecord(@Param('merchantId') merchantId: string) {
+    return this.admin.accountRecord({ merchantId: pathId('merchantId', merchantId) });
+  }
+
+  @Can('merchants.manage')
+  @Patch('merchants/:merchantId')
+  updateMerchant(@Param('merchantId') merchantId: string, @Body() body: unknown) {
+    const input = parse(
+      z.strictObject({
+        name: name.optional(),
+        category: category.optional(),
+        city: city.optional(),
+        address: z.string().trim().max(200).optional(),
+        phone: phoneNumber.optional(),
+        email: email.optional(),
+        reason: reason.optional(),
+      }),
+      body,
+    );
+    const { reason: why, ...fields } = input;
+    return this.admin.updateAccount({ merchantId: pathId('merchantId', merchantId) }, fields, why);
+  }
+
+  @Can('merchants.manage')
+  @Post('merchants/:merchantId/iban-change-requests')
+  @HttpCode(201)
+  ibanChangeRequest(@Param('merchantId') merchantId: string, @Body() body: unknown) {
+    const input = parse(
+      z.strictObject({ iban: z.string().regex(/^TN[0-9]{22}$/), reason }),
+      body,
+    );
+    return this.admin.requestIbanChange(pathId('merchantId', merchantId), input.iban, input.reason);
+  }
+
+  @Can('accounts.read')
+  @Get('companies/:companyId/record')
+  companyRecord(@Param('companyId') companyId: string) {
+    return this.admin.accountRecord({ companyId: pathId('companyId', companyId) });
+  }
+
+  @Can('companies.manage')
+  @Patch('companies/:companyId')
+  updateCompany(@Param('companyId') companyId: string, @Body() body: unknown) {
+    const input = parse(
+      z.strictObject({
+        name: name.optional(),
+        city: city.optional(),
+        phone: phoneNumber.optional(),
+        email: email.optional(),
+        reason: reason.optional(),
+      }),
+      body,
+    );
+    const { reason: why, ...fields } = input;
+    return this.admin.updateAccount({ companyId: pathId('companyId', companyId) }, fields, why);
   }
 
   @Can('accounts.read')

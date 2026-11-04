@@ -39,12 +39,29 @@ import {
   currentGridInclude,
   gridBody,
   installGrid,
+  tierBody,
   type GridOwner,
 } from '../platform/commission-grids.js';
 import { CREDIT_TYPES, SettingsService, typeSettingsBody } from '../platform/settings.service.js';
 
 type GridRows = (CommissionGrid & { tiers: TierRow[] })[];
 type MerchantRow = Merchant & { commissionGrids: GridRows };
+
+/** Payload of a RIB change request: the new IBAN sealed (never in clear in the approvals). */
+interface IbanChangePayload {
+  owner: { merchantId: string };
+  iban: string;
+}
+
+/** Editable fields of a record (decision of 2026-11-03); the grid and the RIB go through four eyes. */
+export interface AccountUpdate {
+  name?: string | undefined;
+  city?: string | undefined;
+  phone?: string | undefined;
+  email?: string | undefined;
+  address?: string | undefined;
+  category?: MerchantCategory | undefined;
+}
 
 /** Payload of a grid change request (decision of 2026-11-03). */
 interface GridChangePayload {
@@ -72,7 +89,7 @@ function merchantAccount(merchant: MerchantRow) {
   };
 }
 
-function approvalBody(approval: Approval, userId: string) {
+function approvalBody(approval: Approval, userId: string, pii?: PiiService) {
   return {
     id: approval.id,
     type: approval.type,
@@ -80,6 +97,9 @@ function approvalBody(approval: Approval, userId: string) {
     subject: approval.subject,
     ...(approval.oldRateBps === null ? {} : { oldRateBps: approval.oldRateBps }),
     ...(approval.newRateBps === null ? {} : { newRateBps: approval.newRateBps }),
+    ...(approval.type === 'IBAN_CHANGE' && pii !== undefined
+      ? { maskedIban: pii.maskedIban((approval.payload as unknown as IbanChangePayload).iban) }
+      : {}),
     ...(approval.type === 'COMMISSION_GRID_CHANGE'
       ? {
           commissionGrid: {
@@ -484,6 +504,195 @@ export class AdminService {
     });
   }
 
+  // ---------------------------------------------------------------- records (decision of 2026-11-03)
+
+  /** Change of a record, field names only (no personal data in the history). */
+  private async recordChange(
+    tx: Tx,
+    owner: GridOwner,
+    fields: string[],
+    reason: string | null,
+  ): Promise<void> {
+    const who = principal();
+    await tx.accountChange.create({
+      data: {
+        id: uuidv7(),
+        ...owner,
+        fields,
+        reason,
+        actorId: who.userId,
+        actorName: who.displayName,
+      },
+    });
+  }
+
+  /** Record of a company or a merchant: contact, grid, history of the changes, open requests. */
+  async accountRecord(owner: GridOwner) {
+    const who = principal();
+    const isCompany = 'companyId' in owner;
+    const id = isCompany ? owner.companyId : owner.merchantId;
+    const manage = allows(who.role, who.subRole, [isCompany ? 'companies.manage' : 'merchants.manage']);
+    const commercial = allows(who.role, who.subRole, ['commissions.read']);
+    return this.db.user(async (tx) => {
+      const found = isCompany
+        ? await tx.company.findUnique({
+            where: { id },
+            include: { commissionGrids: currentGridInclude },
+          })
+        : await tx.merchant.findUnique({
+            where: { id },
+            include: { commissionGrids: currentGridInclude },
+          });
+      if (found === null) throw problems.notFound();
+      const changes = await tx.accountChange.findMany({
+        where: owner,
+        orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
+        take: 100,
+      });
+      const versions = commercial
+        ? await tx.commissionGrid.findMany({
+            where: owner,
+            orderBy: [{ effectiveFrom: 'desc' }, { id: 'desc' }],
+            take: 50,
+            include: { tiers: { orderBy: { position: 'asc' } } },
+          })
+        : [];
+      const key = isCompany ? 'companyId' : 'merchantId';
+      const requests = await tx.approval.findMany({
+        where: {
+          status: 'PENDING',
+          type: { in: ['COMMISSION_GRID_CHANGE', 'IBAN_CHANGE'] },
+          payload: { path: ['owner', key], equals: id },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      const merchant = isCompany ? null : (found as unknown as Merchant);
+      return {
+        id,
+        kind: isCompany ? ('COMPANY' as const) : ('MERCHANT' as const),
+        name: found.name,
+        city: found.city,
+        status: found.status,
+        email: found.email,
+        // The phone is personal data: shown to the administrators who may change it only.
+        phone: manage ? this.pii.open(found.phone) : null,
+        ...(merchant === null
+          ? {}
+          : {
+              category: merchant.category,
+              address: merchant.address,
+              maskedIban: merchant.iban === null ? null : this.pii.maskedIban(merchant.iban),
+            }),
+        commissionGrid: commercial ? gridBody(found.commissionGrids) : null,
+        gridVersions: versions.map((version) => ({
+          tiers: version.tiers.map(tierBody),
+          effectiveFrom: version.effectiveFrom.toISOString(),
+        })),
+        history: changes.map((change) => ({
+          occurredAt: change.occurredAt.toISOString(),
+          actorName: change.actorName,
+          fields: change.fields,
+          ...(change.reason === null ? {} : { reason: change.reason }),
+        })),
+        requests: requests.map((approval) => approvalBody(approval, who.userId, this.pii)),
+        createdAt: found.createdAt.toISOString(),
+      };
+    });
+  }
+
+  /** The administrator changes the record at any time (decision of 2026-11-03); audited, history. */
+  async updateAccount(owner: GridOwner, input: AccountUpdate, reason: string | undefined) {
+    const isCompany = 'companyId' in owner;
+    const id = isCompany ? owner.companyId : owner.merchantId;
+    await this.db.user(async (tx) => {
+      if (isCompany)
+        await tx.$queryRaw`SELECT id FROM companies WHERE id = ${id}::uuid FOR UPDATE`;
+      else await tx.$queryRaw`SELECT id FROM merchants WHERE id = ${id}::uuid FOR UPDATE`;
+      const found = isCompany
+        ? await tx.company.findUnique({ where: { id } })
+        : await tx.merchant.findUnique({ where: { id } });
+      if (found === null) throw problems.notFound();
+      const name = input.name?.trim();
+      if (name !== undefined && name.toLowerCase() !== found.name.toLowerCase()) {
+        const same = isCompany
+          ? await tx.company.findFirst({
+              where: { name: { equals: name, mode: 'insensitive' }, id: { not: id } },
+            })
+          : await tx.merchant.findFirst({
+              where: { name: { equals: name, mode: 'insensitive' }, id: { not: id } },
+            });
+        if (same !== null) throw problems.conflict();
+      }
+      const data: Record<string, string> = {};
+      const fields: string[] = [];
+      const take = (field: string, next: string | undefined, current: string) => {
+        if (next !== undefined && next !== current) {
+          fields.push(field);
+          return next;
+        }
+        return undefined;
+      };
+      const changed = {
+        name: take('name', name, found.name),
+        city: take('city', input.city?.trim(), found.city),
+        email: take('email', input.email?.toLowerCase(), found.email),
+        phone:
+          input.phone !== undefined && input.phone !== this.pii.open(found.phone)
+            ? (fields.push('phone'), this.pii.seal(input.phone))
+            : undefined,
+        ...(isCompany
+          ? {}
+          : {
+              address: take('address', input.address?.trim(), (found as Merchant).address),
+              category: take('category', input.category, (found as Merchant).category),
+            }),
+      };
+      for (const [field, value] of Object.entries(changed)) if (value !== undefined) data[field] = value;
+      if (fields.length === 0) return;
+      if (isCompany) await tx.company.update({ where: { id }, data });
+      else await tx.merchant.update({ where: { id }, data });
+      await this.recordChange(tx, owner, fields, reason ?? null);
+      await this.audit.record(
+        tx,
+        isCompany ? 'companies.update' : 'merchants.update',
+        (data.name ?? found.name).slice(0, 120),
+      );
+    });
+    return this.accountRecord(owner);
+  }
+
+  /** A RIB change is a request applied when ANOTHER administrator approves it (four eyes). */
+  async requestIbanChange(merchantId: string, iban: string, reason: string) {
+    const who = principal();
+    return this.db.user(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM merchants WHERE id = ${merchantId}::uuid FOR UPDATE`;
+      const merchant = await tx.merchant.findUnique({ where: { id: merchantId } });
+      if (merchant === null) throw problems.notFound();
+      const pending = await tx.approval.findFirst({
+        where: {
+          status: 'PENDING',
+          type: 'IBAN_CHANGE',
+          payload: { path: ['owner', 'merchantId'], equals: merchantId },
+        },
+      });
+      if (pending !== null) throw problems.conflict();
+      const payload: IbanChangePayload = { owner: { merchantId }, iban: this.pii.seal(iban) };
+      const approval = await tx.approval.create({
+        data: {
+          id: uuidv7(),
+          type: 'IBAN_CHANGE',
+          subject: merchant.name,
+          payload: payload as unknown as Prisma.InputJsonValue,
+          reason,
+          initiatorId: who.userId,
+          initiatorName: who.displayName,
+        },
+      });
+      await this.audit.record(tx, 'merchants.ibanRequest', merchant.name);
+      return approvalBody(approval, who.userId, this.pii);
+    });
+  }
+
   async approvals(query: Record<string, unknown>, filters: { status?: ApprovalStatus }) {
     const who = principal();
     const request = this.paginator.request(query, filters);
@@ -503,7 +712,7 @@ export class AdminService {
         : undefined;
       return this.paginator.page(
         request,
-        rows.map((row) => approvalBody(row, who.userId)),
+        rows.map((row) => approvalBody(row, who.userId, this.pii)),
         filters,
         count,
       );
@@ -542,6 +751,15 @@ export class AdminService {
           approvalId: approval.id,
           createdBy: approval.initiatorId,
         });
+        await this.recordChange(tx, payload.owner, ['commissionGrid'], approval.reason);
+      } else if (approval.type === 'IBAN_CHANGE') {
+        // The RIB applies to the payouts requested from now on (a request keeps its IBAN).
+        const payload = approval.payload as unknown as IbanChangePayload;
+        await tx.merchant.update({
+          where: { id: payload.owner.merchantId },
+          data: { iban: payload.iban },
+        });
+        await this.recordChange(tx, payload.owner, ['iban'], approval.reason);
       } else if (approval.type === 'DISPUTE_REFUND') {
         // Second validation of an accepted dispute: refund of the employee (N2).
         await this.disputes.refund(tx, (approval.payload as { disputeId: string }).disputeId);

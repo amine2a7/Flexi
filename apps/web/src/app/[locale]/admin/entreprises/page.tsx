@@ -4,6 +4,7 @@ import type { Schemas } from '@flexipay/api-client';
 import { Building2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
 import { usePagedList } from '@/lib/api/use-paged-list';
 import { formatCalendarDate } from '@/lib/format/date';
@@ -44,7 +45,19 @@ export default function AdminCompaniesPage() {
   );
 
   const columns: Column<Schemas['CompanyAccount']>[] = [
-    { key: 'name', header: t('name'), cell: (row) => row.name, sortValue: (row) => row.name },
+    {
+      key: 'name',
+      header: t('name'),
+      cell: (row) => (
+        <Link
+          href={`/admin/entreprises/${row.id}`}
+          className="font-label text-navy underline-offset-2 hover:underline"
+        >
+          {row.name}
+        </Link>
+      ),
+      sortValue: (row) => row.name,
+    },
     { key: 'city', header: t('city'), cell: (row) => row.city, sortValue: (row) => row.city },
     {
       key: 'employees',

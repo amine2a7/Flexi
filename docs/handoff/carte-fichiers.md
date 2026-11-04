@@ -12,7 +12,7 @@ Web : `W = apps/web/src`, pages sous `W/app/[locale]/`. API : `A = apps/api/src`
 | Paiement | `A/payments/payments.service.ts`, `A/payments/pin.service.ts` | `commercant/encaissement/`, `admin/transactions/` | `T/payments.test.ts`, `T/pin.test.ts` | `docs/specs/06-employe-mobile.md` |
 | Litiges | `A/risk/disputes.service.ts`, `A/risk/risk.controller.ts` | `admin/securite/page.tsx`, `admin/securite/litiges/[disputeId]/page.tsx`, `W/mocks/handlers/risk.ts` | `T/disputes.test.ts`, `apps/web/e2e/security.spec.ts` | `docs/design/specs/admin-securite.md` |
 | Alertes de fraude | `A/risk/fraud.service.ts`, `A/jobs/jobs.service.ts` | `admin/securite/page.tsx` | `T/fraud-alerts.test.ts` | idem |
-| Admin entreprise | `A/admin/admin.controller.ts`, `A/admin/admin.service.ts` | `admin/entreprises/page.tsx`, `W/components/admin/account-form.tsx` | `T/admin.test.ts`, `T/accounts.test.ts` | `docs/specs/04-admin-kyc.md` |
+| Admin entreprise | `A/admin/admin.controller.ts`, `A/admin/admin.service.ts` (accountRecord, updateAccount, requestIbanChange), migration 0028 | `admin/entreprises/page.tsx`, `admin/entreprises/[companyId]/page.tsx`, `W/components/admin/account-form.tsx`, `W/components/admin/account-record.tsx` | `T/admin.test.ts`, `T/accounts.test.ts` | `docs/specs/04-admin-kyc.md` |
 | Admin commerçant | idem | `admin/commercants/page.tsx`, `admin/commercants/[merchantId]/page.tsx` | idem | idem, `docs/specs/07-commercant.md` |
 | Validations (double validation) | `A/admin/admin.service.ts` (approvals) | `admin/validations/` | `T/four-eyes.test.ts` | `docs/specs/09-notifications-audit.md` |
 | Paramètres plateforme | `A/platform/settings.service.ts` | `admin/parametres/page.tsx` | `T/admin.test.ts` | — |

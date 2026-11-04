@@ -140,7 +140,8 @@
       "COMMISSION_RATE_CHANGE": "Rate change",
       "SETTINGS_CHANGE": "Settings change",
       "DISPUTE_REFUND": "Dispute refund",
-      "COMMISSION_GRID_CHANGE": "Grid change"
+      "COMMISSION_GRID_CHANGE": "Grid change",
+      "IBAN_CHANGE": "Bank account change"
     },
     "approveTitle": "Approve this request?",
     "approveMessage": "The change will apply immediately and be logged.",
@@ -536,6 +537,49 @@
       "noBound": "Enter at least « From » or « To »: the line without bounds is the default rate.",
       "rate": "Enter a rate between 0 and 100 %, 2 decimals at most.",
       "amount": "Enter an amount in TND, 3 decimals at most."
+    }
+  },
+  "record": {
+    "contact": "Information",
+    "edit": "Edit",
+    "commission": "Commission",
+    "changeGrid": "Change the grid",
+    "iban": "Bank account",
+    "changeIban": "Change the bank account",
+    "noIban": "No bank account",
+    "futureOnly": "A change needs a second approval and only applies to future orders and payouts.",
+    "pending": "Awaiting the second approval: {list}.",
+    "history": "History of the changes",
+    "noHistory": "No change since the creation.",
+    "changedBy": "{date} · {name}",
+    "created": "Created on",
+    "backCompanies": "Back to companies",
+    "editTitle": "Edit {name}",
+    "editDescription": "Every change is kept in the history and the audit log.",
+    "duplicate": "An account already has this name.",
+    "reason": "Reason",
+    "reasonOptional": "Optional, shown in the history.",
+    "reasonRequired": "Enter the reason: the approving administrator sees it.",
+    "save": "Save",
+    "saved": "Record updated.",
+    "gridTitle": "Change the grid of {name}",
+    "fourEyes": "Another administrator must approve the request.",
+    "sendForApproval": "Send for approval",
+    "requested": "Request sent. Another administrator must approve it.",
+    "alreadyPending": "A request is already pending for this account.",
+    "ibanTitle": "Change the bank account",
+    "ibanLabel": "New bank account (IBAN)",
+    "ibanHint": "TN followed by 22 digits.",
+    "ibanInvalid": "Enter a Tunisian IBAN: TN followed by 22 digits.",
+    "fields": {
+      "name": "Name",
+      "city": "City",
+      "address": "Address",
+      "category": "Category",
+      "phone": "Phone",
+      "email": "Email",
+      "iban": "Bank account",
+      "commissionGrid": "Commission grid"
     }
   }
 }

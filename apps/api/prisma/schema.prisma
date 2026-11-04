@@ -162,6 +162,7 @@ enum ApprovalType {
   SETTINGS_CHANGE
   COMMISSION_GRID_CHANGE
   DISPUTE_REFUND
+  IBAN_CHANGE
 }
 
 enum FraudAlertKind {
@@ -259,6 +260,22 @@ model CommissionGrid {
   @@index([companyId, effectiveFrom], map: "commission_grids_company_idx")
   @@index([merchantId, effectiveFrom], map: "commission_grids_merchant_idx")
   @@map("commission_grids")
+}
+
+/// Change of a company or merchant record (decision of 2026-11-03): field names only, no values.
+model AccountChange {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  companyId  String?  @map("company_id") @db.Uuid
+  merchantId String?  @map("merchant_id") @db.Uuid
+  fields     String[] @db.VarChar(40)
+  reason     String?  @db.VarChar(500)
+  actorId    String?  @map("actor_id") @db.Uuid
+  actorName  String   @map("actor_name") @db.VarChar(120)
+  occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(3)
+
+  @@index([companyId, occurredAt], map: "account_changes_company_idx")
+  @@index([merchantId, occurredAt], map: "account_changes_merchant_idx")
+  @@map("account_changes")
 }
 
 /// Line of a grid: tranche [min, max) in millimes, or the default line (no bounds).

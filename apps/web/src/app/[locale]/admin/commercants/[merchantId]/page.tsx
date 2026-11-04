@@ -3,22 +3,18 @@
 import type { Schemas } from '@flexipay/api-client';
 import { ArrowLeft, Save } from 'lucide-react';
 import { useParams } from 'next/navigation';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { messageKey } from '@/i18n/keys';
 import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
 import { errorMessageKey } from '@/lib/api/problem';
 import { useApiQuery } from '@/lib/api/use-api-query';
-import { formatDateTime } from '@/lib/format/date';
 import { Button, buttonClasses } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
-import {
-  CommissionLabel,
-  CreditTypeCheckboxes,
-  type CreditType,
-} from '@/components/ui/credit-type';
-import { Alert, DescriptionList, PageHeader } from '@/components/ui/layout-blocks';
+import { AccountRecordPanel } from '@/components/admin/account-record';
+import { CreditTypeCheckboxes, type CreditType } from '@/components/ui/credit-type';
+import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useToast } from '@/components/ui/toast';
@@ -53,7 +49,6 @@ function MerchantRecord({ merchant }: { merchant: Schemas['MerchantAccount'] }) 
   const tCategory = useTranslations('category');
   const tRoot = useTranslations();
   const canManage = useCan('merchants.manage');
-  const locale = useLocale();
   const toast = useToast();
   const [types, setTypes] = useState<CreditType[]>([...merchant.acceptedCreditTypes]);
   const [saving, setSaving] = useState(false);
@@ -87,21 +82,8 @@ function MerchantRecord({ merchant }: { merchant: Schemas['MerchantAccount'] }) 
         description={tCategory(merchant.category)}
         actions={<StatusBadge status={merchant.status} />}
       />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardTitle>{t('detailInfo')}</CardTitle>
-          <DescriptionList
-            items={[
-              { label: t('category'), value: tCategory(merchant.category) },
-              { label: t('city'), value: merchant.city },
-              {
-                label: t('profile'),
-                value: <CommissionLabel grid={merchant.commissionGrid} />,
-              },
-              { label: t('created'), value: formatDateTime(merchant.createdAt, locale) },
-            ]}
-          />
-        </Card>
+      <AccountRecordPanel owner={{ merchantId: merchant.id }} />
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Card>
           <CardTitle>{t('typesTitle')}</CardTitle>
           <div className="flex flex-col gap-4">

@@ -316,6 +316,82 @@ describe('grid rules of 2026-11-04', () => {
   });
 });
 
+describe('records editable at any time (decision of 2026-11-03)', () => {
+  const shop = async (client: WebClient) => {
+    const created = await client.call('POST', '/v1/admin/merchants', {
+      body: {
+        name: `Fiche ${String(Date.now())}`,
+        category: 'CAFE',
+        city: 'Tunis',
+        phone: '+21671000003',
+        email: `fiche-${String(Math.random()).slice(2, 10)}@test.tn`,
+        commissionGrid: GRID,
+        acceptedCreditTypes: ['RESTAURATION'],
+      },
+    });
+    return String(created.body.id);
+  };
+
+  it('the administrator changes the information; the history names the fields, never the values', async () => {
+    const { first } = await admins();
+    const merchantId = await shop(first);
+    const updated = await first.call('PATCH', `/v1/admin/merchants/${merchantId}`, {
+      body: { city: 'Sousse', phone: '+21673000099', reason: 'Déménagement' },
+    });
+    expect(updated.status).toBe(200);
+    expect(updated.body).toMatchObject({ city: 'Sousse', phone: '+21673000099' });
+    expect(updated.body.history).toEqual([
+      expect.objectContaining({ fields: ['city', 'phone'], reason: 'Déménagement', actorName: 'Amine K.' }),
+    ]);
+    expect(JSON.stringify(updated.body.history)).not.toContain('21673000099');
+    const company = await createCompany(db);
+    const renamed = await first.call('PATCH', `/v1/admin/companies/${company.id}`, {
+      body: { name: `Renommée ${String(Date.now())}` },
+    });
+    expect(renamed.body.history).toEqual([expect.objectContaining({ fields: ['name'] })]);
+  });
+
+  it('a RIB change applies only when another administrator approves it', async () => {
+    const { first, second } = await admins();
+    const merchantId = await shop(first);
+    const iban = 'TN5901234567890123456789';
+    const requested = await first.call('POST', `/v1/admin/merchants/${merchantId}/iban-change-requests`, {
+      body: { iban, reason: 'Nouveau compte bancaire' },
+    });
+    expect(requested.status).toBe(201);
+    expect(requested.body).toMatchObject({ type: 'IBAN_CHANGE', maskedIban: '•••• 6789' });
+    expect(JSON.stringify(requested.body)).not.toContain(iban);
+    const again = await second.call('POST', `/v1/admin/merchants/${merchantId}/iban-change-requests`, {
+      body: { iban, reason: 'Doublon' },
+    });
+    expect(again.status).toBe(409);
+    const record = await first.call('GET', `/v1/admin/merchants/${merchantId}/record`);
+    expect(record.body.requests).toHaveLength(1);
+    const id = String(requested.body.id);
+    expect((await first.call('POST', `/v1/admin/approvals/${id}/approve`)).status).toBe(403);
+    expect((await second.call('POST', `/v1/admin/approvals/${id}/approve`)).status).toBe(200);
+    const after = await first.call('GET', `/v1/admin/merchants/${merchantId}/record`);
+    expect(after.body).toMatchObject({ maskedIban: '•••• 6789', requests: [] });
+    expect((after.body.history as { fields: string[] }[])[0]?.fields).toEqual(['iban']);
+    const refused = await first.call('POST', `/v1/admin/merchants/${merchantId}/iban-change-requests`, {
+      body: { iban: 'FR7612345', reason: 'Essai' },
+    });
+    expect(refused.status).toBe(400);
+  });
+
+  it('support reads a record without the phone nor the grid', async () => {
+    const { first } = await admins();
+    const merchantId = await shop(first);
+    const support = await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Sami S.', 'SUPPORT'));
+    const record = await support.call('GET', `/v1/admin/merchants/${merchantId}/record`);
+    expect(record.status).toBe(200);
+    expect(record.body).toMatchObject({ phone: null, commissionGrid: null, gridVersions: [] });
+    expect(
+      (await support.call('PATCH', `/v1/admin/merchants/${merchantId}`, { body: { city: 'Nabeul' } })).status,
+    ).toBe(403);
+  });
+});
+
 describe('four-eyes approvals', () => {
   it('applies a settings change after approval (202 = request only)', async () => {
     const { first, second } = await admins();
