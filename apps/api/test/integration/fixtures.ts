@@ -23,6 +23,20 @@ export const oneLineGrid = (rateBps = 200) => ({
 /** Same grid as an API body (window « Commission »). */
 export const gridBody = (rateBps = 200) => [{ rateBps, minMillimes: null, maxMillimes: null }];
 
+/** Ledger lines of the transactions of a reference (code, direction, amount), sorted. */
+export async function ledgerLines(db: DbService, reference: string) {
+  const rows = await db.system((tx) =>
+    tx.$queryRaw<{ code: string; direction: string; amount: bigint }[]>`
+      SELECT a.code, e.direction::text AS direction, e.amount_millimes AS amount
+        FROM ledger_entries e
+        JOIN ledger_accounts a ON a.id = e.account_id
+        JOIN ledger_transactions t ON t.id = e.transaction_id
+       WHERE t.reference = ${reference}
+       ORDER BY a.code, e.direction`,
+  );
+  return rows.map((row) => ({ code: row.code.split(':')[0], direction: row.direction, amount: Number(row.amount) }));
+}
+
 /** Platform and credit type settings of the demo (idempotent). */
 export async function seedSettings(db: DbService): Promise<void> {
   await db.system(async (tx) => {

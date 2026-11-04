@@ -4,7 +4,7 @@ import { FourEyesService } from '../common/four-eyes.service.js';
 import { randomDigits, uuidv7 } from '../common/crypto.js';
 import { DbService, type Tx } from '../common/db.service.js';
 import { FILE_STORAGE, type FileStorage } from '../common/storage.js';
-import { commissionOf, toMillimes } from '../common/money.js';
+import { feesOf, toMillimes } from '../common/money.js';
 import type { Page, PageRequest } from '../common/pagination.js';
 import { Paginator } from '../common/pagination.js';
 import { ApiProblem, problems, validationFailed } from '../common/problem.js';
@@ -69,7 +69,11 @@ export function orderSummary(order: OrderRow) {
     companyId: order.companyId,
     companyName: order.company.name,
     amountMillimes: toMillimes(order.amountMillimes),
+    feeRateBps: order.feeRateBps,
     feesMillimes: toMillimes(order.feesMillimes),
+    vatRateBps: order.vatRateBps,
+    vatMillimes: toMillimes(order.vatMillimes),
+    stampDutyMillimes: toMillimes(order.stampDutyMillimes),
     totalMillimes: toMillimes(order.totalMillimes),
     createdAt: order.createdAt.toISOString(),
     paymentReference: order.paymentReference,
@@ -196,11 +200,22 @@ export class OrdersService {
     return amount;
   }
 
+  /**
+   * Fees of an order amount (decisions of 2026-11-03): the rate of the tranche of the company grid,
+   * VAT on the rounded commission and stamp duty of the settings. No grid: refused (2026-11-04).
+   */
+  private async fees(tx: Tx, amount: bigint) {
+    const companyId = principal().companyId;
+    if (companyId === null) throw problems.forbidden();
+    const rate = await this.settings.commissionRate(tx, { companyId }, amount);
+    const taxes = await this.settings.taxes(tx);
+    return { rate, taxes, fees: feesOf(amount, rate, taxes) };
+  }
+
   async quote(lines: OrderLineInput[]) {
     return this.db.user(async (tx) => {
       const amount = await this.checkLines(tx, lines);
-      const rate = (await this.settings.platform(tx)).orderFeeRateBps;
-      const fees = commissionOf(amount, rate);
+      const { rate, taxes, fees } = await this.fees(tx, amount);
       return {
         lines: sortedLines(
           lines.map((line) => ({
@@ -211,8 +226,11 @@ export class OrdersService {
         ),
         amountMillimes: toMillimes(amount),
         feeRateBps: rate,
-        feesMillimes: toMillimes(fees),
-        totalMillimes: toMillimes(amount + fees),
+        feesMillimes: toMillimes(fees.commission),
+        vatRateBps: taxes.vatRateBps,
+        vatMillimes: toMillimes(fees.vat),
+        stampDutyMillimes: toMillimes(fees.stamp),
+        totalMillimes: toMillimes(amount + fees.commission + fees.vat + fees.stamp),
       };
     });
   }
@@ -223,8 +241,7 @@ export class OrdersService {
     const who = principal();
     if (who.companyId === null) throw problems.forbidden();
     const amount = await this.checkLines(tx, lines);
-    const rate = (await this.settings.platform(tx)).orderFeeRateBps;
-    const fees = commissionOf(amount, rate);
+    const { rate, taxes, fees } = await this.fees(tx, amount);
     const [sequence] = await tx.$queryRaw<
       { value: bigint }[]
     >`SELECT nextval('order_reference_seq') AS value`;
@@ -237,8 +254,11 @@ export class OrdersService {
         status: 'AWAITING_CONFIRMATION',
         amountMillimes: amount,
         feeRateBps: rate,
-        feesMillimes: fees,
-        totalMillimes: amount + fees,
+        feesMillimes: fees.commission,
+        vatRateBps: taxes.vatRateBps,
+        vatMillimes: fees.vat,
+        stampDutyMillimes: fees.stamp,
+        totalMillimes: amount + fees.commission + fees.vat + fees.stamp,
         paymentReference: `FXP-${randomDigits(8)}`,
         lines: {
           create: lines.map((line) => ({
@@ -542,15 +562,14 @@ export class OrdersService {
           direction: 'C' as const,
           amount: line.amountMillimes,
         })),
-        ...(order.feesMillimes > 0n
-          ? [
-              {
-                account: accounts.companyFees(),
-                direction: 'C' as const,
-                amount: order.feesMillimes,
-              },
-            ]
-          : []),
+        // Commission, VAT and stamp duty each on its own account (decision of 2026-11-03).
+        ...[
+          { account: accounts.companyFees(), amount: order.feesMillimes },
+          { account: accounts.vatCollected(), amount: order.vatMillimes },
+          { account: accounts.stampDuty(), amount: order.stampDutyMillimes },
+        ]
+          .filter((line) => line.amount > 0n)
+          .map((line) => ({ ...line, direction: 'C' as const })),
       ],
     });
     await tx.creditOrder.update({ where: { id }, data: { status: 'VALIDATED' } });

@@ -9,7 +9,8 @@ loadTestEnv();
 const { loadEnv } = await import('../../src/config/env.js');
 const { createApp } = await import('../../src/app.factory.js');
 const { DbService } = await import('../../src/common/db.service.js');
-const { createUser, sealed, seedSettings, signedIn } = await import('./fixtures.js');
+const { createUser, sealed, seedSettings, signedIn, oneLineGrid } =
+  await import('./fixtures.js');
 
 const env = loadEnv();
 const db = new DbService(env);
@@ -118,6 +119,7 @@ describe('four eyes', () => {
             phone: sealed('+21671000000'),
             email: 'rh@societe.tn',
             status: 'APPROVED',
+            commissionGrids: oneLineGrid(150),
           },
         }),
       )

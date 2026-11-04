@@ -49,6 +49,10 @@ export const accounts = {
   payoutPayable: () => platform('PAYOUT_PAYABLE', 'LIABILITY', true),
   companyFees: () => platform('REVENUE_COMPANY_FEES', 'REVENUE', true),
   merchantCommission: () => platform('REVENUE_MERCHANT_COMMISSION', 'REVENUE', true),
+  /** VAT collected on the commissions, owed to the State (decision of 2026-11-03). */
+  vatCollected: () => platform('VAT_COLLECTED', 'LIABILITY', true),
+  /** Stamp duty collected on orders and payouts, owed to the State (decision of 2026-11-03). */
+  stampDuty: () => platform('STAMP_DUTY', 'LIABILITY', true),
   expiredCredits: () => platform('REVENUE_EXPIRED', 'REVENUE', true),
   companyWallet: (companyId: string, type: CreditType) =>
     wallet('COMPANY', 'COMPANY_WALLET', companyId, type),
@@ -385,6 +389,7 @@ export class LedgerService {
     mismatches: string[];
     lotMismatches: string[];
     holdMismatches: string[];
+    taxMismatches: string[];
     totalDebits: bigint;
     totalCredits: bigint;
   }> {
@@ -427,15 +432,33 @@ export class LedgerService {
         ) s ON true
        WHERE a.code LIKE 'DISPUTE_HOLD:%' AND s.held <> b.balance_millimes
        ORDER BY a.code`;
+    // VAT and stamp duty owed to the State equal what the documents carry (decision of
+    // 2026-11-03): validated orders, payouts not rejected, minus the VAT of cancelled commissions.
+    const [documents] = await tx.$queryRaw<{ vat: bigint; stamp: bigint }[]>`
+      SELECT
+        ((SELECT coalesce(sum(vat_millimes), 0) FROM credit_orders WHERE status = 'VALIDATED')
+          + (SELECT coalesce(sum(vat_millimes), 0) FROM payout_requests WHERE status <> 'REJECTED')
+          - (SELECT coalesce(sum(vat_reversed_millimes), 0) FROM disputes WHERE status = 'ACCEPTED')
+        )::bigint AS vat,
+        ((SELECT coalesce(sum(stamp_duty_millimes), 0) FROM credit_orders WHERE status = 'VALIDATED')
+          + (SELECT coalesce(sum(stamp_duty_millimes), 0) FROM payout_requests WHERE status <> 'REJECTED')
+        )::bigint AS stamp`;
+    const taxMismatches: string[] = [];
+    if ((await this.balance(tx, accounts.vatCollected())) !== (documents?.vat ?? 0n))
+      taxMismatches.push(accounts.vatCollected().code);
+    if ((await this.balance(tx, accounts.stampDuty())) !== (documents?.stamp ?? 0n))
+      taxMismatches.push(accounts.stampDuty().code);
     return {
       ok:
         mismatches.length === 0 &&
         lotMismatches.length === 0 &&
         holdMismatches.length === 0 &&
+        taxMismatches.length === 0 &&
         totalDebits === totalCredits,
       mismatches: mismatches.map((row) => row.code),
       lotMismatches: lotMismatches.map((row) => row.code),
       holdMismatches: holdMismatches.map((row) => row.code),
+      taxMismatches,
       totalDebits,
       totalCredits,
     };

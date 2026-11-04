@@ -1,14 +1,6 @@
 import type { Schemas } from '@flexipay/api-client';
 import { http, HttpResponse } from 'msw';
-import {
-  commissionOf,
-  currentAccount,
-  db,
-  invoicesOf,
-  saveOrders,
-  SECOND_VALIDATION_THRESHOLD_MILLIMES,
-  type MockOrder,
-} from '../db';
+import { commissionOf, currentAccount, db, invoicesOf, saveOrders, SECOND_VALIDATION_THRESHOLD_MILLIMES, type MockOrder, defaultRateOf, taxLines, taxesOf } from '../db';
 import { COMPANY_TENANT } from '../fixtures/accounts';
 import { checkOrderLines } from './company';
 import { FUNDING_ACCOUNT } from '../fixtures/funding-account';
@@ -198,8 +190,11 @@ export const orderHandlers = [
     const invalid = checkOrderLines(body.lines);
     if (invalid !== undefined) return invalid;
     const amount = body.lines.reduce((sum, line) => sum + line.amountMillimes, 0);
-    const fees = commissionOf(amount, db.admin.settings.orderFeeRateBps);
     const own = db.admin.companies.find((company) => company.id === COMPANY_TENANT.id);
+    const rate = defaultRateOf(own?.commissionGrid ?? null) ?? db.admin.settings.orderFeeRateBps;
+    const fees = commissionOf(amount, rate);
+    const taxes = taxLines(fees, db.admin.settings);
+
     const order: MockOrder = {
       id: crypto.randomUUID(),
       reference: `CMD-2026-${String(7300 + db.orders.length)}`,
@@ -209,8 +204,10 @@ export const orderHandlers = [
       companyId: COMPANY_TENANT.id,
       companyName: own?.name ?? COMPANY_TENANT.label,
       amountMillimes: amount,
+      feeRateBps: rate,
       feesMillimes: fees,
-      totalMillimes: amount + fees,
+      ...taxes,
+      totalMillimes: amount + fees + taxesOf(taxes),
       createdAt: new Date().toISOString(),
       paymentReference: `FXP-${String(Date.now()).slice(-8)}`,
       history: [],

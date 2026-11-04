@@ -12,13 +12,13 @@ const { LedgerService, accounts } = await import('../../src/ledger/ledger.servic
 const { PayoutsService } = await import('../../src/payouts/payouts.service.js');
 const { JobsService } = await import('../../src/jobs/jobs.service.js');
 const { hashSecret } = await import('../../src/auth/password.js');
-const { createCompany, createEmployee, createUser, sealed, seedSettings, signedIn, oneLineGrid } =
+const { createCompany, createEmployee, createUser, sealed, seedSettings, signedIn, oneLineGrid, ledgerLines } =
   await import('./fixtures.js');
 
 const env = loadEnv();
 const db = new DbService(env);
 const ledger = new LedgerService();
-const app = await createApp(env, false);
+let app = await createApp(env, false);
 let base = '';
 const PIN = '4826';
 
@@ -298,7 +298,10 @@ describe('payout and settlement', () => {
       grossMillimes: 45_000,
       commissionRateBps: 200,
       commissionMillimes: 900,
-      netMillimes: 44_100,
+      vatRateBps: 1_900,
+      vatMillimes: 171,
+      stampDutyMillimes: 1_000,
+      netMillimes: 42_929,
       availableMillimes: 45_000,
     });
     const requested = await shop.call('POST', '/v1/merchant/payouts', {
@@ -309,8 +312,17 @@ describe('payout and settlement', () => {
     expect(requested.body).toMatchObject({
       status: 'REQUESTED',
       commissionRateBps: 200,
-      netMillimes: 44_100,
+      vatMillimes: 171,
+      stampDutyMillimes: 1_000,
+      netMillimes: 42_929,
     });
+    expect(await ledgerLines(db, String(requested.body.reference))).toEqual([
+      { code: 'MERCHANT_WALLET', direction: 'D', amount: 45_000 },
+      { code: 'PAYOUT_PAYABLE', direction: 'C', amount: 42_929 },
+      { code: 'REVENUE_MERCHANT_COMMISSION', direction: 'C', amount: 900 },
+      { code: 'STAMP_DUTY', direction: 'C', amount: 1_000 },
+      { code: 'VAT_COLLECTED', direction: 'C', amount: 171 },
+    ]);
     expect(String(requested.body.maskedIban)).toMatch(/^•••• \d{4}$/);
     expect((await shop.call('GET', '/v1/merchant/receivables')).body.totalMillimes).toBe(0);
     // A quote is used once.
@@ -352,7 +364,7 @@ describe('payout and settlement', () => {
       (
         settlements.body.data as { status: string; paymentsCount: number; netMillimes: number }[]
       )[0],
-    ).toMatchObject({ status: 'PAID', paymentsCount: 1, netMillimes: 44_100 });
+    ).toMatchObject({ status: 'PAID', paymentsCount: 1, netMillimes: 42_929 });
     const books = await db.system((tx) => ledger.reconcile(tx));
     expect(books.ok).toBe(true);
   });
@@ -382,16 +394,59 @@ describe('payout and settlement', () => {
     expect(quote.body).toMatchObject({
       commissionRateBps: 250,
       commissionMillimes: 1_125,
-      netMillimes: 43_875,
+      vatMillimes: 214,
+      netMillimes: 42_661,
     });
     const requested = await shop.call('POST', '/v1/merchant/payouts', {
       body: { quoteId: quote.body.quoteId },
       headers: key(),
     });
-    expect(requested.body).toMatchObject({ commissionRateBps: 250, netMillimes: 43_875 });
+    expect(requested.body).toMatchObject({ commissionRateBps: 250, netMillimes: 42_661 });
     // Every shop has a grid (decision of 2026-11-04): the dashboard shows its default rate.
     const plain = await merchantClient((await createMerchant()).id);
     expect((await plain.call('GET', '/v1/merchant/dashboard')).body.commissionRateBps).toBe(200);
+  });
+
+  it('refuses the request when the VAT or the stamp duty changed after the simulation', async () => {
+    const { client: employee } = await fundedEmployee(60_000n);
+    const merchant = await createMerchant();
+    const shop = await merchantClient(merchant.id);
+    await employee.call('POST', '/v1/employee/payments', {
+      body: { merchantCode: merchant.paymentCode, creditType: 'RESTAURATION', amountMillimes: 45_000, pin: PIN },
+      headers: key(),
+    });
+    const quote = await shop.call('POST', '/v1/merchant/payout-quotes', {
+      body: { creditType: 'RESTAURATION', grossMillimes: 45_000 },
+    });
+    await db.system((tx) => tx.platformSettings.update({ where: { id: 1 }, data: { vatRateBps: 1_800 } }));
+    try {
+      const requested = await shop.call('POST', '/v1/merchant/payouts', {
+        body: { quoteId: quote.body.quoteId },
+        headers: key(),
+      });
+      expect(requested.status).toBe(409);
+      const written = await db.system((tx) =>
+        tx.payoutRequest.count({ where: { merchantId: merchant.id } }),
+      );
+      expect(written).toBe(0);
+    } finally {
+      await db.system((tx) => tx.platformSettings.update({ where: { id: 1 }, data: { vatRateBps: 1_900 } }));
+    }
+  });
+
+  it('refuses a payout whose commission, VAT and stamp duty leave nothing to transfer', async () => {
+    const { client: employee } = await fundedEmployee(60_000n);
+    const merchant = await createMerchant(['RESTAURATION'], 10_000);
+    const shop = await merchantClient(merchant.id);
+    await employee.call('POST', '/v1/employee/payments', {
+      body: { merchantCode: merchant.paymentCode, creditType: 'RESTAURATION', amountMillimes: 45_000, pin: PIN },
+      headers: key(),
+    });
+    const quote = await shop.call('POST', '/v1/merchant/payout-quotes', {
+      body: { creditType: 'RESTAURATION', grossMillimes: 45_000 },
+    });
+    expect(quote.status).toBe(400);
+    expect(quote.body.details).toMatchObject({ fields: [{ pointer: '/grossMillimes', code: 'TOO_SMALL' }] });
   });
 
   it('gives the balance back when the request is rejected (reversal)', async () => {
@@ -425,6 +480,14 @@ describe('payout and settlement', () => {
     expect(rejected.body.status).toBe('REJECTED');
     expect(await db.system((tx) => ledger.balance(tx, wallet))).toBe(30_000n);
     expect((await shop.call('GET', '/v1/merchant/receivables')).body.totalMillimes).toBe(30_000);
+    // The reversal gives the VAT and the stamp duty back too.
+    const reversal = await ledgerLines(db, `${String(requested.body.reference)}-REJ`);
+    expect(reversal.filter((line) => line.code === 'VAT_COLLECTED' || line.code === 'STAMP_DUTY')).toEqual([
+      { code: 'STAMP_DUTY', direction: 'D', amount: 1_000 },
+      { code: 'VAT_COLLECTED', direction: 'D', amount: Number(requested.body.vatMillimes) },
+    ]);
+    const books = await db.system((tx) => ledger.reconcile(tx));
+    expect(books.taxMismatches).toEqual([]);
   });
 
   it('the administrator who created the merchant never approves its payouts (QY-03 b)', async () => {
@@ -486,7 +549,16 @@ describe('payout and settlement', () => {
   });
 });
 
+/** A new app (its own sign-in rate limit: 30 per minute, src/common/http.ts). */
+const freshApp = async () => {
+  await app.close();
+  app = await createApp(env, false);
+  base = await listen(app);
+};
+
 describe('expired credits (destination set by the administrator, decision of 2026-10-14)', () => {
+  beforeAll(freshApp);
+
   /** An employee of a new company with an already expired lot of `amount` Restauration credits. */
   async function expiredLot(amount: bigint) {
     const company = await createCompany(db);
@@ -579,6 +651,8 @@ describe('daily reconciliation (ledger-auditor C8)', () => {
 // TEST-FIRST N4 (ledger-auditor): every financial route replays the same answer for the same
 // Idempotency-Key and body, writes nothing more, and refuses the key reused with another body.
 describe('replays (N4)', () => {
+  beforeAll(freshApp);
+
   const entries = () => db.system((tx) => tx.ledgerEntry.count());
 
   it('a payment replayed with the same key is booked once', async () => {

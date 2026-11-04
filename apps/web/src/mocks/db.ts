@@ -212,6 +212,25 @@ export function defaultRateOf(grid: S['CommissionGrid'] | null): number | null {
   return grid?.tiers.find((tier) => tier.minMillimes === null && tier.maxMillimes === null)?.rateBps ?? null;
 }
 
+/** VAT on the rounded commission and stamp duty (decision of 2026-11-03), as the API. */
+export function taxLines(
+  commissionMillimes: number,
+  taxes: { vatRateBps: number; stampDutyMillimes: number } = {
+    vatRateBps: 1_900,
+    stampDutyMillimes: 1_000,
+  },
+) {
+  return {
+    vatRateBps: taxes.vatRateBps,
+    vatMillimes: commissionOf(commissionMillimes, taxes.vatRateBps),
+    stampDutyMillimes: taxes.stampDutyMillimes,
+  };
+}
+
+/** Sum of the VAT and the stamp duty of `taxLines`. */
+export const taxesOf = (lines: { vatMillimes: number; stampDutyMillimes: number }) =>
+  lines.vatMillimes + lines.stampDutyMillimes;
+
 export function commissionOf(grossMillimes: number, rateBps: number): number {
   return Math.floor((grossMillimes * rateBps + 5_000) / 10_000);
 }
@@ -261,6 +280,7 @@ function buildMerchant(now: number) {
   const payouts: S['PayoutRequest'][] = Array.from({ length: 32 }, (_, index) => {
     const gross = amount(random, 150_000, 2_400_000, 1_000);
     const commission = commissionOf(gross, rateBps);
+    const taxes = taxLines(commission);
     const statuses: S['PayoutRequestStatus'][] = [
       'EXECUTED',
       'EXECUTED',
@@ -277,7 +297,8 @@ function buildMerchant(now: number) {
       grossMillimes: gross,
       commissionRateBps: rateBps,
       commissionMillimes: commission,
-      netMillimes: gross - commission,
+      ...taxes,
+      netMillimes: gross - commission - taxesOf(taxes),
       requestedAt: iso(now - (index * 3 + 1) * DAY - random.int(0, 500) * MINUTE),
       maskedIban: '•••• 4821',
     };
@@ -601,7 +622,8 @@ function buildOrder(
       ? Math.max(drawn, 12_500_000)
       : drawn;
   const fees = commissionOf(value, 150);
-  const total = value + fees;
+  const taxes = taxLines(fees);
+  const total = value + fees + taxesOf(taxes);
   const admin = random.pick(ADMIN_NAMES);
   const at = (offset: number) => iso(createdAtMs + offset);
   const event = (
@@ -626,7 +648,9 @@ function buildOrder(
     companyId: company.id,
     companyName: company.name,
     amountMillimes: value,
+    feeRateBps: 150,
     feesMillimes: fees,
+    ...taxes,
     totalMillimes: total,
     createdAt: at(0),
     paymentReference: `FXP-${random.digits(8)}`,

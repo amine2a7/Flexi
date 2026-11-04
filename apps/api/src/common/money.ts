@@ -19,6 +19,23 @@ export function fromMillimes(value: number): bigint {
  * Commission of `gross` at `rateBps` basis points, rounded half up to the millime, in integers
  * only (spec 03): 45 000 at 200 bps -> 900. Same rule everywhere (quote, request, display).
  */
+/**
+ * Commission at a rate, VAT on the ROUNDED commission, stamp duty (decisions of 2026-11-03):
+ * all in millimes, half up. Same rule as `orderBreakdown` / `payoutBreakdown` of the shared package.
+ */
+export function feesOf(
+  amount: bigint,
+  rateBps: number,
+  taxes: { vatRateBps: number; stampDutyMillimes: bigint },
+): { commission: bigint; vat: bigint; stamp: bigint } {
+  const commission = commissionOf(amount, rateBps);
+  return {
+    commission,
+    vat: commissionOf(commission, taxes.vatRateBps),
+    stamp: taxes.stampDutyMillimes,
+  };
+}
+
 export function commissionOf(gross: bigint, rateBps: number): bigint {
   if (!Number.isInteger(rateBps) || rateBps < 0 || rateBps > 10_000) throw new Error('bad rate');
   return (gross * BigInt(rateBps) + 5_000n) / 10_000n;

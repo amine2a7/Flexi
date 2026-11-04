@@ -1,7 +1,7 @@
 import type { Schemas } from '@flexipay/api-client';
 import { http, HttpResponse } from 'msw';
 import { demoIban } from '../admin-seed';
-import { currentAccount, db, defaultRateOf } from '../db';
+import { currentAccount, db, defaultRateOf, taxLines, taxesOf } from '../db';
 import { MERCHANT_TENANT } from '../fixtures/accounts';
 import { createRandom } from '../fixtures/random';
 import { fileResponse, renderDemoDocument } from './demo-document';
@@ -78,6 +78,9 @@ function demoShopPayouts(): AdminPayout[] {
     grossMillimes: payout.grossMillimes,
     commissionRateBps: payout.commissionRateBps,
     commissionMillimes: payout.commissionMillimes,
+    vatRateBps: payout.vatRateBps,
+    vatMillimes: payout.vatMillimes,
+    stampDutyMillimes: payout.stampDutyMillimes,
     netMillimes: payout.netMillimes,
     requestedAt: payout.requestedAt,
     iban: demoIban(MERCHANT_TENANT.id, () => ''),
@@ -142,7 +145,8 @@ function ensureLines(batch: S['SettlementBatch']): AdminPayout[] {
       grossMillimes: gross,
       commissionRateBps: rate,
       commissionMillimes: commission,
-      netMillimes: gross - commission,
+      ...taxLines(commission),
+      netMillimes: gross - commission - taxesOf(taxLines(commission)),
       requestedAt: new Date(settlementTime - 2 * 86_400_000).toISOString(),
       iban: demoIban(merchant.id, () => random.digits(20)),
       batchId: batch.id,

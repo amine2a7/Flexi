@@ -1,7 +1,7 @@
 import type { Schemas } from '@flexipay/api-client';
 import { http, HttpResponse } from 'msw';
 import { CREDIT_TYPES } from '../credit-types';
-import { commissionOf, db, type MockPayment } from '../db';
+import { commissionOf, db, type MockPayment, taxLines, taxesOf } from '../db';
 import { FIRST_NAMES, LAST_NAMES, calendarDate, createRandom } from '../fixtures/random';
 import { linkEmployeePayment } from './employee';
 import {
@@ -308,13 +308,15 @@ export const merchantHandlers = [
     if (body.grossMillimes > available) return problem(422, 'INSUFFICIENT_FUNDS');
     const rate = typeRate(body.creditType);
     const commission = commissionOf(body.grossMillimes, rate);
+    const taxes = taxLines(commission, db.admin.settings);
     const quote: S['PayoutQuote'] = {
       quoteId: crypto.randomUUID(),
       creditType: body.creditType,
       grossMillimes: body.grossMillimes,
       commissionRateBps: rate,
       commissionMillimes: commission,
-      netMillimes: body.grossMillimes - commission,
+      ...taxes,
+      netMillimes: body.grossMillimes - commission - taxesOf(taxes),
       availableMillimes: available,
       expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
     };
@@ -354,6 +356,9 @@ export const merchantHandlers = [
       grossMillimes: quote.grossMillimes,
       commissionRateBps: quote.commissionRateBps,
       commissionMillimes: quote.commissionMillimes,
+      vatRateBps: quote.vatRateBps,
+      vatMillimes: quote.vatMillimes,
+      stampDutyMillimes: quote.stampDutyMillimes,
       netMillimes: quote.netMillimes,
       requestedAt: new Date().toISOString(),
       maskedIban: db.merchant.profile.maskedIban.slice(-9),

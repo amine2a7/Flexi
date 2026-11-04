@@ -121,6 +121,7 @@ export function buildOtherPayouts(
       DEFAULT_TYPE_SETTINGS.find((item) => item.creditType === creditType)?.commissionRateBps ??
       0;
     const commission = Math.floor((gross * rate + 5_000) / 10_000);
+    const vat = Math.floor((commission * 1_900 + 5_000) / 10_000);
     return {
       id: random.uuid(),
       reference: `VIR-2026-${String(8800 - index)}`,
@@ -131,7 +132,10 @@ export function buildOtherPayouts(
       grossMillimes: gross,
       commissionRateBps: rate,
       commissionMillimes: commission,
-      netMillimes: gross - commission,
+      vatRateBps: 1_900,
+      vatMillimes: vat,
+      stampDutyMillimes: 1_000,
+      netMillimes: gross - commission - vat - 1_000,
       requestedAt: iso(now - (index * 2 + 1) * DAY - random.int(0, 600) * MINUTE),
       iban: demoIban(merchant.id, () => random.digits(20)),
     };

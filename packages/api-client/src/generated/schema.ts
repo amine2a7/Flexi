@@ -2949,6 +2949,12 @@ export interface components {
       grossMillimes: components['schemas']['PositiveAmountMillimes'];
       commissionRateBps: components['schemas']['RateBps'];
       commissionMillimes: components['schemas']['AmountMillimes'];
+      /** @description TVA sur la commission, figée (décision du 2026-11-03). */
+      vatRateBps: components['schemas']['RateBps'];
+      /** @description TVA de la commission arrondie, au millime le plus proche. */
+      vatMillimes: components['schemas']['AmountMillimes'];
+      /** @description Timbre fiscal, figé. */
+      stampDutyMillimes: components['schemas']['AmountMillimes'];
       netMillimes: components['schemas']['AmountMillimes'];
       availableMillimes: components['schemas']['AmountMillimes'];
       expiresAt: components['schemas']['Timestamp'];
@@ -2966,6 +2972,12 @@ export interface components {
       grossMillimes: components['schemas']['PositiveAmountMillimes'];
       commissionRateBps: components['schemas']['RateBps'];
       commissionMillimes: components['schemas']['AmountMillimes'];
+      /** @description TVA sur la commission, figée (décision du 2026-11-03). */
+      vatRateBps: components['schemas']['RateBps'];
+      /** @description TVA de la commission arrondie, au millime le plus proche. */
+      vatMillimes: components['schemas']['AmountMillimes'];
+      /** @description Timbre fiscal, figé. */
+      stampDutyMillimes: components['schemas']['AmountMillimes'];
       /** @description Dette du commerçant (litige accepté sur un paiement déjà viré) déduite à l'exécution de ce virement. */
       deductedMillimes?: components['schemas']['AmountMillimes'];
       netMillimes: components['schemas']['AmountMillimes'];
@@ -2985,6 +2997,12 @@ export interface components {
       grossMillimes: components['schemas']['PositiveAmountMillimes'];
       commissionRateBps: components['schemas']['RateBps'];
       commissionMillimes: components['schemas']['AmountMillimes'];
+      /** @description TVA sur la commission, figée (décision du 2026-11-03). */
+      vatRateBps: components['schemas']['RateBps'];
+      /** @description TVA de la commission arrondie, au millime le plus proche. */
+      vatMillimes: components['schemas']['AmountMillimes'];
+      /** @description Timbre fiscal, figé. */
+      stampDutyMillimes: components['schemas']['AmountMillimes'];
       netMillimes: components['schemas']['AmountMillimes'];
       requestedAt: components['schemas']['Timestamp'];
       /** @description RIB masqué (4 derniers chiffres). */
@@ -3257,6 +3275,12 @@ export interface components {
       amountMillimes: components['schemas']['PositiveAmountMillimes'];
       feeRateBps: components['schemas']['RateBps'];
       feesMillimes: components['schemas']['AmountMillimes'];
+      /** @description TVA sur la commission, figée (décision du 2026-11-03). */
+      vatRateBps: components['schemas']['RateBps'];
+      /** @description TVA de la commission arrondie, au millime le plus proche. */
+      vatMillimes: components['schemas']['AmountMillimes'];
+      /** @description Timbre fiscal, figé. */
+      stampDutyMillimes: components['schemas']['AmountMillimes'];
       totalMillimes: components['schemas']['PositiveAmountMillimes'];
     };
     /** CreditOrderCreate */
@@ -3274,7 +3298,15 @@ export interface components {
       companyId: components['schemas']['Uuid'];
       companyName: string;
       amountMillimes: components['schemas']['PositiveAmountMillimes'];
+      /** @description Taux de la tranche de la grille, figé dans la commande. */
+      feeRateBps: components['schemas']['RateBps'];
       feesMillimes: components['schemas']['AmountMillimes'];
+      /** @description TVA sur la commission, figée (décision du 2026-11-03). */
+      vatRateBps: components['schemas']['RateBps'];
+      /** @description TVA de la commission arrondie, au millime le plus proche. */
+      vatMillimes: components['schemas']['AmountMillimes'];
+      /** @description Timbre fiscal, figé. */
+      stampDutyMillimes: components['schemas']['AmountMillimes'];
       totalMillimes: components['schemas']['PositiveAmountMillimes'];
       createdAt: components['schemas']['Timestamp'];
       /** @description Référence à indiquer sur le virement. */
@@ -3295,7 +3327,15 @@ export interface components {
       companyId: components['schemas']['Uuid'];
       companyName: string;
       amountMillimes: components['schemas']['PositiveAmountMillimes'];
+      /** @description Taux de la tranche de la grille, figé dans la commande. */
+      feeRateBps: components['schemas']['RateBps'];
       feesMillimes: components['schemas']['AmountMillimes'];
+      /** @description TVA sur la commission, figée (décision du 2026-11-03). */
+      vatRateBps: components['schemas']['RateBps'];
+      /** @description TVA de la commission arrondie, au millime le plus proche. */
+      vatMillimes: components['schemas']['AmountMillimes'];
+      /** @description Timbre fiscal, figé. */
+      stampDutyMillimes: components['schemas']['AmountMillimes'];
       totalMillimes: components['schemas']['PositiveAmountMillimes'];
       createdAt: components['schemas']['Timestamp'];
       /** @description Référence à indiquer sur le virement. */
@@ -3733,6 +3773,12 @@ export interface components {
       grossMillimes: components['schemas']['PositiveAmountMillimes'];
       commissionRateBps: components['schemas']['RateBps'];
       commissionMillimes: components['schemas']['AmountMillimes'];
+      /** @description TVA sur la commission, figée (décision du 2026-11-03). */
+      vatRateBps: components['schemas']['RateBps'];
+      /** @description TVA de la commission arrondie, au millime le plus proche. */
+      vatMillimes: components['schemas']['AmountMillimes'];
+      /** @description Timbre fiscal, figé. */
+      stampDutyMillimes: components['schemas']['AmountMillimes'];
       netMillimes: components['schemas']['AmountMillimes'];
       requestedAt: components['schemas']['Timestamp'];
       iban: string;
@@ -3751,6 +3797,12 @@ export interface components {
       grossMillimes: components['schemas']['PositiveAmountMillimes'];
       commissionRateBps: components['schemas']['RateBps'];
       commissionMillimes: components['schemas']['AmountMillimes'];
+      /** @description TVA sur la commission, figée (décision du 2026-11-03). */
+      vatRateBps: components['schemas']['RateBps'];
+      /** @description TVA de la commission arrondie, au millime le plus proche. */
+      vatMillimes: components['schemas']['AmountMillimes'];
+      /** @description Timbre fiscal, figé. */
+      stampDutyMillimes: components['schemas']['AmountMillimes'];
       netMillimes: components['schemas']['AmountMillimes'];
       requestedAt: components['schemas']['Timestamp'];
       iban: string;

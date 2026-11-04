@@ -1,7 +1,7 @@
 import type { Schemas } from '@flexipay/api-client';
 import { http, HttpResponse } from 'msw';
 import { CREDIT_TYPES, balancesList, emptyBalances, type TypeBalances } from '../credit-types';
-import { commissionOf, db, saveOrders } from '../db';
+import { commissionOf, db, saveOrders, defaultRateOf, taxLines, taxesOf } from '../db';
 import { COMPANY_TENANT } from '../fixtures/accounts';
 import { OPEN_ORDER_STATUSES, orderSummary } from './orders';
 import {
@@ -299,14 +299,17 @@ export const companyHandlers = [
     const invalid = checkOrderLines(body.lines);
     if (invalid !== undefined) return invalid;
     const amount = body.lines.reduce((sum, line) => sum + line.amountMillimes, 0);
-    const rate = db.admin.settings.orderFeeRateBps;
+    const own = db.admin.companies.find((company) => company.id === COMPANY_TENANT.id);
+    const rate = defaultRateOf(own?.commissionGrid ?? null) ?? db.admin.settings.orderFeeRateBps;
     const fees = commissionOf(amount, rate);
+    const taxes = taxLines(fees, db.admin.settings);
     return HttpResponse.json<S['CreditOrderQuote']>({
       lines: body.lines,
       amountMillimes: amount,
       feeRateBps: rate,
       feesMillimes: fees,
-      totalMillimes: amount + fees,
+      ...taxes,
+      totalMillimes: amount + fees + taxesOf(taxes),
     });
   }),
 

@@ -8,7 +8,7 @@ loadTestEnv();
 const { loadEnv } = await import('../../src/config/env.js');
 const { createApp } = await import('../../src/app.factory.js');
 const { DbService } = await import('../../src/common/db.service.js');
-const { createCompany, createEmployee, createUser, seedSettings, signedIn } =
+const { createCompany, createEmployee, createUser, ledgerLines, sealed, seedSettings, signedIn } =
   await import('./fixtures.js');
 
 const env = loadEnv();
@@ -54,6 +54,143 @@ async function setup() {
 
 const key = () => ({ 'Idempotency-Key': randomUUID() });
 
+/** Company with its own grid (decision of 2026-11-03). */
+async function companyWithGrid(tiers: { rateBps: number; min?: bigint; max?: bigint }[]) {
+  return db.system((tx) =>
+    tx.company.create({
+      data: {
+        name: `Grille ${randomUUID().slice(0, 8)}`,
+        city: 'Tunis',
+        phone: sealed('+21671000000'),
+        email: 'grille@societe.test',
+        status: 'APPROVED',
+        commissionGrids: {
+          create: {
+            tiers: {
+              create: tiers.map((tier, position) => ({
+                position,
+                rateBps: tier.rateBps,
+                minMillimes: tier.min ?? null,
+                maxMillimes: tier.max ?? null,
+              })),
+            },
+          },
+        },
+      },
+    }),
+  );
+}
+
+describe('commission, VAT and stamp duty of an order (decisions of 2026-11-03)', () => {
+  it('order of 10 000 TND at 5 %: total 10 596,000 TND, separate ledger entries', async () => {
+    const company = await companyWithGrid([{ rateBps: 500 }]);
+    const owner = await signedIn(
+      base,
+      await createUser(db, env, 'COMPANY', { companyId: company.id }, 'Nadia T.'),
+    );
+    const admin = await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Amine K.'));
+    const lines = [{ creditType: 'RESTAURATION', amountMillimes: 10_000_000 }];
+    const quote = await owner.call('POST', '/v1/company/order-quotes', { body: { lines } });
+    expect(quote.body).toMatchObject({
+      amountMillimes: 10_000_000,
+      feeRateBps: 500,
+      feesMillimes: 500_000,
+      vatRateBps: 1_900,
+      vatMillimes: 95_000,
+      stampDutyMillimes: 1_000,
+      totalMillimes: 10_596_000,
+    });
+    const created = await owner.call('POST', '/v1/company/orders', { body: { lines }, headers: key() });
+    expect(created.body).toMatchObject({ totalMillimes: 10_596_000, vatMillimes: 95_000 });
+    const id = String(created.body.id);
+    await admin.call('POST', `/v1/admin/credit-orders/${id}/confirm`);
+    await owner.call('POST', `/v1/company/orders/${id}/transfer-declarations`, {
+      form: declaration('10596000'),
+      headers: key(),
+    });
+    const validated = await admin.call('POST', `/v1/admin/credit-orders/${id}/validate`, {
+      headers: key(),
+    });
+    expect(validated.body.status).toBe('VALIDATED');
+    expect(await ledgerLines(db, String(created.body.reference))).toEqual([
+      { code: 'BANK_ESCROW', direction: 'D', amount: 10_596_000 },
+      { code: 'COMPANY_WALLET', direction: 'C', amount: 10_000_000 },
+      { code: 'REVENUE_COMPANY_FEES', direction: 'C', amount: 500_000 },
+      { code: 'STAMP_DUTY', direction: 'C', amount: 1_000 },
+      { code: 'VAT_COLLECTED', direction: 'C', amount: 95_000 },
+    ]);
+  });
+
+  it('order of 16 000 TND falls in the 15 000 – 18 000 tranche at 3 %', async () => {
+    const company = await companyWithGrid([
+      { rateBps: 500 },
+      { rateBps: 400, min: 0n, max: 14_999_999n },
+      { rateBps: 300, min: 15_000_000n, max: 18_000_000n },
+    ]);
+    const owner = await signedIn(
+      base,
+      await createUser(db, env, 'COMPANY', { companyId: company.id }, 'Nadia T.'),
+    );
+    const quote = await owner.call('POST', '/v1/company/order-quotes', {
+      body: { lines: [{ creditType: 'RESTAURATION', amountMillimes: 16_000_000 }] },
+    });
+    expect(quote.body).toMatchObject({
+      feeRateBps: 300,
+      feesMillimes: 480_000,
+      vatMillimes: 91_200,
+      stampDutyMillimes: 1_000,
+      totalMillimes: 16_572_200,
+    });
+    // 18 000 TND is still in the tranche (both bounds included).
+    const upper = await owner.call('POST', '/v1/company/order-quotes', {
+      body: { lines: [{ creditType: 'RESTAURATION', amountMillimes: 18_000_000 }] },
+    });
+    expect(upper.body.feeRateBps).toBe(300);
+  });
+
+  it('the rates are frozen in the order: a later grid change does not alter it', async () => {
+    const company = await companyWithGrid([{ rateBps: 500 }]);
+    const owner = await signedIn(
+      base,
+      await createUser(db, env, 'COMPANY', { companyId: company.id }, 'Nadia T.'),
+    );
+    const lines = [{ creditType: 'RESTAURATION', amountMillimes: 1_000_000 }];
+    const created = await owner.call('POST', '/v1/company/orders', { body: { lines }, headers: key() });
+    await db.system((tx) =>
+      tx.commissionGrid.create({
+        data: { companyId: company.id, tiers: { create: [{ position: 0, rateBps: 100 }] } },
+      }),
+    );
+    const detail = await owner.call('GET', `/v1/company/orders/${String(created.body.id)}`);
+    expect(detail.body).toMatchObject({ feeRateBps: 500, feesMillimes: 50_000, vatMillimes: 9_500 });
+    const next = await owner.call('POST', '/v1/company/order-quotes', { body: { lines } });
+    expect(next.body).toMatchObject({ feeRateBps: 100, feesMillimes: 10_000 });
+  });
+
+  it('a company without a grid cannot order', async () => {
+    const company = await db.system((tx) =>
+      tx.company.create({
+        data: {
+          name: `Sans grille ${randomUUID().slice(0, 8)}`,
+          city: 'Tunis',
+          phone: sealed('+21671000000'),
+          email: 'sans@societe.test',
+          status: 'APPROVED',
+        },
+      }),
+    );
+    const owner = await signedIn(
+      base,
+      await createUser(db, env, 'COMPANY', { companyId: company.id }, 'Nadia T.'),
+    );
+    const quote = await owner.call('POST', '/v1/company/order-quotes', {
+      body: { lines: [{ creditType: 'RESTAURATION', amountMillimes: 1_000_000 }] },
+    });
+    expect(quote.status).toBe(422);
+    expect(quote.body.code).toBe('COMMISSION_GRID_MISSING');
+  });
+});
+
 describe('credit order circuit', () => {
   it('orders, confirms, declares the transfer, validates: each type is credited', async () => {
     const { owner, adminA } = await setup();
@@ -69,7 +206,10 @@ describe('credit order circuit', () => {
       amountMillimes: 1_500_000,
       feeRateBps: 150,
       feesMillimes: 22_500,
-      totalMillimes: 1_522_500,
+      vatRateBps: 1_900,
+      vatMillimes: 4_275,
+      stampDutyMillimes: 1_000,
+      totalMillimes: 1_527_775,
     });
 
     const headers = key();
@@ -83,7 +223,7 @@ describe('credit order circuit', () => {
     expect(created.status).toBe(201);
     expect(created.body).toMatchObject({
       status: 'AWAITING_CONFIRMATION',
-      totalMillimes: 1_522_500,
+      totalMillimes: 1_527_775,
     });
     expect((created.body.lines as { creditType: string }[]).map((line) => line.creditType)).toEqual(
       ['RESTAURATION', 'CADEAUX'],
@@ -108,11 +248,11 @@ describe('credit order circuit', () => {
     const invoices = await owner.call('GET', '/v1/company/invoices');
     expect((invoices.body.data as { status: string; totalMillimes: number }[])[0]).toMatchObject({
       status: 'UNPAID',
-      totalMillimes: 1_522_500,
+      totalMillimes: 1_527_775,
     });
 
     const declared = await owner.call('POST', `/v1/company/orders/${id}/transfer-declarations`, {
-      form: declaration('1522500'),
+      form: declaration('1527775'),
       headers: key(),
     });
     expect(declared.status).toBe(201);

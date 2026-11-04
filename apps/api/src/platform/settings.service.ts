@@ -57,6 +57,12 @@ export class SettingsService {
   }
 
   /** Settings of the 4 types, in display order. */
+  /** VAT rate and stamp duty of the settings (super-admin), frozen in each order and payout. */
+  async taxes(tx: Tx): Promise<{ vatRateBps: number; stampDutyMillimes: bigint }> {
+    const row = await this.platform(tx);
+    return { vatRateBps: row.vatRateBps, stampDutyMillimes: row.stampDutyMillimes };
+  }
+
   async creditTypes(tx: Tx): Promise<CreditTypeSetting[]> {
     const rows = await tx.creditTypeSetting.findMany();
     return CREDIT_TYPES.flatMap((type) => rows.filter((row) => row.creditType === type));

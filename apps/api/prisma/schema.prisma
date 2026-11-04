@@ -555,6 +555,10 @@ model CreditOrder {
   amountMillimes         BigInt      @map("amount_millimes")
   feeRateBps             Int         @map("fee_rate_bps")
   feesMillimes           BigInt      @map("fees_millimes")
+  /// VAT on the commission and stamp duty, frozen in the order (decision of 2026-11-03).
+  vatRateBps             Int         @default(0) @map("vat_rate_bps")
+  vatMillimes            BigInt      @default(0) @map("vat_millimes")
+  stampDutyMillimes      BigInt      @default(0) @map("stamp_duty_millimes")
   totalMillimes          BigInt      @map("total_millimes")
   /// Reference to write on the bank transfer.
   paymentReference       String      @map("payment_reference") @db.VarChar(32)
@@ -732,6 +736,10 @@ model PayoutQuote {
   grossMillimes      BigInt     @map("gross_millimes")
   commissionRateBps  Int        @map("commission_rate_bps")
   commissionMillimes BigInt     @map("commission_millimes")
+  /// VAT and stamp duty of the simulation (decision of 2026-11-03).
+  vatRateBps         Int        @default(0) @map("vat_rate_bps")
+  vatMillimes        BigInt     @default(0) @map("vat_millimes")
+  stampDutyMillimes  BigInt     @default(0) @map("stamp_duty_millimes")
   netMillimes        BigInt     @map("net_millimes")
   expiresAt          DateTime   @map("expires_at") @db.Timestamptz(3)
   usedAt             DateTime?  @map("used_at") @db.Timestamptz(3)
@@ -752,6 +760,10 @@ model PayoutRequest {
   /// Rate frozen when the request is made (rule 5).
   commissionRateBps  Int          @map("commission_rate_bps")
   commissionMillimes BigInt       @map("commission_millimes")
+  /// VAT and stamp duty frozen in the request (decision of 2026-11-03).
+  vatRateBps         Int          @default(0) @map("vat_rate_bps")
+  vatMillimes        BigInt       @default(0) @map("vat_millimes")
+  stampDutyMillimes  BigInt       @default(0) @map("stamp_duty_millimes")
   netMillimes        BigInt       @map("net_millimes")
   /// IBAN at the time of the request (the transfer goes there even if the shop changes it).
   iban               String // encrypted (AES-256-GCM)
@@ -1034,6 +1046,8 @@ model Dispute {
   resolutionTransactionId    String?       @map("resolution_transaction_id") @db.Uuid
   /// Commission cancelled with the refund of a paid payment (decision of 2026-11-02).
   commissionReversedMillimes BigInt        @default(0) @map("commission_reversed_millimes")
+  /// VAT of that commission, cancelled with it.
+  vatReversedMillimes        BigInt        @default(0) @map("vat_reversed_millimes")
 
   payment    Payment        @relation(fields: [paymentId], references: [id])
   merchant   Merchant       @relation(fields: [merchantId], references: [id])

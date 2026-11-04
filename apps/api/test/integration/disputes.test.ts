@@ -233,6 +233,7 @@ const reconciled = async () => {
   expect(report.mismatches).toEqual([]);
   expect(report.lotMismatches).toEqual([]);
   expect(report.holdMismatches).toEqual([]);
+  expect(report.taxMismatches).toEqual([]);
   expect(report.ok).toBe(true);
 };
 
@@ -467,6 +468,10 @@ describe('disputes (N2)', () => {
     await runBatch(await approvePayout(finance, String(paid.id)));
     const commission = commissionOf(20_000n, Number(paid.commissionRateBps));
     expect(commission).toBeGreaterThan(0n);
+    // The VAT of the cancelled commission is cancelled with it (decision of 2026-11-03).
+    const vat = commissionOf(commission, Number(paid.vatRateBps));
+    const vatCollected = () => db.system((tx) => ledger.balance(tx, accounts.vatCollected()));
+    const vatBefore = await vatCollected();
     const revenue = () => db.system((tx) => ledger.balance(tx, accounts.merchantCommission()));
     const debt = () => db.system((tx) => ledger.balance(tx, accounts.merchantDebt(merchant.id)));
     const before = await revenue();
@@ -474,7 +479,8 @@ describe('disputes (N2)', () => {
     await refundDispute(ops, finance, dispute);
     expect(await balance(accounts.employeeWallet(employee.id, 'RESTAURATION'))).toBe(100_000n);
     expect(await revenue()).toBe(before - commission);
-    expect(await debt()).toBe(20_000n - commission);
+    expect(await vatCollected()).toBe(vatBefore - vat);
+    expect(await debt()).toBe(20_000n - commission - vat);
     await reconciled();
     // Next settlement of the merchant: the debt is deducted from what the bank sends.
     await pay(payer, merchant.paymentCode, 50_000);
@@ -482,7 +488,7 @@ describe('disputes (N2)', () => {
     await runBatch(await approvePayout(finance, String(next.id)));
     expect(await debt()).toBe(0n);
     const settled = await shop.call('GET', `/v1/merchant/payouts/${String(next.id)}`);
-    expect(settled.body.deductedMillimes).toBe(Number(20_000n - commission));
+    expect(settled.body.deductedMillimes).toBe(Number(20_000n - commission - vat));
     await reconciled();
   });
 
@@ -678,7 +684,8 @@ describe('disputes: concurrency, cumul and reconciliation (N2)', () => {
     await refundDispute(ops, finance, await openDispute(ops, other.id));
     expect(await revenue()).toBe(before - commission);
     const debt = await db.system((tx) => ledger.balance(tx, accounts.merchantDebt(merchant.id)));
-    expect(debt).toBe(22_060n - commission);
+    // Never more VAT cancelled than the payout took either.
+    expect(debt).toBe(22_060n - commission - BigInt(Number(paid.vatMillimes)));
     await reconciled();
   });
 

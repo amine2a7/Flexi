@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: FlexiPay API
-  version: 0.9.0
+  version: 0.10.0
   summary: Conventions transverses, authentification web et profil (WB2, espace Commun).
   description: |
     # Contrat d'API FlexiPay (version 0.2.2)
@@ -6462,7 +6462,7 @@ components:
       description: Simulation calculée par le serveur ; taux figé jusqu'à `expiresAt`.
       type: object
       additionalProperties: false
-      required: [quoteId, creditType, grossMillimes, commissionRateBps, commissionMillimes, netMillimes, availableMillimes, expiresAt]
+      required: [quoteId, creditType, grossMillimes, commissionRateBps, commissionMillimes, vatRateBps, vatMillimes, stampDutyMillimes, netMillimes, availableMillimes, expiresAt]
       properties:
         creditType:
           $ref: '#/components/schemas/CreditType'
@@ -6473,6 +6473,15 @@ components:
         commissionRateBps:
           $ref: '#/components/schemas/RateBps'
         commissionMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        vatRateBps:
+          description: TVA sur la commission, figée (décision du 2026-11-03).
+          $ref: '#/components/schemas/RateBps'
+        vatMillimes:
+          description: TVA de la commission arrondie, au millime le plus proche.
+          $ref: '#/components/schemas/AmountMillimes'
+        stampDutyMillimes:
+          description: Timbre fiscal, figé.
           $ref: '#/components/schemas/AmountMillimes'
         netMillimes:
           $ref: '#/components/schemas/AmountMillimes'
@@ -6492,7 +6501,7 @@ components:
       title: PayoutRequest
       type: object
       additionalProperties: false
-      required: [id, creditType, reference, status, grossMillimes, commissionRateBps, commissionMillimes, netMillimes, requestedAt, maskedIban]
+      required: [id, creditType, reference, status, grossMillimes, commissionRateBps, commissionMillimes, vatRateBps, vatMillimes, stampDutyMillimes, netMillimes, requestedAt, maskedIban]
       properties:
         creditType:
           $ref: '#/components/schemas/CreditType'
@@ -6509,6 +6518,15 @@ components:
         commissionRateBps:
           $ref: '#/components/schemas/RateBps'
         commissionMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        vatRateBps:
+          description: TVA sur la commission, figée (décision du 2026-11-03).
+          $ref: '#/components/schemas/RateBps'
+        vatMillimes:
+          description: TVA de la commission arrondie, au millime le plus proche.
+          $ref: '#/components/schemas/AmountMillimes'
+        stampDutyMillimes:
+          description: Timbre fiscal, figé.
           $ref: '#/components/schemas/AmountMillimes'
         deductedMillimes:
           description: Dette du commerçant (litige accepté sur un paiement déjà viré) déduite à l'exécution de ce virement.
@@ -6527,7 +6545,7 @@ components:
       description: Demande de virement avec les étapes franchies (du plus ancien au plus récent).
       type: object
       additionalProperties: false
-      required: [id, creditType, reference, status, grossMillimes, commissionRateBps, commissionMillimes, netMillimes, requestedAt, maskedIban, history]
+      required: [id, creditType, reference, status, grossMillimes, commissionRateBps, commissionMillimes, vatRateBps, vatMillimes, stampDutyMillimes, netMillimes, requestedAt, maskedIban, history]
       properties:
         creditType:
           $ref: '#/components/schemas/CreditType'
@@ -6544,6 +6562,15 @@ components:
         commissionRateBps:
           $ref: '#/components/schemas/RateBps'
         commissionMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        vatRateBps:
+          description: TVA sur la commission, figée (décision du 2026-11-03).
+          $ref: '#/components/schemas/RateBps'
+        vatMillimes:
+          description: TVA de la commission arrondie, au millime le plus proche.
+          $ref: '#/components/schemas/AmountMillimes'
+        stampDutyMillimes:
+          description: Timbre fiscal, figé.
           $ref: '#/components/schemas/AmountMillimes'
         netMillimes:
           $ref: '#/components/schemas/AmountMillimes'
@@ -7084,7 +7111,7 @@ components:
       description: Récapitulatif calculé par le serveur.
       type: object
       additionalProperties: false
-      required: [lines, amountMillimes, feeRateBps, feesMillimes, totalMillimes]
+      required: [lines, amountMillimes, feeRateBps, feesMillimes, vatRateBps, vatMillimes, stampDutyMillimes, totalMillimes]
       properties:
         lines:
           type: array
@@ -7097,6 +7124,15 @@ components:
         feeRateBps:
           $ref: '#/components/schemas/RateBps'
         feesMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        vatRateBps:
+          description: TVA sur la commission, figée (décision du 2026-11-03).
+          $ref: '#/components/schemas/RateBps'
+        vatMillimes:
+          description: TVA de la commission arrondie, au millime le plus proche.
+          $ref: '#/components/schemas/AmountMillimes'
+        stampDutyMillimes:
+          description: Timbre fiscal, figé.
           $ref: '#/components/schemas/AmountMillimes'
         totalMillimes:
           $ref: '#/components/schemas/PositiveAmountMillimes'
@@ -7117,7 +7153,7 @@ components:
       title: CreditOrder
       type: object
       additionalProperties: false
-      required: [id, reference, status, lines, companyId, companyName, amountMillimes, feesMillimes, totalMillimes, createdAt, paymentReference]
+      required: [id, reference, status, lines, companyId, companyName, amountMillimes, feesMillimes, feeRateBps, vatRateBps, vatMillimes, stampDutyMillimes, totalMillimes, createdAt, paymentReference]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -7142,7 +7178,19 @@ components:
           maxLength: 120
         amountMillimes:
           $ref: '#/components/schemas/PositiveAmountMillimes'
+        feeRateBps:
+          description: Taux de la tranche de la grille, figé dans la commande.
+          $ref: '#/components/schemas/RateBps'
         feesMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        vatRateBps:
+          description: TVA sur la commission, figée (décision du 2026-11-03).
+          $ref: '#/components/schemas/RateBps'
+        vatMillimes:
+          description: TVA de la commission arrondie, au millime le plus proche.
+          $ref: '#/components/schemas/AmountMillimes'
+        stampDutyMillimes:
+          description: Timbre fiscal, figé.
           $ref: '#/components/schemas/AmountMillimes'
         totalMillimes:
           $ref: '#/components/schemas/PositiveAmountMillimes'
@@ -7161,7 +7209,7 @@ components:
       description: Commande avec sa déclaration de virement, son dernier motif et son historique.
       type: object
       additionalProperties: false
-      required: [id, reference, status, lines, companyId, companyName, amountMillimes, feesMillimes, totalMillimes, createdAt, paymentReference, history, requiresSecondValidation]
+      required: [id, reference, status, lines, companyId, companyName, amountMillimes, feesMillimes, feeRateBps, vatRateBps, vatMillimes, stampDutyMillimes, totalMillimes, createdAt, paymentReference, history, requiresSecondValidation]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -7186,7 +7234,19 @@ components:
           maxLength: 120
         amountMillimes:
           $ref: '#/components/schemas/PositiveAmountMillimes'
+        feeRateBps:
+          description: Taux de la tranche de la grille, figé dans la commande.
+          $ref: '#/components/schemas/RateBps'
         feesMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        vatRateBps:
+          description: TVA sur la commission, figée (décision du 2026-11-03).
+          $ref: '#/components/schemas/RateBps'
+        vatMillimes:
+          description: TVA de la commission arrondie, au millime le plus proche.
+          $ref: '#/components/schemas/AmountMillimes'
+        stampDutyMillimes:
+          description: Timbre fiscal, figé.
           $ref: '#/components/schemas/AmountMillimes'
         totalMillimes:
           $ref: '#/components/schemas/PositiveAmountMillimes'
@@ -8040,7 +8100,7 @@ components:
       description: Demande de virement vue par l'administrateur (IBAN complet pour le contrôle).
       type: object
       additionalProperties: false
-      required: [id, creditType, reference, status, merchantId, merchantName, grossMillimes, commissionRateBps, commissionMillimes, netMillimes, requestedAt, iban]
+      required: [id, creditType, reference, status, merchantId, merchantName, grossMillimes, commissionRateBps, commissionMillimes, vatRateBps, vatMillimes, stampDutyMillimes, netMillimes, requestedAt, iban]
       properties:
         creditType:
           $ref: '#/components/schemas/CreditType'
@@ -8063,6 +8123,15 @@ components:
         commissionRateBps:
           $ref: '#/components/schemas/RateBps'
         commissionMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        vatRateBps:
+          description: TVA sur la commission, figée (décision du 2026-11-03).
+          $ref: '#/components/schemas/RateBps'
+        vatMillimes:
+          description: TVA de la commission arrondie, au millime le plus proche.
+          $ref: '#/components/schemas/AmountMillimes'
+        stampDutyMillimes:
+          description: Timbre fiscal, figé.
           $ref: '#/components/schemas/AmountMillimes'
         netMillimes:
           $ref: '#/components/schemas/AmountMillimes'
@@ -8081,7 +8150,7 @@ components:
       title: AdminPayoutRequestDetail
       type: object
       additionalProperties: false
-      required: [id, creditType, reference, status, merchantId, merchantName, grossMillimes, commissionRateBps, commissionMillimes, netMillimes, requestedAt, iban, history]
+      required: [id, creditType, reference, status, merchantId, merchantName, grossMillimes, commissionRateBps, commissionMillimes, vatRateBps, vatMillimes, stampDutyMillimes, netMillimes, requestedAt, iban, history]
       properties:
         creditType:
           $ref: '#/components/schemas/CreditType'
@@ -8104,6 +8173,15 @@ components:
         commissionRateBps:
           $ref: '#/components/schemas/RateBps'
         commissionMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        vatRateBps:
+          description: TVA sur la commission, figée (décision du 2026-11-03).
+          $ref: '#/components/schemas/RateBps'
+        vatMillimes:
+          description: TVA de la commission arrondie, au millime le plus proche.
+          $ref: '#/components/schemas/AmountMillimes'
+        stampDutyMillimes:
+          description: Timbre fiscal, figé.
           $ref: '#/components/schemas/AmountMillimes'
         netMillimes:
           $ref: '#/components/schemas/AmountMillimes'

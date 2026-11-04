@@ -547,8 +547,11 @@ const summary = await prisma.$transaction(
           companyId: order.companyId,
           status: order.status,
           amountMillimes: big(order.amountMillimes),
-          feeRateBps: settings.orderFeeRateBps,
+          feeRateBps: order.feeRateBps,
           feesMillimes: big(order.feesMillimes),
+          vatRateBps: order.vatRateBps,
+          vatMillimes: big(order.vatMillimes),
+          stampDutyMillimes: big(order.stampDutyMillimes),
           totalMillimes: big(order.totalMillimes),
           paymentReference: order.paymentReference,
           declaredAmountMillimes:
@@ -600,15 +603,14 @@ const summary = await prisma.$transaction(
               direction: 'C' as const,
               amount: big(line.amountMillimes),
             })),
-            ...(order.feesMillimes > 0
-              ? [
-                  {
-                    account: accounts.companyFees(),
-                    direction: 'C' as const,
-                    amount: big(order.feesMillimes),
-                  },
-                ]
-              : []),
+            // Commission, VAT and stamp duty each on its own account (as the API).
+            ...[
+              { account: accounts.companyFees(), amount: big(order.feesMillimes) },
+              { account: accounts.vatCollected(), amount: big(order.vatMillimes) },
+              { account: accounts.stampDuty(), amount: big(order.stampDutyMillimes) },
+            ]
+              .filter((line) => line.amount > 0n)
+              .map((line) => ({ ...line, direction: 'C' as const })),
           ],
         });
       }
@@ -986,6 +988,9 @@ const summary = await prisma.$transaction(
       gross: bigint;
       rateBps: number;
       commission: bigint;
+      vatRateBps: number;
+      vat: bigint;
+      stamp: bigint;
       net: bigint;
       requestedAt: Date;
       iban: string;
@@ -1017,15 +1022,13 @@ const summary = await prisma.$transaction(
         entries: [
           { account: wallet, direction: 'D', amount: input.gross },
           { account: accounts.payoutPayable(), direction: 'C', amount: input.net },
-          ...(input.commission > 0n
-            ? [
-                {
-                  account: accounts.merchantCommission(),
-                  direction: 'C' as const,
-                  amount: input.commission,
-                },
-              ]
-            : []),
+          ...[
+            { account: accounts.merchantCommission(), amount: input.commission },
+            { account: accounts.vatCollected(), amount: input.vat },
+            { account: accounts.stampDuty(), amount: input.stamp },
+          ]
+            .filter((line) => line.amount > 0n)
+            .map((line) => ({ ...line, direction: 'C' as const })),
         ],
       });
       const step = (offset: number) => new Date(input.requestedAt.getTime() + offset);
@@ -1067,6 +1070,9 @@ const summary = await prisma.$transaction(
           grossMillimes: input.gross,
           commissionRateBps: input.rateBps,
           commissionMillimes: input.commission,
+          vatRateBps: input.vatRateBps,
+          vatMillimes: input.vat,
+          stampDutyMillimes: input.stamp,
           netMillimes: input.net,
           iban: seal(input.iban),
           transactionId: posted.transactionId,
@@ -1122,6 +1128,9 @@ const summary = await prisma.$transaction(
             gross: big(request.grossMillimes),
             rateBps: request.commissionRateBps,
             commission: big(request.commissionMillimes),
+            vatRateBps: request.vatRateBps,
+            vat: big(request.vatMillimes),
+            stamp: big(request.stampDutyMillimes),
             net: big(request.netMillimes),
             requestedAt: at(request.requestedAt),
             iban: DEMO_IBAN,
@@ -1141,6 +1150,9 @@ const summary = await prisma.$transaction(
             gross: big(request.grossMillimes),
             rateBps: request.commissionRateBps,
             commission: big(request.commissionMillimes),
+            vatRateBps: request.vatRateBps,
+            vat: big(request.vatMillimes),
+            stamp: big(request.stampDutyMillimes),
             net: big(request.netMillimes),
             requestedAt: at(request.requestedAt),
             iban: request.iban,

@@ -275,6 +275,8 @@ export class DisputesService {
       accounts.merchantDebt(merchantId),
       accounts.merchantCommission(),
       accounts.payoutPayable(),
+      accounts.vatCollected(),
+      accounts.stampDuty(),
     ]);
     await tx.$queryRaw`SELECT id FROM disputes WHERE id = ${id}::uuid FOR UPDATE`;
     const dispute = await tx.dispute.findUnique({ where: { id }, include: { payment: true } });
@@ -301,7 +303,7 @@ export class DisputesService {
       throw new Error('dispute refund: payment debits do not match the disputed amount');
     }
     const now = new Date();
-    const { debits, commission } = await this.refundDebits(tx, dispute, who.userId);
+    const { debits, commission, vat } = await this.refundDebits(tx, dispute, who.userId);
     const posted = await this.ledger.post(tx, {
       type: 'DISPUTE_REFUND',
       reference: dispute.reference,
@@ -329,6 +331,7 @@ export class DisputesService {
         decidedAt: now,
         resolutionTransactionId: posted.transactionId,
         commissionReversedMillimes: commission,
+        vatReversedMillimes: vat,
       },
     });
     await this.audit.record(tx, 'disputes.refund', dispute.reference);
@@ -344,20 +347,21 @@ export class DisputesService {
     tx: Tx,
     dispute: Dispute & { payment: Payment },
     actorId: string,
-  ): Promise<{ debits: EntryInput[]; commission: bigint }> {
+  ): Promise<{ debits: EntryInput[]; commission: bigint; vat: bigint }> {
     const { merchantId, creditType } = dispute.payment;
     const amount = dispute.amountMillimes;
     if (dispute.holdTransactionId !== null) {
       const account = accounts.disputeHold(merchantId, creditType);
-      return { debits: [{ account, direction: 'D', amount }], commission: 0n };
+      return { debits: [{ account, direction: 'D', amount }], commission: 0n, vat: 0n };
     }
     if (dispute.heldPayoutId !== null) {
       await this.reverseHeldPayout(tx, dispute, actorId);
       const account = accounts.merchantWallet(merchantId, creditType);
-      return { debits: [{ account, direction: 'D', amount }], commission: 0n };
+      return { debits: [{ account, direction: 'D', amount }], commission: 0n, vat: 0n };
     }
-    const commission = await this.commissionToCancel(tx, dispute);
-    const debt = amount - commission;
+    const { commission, vat } = await this.feesToCancel(tx, dispute);
+    const debt = amount - commission - vat;
+    if (debt < 0n) throw problems.conflict();
     return {
       debits: [
         ...(debt > 0n
@@ -372,8 +376,13 @@ export class DisputesService {
               },
             ]
           : []),
+        // The VAT of the cancelled commission is not owed to the State any more.
+        ...(vat > 0n
+          ? [{ account: accounts.vatCollected(), direction: 'D' as const, amount: vat }]
+          : []),
       ],
       commission,
+      vat,
     };
   }
 
@@ -439,23 +448,31 @@ export class DisputesService {
   }
 
   /**
-   * Commission of a paid payment at the frozen rate of its payout, without ever cancelling more
-   * than the payout took (the rounding of several shares could add up to more).
+   * Commission of a paid payment at the frozen rate of its payout and the VAT of that commission
+   * at the frozen VAT rate, without ever cancelling more than the payout took (the rounding of
+   * several shares could add up to more). The stamp duty of the payout stays due.
    */
-  private async commissionToCancel(
+  private async feesToCancel(
     tx: Tx,
     dispute: Dispute & { payment: Payment },
-  ): Promise<bigint> {
-    if (dispute.payment.payoutId === null) return 0n;
+  ): Promise<{ commission: bigint; vat: bigint }> {
+    if (dispute.payment.payoutId === null) return { commission: 0n, vat: 0n };
     const payout = await tx.payoutRequest.findUnique({ where: { id: dispute.payment.payoutId } });
-    if (payout === null) return 0n;
+    if (payout === null) return { commission: 0n, vat: 0n };
     const done = await tx.dispute.aggregate({
-      _sum: { commissionReversedMillimes: true },
+      _sum: { commissionReversedMillimes: true, vatReversedMillimes: true },
       where: { status: 'ACCEPTED', payment: { payoutId: payout.id } },
     });
-    const left = payout.commissionMillimes - (done._sum.commissionReversedMillimes ?? 0n);
-    const share = commissionOf(dispute.amountMillimes, payout.commissionRateBps);
-    return share < left ? share : left;
+    const min = (a: bigint, b: bigint) => (a < b ? a : b);
+    const commission = min(
+      commissionOf(dispute.amountMillimes, payout.commissionRateBps),
+      payout.commissionMillimes - (done._sum.commissionReversedMillimes ?? 0n),
+    );
+    const vat = min(
+      commissionOf(commission, payout.vatRateBps),
+      payout.vatMillimes - (done._sum.vatReversedMillimes ?? 0n),
+    );
+    return { commission, vat };
   }
 
   /** First dispute: the payout leaves its batch and waits. Next ones keep its status of origin. */

@@ -68,6 +68,7 @@ export class JobsService implements OnApplicationBootstrap, OnApplicationShutdow
       ...result.mismatches,
       ...result.lotMismatches,
       ...result.holdMismatches,
+      ...result.taxMismatches,
     ];
     this.logger.error(
       `ledger reconciliation failed: ${String(accountsInError.length)} account(s), books balanced: ${String(result.totalDebits === result.totalCredits)}`,
