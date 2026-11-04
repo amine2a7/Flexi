@@ -28,6 +28,7 @@ import { InsufficientFundsError, LedgerService, accounts } from '../ledger/ledge
 import { merchantPayment } from '../payments/payments.service.js';
 import { nextBatch } from './settlement-batch.js';
 import { OutboxService } from '../common/outbox.service.js';
+import { pdfDocument, percent, tnd, type PdfLine } from '../common/pdf.js';
 import {
   BANK_ADAPTER,
   type BankAdapter,
@@ -232,6 +233,48 @@ export class PayoutsService {
         ),
         totalMillimes: toMillimes(total._sum.amountMillimes ?? 0n),
       };
+    });
+  }
+
+  /**
+   * PDF of the commission invoice of a payout (task 10): gross, commission at the rate of its
+   * tranche, VAT on the commission, stamp duty and net, as frozen in the request. A rejected
+   * payout has no invoice. Generated on download (RLS: the shop of the session).
+   */
+  async commissionInvoice(id: string): Promise<{ data: Buffer; fileName: string }> {
+    const merchantId = this.merchantId();
+    return this.db.user(async (tx) => {
+      const payout = await tx.payoutRequest.findUnique({
+        where: { id },
+        include: { merchant: { select: { name: true, city: true } } },
+      });
+      if (payout?.merchantId !== merchantId) throw problems.notFound();
+      if (payout.status === 'REJECTED') throw problems.conflict();
+      const number = `FAC-C-${payout.reference.slice(4)}`;
+      const lines: PdfLine[] = [
+        { text: 'FlexiPay', bold: true, size: 18 },
+        { text: 'Titres-restaurant dématérialisés', size: 9 },
+        { text: `Facture de commission ${number}`, bold: true, size: 14, gap: 24 },
+        { text: `Date : ${payout.requestedAt.toLocaleDateString('fr-TN', { timeZone: 'Africa/Tunis' })}` },
+        { text: `Virement : ${payout.reference}` },
+        { text: `Commerçant : ${payout.merchant.name}, ${payout.merchant.city}`, gap: 12 },
+        { text: 'Détail', bold: true, gap: 20 },
+        { text: 'Montant du virement', right: tnd(payout.grossMillimes) },
+        { text: `Commission FlexiPay (${percent(payout.commissionRateBps)})`, right: tnd(-payout.commissionMillimes) },
+        { text: `TVA sur la commission (${percent(payout.vatRateBps)})`, right: tnd(-payout.vatMillimes) },
+        { text: 'Timbre fiscal', right: tnd(-payout.stampDutyMillimes) },
+        { text: 'Net viré', right: tnd(payout.netMillimes), bold: true, size: 12, gap: 10 },
+        {
+          text: `Total facturé (commission + TVA + timbre) : ${tnd(payout.commissionMillimes + payout.vatMillimes + payout.stampDutyMillimes)}`,
+          gap: 16,
+        },
+        {
+          text: 'Montants en dinars tunisiens (TND), au millime. Document généré par FlexiPay.',
+          size: 8,
+          gap: 30,
+        },
+      ];
+      return { data: pdfDocument(`Facture ${number}`, lines), fileName: `${number}.pdf` };
     });
   }
 

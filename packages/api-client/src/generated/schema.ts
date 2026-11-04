@@ -798,6 +798,27 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/merchant/payouts/{payoutId}/invoice': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Facture de commission du virement en PDF (tâche 10 ; 409 pour un virement rejeté)
+     * @description PDF généré à la demande à partir des montants figés (commission, TVA, timbre détaillés),
+     *     `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff`.
+     */
+    get: operations['getPayoutCommissionInvoice'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/merchant/payouts/{payoutId}': {
     parameters: {
       query?: never;
@@ -1208,6 +1229,27 @@ export interface paths {
      * @description Débite le wallet de l'entreprise ; solde insuffisant : `422 INSUFFICIENT_FUNDS`.
      */
     post: operations['allocateCredits'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/company/invoices/{invoiceId}/pdf': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Facture de la commande en PDF (tâche 10)
+     * @description PDF généré à la demande à partir des montants figés (commission, TVA, timbre détaillés),
+     *     `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff`.
+     */
+    get: operations['getCompanyInvoicePdf'];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -6079,6 +6121,36 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  getPayoutCommissionInvoice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        payoutId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Le PDF. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/pdf': string;
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   getPayoutRequest: {
     parameters: {
       query?: never;
@@ -6865,6 +6937,36 @@ export interface operations {
       403: components['responses']['Forbidden'];
       409: components['responses']['Conflict'];
       422: components['responses']['UnprocessableFinancial'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getCompanyInvoicePdf: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        invoiceId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Le PDF. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/pdf': string;
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
       429: components['responses']['TooManyRequests'];
       500: components['responses']['InternalError'];
     };

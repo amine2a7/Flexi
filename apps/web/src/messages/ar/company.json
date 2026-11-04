@@ -181,7 +181,9 @@
     "date": "صدرت في",
     "total": "المبلغ",
     "status": "الحالة",
-    "emptyTitle": "لا توجد فواتير"
+    "emptyTitle": "لا توجد فواتير",
+    "pdf": "PDF",
+    "download": "تنزيل"
   },
   "reporting": {
     "title": "التقارير",

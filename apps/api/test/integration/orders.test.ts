@@ -119,6 +119,18 @@ describe('commission, VAT and stamp duty of an order (decisions of 2026-11-03)',
       { code: 'STAMP_DUTY', direction: 'C', amount: 1_000 },
       { code: 'VAT_COLLECTED', direction: 'C', amount: 95_000 },
     ]);
+    // The invoice in PDF details every line (task 10).
+    const invoices = await owner.call('GET', '/v1/company/invoices');
+    const invoice = (invoices.body.data as { id: string; number: string }[])[0];
+    const pdf = await fetch(`${base}/v1/company/invoices/${invoice?.id ?? ''}/pdf`, {
+      headers: { Cookie: `__Host-fp_at=${owner.cookie('__Host-fp_at') ?? ''}` },
+    });
+    expect(pdf.status).toBe(200);
+    expect(pdf.headers.get('content-type')).toBe('application/pdf');
+    const text = Buffer.from(await pdf.arrayBuffer()).toString('latin1');
+    expect(text.startsWith('%PDF-1.4')).toBe(true);
+    for (const expected of ['Commission FlexiPay (5 %)', 'TVA sur la commission (19 %)', 'Timbre fiscal', '10 596,000 TND'])
+      expect(text).toContain(expected);
   });
 
   it('order of 16 000 TND falls in the 15 000 – 18 000 tranche at 3 %', async () => {

@@ -9,6 +9,7 @@ import { Amount } from '@/components/ui/amount';
 import { Card } from '@/components/ui/card';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { PageHeader } from '@/components/ui/layout-blocks';
+import { PdfDownloadButton } from '@/components/ui/pdf-download';
 import { StatusBadge } from '@/components/ui/status-badge';
 
 export default function InvoicesPage() {
@@ -30,6 +31,23 @@ export default function InvoicesPage() {
       cell: (row) => <Amount millimes={row.totalMillimes} />,
     },
     { key: 'status', header: t('status'), cell: (row) => <StatusBadge status={row.status} /> },
+    {
+      key: 'pdf',
+      header: t('pdf'),
+      align: 'end',
+      cell: (row) => (
+        <PdfDownloadButton
+          label={t('download')}
+          fileName={`${row.number}.pdf`}
+          load={() =>
+            getApi().GET('/v1/company/invoices/{invoiceId}/pdf', {
+              params: { path: { invoiceId: row.id } },
+              parseAs: 'blob',
+            })
+          }
+        />
+      ),
+    },
   ];
   return (
     <>

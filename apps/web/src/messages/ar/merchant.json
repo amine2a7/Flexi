@@ -157,7 +157,8 @@
     "destination": "الوجهة",
     "destinationHint": "الحساب البنكي المسجل (مخفي). لتغييره، تواصل مع FlexiPay.",
     "requestAgain": "إعادة الطلب",
-    "requestAgainFor": "إعادة طلب التحويل {reference}"
+    "requestAgainFor": "إعادة طلب التحويل {reference}",
+    "invoice": "تنزيل فاتورة العمولة"
   },
   "settlements": {
     "title": "التسويات والوثائق",

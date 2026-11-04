@@ -181,7 +181,9 @@
     "date": "Émise le",
     "total": "Montant",
     "status": "Statut",
-    "emptyTitle": "Aucune facture"
+    "emptyTitle": "Aucune facture",
+    "pdf": "PDF",
+    "download": "Télécharger"
   },
   "reporting": {
     "title": "Reporting",

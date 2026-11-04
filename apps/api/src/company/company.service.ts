@@ -1,4 +1,5 @@
 import { PiiService } from '../common/pii.js';
+import { pdfDocument, percent, tnd, type PdfLine } from '../common/pdf.js';
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import { InvitationService } from '../auth/invitation.service.js';
@@ -15,6 +16,15 @@ import { InsufficientFundsError, LedgerService, accounts } from '../ledger/ledge
 import { OPEN_ORDER_STATUSES, orderSummary } from '../orders/orders.service.js';
 import { CREDIT_TYPES, SettingsService } from '../platform/settings.service.js';
 import { canReceiveCredits } from '../common/account-lifecycle.js';
+
+const TYPE_LABEL: Record<CreditType, string> = {
+  RESTAURATION: 'Restauration',
+  HABILLEMENT: 'Habillement',
+  CARBURANT: 'Carburant',
+  CADEAUX: 'Cadeaux',
+};
+const dateFr = (date: Date) =>
+  date.toLocaleDateString('fr-TN', { timeZone: 'Africa/Tunis', day: '2-digit', month: '2-digit', year: 'numeric' });
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE = /^\+216[0-9]{8}$/;
@@ -605,6 +615,47 @@ export class CompanyService {
         [...balances.values()].reduce((sum, value) => sum + value, 0n),
       ),
     };
+  }
+
+  /**
+   * PDF of an invoice of the company (task 10): the credits ordered by type, the commission at
+   * the rate of its tranche, the VAT on the commission, the stamp duty and the total, as frozen in
+   * the order. Generated on download from the stored figures (RLS: the company of the session).
+   */
+  async invoicePdf(id: string): Promise<{ data: Buffer; fileName: string }> {
+    return this.db.user(async (tx) => {
+      const invoice = await tx.invoice.findUnique({
+        where: { id },
+        include: { order: { include: { lines: true } }, company: { select: { name: true, city: true } } },
+      });
+      if (invoice === null) throw problems.notFound();
+      const order = invoice.order;
+      const lines: PdfLine[] = [
+        { text: 'FlexiPay', bold: true, size: 18 },
+        { text: 'Titres-restaurant dématérialisés', size: 9 },
+        { text: `Facture ${invoice.number}`, bold: true, size: 14, gap: 24 },
+        { text: `Date : ${dateFr(invoice.issuedAt)}` },
+        { text: `Commande : ${order.reference} · Référence de virement : ${order.paymentReference}` },
+        { text: `Client : ${invoice.company.name}, ${invoice.company.city}`, gap: 12 },
+        { text: 'Détail', bold: true, gap: 20 },
+        ...order.lines.map((line) => ({
+          text: `Crédits ${TYPE_LABEL[line.creditType]}`,
+          right: tnd(line.amountMillimes),
+        })),
+        { text: 'Montant des crédits', right: tnd(order.amountMillimes), bold: true, gap: 8 },
+        { text: `Commission FlexiPay (${percent(order.feeRateBps)})`, right: tnd(order.feesMillimes) },
+        { text: `TVA sur la commission (${percent(order.vatRateBps)})`, right: tnd(order.vatMillimes) },
+        { text: 'Timbre fiscal', right: tnd(order.stampDutyMillimes) },
+        { text: 'Total à payer', right: tnd(order.totalMillimes), bold: true, size: 12, gap: 10 },
+        { text: `Statut : ${invoice.status === 'PAID' ? 'payée' : 'à payer'}`, gap: 16 },
+        {
+          text: 'Montants en dinars tunisiens (TND), au millime. Document généré par FlexiPay.',
+          size: 8,
+          gap: 30,
+        },
+      ];
+      return { data: pdfDocument(`Facture ${invoice.number}`, lines), fileName: `${invoice.number}.pdf` };
+    });
   }
 
   async invoices(query: Record<string, unknown>) {

@@ -181,7 +181,9 @@
     "date": "Issued on",
     "total": "Amount",
     "status": "Status",
-    "emptyTitle": "No invoices"
+    "emptyTitle": "No invoices",
+    "pdf": "PDF",
+    "download": "Download"
   },
   "reporting": {
     "title": "Reporting",

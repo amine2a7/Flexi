@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowLeft } from 'lucide-react';
+import { PdfDownloadButton } from '@/components/ui/pdf-download';
 import { useParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { messageKey } from '@/i18n/keys';
@@ -66,6 +67,20 @@ export default function PayoutDetailPage() {
                     { label: t('rate'), value: <Rate bps={payout.data.commissionRateBps} /> },
                   ]}
                 />
+                {payout.data.status === 'REJECTED' ? null : (
+                  <div className="mb-4 flex justify-end">
+                    <PdfDownloadButton
+                      label={t('invoice')}
+                      fileName={`FAC-C-${payout.data.reference.slice(4)}.pdf`}
+                      load={() =>
+                        getApi().GET('/v1/merchant/payouts/{payoutId}/invoice', {
+                          params: { path: { payoutId: payout.data.id } },
+                          parseAs: 'blob',
+                        })
+                      }
+                    />
+                  </div>
+                )}
                 <AmountBreakdown
                   lines={[
                     { label: t('gross'), millimes: payout.data.grossMillimes },

@@ -261,6 +261,13 @@ export class CompanyController {
   }
 
   @Can('invoices.read')
+  @Get('invoices/:invoiceId/pdf')
+  async invoicePdf(@Param('invoiceId') invoiceId: string, @Res() res: Response): Promise<void> {
+    const file = await this.company.invoicePdf(pathId('invoiceId', invoiceId));
+    sendFile(res, file.data, 'application/pdf', file.fileName);
+  }
+
+  @Can('invoices.read')
   @Get('invoices')
   invoices(@Query() query: Record<string, unknown>) {
     return this.company.invoices(query);

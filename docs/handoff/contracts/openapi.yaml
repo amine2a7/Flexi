@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: FlexiPay API
-  version: 0.12.0
+  version: 0.13.0
   summary: Conventions transverses, authentification web et profil (WB2, espace Commun).
   description: |
     # Contrat d'API FlexiPay (version 0.2.2)
@@ -2008,6 +2008,45 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/merchant/payouts/{payoutId}/invoice:
+    get:
+      tags: [merchant]
+      operationId: getPayoutCommissionInvoice
+      summary: Facture de commission du virement en PDF (tâche 10 ; 409 pour un virement rejeté)
+      description: |
+        PDF généré à la demande à partir des montants figés (commission, TVA, timbre détaillés),
+        `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff`.
+      parameters:
+        - name: payoutId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Le PDF.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/merchant/payouts/{payoutId}:
     get:
       tags: [merchant]
@@ -2886,6 +2925,45 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableFinancial'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/invoices/{invoiceId}/pdf:
+    get:
+      tags: [company]
+      operationId: getCompanyInvoicePdf
+      summary: Facture de la commande en PDF (tâche 10)
+      description: |
+        PDF généré à la demande à partir des montants figés (commission, TVA, timbre détaillés),
+        `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff`.
+      parameters:
+        - name: invoiceId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Le PDF.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':

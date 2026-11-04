@@ -19,8 +19,8 @@ Carte des fichiers par module : `docs/handoff/carte-fichiers.md`. Décisions du 
 | 6 | Simulations détaillées (commande, virement) | Fait (tests à la passe finale) | 966abd6 |
 | 7 | Fiches entreprise/commerçant modifiables, historique, grille et RIB en double validation | Fait (tests à la passe finale) | 0eba42e ; /audit-acces à la tâche 12 |
 | 8 | R2 : contrôle quotidien wallets = somme des écritures | Fait (tests à la passe finale, 9a38685) | contrôle existant (réconciliation quotidienne) + alerte LEDGER_MISMATCH dans Sécurité, aucune correction automatique |
-| 9 | Lots J+2, banque simulée, double validation Finance ; virement retenu contre-passé : notification au commerçant + bouton « Redemander » | Fait (tests à la passe finale) | lot libéré (BATCH_RELEASE) → ordre SENT (déduction de la dette) → retour bancaire simulé (IBAN finissant par 0000 = rejet, contre-passation) → PAID ; e-mail simulé au commerçant |
-| 10 | Factures PDF (commission, TVA, timbre) | À faire | |
+| 9 | Lots J+2, banque simulée, double validation Finance ; virement retenu contre-passé : notification au commerçant + bouton « Redemander » | Fait (tests à la passe finale), bfe7c4f | lot libéré (BATCH_RELEASE) → ordre SENT (déduction de la dette) → retour bancaire simulé (IBAN finissant par 0000 = rejet, contre-passation) → PAID ; e-mail simulé au commerçant |
+| 10 | Factures PDF (commission, TVA, timbre) | Fait (tests à la passe finale) | générées à la demande depuis les montants figés (générateur PDF interne, sans dépendance) ; « asynchrone » non retenu à ce volume : à confirmer par Amine |
 | 11 | Données de démo réalistes | À faire | |
 | 12 | Contrôles finaux | À faire | |
 | 13 | Description de la PR feat/web → main (sans push) | À faire | |

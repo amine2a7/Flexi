@@ -19,7 +19,7 @@ import { IdempotencyService } from '../common/idempotency.service.js';
 import { Paginator } from '../common/pagination.js';
 import { problems } from '../common/problem.js';
 import { principal } from '../common/request-context.js';
-import { pathId, sendOutcome } from '../common/responses.js';
+import { pathId, sendFile, sendOutcome } from '../common/responses.js';
 import { creditType, parse, positiveMillimes } from '../common/validation.js';
 import { PaymentsService } from '../payments/payments.service.js';
 import { currentGridInclude, gridBody } from '../platform/commission-grids.js';
@@ -146,6 +146,13 @@ export class MerchantController {
       body: await this.payouts.request(tx, quoteId, key),
     }));
     return sendOutcome(res, outcome);
+  }
+
+  @Can('payouts.read')
+  @Get('payouts/:payoutId/invoice')
+  async payoutInvoice(@Param('payoutId') payoutId: string, @Res() res: Response): Promise<void> {
+    const file = await this.payouts.commissionInvoice(pathId('payoutId', payoutId));
+    sendFile(res, file.data, 'application/pdf', file.fileName);
   }
 
   @Can('payouts.read')
