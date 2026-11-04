@@ -92,7 +92,7 @@ export function AmountBreakdown({
             ) : null}
           </dt>
           <dd>
-            <Amount millimes={line.millimes} sign={line.sign} />
+            <Amount millimes={line.millimes} sign={line.sign} className="font-semibold" />
           </dd>
         </div>
       ))}

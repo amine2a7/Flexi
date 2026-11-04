@@ -64,5 +64,9 @@
     "hint": "Example: 18.500",
     "preview": "Amount read: {amount}",
     "invalid": "Invalid amount: digits and decimal separator, 3 decimals at most."
+  },
+  "fees": {
+    "vat": "VAT on the commission",
+    "stamp": "Stamp duty"
   }
 }

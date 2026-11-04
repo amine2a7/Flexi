@@ -15,8 +15,8 @@ Carte des fichiers par module : `docs/handoff/carte-fichiers.md`. Décisions du 
 | 2 | Écrans Sécurité sur l'API réelle (litiges, alertes, actions par rôle) | Fait | 17348f4 ; e2e security.spec vert (1er essai) |
 | 3 | Grille de commission (modèle, anti-chevauchement, ligne par défaut, migration des profils, TVA/timbre/seuil) | Fait | 0f2a903 ; securite OK (S-GC-02 Basse acceptée : restauration du rôle dans une transaction déjà annulée) |
 | 4 | Calcul serveur commission + TVA + timbre, écritures séparées, taux figés | Fait | f52afed ; ledger-auditor OK (Basses à reprendre en tâche 9 : totaux de lot TVA/timbre, verrou du devis avant les comptes ; [DÉCISION] éventuelle : commande alignée sur le devis) |
-| 5 | Fenêtre « Commission » à l'étape 2 (entreprise, commerçant) | Fait (tests à la passe finale) | voir commit feat(web): commission window |
-| 6 | Simulations détaillées (commande, virement) | À faire | |
+| 5 | Fenêtre « Commission » à l'étape 2 (entreprise, commerçant) | Fait (tests à la passe finale) | 294a02e |
+| 6 | Simulations détaillées (commande, virement) | Fait (tests à la passe finale) | voir commit feat(web): detailed simulations |
 | 7 | Fiches entreprise/commerçant modifiables, historique, grille et RIB en double validation | À faire | /audit-acces |
 | 8 | R2 : contrôle quotidien wallets = somme des écritures | À faire | |
 | 9 | Lots J+2, banque simulée, double validation Finance ; virement retenu contre-passé : notification au commerçant + bouton « Redemander » | À faire | décision du 2026-11-04 |

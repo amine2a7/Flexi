@@ -31,6 +31,7 @@ type Line = Schemas['CreditOrderLine'];
  */
 export default function NewOrderPage() {
   const t = useTranslations('company.newOrder');
+  const tFees = useTranslations('ui.fees');
   const tRoot = useTranslations();
   const tOrders = useTranslations('orders');
   const tTypes = useTranslations('ui.creditTypes');
@@ -117,6 +118,15 @@ export default function NewOrderPage() {
             label: t('fees'),
             note: formatRateBps(quote.feeRateBps, locale),
             millimes: quote.feesMillimes,
+          },
+          {
+            label: tFees('vat'),
+            note: formatRateBps(quote.vatRateBps, locale),
+            millimes: quote.vatMillimes,
+          },
+          {
+            label: tFees('stamp'),
+            millimes: quote.stampDutyMillimes,
           },
         ];
   return (

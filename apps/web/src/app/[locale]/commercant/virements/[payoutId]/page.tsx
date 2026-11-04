@@ -21,6 +21,7 @@ import { Timeline } from '@/components/ui/timeline';
 export default function PayoutDetailPage() {
   const { payoutId } = useParams<{ payoutId: string }>();
   const t = useTranslations('merchant.payouts');
+  const tFees = useTranslations('ui.fees');
   const tRoot = useTranslations();
   const locale = useLocale();
   const payout = useApiQuery(
@@ -71,6 +72,16 @@ export default function PayoutDetailPage() {
                     {
                       label: t('commission'),
                       millimes: payout.data.commissionMillimes,
+                      sign: 'debit',
+                    },
+                    {
+                      label: tFees('vat'),
+                      millimes: payout.data.vatMillimes,
+                      sign: 'debit',
+                    },
+                    {
+                      label: tFees('stamp'),
+                      millimes: payout.data.stampDutyMillimes,
                       sign: 'debit',
                     },
                   ]}

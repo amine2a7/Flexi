@@ -64,5 +64,9 @@
     "hint": "Exemple : 18,500",
     "preview": "Montant lu : {amount}",
     "invalid": "Montant invalide : chiffres et séparateur décimal, 3 décimales au plus."
+  },
+  "fees": {
+    "vat": "TVA sur la commission",
+    "stamp": "Timbre fiscal"
   }
 }

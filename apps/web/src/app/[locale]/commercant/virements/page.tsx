@@ -39,6 +39,7 @@ const STATUSES: readonly Status[] = ['REQUESTED', 'CHECKED', 'SENT', 'EXECUTED',
 export default function PayoutsPage() {
   const [tab, setTab] = useState<'request' | 'tracking'>('request');
   const t = useTranslations('merchant.payouts');
+  const tFees = useTranslations('ui.fees');
   const tRoot = useTranslations();
   const tTypes = useTranslations('ui.creditTypes');
   const canRequest = useCan('payouts.request');
@@ -211,6 +212,17 @@ export default function PayoutsPage() {
             label: t('commission'),
             note: formatRateBps(quote.commissionRateBps, locale),
             millimes: quote.commissionMillimes,
+            sign: 'debit' as const,
+          },
+          {
+            label: tFees('vat'),
+            note: formatRateBps(quote.vatRateBps, locale),
+            millimes: quote.vatMillimes,
+            sign: 'debit' as const,
+          },
+          {
+            label: tFees('stamp'),
+            millimes: quote.stampDutyMillimes,
             sign: 'debit' as const,
           },
         ];

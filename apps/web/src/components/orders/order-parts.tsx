@@ -52,6 +52,7 @@ export function isStateConflict(error: unknown): boolean {
 
 export function OrderSummaryCard({ order, showCompany }: { order: Order; showCompany: boolean }) {
   const t = useTranslations('orders.fields');
+  const tFees = useTranslations('ui.fees');
   const tTypes = useTranslations('ui.creditTypes');
   const tOrders = useTranslations('orders');
   const locale = useLocale();
@@ -80,6 +81,8 @@ export function OrderSummaryCard({ order, showCompany }: { order: Order; showCom
           },
           { label: t('credits'), value: <Amount millimes={order.amountMillimes} /> },
           { label: t('fees'), value: <Amount millimes={order.feesMillimes} /> },
+          { label: tFees('vat'), value: <Amount millimes={order.vatMillimes} /> },
+          { label: tFees('stamp'), value: <Amount millimes={order.stampDutyMillimes} /> },
           {
             label: t('total'),
             value: <Amount millimes={order.totalMillimes} size="title" />,

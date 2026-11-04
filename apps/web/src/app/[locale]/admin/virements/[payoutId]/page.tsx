@@ -71,6 +71,7 @@ function PayoutView({
 }) {
   const t = useTranslations('admin.payouts');
   const tTypes = useTranslations('ui.creditTypes');
+  const tFees = useTranslations('ui.fees');
   const tRoot = useTranslations();
   const canDecide = useCan('payouts.decide');
   const locale = useLocale();
@@ -125,6 +126,13 @@ function PayoutView({
           millimes: payout.commissionMillimes,
           sign: 'debit',
         },
+        {
+          label: tFees('vat'),
+          note: formatRateBps(payout.vatRateBps, locale),
+          millimes: payout.vatMillimes,
+          sign: 'debit',
+        },
+        { label: tFees('stamp'), millimes: payout.stampDutyMillimes, sign: 'debit' },
       ]}
       total={{ label: t('net'), millimes: payout.netMillimes }}
     />
