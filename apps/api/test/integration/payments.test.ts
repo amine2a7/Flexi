@@ -324,6 +324,14 @@ describe('payout and settlement', () => {
       { code: 'VAT_COLLECTED', direction: 'C', amount: 171 },
     ]);
     expect(String(requested.body.maskedIban)).toMatch(/^•••• \d{4}$/);
+    // Commission invoice of the payout in PDF (task 10): commission, VAT, stamp duty, net.
+    const invoice = await fetch(`${base}/v1/merchant/payouts/${String(requested.body.id)}/invoice`, {
+      headers: { Cookie: `__Host-fp_at=${shop.cookie('__Host-fp_at') ?? ''}` },
+    });
+    expect(invoice.status).toBe(200);
+    const text = Buffer.from(await invoice.arrayBuffer()).toString('latin1');
+    for (const expected of ['Commission FlexiPay (2 %)', '-0,171 TND', '-1,000 TND', '42,929 TND'])
+      expect(text).toContain(expected);
     expect((await shop.call('GET', '/v1/merchant/receivables')).body.totalMillimes).toBe(0);
     // A quote is used once.
     expect(
