@@ -73,14 +73,17 @@ export class JobsService implements OnApplicationBootstrap, OnApplicationShutdow
     this.logger.error(
       `ledger reconciliation failed: ${String(accountsInError.length)} account(s), books balanced: ${String(result.totalDebits === result.totalCredits)}`,
     );
-    await this.db.system((tx) =>
-      this.audit.record(
-        tx,
-        'ledger.reconcileFailed',
-        accountsInError.join(', ').slice(0, 200) || 'débits ≠ crédits',
-        'Système',
-      ),
-    );
+    // R2: an alert for Opérations (Security screen) and the audit entry for Finance; the books are
+    // never corrected automatically (a reversal is decided by a person).
+    const subject = (accountsInError.join(', ') || 'débits ≠ crédits').slice(0, 120);
+    await this.db.system(async (tx) => {
+      await tx.$executeRaw`
+        INSERT INTO fraud_alerts (id, kind, severity, subject, subject_key)
+        VALUES (${uuidv7()}::uuid, 'LEDGER_MISMATCH'::"FraudAlertKind", 'HIGH'::"FraudAlertSeverity",
+                ${subject}, ${`ledger:${new Date().toISOString().slice(0, 10)}`})
+        ON CONFLICT (kind, subject_key) DO NOTHING`;
+      await this.audit.record(tx, 'ledger.reconcileFailed', accountsInError.join(', ').slice(0, 200) || 'débits ≠ crédits', 'Système');
+    });
     return false;
   }
 

@@ -456,7 +456,8 @@
       "NEAR_DAILY_LIMIT": "دفعة قريبة من السقف اليومي",
       "RIB_CHANGE_PAYOUT": "تغيير الحساب البنكي ثم تحويل",
       "NEW_DEVICE_PAYMENT": "جهاز جديد ثم دفعة",
-      "COMMISSION_GRID_MISSING": "جدول عمولة مفقود"
+      "COMMISSION_GRID_MISSING": "جدول عمولة مفقود",
+      "LEDGER_MISMATCH": "فارق في دفتر الأستاذ"
     },
     "severities": {
       "HIGH": "مرتفعة",

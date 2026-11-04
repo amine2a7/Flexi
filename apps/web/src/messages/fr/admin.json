@@ -456,7 +456,8 @@
       "NEAR_DAILY_LIMIT": "Paiement proche du plafond journalier",
       "RIB_CHANGE_PAYOUT": "RIB modifié puis virement",
       "NEW_DEVICE_PAYMENT": "Nouvel appareil puis paiement",
-      "COMMISSION_GRID_MISSING": "Grille de commission manquante"
+      "COMMISSION_GRID_MISSING": "Grille de commission manquante",
+      "LEDGER_MISMATCH": "Écart du grand livre"
     },
     "severities": {
       "HIGH": "Élevée",

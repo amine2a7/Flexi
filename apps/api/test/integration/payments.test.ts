@@ -640,6 +640,12 @@ describe('daily reconciliation (ledger-auditor C8)', () => {
         }),
       );
       expect(alert?.target).toContain(wallet);
+      // R2: an alert in the Security screen, the balance itself is never corrected.
+      const raised = await db.system((tx) =>
+        tx.fraudAlert.findFirst({ where: { kind: 'LEDGER_MISMATCH' }, orderBy: { occurredAt: 'desc' } }),
+      );
+      expect(raised).toMatchObject({ severity: 'HIGH', status: 'OPEN' });
+      expect(raised?.subject).toContain(wallet);
     } finally {
       await shift(1);
       await owner.end();

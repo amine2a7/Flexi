@@ -8986,7 +8986,7 @@ components:
     FraudAlertKind:
       title: FraudAlertKind
       type: string
-      enum: [REPEATED_REFUSALS, MERCHANT_BURST, NEAR_DAILY_LIMIT, RIB_CHANGE_PAYOUT, NEW_DEVICE_PAYMENT, COMMISSION_GRID_MISSING]
+      enum: [REPEATED_REFUSALS, MERCHANT_BURST, NEAR_DAILY_LIMIT, RIB_CHANGE_PAYOUT, NEW_DEVICE_PAYMENT, COMMISSION_GRID_MISSING, LEDGER_MISMATCH]
     FraudAlertSeverity:
       title: FraudAlertSeverity
       type: string

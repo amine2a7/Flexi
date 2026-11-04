@@ -172,6 +172,7 @@ enum FraudAlertKind {
   RIB_CHANGE_PAYOUT
   NEW_DEVICE_PAYMENT
   COMMISSION_GRID_MISSING
+  LEDGER_MISMATCH
 }
 
 enum FraudAlertSeverity {

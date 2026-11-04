@@ -456,7 +456,8 @@
       "NEAR_DAILY_LIMIT": "Payment near the daily limit",
       "RIB_CHANGE_PAYOUT": "Bank details changed, then payout",
       "NEW_DEVICE_PAYMENT": "New device, then payment",
-      "COMMISSION_GRID_MISSING": "Missing commission grid"
+      "COMMISSION_GRID_MISSING": "Missing commission grid",
+      "LEDGER_MISMATCH": "Ledger mismatch"
     },
     "severities": {
       "HIGH": "High",

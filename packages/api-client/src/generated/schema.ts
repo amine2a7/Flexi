@@ -4190,7 +4190,8 @@ export interface components {
       | 'NEAR_DAILY_LIMIT'
       | 'RIB_CHANGE_PAYOUT'
       | 'NEW_DEVICE_PAYMENT'
-      | 'COMMISSION_GRID_MISSING';
+      | 'COMMISSION_GRID_MISSING'
+      | 'LEDGER_MISMATCH';
     /**
      * FraudAlertSeverity
      * @enum {string}
@@ -9051,6 +9052,7 @@ export const fraudAlertKindValues: ReadonlyArray<
   'RIB_CHANGE_PAYOUT',
   'NEW_DEVICE_PAYMENT',
   'COMMISSION_GRID_MISSING',
+  'LEDGER_MISMATCH',
 ];
 export const fraudAlertSeverityValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['FraudAlertSeverity']
