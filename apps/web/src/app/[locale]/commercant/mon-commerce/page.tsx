@@ -40,7 +40,7 @@ export default function ShopPage() {
                 { label: t('iban'), value: <span dir="ltr">{profile.data.maskedIban}</span> },
                 {
                   label: t('commission'),
-                  value: <CommissionLabel profile={profile.data.commissionProfile} />,
+                  value: <CommissionLabel grid={profile.data.commissionGrid} />,
                 },
               ]}
             />

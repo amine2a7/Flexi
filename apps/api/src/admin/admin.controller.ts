@@ -27,6 +27,7 @@ import {
   rateBps,
   reason,
 } from '../common/validation.js';
+import { commissionGridSchema } from '@flexipay/shared';
 import { AdminService } from './admin.service.js';
 
 const accountStatus = z.enum(['PENDING_KYC', 'APPROVED', 'REJECTED', 'SUSPENDED']);
@@ -50,6 +51,8 @@ const settingsBody = z.strictObject({
     creditValidityMonths: z.number().int().min(1).max(60),
     maxFamilyMembers: z.number().int().min(0).max(10),
     orderFeeRateBps: rateBps,
+    vatRateBps: rateBps,
+    stampDutyMillimes: millimes,
     expiredCreditsDestination: z.enum(['PLATFORM_REVENUE', 'COMPANY_RETURN']),
     creditTypes: z
       .array(
@@ -102,7 +105,7 @@ export class AdminController {
           city,
           phone: phoneNumber,
           email,
-          commissionProfileId: z.uuid().optional(),
+          commissionGrid: commissionGridSchema,
           acceptedCreditTypes: types,
         }),
         body,
@@ -139,24 +142,33 @@ export class AdminController {
   @HttpCode(201)
   createCompany(@Body() body: unknown) {
     return this.admin.createCompany(
-      parse(z.strictObject({ name, city, phone: phoneNumber, email }), body),
+      parse(
+        z.strictObject({
+          name,
+          city,
+          phone: phoneNumber,
+          email,
+          commissionGrid: commissionGridSchema,
+        }),
+        body,
+      ),
     );
   }
 
-  @Can('commissions.read')
-  @Get('commission-profiles')
-  profiles() {
-    return this.admin.profiles();
-  }
-
   @Can('commissions.request')
-  @Post('commission-profiles/:profileId/change-requests')
+  @Post('commission-grids/change-requests')
   @HttpCode(201)
-  changeRequest(@Param('profileId') profileId: string, @Body() body: unknown) {
-    const input = parse(z.strictObject({ newRateBps: rateBps, reason }), body);
-    return this.admin.requestCommissionChange(
-      pathId('profileId', profileId),
-      input.newRateBps,
+  gridChangeRequest(@Body() body: unknown) {
+    const input = parse(
+      z.union([
+        z.strictObject({ companyId: z.uuid(), tiers: commissionGridSchema, reason }),
+        z.strictObject({ merchantId: z.uuid(), tiers: commissionGridSchema, reason }),
+      ]),
+      body,
+    );
+    return this.admin.requestGridChange(
+      'companyId' in input ? { companyId: input.companyId } : { merchantId: input.merchantId },
+      input.tiers,
       input.reason,
     );
   }

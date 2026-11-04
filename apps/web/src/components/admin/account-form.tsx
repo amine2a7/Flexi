@@ -5,9 +5,8 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
 import { getApi } from '@/lib/api/client';
+import { parseBps } from '@/lib/format/money-input';
 import { asProblem, errorMessageKey, fieldErrors as readFieldErrors } from '@/lib/api/problem';
-import { useApiQuery } from '@/lib/api/use-api-query';
-import { formatRateBps } from '@/lib/format/money';
 import { Button } from '@/components/ui/button';
 import { SelectField, TextField } from '@/components/ui/field';
 import { Alert } from '@/components/ui/layout-blocks';
@@ -34,7 +33,8 @@ interface Draft {
   city: string;
   phone: string;
   email: string;
-  commissionProfileId: string;
+  /** Default rate of the commission grid, in % (one line until the window of task 5). */
+  defaultRate: string;
   /** Field errors only (the value lives in its own state). */
   acceptedCreditTypes?: never;
 }
@@ -45,7 +45,7 @@ const EMPTY: Draft = {
   city: '',
   phone: '+216',
   email: '',
-  commissionProfileId: '',
+  defaultRate: '',
 };
 
 /** Creation form of a merchant or a company account (admin space). */
@@ -65,21 +65,13 @@ export function AccountForm({
   const t = (key: string, values?: Record<string, string>) =>
     tRoot(messageKey(`${ns}.${key}`), values);
   const tCategory = useTranslations('category');
-  const locale = useLocale();
   const toast = useToast();
+  const locale = useLocale();
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [types, setTypes] = useState<CreditType[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof Draft, string>>>({});
   const [error, setError] = useState<unknown>(undefined);
   const [saving, setSaving] = useState(false);
-  const profiles = useApiQuery(
-    () =>
-      kind === 'merchant'
-        ? getApi().GET('/v1/admin/commission-profiles')
-        : Promise.resolve({ data: { data: [] }, error: undefined }),
-    [kind],
-  );
-
   const typesError = fieldErrors.acceptedCreditTypes;
   const set = (field: keyof Draft) => (value: string) => {
     setDraft((current) => ({ ...current, [field]: value }));
@@ -87,6 +79,11 @@ export function AccountForm({
 
   async function onSubmit(event: SyntheticEvent) {
     event.preventDefault();
+    const rateBps = parseBps(draft.defaultRate, locale);
+    if (rateBps === undefined || rateBps > 10_000) {
+      setFieldErrors({ defaultRate: t('form.defaultRateInvalid') });
+      return;
+    }
     setSaving(true);
     setError(undefined);
     setFieldErrors({});
@@ -96,6 +93,7 @@ export function AccountForm({
         city: draft.city,
         phone: draft.phone.replaceAll(' ', ''),
         email: draft.email.trim(),
+        commissionGrid: [{ rateBps, minMillimes: null, maxMillimes: null }],
       };
       const result =
         kind === 'merchant'
@@ -104,10 +102,6 @@ export function AccountForm({
                 ...common,
                 category: draft.category as Schemas['MerchantCategory'],
                 acceptedCreditTypes: types,
-                // Optional: without a profile the rate of each credit type applies.
-                ...(draft.commissionProfileId === ''
-                  ? {}
-                  : { commissionProfileId: draft.commissionProfileId }),
               },
             })
           : await getApi().POST('/v1/admin/companies', { body: common });
@@ -124,7 +118,7 @@ export function AccountForm({
         setFieldErrors(
           Object.fromEntries(
             fields.map((item) => [
-              item.pointer.slice(1),
+              item.pointer.startsWith('/commissionGrid') ? 'defaultRate' : item.pointer.slice(1),
               item.code === 'REQUIRED' || item.code === 'INVALID_ENUM'
                 ? t('form.required')
                 : t('form.invalidFormat'),
@@ -139,16 +133,6 @@ export function AccountForm({
     }
   }
 
-  const profileOptions =
-    profiles.status === 'success'
-      ? profiles.data.data.map((profile) => ({
-          value: profile.id,
-          label: t('profileOption', {
-            name: profile.name,
-            rate: formatRateBps(profile.rateBps, locale),
-          }),
-        }))
-      : [];
 
   return (
     <Modal
@@ -217,6 +201,17 @@ export function AccountForm({
               set('email')(event.target.value);
             }}
           />
+          <TextField
+            label={t('form.defaultRate')}
+            hint={t('form.defaultRateHint')}
+            error={fieldErrors.defaultRate}
+            inputMode="decimal"
+            dir="ltr"
+            value={draft.defaultRate}
+            onChange={(event) => {
+              set('defaultRate')(event.target.value);
+            }}
+          />
           {kind === 'merchant' ? (
             <div className="sm:col-span-2">
               <CreditTypeCheckboxes
@@ -227,19 +222,6 @@ export function AccountForm({
                 onChange={setTypes}
               />
             </div>
-          ) : null}
-          {kind === 'merchant' ? (
-            <SelectField
-              label={t('profile')}
-              hint={t('profileHint')}
-              placeholder={t('profilePlaceholder')}
-              error={fieldErrors.commissionProfileId}
-              options={profileOptions}
-              value={draft.commissionProfileId}
-              onChange={(event) => {
-                set('commissionProfileId')(event.target.value);
-              }}
-            />
           ) : null}
         </div>
         <div className="flex justify-end">

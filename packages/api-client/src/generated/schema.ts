@@ -1334,24 +1334,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/v1/admin/commission-profiles': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** Profils de commission */
-    get: operations['listCommissionProfiles'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/admin/commission-profiles/{profileId}/change-requests': {
+  '/v1/admin/commission-grids/change-requests': {
     parameters: {
       query?: never;
       header?: never;
@@ -1360,8 +1343,16 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Demander un changement de taux (double validation, règle 12) */
-    post: operations['requestCommissionChange'];
+    /**
+     * Demander un changement de grille de commission (double validation, règle 12)
+     * @description Grille d'une entreprise (`companyId`) ou d'un commerçant (`merchantId`), décision du
+     *     2026-11-03. Appliquée à l'approbation par un AUTRE administrateur, comme nouvelle version
+     *     (historique) ; elle vaut pour les commandes et virements futurs seulement (une demande en
+     *     cours garde ses taux figés). Une seule demande en attente par entité (409 sinon).
+     *     `400 VALIDATION_FAILED` : `GRID_OVERLAP`, `GRID_DEFAULT_REQUIRED`,
+     *     `GRID_DEFAULT_DUPLICATE`, `GRID_BOUNDS` sur `/tiers/<n>`.
+     */
+    post: operations['requestCommissionGridChange'];
     delete?: never;
     options?: never;
     head?: never;
@@ -3080,11 +3071,37 @@ export interface components {
       displayName: string;
       subRole: components['schemas']['SubRole'];
     };
-    /** CommissionProfileSummary */
-    CommissionProfileSummary: {
-      id: components['schemas']['Uuid'];
-      name: string;
+    /**
+     * CommissionTier
+     * @description Ligne d'une grille de commission : tranche [min, max] en millimes (min et max inclus,
+     *     décision du 2026-11-04 ; sans min = 0, sans max = illimité), ou ligne par défaut sans min ni max (obligatoire et
+     *     unique, appliquée quand aucune tranche ne correspond). Les tranches ne se chevauchent pas.
+     */
+    CommissionTier: {
       rateBps: components['schemas']['RateBps'];
+      minMillimes: components['schemas']['AmountMillimes'] | null;
+      maxMillimes: components['schemas']['AmountMillimes'] | null;
+    };
+    /** CommissionTierList */
+    CommissionTierList: components['schemas']['CommissionTier'][];
+    /**
+     * CommissionGrid
+     * @description Grille en vigueur (dernière version) : entreprise = taux sur le montant de chaque commande,
+     *     commerçant = taux sur le montant de chaque virement (décision du 2026-11-03).
+     */
+    CommissionGrid: {
+      tiers: components['schemas']['CommissionTierList'];
+      effectiveFrom: components['schemas']['Timestamp'];
+    };
+    /**
+     * CommissionGridChangeRequest
+     * @description Exactement une entité, `companyId` ou `merchantId`.
+     */
+    CommissionGridChangeRequest: {
+      companyId?: components['schemas']['Uuid'];
+      merchantId?: components['schemas']['Uuid'];
+      tiers: components['schemas']['CommissionTierList'];
+      reason: string;
     };
     /** MerchantProfile */
     MerchantProfile: {
@@ -3102,10 +3119,12 @@ export interface components {
       /** @description Types de crédit que le commerce accepte (définis par FlexiPay). */
       acceptedCreditTypes: components['schemas']['CreditType'][];
       /**
-       * @description Profil de commission propre au commerçant, ou `null` : le taux du type de crédit
-       *     s'applique alors (décision du 2026-10-14). Le taux est figé dans la demande de virement.
+       * @description Grille de commission du commerçant (taux sur le montant de chaque virement). Jamais
+       *     `null` après la migration 0025 (décision du 2026-11-04) : sans grille, l'opération est
+       *     refusée (`422 COMMISSION_GRID_MISSING`) et une alerte est levée. Le taux est figé dans
+       *     la demande de virement.
        */
-      commissionProfile: components['schemas']['CommissionProfileSummary'] | null;
+      commissionGrid: components['schemas']['CommissionGrid'] | null;
       pointsOfSale: components['schemas']['PointOfSale'][];
       staff: components['schemas']['StaffMember'][];
     };
@@ -3493,10 +3512,12 @@ export interface components {
       city: string;
       status: components['schemas']['AccountStatus'];
       /**
-       * @description Profil de commission propre au commerçant, ou `null` : le taux du type de crédit
-       *     s'applique alors (décision du 2026-10-14). Le taux est figé dans la demande de virement.
+       * @description Grille de commission du commerçant (taux sur le montant de chaque virement). Jamais
+       *     `null` après la migration 0025 (décision du 2026-11-04) : sans grille, l'opération est
+       *     refusée (`422 COMMISSION_GRID_MISSING`) et une alerte est levée. Le taux est figé dans
+       *     la demande de virement.
        */
-      commissionProfile: components['schemas']['CommissionProfileSummary'] | null;
+      commissionGrid: components['schemas']['CommissionGrid'] | null;
       createdAt: components['schemas']['Timestamp'];
     };
     /** MerchantCreditTypes */
@@ -3522,11 +3543,8 @@ export interface components {
       phone: components['schemas']['PhoneNumber'];
       /** Format: email */
       email: string;
-      /**
-       * @description Profil de commission propre au commerçant (liste déroulante), facultatif : sans profil,
-       *     le taux de chaque type de crédit s'applique.
-       */
-      commissionProfileId?: components['schemas']['Uuid'];
+      /** @description Grille de commission saisie à la création (étape 2, fenêtre « Commission »). */
+      commissionGrid: components['schemas']['CommissionTierList'];
     };
     /** CompanyAccount */
     CompanyAccount: {
@@ -3536,6 +3554,12 @@ export interface components {
       status: components['schemas']['AccountStatus'];
       /** Format: int32 */
       employeesCount: number;
+      /**
+       * @description Grille de commission de l'entreprise (taux sur le montant de chaque commande). Jamais
+       *     `null` après la migration 0025 : sans grille, la commande est refusée
+       *     (`422 COMMISSION_GRID_MISSING`) et une alerte est levée.
+       */
+      commissionGrid: components['schemas']['CommissionGrid'] | null;
       createdAt: components['schemas']['Timestamp'];
     };
     /**
@@ -3553,31 +3577,16 @@ export interface components {
       phone: components['schemas']['PhoneNumber'];
       /** Format: email */
       email: string;
-    };
-    /** CommissionProfile */
-    CommissionProfile: {
-      id: components['schemas']['Uuid'];
-      name: string;
-      rateBps: components['schemas']['RateBps'];
-      /** Format: int32 */
-      merchantsCount: number;
-      updatedAt: components['schemas']['Timestamp'];
-    };
-    /** CommissionProfileList */
-    CommissionProfileList: {
-      data: components['schemas']['CommissionProfile'][];
-    };
-    /** CommissionChangeRequest */
-    CommissionChangeRequest: {
-      newRateBps: components['schemas']['RateBps'];
-      reason: string;
+      /** @description Grille de commission saisie à la création (étape 2, fenêtre « Commission »). */
+      commissionGrid: components['schemas']['CommissionTierList'];
     };
     /**
      * ApprovalType
      * @description Opération sensible soumise à double validation (règle 12).
      * @enum {string}
      */
-    ApprovalType: 'COMMISSION_RATE_CHANGE' | 'SETTINGS_CHANGE' | 'DISPUTE_REFUND';
+    ApprovalType:
+      'COMMISSION_RATE_CHANGE' | 'SETTINGS_CHANGE' | 'DISPUTE_REFUND' | 'COMMISSION_GRID_CHANGE';
     /** Approval */
     Approval: {
       id: components['schemas']['Uuid'];
@@ -3587,6 +3596,11 @@ export interface components {
       subject: string;
       oldRateBps?: components['schemas']['RateBps'];
       newRateBps?: components['schemas']['RateBps'];
+      /** @description Grille en vigueur (`null` sans grille) et grille proposée (COMMISSION_GRID_CHANGE). */
+      commissionGrid?: {
+        previous: components['schemas']['CommissionTierList'] | null;
+        proposed: components['schemas']['CommissionTierList'];
+      };
       reason?: string;
       initiatorName: string;
       /** @description Vrai si la demande vient de l'utilisateur courant (il ne peut pas l'approuver). */
@@ -3801,6 +3815,10 @@ export interface components {
       /** Format: int32 */
       maxFamilyMembers: number;
       orderFeeRateBps: components['schemas']['RateBps'];
+      /** @description TVA sur la commission (19 % = 1 900 bps), décision du 2026-11-03. */
+      vatRateBps: components['schemas']['RateBps'];
+      /** @description Timbre fiscal par commande et par virement (1 DT = 1 000), décision du 2026-11-03. */
+      stampDutyMillimes: components['schemas']['AmountMillimes'];
       /** @description Paramétrage par type (un élément par type, les 4 types). */
       creditTypes: components['schemas']['CreditTypeSettings'][];
     };
@@ -3850,7 +3868,8 @@ export interface components {
       | 'INTERNAL_ERROR'
       | 'SERVICE_UNAVAILABLE'
       | 'PIN_INVALID'
-      | 'PIN_LOCKED';
+      | 'PIN_LOCKED'
+      | 'COMMISSION_GRID_MISSING';
     /**
      * ProblemBase
      * @description Membres communs de toute erreur RFC 9457 (`application/problem+json`). Schéma de base
@@ -3975,7 +3994,8 @@ export interface components {
       | 'MERCHANT_BURST'
       | 'NEAR_DAILY_LIMIT'
       | 'RIB_CHANGE_PAYOUT'
-      | 'NEW_DEVICE_PAYMENT';
+      | 'NEW_DEVICE_PAYMENT'
+      | 'COMMISSION_GRID_MISSING';
     /**
      * FraudAlertSeverity
      * @enum {string}
@@ -4074,7 +4094,11 @@ export interface components {
       | 'INVALID_CURSOR'
       | 'CURRENT_PASSWORD_INVALID'
       | 'PASSWORD_POLICY_VIOLATION'
-      | 'IN_FUTURE';
+      | 'IN_FUTURE'
+      | 'GRID_OVERLAP'
+      | 'GRID_DEFAULT_REQUIRED'
+      | 'GRID_DEFAULT_DUPLICATE'
+      | 'GRID_BOUNDS';
     /** FieldError */
     FieldError: {
       /** @enum {string} */
@@ -6891,44 +6915,16 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
-  listCommissionProfiles: {
+  requestCommissionGridChange: {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    requestBody?: never;
-    responses: {
-      /** @description Succès. */
-      200: {
-        headers: {
-          'X-Request-Id': components['headers']['X-Request-Id'];
-          'Cache-Control': components['headers']['Cache-Control-No-Store'];
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['CommissionProfileList'];
-        };
-      };
-      401: components['responses']['Unauthorized'];
-      403: components['responses']['Forbidden'];
-      429: components['responses']['TooManyRequests'];
-      500: components['responses']['InternalError'];
-    };
-  };
-  requestCommissionChange: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        profileId: components['schemas']['Uuid'];
-      };
-      cookie?: never;
-    };
     requestBody: {
       content: {
-        'application/json': components['schemas']['CommissionChangeRequest'];
+        'application/json': components['schemas']['CommissionGridChangeRequest'];
       };
     };
     responses: {
@@ -8609,7 +8605,7 @@ export const invoiceStatusValues: ReadonlyArray<
 > = ['PAID', 'UNPAID'];
 export const approvalTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['ApprovalType']
-> = ['COMMISSION_RATE_CHANGE', 'SETTINGS_CHANGE', 'DISPUTE_REFUND'];
+> = ['COMMISSION_RATE_CHANGE', 'SETTINGS_CHANGE', 'DISPUTE_REFUND', 'COMMISSION_GRID_CHANGE'];
 export const kycStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['KycStatus']
 > = ['PENDING', 'APPROVED', 'REJECTED'];
@@ -8658,6 +8654,7 @@ export const problemCodeValues: ReadonlyArray<
   'SERVICE_UNAVAILABLE',
   'PIN_INVALID',
   'PIN_LOCKED',
+  'COMMISSION_GRID_MISSING',
 ];
 export const userStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['UserStatus']
@@ -8679,6 +8676,7 @@ export const fraudAlertKindValues: ReadonlyArray<
   'NEAR_DAILY_LIMIT',
   'RIB_CHANGE_PAYOUT',
   'NEW_DEVICE_PAYMENT',
+  'COMMISSION_GRID_MISSING',
 ];
 export const fraudAlertSeverityValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['FraudAlertSeverity']
@@ -8703,6 +8701,10 @@ export const fieldErrorCodeValues: ReadonlyArray<
   'CURRENT_PASSWORD_INVALID',
   'PASSWORD_POLICY_VIOLATION',
   'IN_FUTURE',
+  'GRID_OVERLAP',
+  'GRID_DEFAULT_REQUIRED',
+  'GRID_DEFAULT_DUPLICATE',
+  'GRID_BOUNDS',
 ];
 export const fieldErrorInValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['FieldError']['in']

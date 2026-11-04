@@ -11,9 +11,9 @@ Carte des fichiers par module : `docs/handoff/carte-fichiers.md`. Décisions du 
 |---|---|---|---|
 | 0 | Argent N2 (2 Hautes ledger-auditor, commission annulée, Finance lit le litige) | Fait | 0f5ed56, edf19b2 |
 | 0 | Landing + connexion (« Composter mon ticket », tampon, AR) | Fait | 0f2c404, 1a20cc7 |
-| 1 | BOARD, correctif R1 (contrôle DISPUTE_HOLD dans le job), revue securite N2 | En cours | |
-| 2 | Écrans Sécurité sur l'API réelle (litiges, alertes, actions par rôle) | En cours | code écrit, e2e à faire passer |
-| 3 | Grille de commission (modèle, anti-chevauchement, ligne par défaut, migration des profils, TVA/timbre/seuil) | À faire | TEST-FIRST |
+| 1 | BOARD, correctif R1 (contrôle DISPUTE_HOLD dans le job), revue securite N2 | Fait | b028b78 ; securite OK (reste S-N2-04 Basse : isoler les règles de fraude) |
+| 2 | Écrans Sécurité sur l'API réelle (litiges, alertes, actions par rôle) | Fait | 17348f4 ; e2e security.spec vert (1er essai) |
+| 3 | Grille de commission (modèle, anti-chevauchement, ligne par défaut, migration des profils, TVA/timbre/seuil) | En cours | TEST-FIRST |
 | 4 | Calcul serveur commission + TVA + timbre, écritures séparées, taux figés | À faire | TEST-FIRST, ledger-auditor |
 | 5 | Fenêtre « Commission » à l'étape 2 (entreprise, commerçant) | À faire | spec design d'abord |
 | 6 | Simulations détaillées (commande, virement) | À faire | |

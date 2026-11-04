@@ -182,17 +182,31 @@ export function CreditTypeBalanceCards({
  * Commission of a shop: its own profile (name and rate), or the rate of each credit type when it
  * has none (decision of 2026-10-14).
  */
+/** Commission grid in short: default rate and number of tranches (decision of 2026-11-03). */
 export function CommissionLabel({
-  profile,
+  grid,
 }: {
-  profile: { name: string; rateBps: number } | null;
+  grid: {
+    tiers: readonly { rateBps: number; minMillimes: number | null; maxMillimes: number | null }[];
+  } | null;
 }) {
   const t = useTranslations('ui.creditTypes');
-  if (profile === null) return <span>{t('rateByType')}</span>;
+  if (grid === null) return <span>{t('rateByType')}</span>;
+  const fallback = grid.tiers.find((tier) => tier.minMillimes === null && tier.maxMillimes === null);
+  const tranches = grid.tiers.length - (fallback === undefined ? 0 : 1);
   return (
     <span className="flex flex-wrap items-baseline gap-2">
-      {profile.name}
-      <Rate bps={profile.rateBps} />
+      {fallback === undefined ? null : (
+        <span className="flex items-baseline gap-1">
+          <Rate bps={fallback.rateBps} />
+          {t('gridDefault')}
+        </span>
+      )}
+      {tranches > 0 ? (
+        <span className="text-caption text-text-secondary">
+          {t('gridTranches', { count: tranches })}
+        </span>
+      ) : null}
     </span>
   );
 }

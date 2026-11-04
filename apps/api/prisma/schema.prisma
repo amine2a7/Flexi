@@ -160,6 +160,7 @@ enum KycAction {
 enum ApprovalType {
   COMMISSION_RATE_CHANGE
   SETTINGS_CHANGE
+  COMMISSION_GRID_CHANGE
   DISPUTE_REFUND
 }
 
@@ -169,6 +170,7 @@ enum FraudAlertKind {
   NEAR_DAILY_LIMIT
   RIB_CHANGE_PAYOUT
   NEW_DEVICE_PAYMENT
+  COMMISSION_GRID_MISSING
 }
 
 enum FraudAlertSeverity {
@@ -229,24 +231,48 @@ model Company {
   status    AccountStatus @default(PENDING_KYC)
   createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  users     User[]
-  employees Employee[]
-  orders    CreditOrder[]
-  invoices  Invoice[]
-  kycFiles  KycFile[]
+  users           User[]
+  employees       Employee[]
+  orders          CreditOrder[]
+  invoices        Invoice[]
+  kycFiles        KycFile[]
+  commissionGrids CommissionGrid[]
 
   @@map("companies")
 }
 
-model CommissionProfile {
-  id        String   @id @default(uuid(7)) @db.Uuid
-  name      String   @unique @db.VarChar(80)
-  rateBps   Int      @map("rate_bps")
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(3)
+/// Commission grid of a company or a merchant (decision of 2026-11-03). Versions are immutable:
+/// the current grid is the latest one; a change inserts a new version after the second validation.
+model CommissionGrid {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  companyId     String?  @map("company_id") @db.Uuid
+  merchantId    String?  @map("merchant_id") @db.Uuid
+  approvalId    String?  @map("approval_id") @db.Uuid
+  createdBy     String?  @map("created_by") @db.Uuid
+  effectiveFrom DateTime @default(now()) @map("effective_from") @db.Timestamptz(3)
 
-  merchants Merchant[]
+  company  Company?         @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  merchant Merchant?        @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  approval Approval?        @relation(fields: [approvalId], references: [id], onDelete: Restrict)
+  tiers    CommissionTier[]
 
-  @@map("commission_profiles")
+  @@index([companyId, effectiveFrom], map: "commission_grids_company_idx")
+  @@index([merchantId, effectiveFrom], map: "commission_grids_merchant_idx")
+  @@map("commission_grids")
+}
+
+/// Line of a grid: tranche [min, max) in millimes, or the default line (no bounds).
+model CommissionTier {
+  gridId      String  @map("grid_id") @db.Uuid
+  position    Int
+  rateBps     Int     @map("rate_bps")
+  minMillimes BigInt? @map("min_millimes")
+  maxMillimes BigInt? @map("max_millimes")
+
+  grid CommissionGrid @relation(fields: [gridId], references: [id], onDelete: Restrict)
+
+  @@id([gridId, position])
+  @@map("commission_tiers")
 }
 
 model Merchant {
@@ -263,21 +289,19 @@ model Merchant {
   paymentCode         String           @unique @map("payment_code") @db.Char(6)
   /// Bank account for payouts (TN + 22 digits). Masked everywhere except the admin payout control.
   iban                String? // encrypted (AES-256-GCM)
-  /// Own commission profile of the shop; null = the rate of each credit type applies.
-  commissionProfileId String?          @map("commission_profile_id") @db.Uuid
   /// Administrator who created the merchant: never the approver of its payouts (QY-03 b).
   createdBy           String?          @map("created_by") @db.Uuid
   createdAt           DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  commissionProfile CommissionProfile? @relation(fields: [commissionProfileId], references: [id])
-  users             User[]
-  pointsOfSale      PointOfSale[]
-  payments          Payment[]
-  payouts           PayoutRequest[]
-  payoutQuotes      PayoutQuote[]
-  documents         MerchantDocument[]
-  kycFiles          KycFile[]
-  disputes          Dispute[]
+  commissionGrids CommissionGrid[]
+  users           User[]
+  pointsOfSale    PointOfSale[]
+  payments        Payment[]
+  payouts         PayoutRequest[]
+  payoutQuotes    PayoutQuote[]
+  documents       MerchantDocument[]
+  kycFiles        KycFile[]
+  disputes        Dispute[]
 
   @@map("merchants")
 }
@@ -458,6 +482,9 @@ model PlatformSettings {
   creditValidityMonths      Int                       @map("credit_validity_months")
   maxFamilyMembers          Int                       @map("max_family_members")
   orderFeeRateBps           Int                       @map("order_fee_rate_bps")
+  /// VAT on the commission and stamp duty (decision of 2026-11-03), set by the super-admin.
+  vatRateBps                Int                       @default(1900) @map("vat_rate_bps")
+  stampDutyMillimes         BigInt                    @default(1000) @map("stamp_duty_millimes")
   /// Where the remainder of expired lots goes (provisional, decision of 2026-10-14).
   expiredCreditsDestination ExpiredCreditsDestination @default(PLATFORM_REVENUE) @map("expired_credits_destination")
   /// Grace period of a deactivated employee, in days (decision e3 of 2026-10-22).
@@ -480,21 +507,22 @@ model CreditTypeSetting {
 }
 
 model Approval {
-  id            String         @id @default(uuid(7)) @db.Uuid
-  type          ApprovalType
-  status        ApprovalStatus @default(PENDING)
-  subject       String         @db.VarChar(200)
+  id              String           @id @default(uuid(7)) @db.Uuid
+  type            ApprovalType
+  status          ApprovalStatus   @default(PENDING)
+  subject         String           @db.VarChar(200)
   /// Change to apply once approved (profile id + new rate, or the full settings).
-  payload       Json
-  oldRateBps    Int?           @map("old_rate_bps")
-  newRateBps    Int?           @map("new_rate_bps")
-  reason        String         @db.VarChar(500)
-  initiatorId   String         @map("initiator_id") @db.Uuid
-  initiatorName String         @map("initiator_name") @db.VarChar(120)
-  deciderId     String?        @map("decider_id") @db.Uuid
-  decidedAt     DateTime?      @map("decided_at") @db.Timestamptz(3)
-  rejectReason  String?        @map("reject_reason") @db.VarChar(500)
-  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  payload         Json
+  oldRateBps      Int?             @map("old_rate_bps")
+  newRateBps      Int?             @map("new_rate_bps")
+  reason          String           @db.VarChar(500)
+  initiatorId     String           @map("initiator_id") @db.Uuid
+  initiatorName   String           @map("initiator_name") @db.VarChar(120)
+  deciderId       String?          @map("decider_id") @db.Uuid
+  decidedAt       DateTime?        @map("decided_at") @db.Timestamptz(3)
+  rejectReason    String?          @map("reject_reason") @db.VarChar(500)
+  commissionGrids CommissionGrid[]
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@map("approvals")
 }
@@ -985,27 +1013,27 @@ model CreditLot {
 
 /// N2 dispute (decision of 2026-10-31): amount held out of the merchant wallet while investigated.
 model Dispute {
-  id                      String        @id @db.Uuid
-  reference               String        @unique @db.VarChar(32)
-  paymentId               String        @unique @map("payment_id") @db.Uuid
-  merchantId              String        @map("merchant_id") @db.Uuid
-  amountMillimes          BigInt        @map("amount_millimes")
-  reason                  String        @db.VarChar(500)
-  status                  DisputeStatus @default(OPEN)
-  openedBy                String        @map("opened_by") @db.Uuid
-  openedByName            String        @map("opened_by_name") @db.VarChar(120)
-  openedAt                DateTime      @default(now()) @map("opened_at") @db.Timestamptz(3)
-  dueAt                   DateTime      @map("due_at") @db.Timestamptz(3)
-  decisionReason          String?       @map("decision_reason") @db.VarChar(500)
-  decidedAt               DateTime?     @map("decided_at") @db.Timestamptz(3)
-  holdTransactionId       String?       @map("hold_transaction_id") @db.Uuid
+  id                         String        @id @db.Uuid
+  reference                  String        @unique @db.VarChar(32)
+  paymentId                  String        @unique @map("payment_id") @db.Uuid
+  merchantId                 String        @map("merchant_id") @db.Uuid
+  amountMillimes             BigInt        @map("amount_millimes")
+  reason                     String        @db.VarChar(500)
+  status                     DisputeStatus @default(OPEN)
+  openedBy                   String        @map("opened_by") @db.Uuid
+  openedByName               String        @map("opened_by_name") @db.VarChar(120)
+  openedAt                   DateTime      @default(now()) @map("opened_at") @db.Timestamptz(3)
+  dueAt                      DateTime      @map("due_at") @db.Timestamptz(3)
+  decisionReason             String?       @map("decision_reason") @db.VarChar(500)
+  decidedAt                  DateTime?     @map("decided_at") @db.Timestamptz(3)
+  holdTransactionId          String?       @map("hold_transaction_id") @db.Uuid
   /// Payout put on hold by the dispute and its status before (restored when rejected).
-  heldPayoutId            String?       @map("held_payout_id") @db.Uuid
-  heldPayoutStatus        String?       @map("held_payout_status") @db.VarChar(20)
-  paymentPreviousStatus   String        @default("CONFIRMED") @map("payment_previous_status") @db.VarChar(20)
-  resolutionTransactionId String?       @map("resolution_transaction_id") @db.Uuid
+  heldPayoutId               String?       @map("held_payout_id") @db.Uuid
+  heldPayoutStatus           String?       @map("held_payout_status") @db.VarChar(20)
+  paymentPreviousStatus      String        @default("CONFIRMED") @map("payment_previous_status") @db.VarChar(20)
+  resolutionTransactionId    String?       @map("resolution_transaction_id") @db.Uuid
   /// Commission cancelled with the refund of a paid payment (decision of 2026-11-02).
-  commissionReversedMillimes BigInt     @default(0) @map("commission_reversed_millimes")
+  commissionReversedMillimes BigInt        @default(0) @map("commission_reversed_millimes")
 
   payment    Payment        @relation(fields: [paymentId], references: [id])
   merchant   Merchant       @relation(fields: [merchantId], references: [id])

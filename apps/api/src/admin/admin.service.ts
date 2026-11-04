@@ -10,6 +10,7 @@ import { DbService, type Tx } from '../common/db.service.js';
 import { toMillimes } from '../common/money.js';
 import { Paginator, type Page } from '../common/pagination.js';
 import { problems, validationFailed } from '../common/problem.js';
+import { allows } from '../common/permissions.js';
 import { principal } from '../common/request-context.js';
 import { FILE_STORAGE, type FileStorage } from '../common/storage.js';
 import {
@@ -22,7 +23,8 @@ import type {
   AccountStatus,
   Approval,
   ApprovalStatus,
-  CommissionProfile,
+  CommissionGrid,
+  CommissionTier as TierRow,
   CreditType,
   KycAccountType,
   KycStatus,
@@ -31,9 +33,31 @@ import type {
   PaymentStatus,
   Prisma,
 } from '../generated/prisma/client.js';
+import type { CommissionTier } from '@flexipay/shared';
+import {
+  currentGrid,
+  currentGridInclude,
+  gridBody,
+  installGrid,
+  type GridOwner,
+} from '../platform/commission-grids.js';
 import { CREDIT_TYPES, SettingsService, typeSettingsBody } from '../platform/settings.service.js';
 
-type MerchantRow = Merchant & { commissionProfile: CommissionProfile | null };
+type GridRows = (CommissionGrid & { tiers: TierRow[] })[];
+type MerchantRow = Merchant & { commissionGrids: GridRows };
+
+/** Payload of a grid change request (decision of 2026-11-03). */
+interface GridChangePayload {
+  owner: GridOwner;
+  tiers: CommissionTier[];
+  previous: CommissionTier[] | null;
+}
+
+/** Grids are commercial terms: shown with commissions.read only (securite S-GC-04). */
+function visibleGrid(grids: GridRows) {
+  const who = principal();
+  return allows(who.role, who.subRole, ['commissions.read']) ? gridBody(grids) : null;
+}
 
 function merchantAccount(merchant: MerchantRow) {
   return {
@@ -43,14 +67,7 @@ function merchantAccount(merchant: MerchantRow) {
     acceptedCreditTypes: CREDIT_TYPES.filter((type) => merchant.acceptedCreditTypes.includes(type)),
     city: merchant.city,
     status: merchant.status,
-    commissionProfile:
-      merchant.commissionProfile === null
-        ? null
-        : {
-            id: merchant.commissionProfile.id,
-            name: merchant.commissionProfile.name,
-            rateBps: merchant.commissionProfile.rateBps,
-          },
+    commissionGrid: visibleGrid(merchant.commissionGrids),
     createdAt: merchant.createdAt.toISOString(),
   };
 }
@@ -63,6 +80,14 @@ function approvalBody(approval: Approval, userId: string) {
     subject: approval.subject,
     ...(approval.oldRateBps === null ? {} : { oldRateBps: approval.oldRateBps }),
     ...(approval.newRateBps === null ? {} : { newRateBps: approval.newRateBps }),
+    ...(approval.type === 'COMMISSION_GRID_CHANGE'
+      ? {
+          commissionGrid: {
+            previous: (approval.payload as unknown as GridChangePayload).previous,
+            proposed: (approval.payload as unknown as GridChangePayload).tiers,
+          },
+        }
+      : {}),
     reason: approval.reason,
     initiatorName: approval.initiatorName,
     initiatedByMe: approval.initiatorId === userId,
@@ -75,6 +100,8 @@ export interface PlatformSettingsInput {
   creditValidityMonths: number;
   maxFamilyMembers: number;
   orderFeeRateBps: number;
+  vatRateBps: number;
+  stampDutyMillimes: number;
   expiredCreditsDestination: 'PLATFORM_REVENUE' | 'COMPANY_RETURN';
   creditTypes: {
     creditType: CreditType;
@@ -199,7 +226,7 @@ export class AdminService {
       };
       const rows = await tx.merchant.findMany({
         where,
-        include: { commissionProfile: true },
+        include: { commissionGrids: currentGridInclude },
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         skip: request.offset,
         take: request.limit + 1,
@@ -215,7 +242,7 @@ export class AdminService {
     return this.db.user(async (tx) => {
       const merchant = await tx.merchant.findUnique({
         where: { id },
-        include: { commissionProfile: true },
+        include: { commissionGrids: currentGridInclude },
       });
       if (merchant === null) throw problems.notFound();
       return merchantAccount(merchant);
@@ -229,7 +256,7 @@ export class AdminService {
     city: string;
     phone: string;
     email: string;
-    commissionProfileId?: string | undefined;
+    commissionGrid: CommissionTier[];
     acceptedCreditTypes: CreditType[];
   }) {
     const id = uuidv7();
@@ -244,15 +271,6 @@ export class AdminService {
       },
     ]);
     const body = await this.db.user(async (tx) => {
-      // Without a profile, the rate of each credit type applies (decision of 2026-10-14).
-      const profile =
-        input.commissionProfileId === undefined
-          ? undefined
-          : await tx.commissionProfile.findUnique({ where: { id: input.commissionProfileId } });
-      if (profile === null)
-        throw validationFailed([
-          { in: 'body', pointer: '/commissionProfileId', code: 'INVALID_ENUM' },
-        ]);
       const exists = await tx.merchant.findFirst({
         where: { name: { equals: input.name.trim(), mode: 'insensitive' } },
       });
@@ -260,7 +278,7 @@ export class AdminService {
       let paymentCode = String(randomInt(100_000, 1_000_000));
       while ((await tx.merchant.findUnique({ where: { paymentCode } })) !== null)
         paymentCode = String(randomInt(100_000, 1_000_000));
-      const merchant = await tx.merchant.create({
+      await tx.merchant.create({
         data: {
           id,
           name: input.name.trim(),
@@ -270,11 +288,17 @@ export class AdminService {
           email: input.email.toLowerCase(),
           acceptedCreditTypes: [...new Set(input.acceptedCreditTypes)],
           paymentCode,
-          commissionProfileId: profile?.id ?? null,
           status: 'PENDING_KYC',
           createdBy: principal().userId,
         },
-        include: { commissionProfile: true },
+      });
+      // The grid is entered at creation (step 2): no shop without a grid (decision 2026-11-04).
+      await installGrid(tx, { merchantId: id }, input.commissionGrid, {
+        createdBy: principal().userId,
+      });
+      const merchant = await tx.merchant.findUniqueOrThrow({
+        where: { id },
+        include: { commissionGrids: currentGridInclude },
       });
       await this.invitations.create(tx, invitations);
       await this.openKyc(tx, 'MERCHANT', { merchantId: merchant.id });
@@ -292,7 +316,7 @@ export class AdminService {
       const updated = await tx.merchant.update({
         where: { id },
         data: { acceptedCreditTypes: [...new Set(types)] },
-        include: { commissionProfile: true },
+        include: { commissionGrids: currentGridInclude },
       });
       await this.audit.record(tx, 'merchants.creditTypes', merchant.name);
       return merchantAccount(updated);
@@ -309,7 +333,10 @@ export class AdminService {
       };
       const rows = await tx.company.findMany({
         where,
-        include: { _count: { select: { employees: true } } },
+        include: {
+          _count: { select: { employees: true } },
+          commissionGrids: currentGridInclude,
+        },
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         skip: request.offset,
         take: request.limit + 1,
@@ -323,6 +350,7 @@ export class AdminService {
           city: row.city,
           status: row.status,
           employeesCount: row._count.employees,
+          commissionGrid: visibleGrid(row.commissionGrids),
           createdAt: row.createdAt.toISOString(),
         })),
         filters,
@@ -331,7 +359,13 @@ export class AdminService {
     });
   }
 
-  async createCompany(input: { name: string; city: string; phone: string; email: string }) {
+  async createCompany(input: {
+    name: string;
+    city: string;
+    phone: string;
+    email: string;
+    commissionGrid: CommissionTier[];
+  }) {
     const id = uuidv7();
     const invitations = await this.invitations.prepare([
       {
@@ -358,6 +392,10 @@ export class AdminService {
         },
       });
       await this.invitations.create(tx, invitations);
+      // No company without a grid (decision of 2026-11-04).
+      await installGrid(tx, { companyId: id }, input.commissionGrid, {
+        createdBy: principal().userId,
+      });
       await this.openKyc(tx, 'COMPANY', { companyId: company.id });
       await this.audit.record(tx, 'companies.create', company.name);
       return {
@@ -366,6 +404,7 @@ export class AdminService {
         city: company.city,
         status: company.status,
         employeesCount: 0,
+        commissionGrid: await currentGrid(tx, { companyId: id }),
         createdAt: company.createdAt.toISOString(),
       };
     });
@@ -399,52 +438,48 @@ export class AdminService {
 
   // ---------------------------------------------------------------- commissions, approvals, settings
 
-  async profiles() {
-    return this.db.user(async (tx) => {
-      const rows = await tx.commissionProfile.findMany({
-        include: { _count: { select: { merchants: true } } },
-        orderBy: { rateBps: 'asc' },
-      });
-      return {
-        data: rows.map((row) => ({
-          id: row.id,
-          name: row.name,
-          rateBps: row.rateBps,
-          merchantsCount: row._count.merchants,
-          updatedAt: row.updatedAt.toISOString(),
-        })),
-      };
-    });
-  }
-
-  /** A commission change is a request, applied only when ANOTHER administrator approves it. */
-  async requestCommissionChange(profileId: string, newRateBps: number, reason: string) {
+  /**
+   * A grid change is a request, applied only when ANOTHER administrator approves it (decision of
+   * 2026-11-03); the new version applies to future orders and payouts only.
+   */
+  async requestGridChange(owner: GridOwner, tiers: CommissionTier[], reason: string) {
     const who = principal();
     return this.db.user(async (tx) => {
-      const profile = await tx.commissionProfile.findUnique({ where: { id: profileId } });
-      if (profile === null) throw problems.notFound();
+      const found =
+        'companyId' in owner
+          ? await tx.company.findUnique({ where: { id: owner.companyId } })
+          : await tx.merchant.findUnique({ where: { id: owner.merchantId } });
+      if (found === null) throw problems.notFound();
+      // One pending request per owner, even for two requests at the same time.
+      if ('companyId' in owner)
+        await tx.$queryRaw`SELECT id FROM companies WHERE id = ${found.id}::uuid FOR UPDATE`;
+      else await tx.$queryRaw`SELECT id FROM merchants WHERE id = ${found.id}::uuid FOR UPDATE`;
+      const key = 'companyId' in owner ? 'companyId' : 'merchantId';
       const pending = await tx.approval.findFirst({
         where: {
           status: 'PENDING',
-          type: 'COMMISSION_RATE_CHANGE',
-          payload: { path: ['profileId'], equals: profileId },
+          type: 'COMMISSION_GRID_CHANGE',
+          payload: { path: ['owner', key], equals: found.id },
         },
       });
       if (pending !== null) throw problems.conflict();
+      const payload: GridChangePayload = {
+        owner,
+        tiers,
+        previous: (await currentGrid(tx, owner))?.tiers ?? null,
+      };
       const approval = await tx.approval.create({
         data: {
           id: uuidv7(),
-          type: 'COMMISSION_RATE_CHANGE',
-          subject: profile.name,
-          payload: { profileId, newRateBps },
-          oldRateBps: profile.rateBps,
-          newRateBps,
+          type: 'COMMISSION_GRID_CHANGE',
+          subject: found.name,
+          payload: payload as unknown as Prisma.InputJsonValue,
           reason,
           initiatorId: who.userId,
           initiatorName: who.displayName,
         },
       });
-      await this.audit.record(tx, 'commissions.request', profile.name);
+      await this.audit.record(tx, 'commissions.request', found.name);
       return approvalBody(approval, who.userId);
     });
   }
@@ -499,10 +534,13 @@ export class AdminService {
       await this.fourEyes.ensureNotAuthor(approval.initiatorId, `approbation ${approval.subject}`);
       if (approval.status !== 'PENDING') throw problems.conflict();
       if (approval.type === 'COMMISSION_RATE_CHANGE') {
-        const payload = approval.payload as { profileId: string; newRateBps: number };
-        await tx.commissionProfile.update({
-          where: { id: payload.profileId },
-          data: { rateBps: payload.newRateBps, updatedAt: new Date() },
+        // Profiles were replaced by grids (migration 0024 closed the pending requests).
+        throw problems.conflict();
+      } else if (approval.type === 'COMMISSION_GRID_CHANGE') {
+        const payload = approval.payload as unknown as GridChangePayload;
+        await installGrid(tx, payload.owner, payload.tiers, {
+          approvalId: approval.id,
+          createdBy: approval.initiatorId,
         });
       } else if (approval.type === 'DISPUTE_REFUND') {
         // Second validation of an accepted dispute: refund of the employee (N2).
@@ -554,6 +592,8 @@ export class AdminService {
         creditValidityMonths: platform.creditValidityMonths,
         maxFamilyMembers: platform.maxFamilyMembers,
         orderFeeRateBps: platform.orderFeeRateBps,
+        vatRateBps: platform.vatRateBps,
+        stampDutyMillimes: toMillimes(platform.stampDutyMillimes),
         expiredCreditsDestination: platform.expiredCreditsDestination,
         creditTypes: types.map(typeSettingsBody),
       };
@@ -597,6 +637,8 @@ export class AdminService {
         creditValidityMonths: settings.creditValidityMonths,
         maxFamilyMembers: settings.maxFamilyMembers,
         orderFeeRateBps: settings.orderFeeRateBps,
+        vatRateBps: settings.vatRateBps,
+        stampDutyMillimes: BigInt(settings.stampDutyMillimes),
         expiredCreditsDestination: settings.expiredCreditsDestination,
         updatedAt: new Date(),
       },

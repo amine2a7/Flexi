@@ -9,7 +9,7 @@ loadTestEnv();
 const { loadEnv } = await import('../../src/config/env.js');
 const { createApp } = await import('../../src/app.factory.js');
 const { DbService } = await import('../../src/common/db.service.js');
-const { createCompany, createEmployee, createUser, sealed, seedSettings, signedIn } =
+const { createCompany, createEmployee, createUser, sealed, seedSettings, signedIn, oneLineGrid } =
   await import('./fixtures.js');
 
 type SubRole =
@@ -58,6 +58,7 @@ async function merchantUser(subRole: SubRole, merchantId?: string) {
   const merchant = await db.system((tx) =>
     tx.merchant.create({
       data: {
+        commissionGrids: oneLineGrid(),
         name: `Café ${randomUUID().slice(0, 5)}`,
         category: 'CAFE',
         city: 'Tunis',
@@ -244,8 +245,18 @@ describe('merchant sub-roles (Gérant OWNER, Caissier CASHIER)', () => {
 });
 
 describe('admin sub-roles (Super-admin, Opérations COMPLIANCE, Finance, Support), decision C', () => {
-  const companyBody = { name: 'X', city: 'Tunis', phone: '+21671000000', email: 'x@y.tn' };
-  const rateBody = { newRateBps: 210, reason: 'R' };
+  const companyBody = {
+    name: 'X',
+    city: 'Tunis',
+    phone: '+21671000000',
+    email: 'x@y.tn',
+    commissionGrid: [{ rateBps: 150, minMillimes: null, maxMillimes: null }],
+  };
+  const gridBody = {
+    companyId: ID,
+    tiers: [{ rateBps: 210, minMillimes: null, maxMillimes: null }],
+    reason: 'R',
+  };
 
   it('support reads accounts, transactions and messages, never balances, audit nor decisions', async () => {
     const support = await adminUser('SUPPORT');
@@ -256,7 +267,6 @@ describe('admin sub-roles (Super-admin, Opérations COMPLIANCE, Finance, Support
       ['GET', '/v1/admin/credit-orders'],
       ['GET', '/v1/admin/payout-requests'],
       ['GET', '/v1/admin/settlements'],
-      ['GET', '/v1/admin/commission-profiles'],
       ['GET', '/v1/admin/approvals'],
       ['GET', '/v1/admin/kyc-files'],
       ['POST', `/v1/admin/credit-orders/${ID}/confirm`],
@@ -265,7 +275,7 @@ describe('admin sub-roles (Super-admin, Opérations COMPLIANCE, Finance, Support
       ['POST', `/v1/admin/payout-requests/${ID}/reject`, { reason: 'Non' }],
       ['POST', `/v1/admin/kyc-files/${ID}/approve`],
       ['POST', `/v1/admin/approvals/${ID}/approve`],
-      ['POST', `/v1/admin/commission-profiles/${ID}/change-requests`, rateBody],
+      ['POST', '/v1/admin/commission-grids/change-requests', gridBody],
       ['GET', `/v1/admin/kyc-files/${ID}/documents/${ID}`],
       ['POST', '/v1/admin/companies', companyBody],
     ]);
@@ -290,7 +300,7 @@ describe('admin sub-roles (Super-admin, Opérations COMPLIANCE, Finance, Support
       ['GET', '/v1/admin/settings'],
       ['GET', '/v1/admin/audit-logs'],
       ['GET', '/v1/admin/transactions'],
-      ['POST', `/v1/admin/commission-profiles/${ID}/change-requests`, rateBody],
+      ['POST', '/v1/admin/commission-grids/change-requests', gridBody],
       ['POST', `/v1/admin/credit-orders/${ID}/confirm`],
       ['POST', `/v1/admin/credit-orders/${ID}/validate`],
       ['POST', `/v1/admin/payout-requests/${ID}/approve`],
@@ -306,7 +316,7 @@ describe('admin sub-roles (Super-admin, Opérations COMPLIANCE, Finance, Support
       ['POST', `/v1/admin/credit-orders/${ID}/validate`],
       ['POST', `/v1/admin/payout-requests/${ID}/approve`],
       ['POST', `/v1/admin/approvals/${ID}/approve`],
-      ['POST', `/v1/admin/commission-profiles/${ID}/change-requests`, rateBody],
+      ['POST', '/v1/admin/commission-grids/change-requests', gridBody],
       ['GET', '/v1/admin/settings'],
       ['PUT', '/v1/admin/settings', {}],
     ]);
@@ -315,7 +325,6 @@ describe('admin sub-roles (Super-admin, Opérations COMPLIANCE, Finance, Support
       ['GET', '/v1/admin/transactions'],
       ['GET', '/v1/admin/credit-orders'],
       ['GET', '/v1/admin/settlements'],
-      ['GET', '/v1/admin/commission-profiles'],
       ['POST', `/v1/admin/kyc-files/${ID}/approve`],
     ]);
   });
@@ -327,8 +336,8 @@ describe('routes of the other spaces', () => {
     await refused(hr, [
       [
         'POST',
-        `/v1/admin/commission-profiles/${ID}/change-requests`,
-        { newRateBps: 210, reason: 'R' },
+        '/v1/admin/commission-grids/change-requests',
+        { companyId: ID, tiers: [{ rateBps: 210, minMillimes: null, maxMillimes: null }], reason: 'R' },
       ],
     ]);
   });

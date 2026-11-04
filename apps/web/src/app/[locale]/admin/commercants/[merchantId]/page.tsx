@@ -96,7 +96,7 @@ function MerchantRecord({ merchant }: { merchant: Schemas['MerchantAccount'] }) 
               { label: t('city'), value: merchant.city },
               {
                 label: t('profile'),
-                value: <CommissionLabel profile={merchant.commissionProfile} />,
+                value: <CommissionLabel grid={merchant.commissionGrid} />,
               },
               { label: t('created'), value: formatDateTime(merchant.createdAt, locale) },
             ]}

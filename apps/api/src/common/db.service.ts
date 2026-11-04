@@ -32,6 +32,29 @@ export function scopeOf(value: Principal): DbScope {
   };
 }
 
+/**
+ * Internal service step inside a user transaction (decision of 2026-11-04): the RLS role becomes
+ * SYSTEM for `fn`, then the role of the user comes back. Only for a server computation whose
+ * result never leaves the server as rows of another tenant (the commission rate of a payment).
+ */
+export async function asService<T>(tx: Tx, fn: () => Promise<T>): Promise<T> {
+  const [previous] = await tx.$queryRaw<
+    { role: string | null }[]
+  >`SELECT current_setting('app.role', true) AS role`;
+  const restore = () => tx.$executeRaw`SELECT set_config('app.role', ${previous?.role ?? ''}, true)`;
+  await tx.$executeRaw`SELECT set_config('app.role', 'SYSTEM', true)`;
+  let result: T;
+  try {
+    result = await fn();
+  } catch (error) {
+    // An aborted transaction cannot restore the role: it is rolled back anyway.
+    await restore().catch(() => undefined);
+    throw error;
+  }
+  await restore();
+  return result;
+}
+
 @Injectable()
 export class DbService implements OnModuleDestroy {
   readonly prisma: PrismaClient;

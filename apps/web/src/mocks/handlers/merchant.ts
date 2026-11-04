@@ -95,11 +95,11 @@ function receivables(): S['Receivable'][] {
 }
 
 /**
- * Commission rate of the demo shop for a type (decision of 2026-10-14): its own profile when it
+ * Commission rate of the demo shop for a type (decision of 2026-10-14): its own grid when it
  * has one, otherwise the rate of the credit type.
  */
 export function typeRate(type: S['CreditType']): number {
-  if (db.merchant.profile.commissionProfile !== null) return db.merchant.rateBps;
+  if (db.merchant.profile.commissionGrid !== null) return db.merchant.rateBps;
   return (
     db.admin.settings.creditTypes.find((item) => item.creditType === type)?.commissionRateBps ?? 0
   );
@@ -188,7 +188,7 @@ export const merchantHandlers = [
       nextSettlementDate:
         db.merchant.settlements.find((item) => item.status === 'SCHEDULED')?.settlementDate ?? null,
       commissionRateBps:
-        db.merchant.profile.commissionProfile === null ? null : db.merchant.rateBps,
+        db.merchant.profile.commissionGrid === null ? null : db.merchant.rateBps,
       recentPayments: db.merchant.payments.slice(0, 5).map(publicPayment),
       monthlyFlows: monthlyFlows(),
       monthByCreditType: CREDIT_TYPES.map((creditType) => ({
@@ -389,10 +389,6 @@ export const merchantHandlers = [
   http.get(apiUrl('/v1/merchant/profile'), async () => {
     const account = await guardRead('MERCHANT');
     if (isResponse(account)) return account;
-    const own = db.merchant.profile.commissionProfile;
-    return HttpResponse.json<S['MerchantProfile']>({
-      ...db.merchant.profile,
-      commissionProfile: own === null ? null : { ...own, rateBps: db.merchant.rateBps },
-    });
+    return HttpResponse.json<S['MerchantProfile']>(db.merchant.profile);
   }),
 ];

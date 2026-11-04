@@ -12,7 +12,7 @@ const { LedgerService, accounts } = await import('../../src/ledger/ledger.servic
 const { PayoutsService } = await import('../../src/payouts/payouts.service.js');
 const { JobsService } = await import('../../src/jobs/jobs.service.js');
 const { hashSecret } = await import('../../src/auth/password.js');
-const { createCompany, createEmployee, createUser, sealed, seedSettings, signedIn } =
+const { createCompany, createEmployee, createUser, sealed, seedSettings, signedIn, oneLineGrid } =
   await import('./fixtures.js');
 
 const env = loadEnv();
@@ -40,12 +40,6 @@ async function createMerchant(
   createdBy?: string,
 ) {
   return db.system(async (tx) => {
-    const profile =
-      ownRateBps === undefined
-        ? null
-        : await tx.commissionProfile.create({
-            data: { name: `Profil ${randomUUID().slice(0, 8)}`, rateBps: ownRateBps },
-          });
     return tx.merchant.create({
       data: {
         name: `Café ${randomUUID().slice(0, 5)}`,
@@ -62,7 +56,7 @@ async function createMerchant(
             24,
           ),
         ),
-        commissionProfileId: profile?.id ?? null,
+        commissionGrids: oneLineGrid(ownRateBps ?? 200),
         createdBy: createdBy ?? null,
       },
     });
@@ -395,9 +389,9 @@ describe('payout and settlement', () => {
       headers: key(),
     });
     expect(requested.body).toMatchObject({ commissionRateBps: 250, netMillimes: 43_875 });
-    // Without its own profile, a shop gets the rate of the credit type (200 for Restauration).
+    // Every shop has a grid (decision of 2026-11-04): the dashboard shows its default rate.
     const plain = await merchantClient((await createMerchant()).id);
-    expect((await plain.call('GET', '/v1/merchant/dashboard')).body.commissionRateBps).toBeNull();
+    expect((await plain.call('GET', '/v1/merchant/dashboard')).body.commissionRateBps).toBe(200);
   });
 
   it('gives the balance back when the request is rejected (reversal)', async () => {

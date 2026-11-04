@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: FlexiPay API
-  version: 0.8.0
+  version: 0.9.0
   summary: Conventions transverses, authentification web et profil (WB2, espace Commun).
   description: |
     # Contrat d'API FlexiPay (version 0.2.2)
@@ -37,7 +37,7 @@ info:
     - Changement **cassant** (suppression ou renommage de champ, changement de type, nouveau champ
       obligatoire en entrée, changement de sémantique) : nouvelle version majeure `/v2`. L'ancienne
       version annonce sa fin par les en-têtes `Deprecation` (RFC 9745) et `Sunset` (RFC 8594).
-    - Chemins en minuscules avec tirets (`/v1/commission-profiles`), ressources au pluriel.
+    - Chemins en minuscules avec tirets (`/v1/commission-grids`), ressources au pluriel.
     - Champs JSON et paramètres de requête en `camelCase`. Valeurs d'énumération en
       `UPPER_SNAKE_CASE`.
 
@@ -3198,48 +3198,24 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
-  /v1/admin/commission-profiles:
-    get:
-      tags: [admin]
-      operationId: listCommissionProfiles
-      summary: Profils de commission
-      responses:
-        '200':
-          description: Succès.
-          headers:
-            X-Request-Id:
-              $ref: '#/components/headers/X-Request-Id'
-            Cache-Control:
-              $ref: '#/components/headers/Cache-Control-No-Store'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CommissionProfileList'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
-        '500':
-          $ref: '#/components/responses/InternalError'
-  /v1/admin/commission-profiles/{profileId}/change-requests:
+  /v1/admin/commission-grids/change-requests:
     post:
       tags: [admin]
-      operationId: requestCommissionChange
-      summary: Demander un changement de taux (double validation, règle 12)
-      parameters:
-        - name: profileId
-          in: path
-          required: true
-          schema:
-            $ref: '#/components/schemas/Uuid'
+      operationId: requestCommissionGridChange
+      summary: Demander un changement de grille de commission (double validation, règle 12)
+      description: |
+        Grille d'une entreprise (`companyId`) ou d'un commerçant (`merchantId`), décision du
+        2026-11-03. Appliquée à l'approbation par un AUTRE administrateur, comme nouvelle version
+        (historique) ; elle vaut pour les commandes et virements futurs seulement (une demande en
+        cours garde ses taux figés). Une seule demande en attente par entité (409 sinon).
+        `400 VALIDATION_FAILED` : `GRID_OVERLAP`, `GRID_DEFAULT_REQUIRED`,
+        `GRID_DEFAULT_DUPLICATE`, `GRID_BOUNDS` sur `/tiers/<n>`.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CommissionChangeRequest'
+              $ref: '#/components/schemas/CommissionGridChangeRequest'
       responses:
         '201':
           description: Succès.
@@ -6727,25 +6703,68 @@ components:
           maxLength: 120
         subRole:
           $ref: '#/components/schemas/SubRole'
-    CommissionProfileSummary:
-      title: CommissionProfileSummary
+    CommissionTier:
+      title: CommissionTier
+      description: |
+        Ligne d'une grille de commission : tranche [min, max] en millimes (min et max inclus,
+        décision du 2026-11-04 ; sans min = 0, sans max = illimité), ou ligne par défaut sans min ni max (obligatoire et
+        unique, appliquée quand aucune tranche ne correspond). Les tranches ne se chevauchent pas.
       type: object
       additionalProperties: false
-      required: [id, name, rateBps]
+      required: [rateBps, minMillimes, maxMillimes]
       properties:
-        id:
-          $ref: '#/components/schemas/Uuid'
-        name:
-          type: string
-          minLength: 1
-          maxLength: 80
         rateBps:
           $ref: '#/components/schemas/RateBps'
+        minMillimes:
+          oneOf:
+            - $ref: '#/components/schemas/AmountMillimes'
+            - type: 'null'
+        maxMillimes:
+          oneOf:
+            - $ref: '#/components/schemas/AmountMillimes'
+            - type: 'null'
+    CommissionTierList:
+      title: CommissionTierList
+      type: array
+      minItems: 1
+      maxItems: 20
+      items:
+        $ref: '#/components/schemas/CommissionTier'
+    CommissionGrid:
+      title: CommissionGrid
+      description: |
+        Grille en vigueur (dernière version) : entreprise = taux sur le montant de chaque commande,
+        commerçant = taux sur le montant de chaque virement (décision du 2026-11-03).
+      type: object
+      additionalProperties: false
+      required: [tiers, effectiveFrom]
+      properties:
+        tiers:
+          $ref: '#/components/schemas/CommissionTierList'
+        effectiveFrom:
+          $ref: '#/components/schemas/Timestamp'
+    CommissionGridChangeRequest:
+      title: CommissionGridChangeRequest
+      description: Exactement une entité, `companyId` ou `merchantId`.
+      type: object
+      additionalProperties: false
+      required: [tiers, reason]
+      properties:
+        companyId:
+          $ref: '#/components/schemas/Uuid'
+        merchantId:
+          $ref: '#/components/schemas/Uuid'
+        tiers:
+          $ref: '#/components/schemas/CommissionTierList'
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
     MerchantProfile:
       title: MerchantProfile
       type: object
       additionalProperties: false
-      required: [name, category, city, address, phone, maskedIban, paymentCode, acceptedCreditTypes, commissionProfile, pointsOfSale, staff]
+      required: [name, category, city, address, phone, maskedIban, paymentCode, acceptedCreditTypes, commissionGrid, pointsOfSale, staff]
       properties:
         name:
           type: string
@@ -6781,12 +6800,14 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/CreditType'
-        commissionProfile:
+        commissionGrid:
           description: |
-            Profil de commission propre au commerçant, ou `null` : le taux du type de crédit
-            s'applique alors (décision du 2026-10-14). Le taux est figé dans la demande de virement.
+            Grille de commission du commerçant (taux sur le montant de chaque virement). Jamais
+            `null` après la migration 0025 (décision du 2026-11-04) : sans grille, l'opération est
+            refusée (`422 COMMISSION_GRID_MISSING`) et une alerte est levée. Le taux est figé dans
+            la demande de virement.
           oneOf:
-            - $ref: '#/components/schemas/CommissionProfileSummary'
+            - $ref: '#/components/schemas/CommissionGrid'
             - type: 'null'
         pointsOfSale:
           type: array
@@ -7566,7 +7587,7 @@ components:
       title: MerchantAccount
       type: object
       additionalProperties: false
-      required: [id, name, category, acceptedCreditTypes, city, status, commissionProfile, createdAt]
+      required: [id, name, category, acceptedCreditTypes, city, status, commissionGrid, createdAt]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -7590,12 +7611,14 @@ components:
           maxLength: 80
         status:
           $ref: '#/components/schemas/AccountStatus'
-        commissionProfile:
+        commissionGrid:
           description: |
-            Profil de commission propre au commerçant, ou `null` : le taux du type de crédit
-            s'applique alors (décision du 2026-10-14). Le taux est figé dans la demande de virement.
+            Grille de commission du commerçant (taux sur le montant de chaque virement). Jamais
+            `null` après la migration 0025 (décision du 2026-11-04) : sans grille, l'opération est
+            refusée (`422 COMMISSION_GRID_MISSING`) et une alerte est levée. Le taux est figé dans
+            la demande de virement.
           oneOf:
-            - $ref: '#/components/schemas/CommissionProfileSummary'
+            - $ref: '#/components/schemas/CommissionGrid'
             - type: 'null'
         createdAt:
           $ref: '#/components/schemas/Timestamp'
@@ -7631,7 +7654,7 @@ components:
       title: MerchantCreate
       type: object
       additionalProperties: false
-      required: [name, category, acceptedCreditTypes, city, phone, email]
+      required: [name, category, acceptedCreditTypes, city, phone, email, commissionGrid]
       properties:
         acceptedCreditTypes:
           description: Types de crédit acceptés par le commerçant.
@@ -7657,16 +7680,14 @@ components:
           type: string
           format: email
           maxLength: 254
-        commissionProfileId:
-          description: |
-            Profil de commission propre au commerçant (liste déroulante), facultatif : sans profil,
-            le taux de chaque type de crédit s'applique.
-          $ref: '#/components/schemas/Uuid'
+        commissionGrid:
+          description: Grille de commission saisie à la création (étape 2, fenêtre « Commission »).
+          $ref: '#/components/schemas/CommissionTierList'
     CompanyAccount:
       title: CompanyAccount
       type: object
       additionalProperties: false
-      required: [id, name, city, status, employeesCount, createdAt]
+      required: [id, name, city, status, employeesCount, commissionGrid, createdAt]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -7685,6 +7706,14 @@ components:
           format: int32
           minimum: 0
           maximum: 1000000
+        commissionGrid:
+          description: |
+            Grille de commission de l'entreprise (taux sur le montant de chaque commande). Jamais
+            `null` après la migration 0025 : sans grille, la commande est refusée
+            (`422 COMMISSION_GRID_MISSING`) et une alerte est levée.
+          oneOf:
+            - $ref: '#/components/schemas/CommissionGrid'
+            - type: 'null'
         createdAt:
           $ref: '#/components/schemas/Timestamp'
     CompanyAccountPage:
@@ -7705,7 +7734,7 @@ components:
       title: CompanyCreate
       type: object
       additionalProperties: false
-      required: [name, city, phone, email]
+      required: [name, city, phone, email, commissionGrid]
       properties:
         name:
           type: string
@@ -7721,55 +7750,14 @@ components:
           type: string
           format: email
           maxLength: 254
-    CommissionProfile:
-      title: CommissionProfile
-      type: object
-      additionalProperties: false
-      required: [id, name, rateBps, merchantsCount, updatedAt]
-      properties:
-        id:
-          $ref: '#/components/schemas/Uuid'
-        name:
-          type: string
-          minLength: 1
-          maxLength: 80
-        rateBps:
-          $ref: '#/components/schemas/RateBps'
-        merchantsCount:
-          type: integer
-          format: int32
-          minimum: 0
-          maximum: 1000000
-        updatedAt:
-          $ref: '#/components/schemas/Timestamp'
-    CommissionProfileList:
-      title: CommissionProfileList
-      type: object
-      additionalProperties: false
-      required: [data]
-      properties:
-        data:
-          type: array
-          maxItems: 100
-          items:
-            $ref: '#/components/schemas/CommissionProfile'
-    CommissionChangeRequest:
-      title: CommissionChangeRequest
-      type: object
-      additionalProperties: false
-      required: [newRateBps, reason]
-      properties:
-        newRateBps:
-          $ref: '#/components/schemas/RateBps'
-        reason:
-          type: string
-          minLength: 1
-          maxLength: 500
+        commissionGrid:
+          description: Grille de commission saisie à la création (étape 2, fenêtre « Commission »).
+          $ref: '#/components/schemas/CommissionTierList'
     ApprovalType:
       title: ApprovalType
       description: Opération sensible soumise à double validation (règle 12).
       type: string
-      enum: [COMMISSION_RATE_CHANGE, SETTINGS_CHANGE, DISPUTE_REFUND]
+      enum: [COMMISSION_RATE_CHANGE, SETTINGS_CHANGE, DISPUTE_REFUND, COMMISSION_GRID_CHANGE]
     Approval:
       title: Approval
       type: object
@@ -7791,6 +7779,18 @@ components:
           $ref: '#/components/schemas/RateBps'
         newRateBps:
           $ref: '#/components/schemas/RateBps'
+        commissionGrid:
+          description: Grille en vigueur (`null` sans grille) et grille proposée (COMMISSION_GRID_CHANGE).
+          type: object
+          additionalProperties: false
+          required: [previous, proposed]
+          properties:
+            previous:
+              oneOf:
+                - $ref: '#/components/schemas/CommissionTierList'
+                - type: 'null'
+            proposed:
+              $ref: '#/components/schemas/CommissionTierList'
         reason:
           type: string
           maxLength: 500
@@ -8231,7 +8231,7 @@ components:
       title: PlatformSettings
       type: object
       additionalProperties: false
-      required: [payoutMinimumMillimes, creditValidityMonths, maxFamilyMembers, orderFeeRateBps, expiredCreditsDestination, creditTypes]
+      required: [payoutMinimumMillimes, creditValidityMonths, maxFamilyMembers, orderFeeRateBps, vatRateBps, stampDutyMillimes, expiredCreditsDestination, creditTypes]
       properties:
         expiredCreditsDestination:
           $ref: '#/components/schemas/ExpiredCreditsDestination'
@@ -8249,6 +8249,12 @@ components:
           maximum: 10
         orderFeeRateBps:
           $ref: '#/components/schemas/RateBps'
+        vatRateBps:
+          description: TVA sur la commission (19 % = 1 900 bps), décision du 2026-11-03.
+          $ref: '#/components/schemas/RateBps'
+        stampDutyMillimes:
+          description: Timbre fiscal par commande et par virement (1 DT = 1 000), décision du 2026-11-03.
+          $ref: '#/components/schemas/AmountMillimes'
         creditTypes:
           description: Paramétrage par type (un élément par type, les 4 types).
           type: array
@@ -8310,6 +8316,7 @@ components:
         - SERVICE_UNAVAILABLE
         - PIN_INVALID
         - PIN_LOCKED
+        - COMMISSION_GRID_MISSING
     ProblemBase:
       title: ProblemBase
       description: |
@@ -8542,7 +8549,7 @@ components:
     FraudAlertKind:
       title: FraudAlertKind
       type: string
-      enum: [REPEATED_REFUSALS, MERCHANT_BURST, NEAR_DAILY_LIMIT, RIB_CHANGE_PAYOUT, NEW_DEVICE_PAYMENT]
+      enum: [REPEATED_REFUSALS, MERCHANT_BURST, NEAR_DAILY_LIMIT, RIB_CHANGE_PAYOUT, NEW_DEVICE_PAYMENT, COMMISSION_GRID_MISSING]
     FraudAlertSeverity:
       title: FraudAlertSeverity
       type: string
@@ -8727,6 +8734,10 @@ components:
         - CURRENT_PASSWORD_INVALID
         - PASSWORD_POLICY_VIOLATION
         - IN_FUTURE
+        - GRID_OVERLAP
+        - GRID_DEFAULT_REQUIRED
+        - GRID_DEFAULT_DUPLICATE
+        - GRID_BOUNDS
     FieldError:
       title: FieldError
       type: object

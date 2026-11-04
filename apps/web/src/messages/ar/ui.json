@@ -56,7 +56,9 @@
     "limitUsed": "صُرف {spent} اليوم من أصل {limit}",
     "noTransfer": "لكل نوع رصيده الخاص: لا تحويل ولا دفع بين الأنواع.",
     "insufficient": "رصيد {type} غير كافٍ: ينقص {missing}.",
-    "rateByType": "نسبة نوع الرصيد"
+    "rateByType": "غير مُعلَن",
+    "gridDefault": "افتراضيًا",
+    "gridTranches": "{count, plural, one {+ شريحة واحدة} two {+ شريحتان} few {+ # شرائح} many {+ # شريحة} other {+ # شريحة}}"
   },
   "amountField": {
     "hint": "مثال: 18,500",

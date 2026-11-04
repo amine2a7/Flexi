@@ -38,7 +38,8 @@ type S = Schemas;
 export type MockPayment = S['MerchantPayment'] & { confirmAt?: number; willRefuse?: boolean };
 export type MockApproval = Omit<S['Approval'], 'initiatedByMe'> & {
   initiatorId: string;
-  profileId?: string;
+  /** Company or shop of a grid change request. */
+  owner?: { companyId: string } | { merchantId: string };
   settings?: S['PlatformSettings'];
 };
 
@@ -86,7 +87,6 @@ export interface MockDb {
   admin: {
     merchants: S['MerchantAccount'][];
     companies: S['CompanyAccount'][];
-    profiles: S['CommissionProfile'][];
     approvals: MockApproval[];
     batches: S['SettlementBatch'][];
     audit: S['AuditLogEntry'][];
@@ -199,6 +199,19 @@ function amount(
 }
 
 /** Commission in millimes, rounded half up on the integer value (mock of the server rule). */
+/** One-line grid (default rate only), as the migration of the former profiles. */
+export function defaultGrid(rateBps: number, at: number): S['CommissionGrid'] {
+  return {
+    tiers: [{ rateBps, minMillimes: null, maxMillimes: null }],
+    effectiveFrom: new Date(at).toISOString(),
+  };
+}
+
+/** Default line of a grid (null without grid). */
+export function defaultRateOf(grid: S['CommissionGrid'] | null): number | null {
+  return grid?.tiers.find((tier) => tier.minMillimes === null && tier.maxMillimes === null)?.rateBps ?? null;
+}
+
 export function commissionOf(grossMillimes: number, rateBps: number): number {
   return Math.floor((grossMillimes * rateBps + 5_000) / 10_000);
 }
@@ -310,7 +323,7 @@ function buildMerchant(now: number) {
     phone: '+21698421337',
     maskedIban: '•••• •••• •••• 4821',
     paymentCode: '482915',
-    commissionProfile: { id: '01930a1d-0001-7b00-8000-000000000001', name: 'Standard', rateBps },
+    commissionGrid: defaultGrid(rateBps, now - 90 * DAY),
     pointsOfSale: [
       { id: random.uuid(), name: 'Café El Medina — Centre-ville', city: 'Tunis' },
       { id: random.uuid(), name: 'Café El Medina — Lac 2', city: 'Tunis' },
@@ -372,44 +385,8 @@ function buildCompany() {
 
 function buildAdmin(now: number, merchantRate: number) {
   const random = createRandom(23);
-  const profiles: S['CommissionProfile'][] = [
-    {
-      id: '01930a1d-0001-7b00-8000-000000000001',
-      name: 'Standard',
-      rateBps: merchantRate,
-      merchantsCount: 0,
-      updatedAt: iso(now - 90 * DAY),
-    },
-    {
-      id: '01930a1d-0002-7b00-8000-000000000002',
-      name: 'Réduit',
-      rateBps: 150,
-      merchantsCount: 0,
-      updatedAt: iso(now - 60 * DAY),
-    },
-    {
-      id: '01930a1d-0003-7b00-8000-000000000003',
-      name: 'Partenaire',
-      rateBps: 100,
-      merchantsCount: 0,
-      updatedAt: iso(now - 45 * DAY),
-    },
-    {
-      id: '01930a1d-0004-7b00-8000-000000000004',
-      name: 'Premium',
-      rateBps: 250,
-      merchantsCount: 0,
-      updatedAt: iso(now - 20 * DAY),
-    },
-  ];
-  const summary = (profile: S['CommissionProfile']) => ({
-    id: profile.id,
-    name: profile.name,
-    rateBps: profile.rateBps,
-  });
-
-  const standard = profiles[0];
-  if (standard === undefined) throw new Error('seed: no commission profile');
+  // Default rates of the grids migrated from the former profiles (decision of 2026-11-03).
+  const rates = [merchantRate, 150, 100, 250];
   const merchants: S['MerchantAccount'][] = [];
   const used = new Set<string>([MERCHANT_TENANT.label]);
   merchants.push({
@@ -419,7 +396,14 @@ function buildAdmin(now: number, merchantRate: number) {
     acceptedCreditTypes: ['RESTAURATION', 'CADEAUX'],
     city: 'Tunis',
     status: 'APPROVED',
-    commissionProfile: summary(standard),
+    commissionGrid: {
+      // Demo grid: 2 % by default, 1,5 % from 5 000 TND per payout.
+      tiers: [
+        { rateBps: merchantRate, minMillimes: null, maxMillimes: null },
+        { rateBps: 150, minMillimes: 5_000_000, maxMillimes: null },
+      ],
+      effectiveFrom: iso(now - 90 * DAY),
+    },
     createdAt: iso(now - 200 * DAY),
   });
   while (merchants.length < 46) {
@@ -442,15 +426,18 @@ function buildAdmin(now: number, merchantRate: number) {
             : roll < 0.96
               ? 'SUSPENDED'
               : 'REJECTED',
-      commissionProfile: summary(random.pick(profiles)),
+      commissionGrid: defaultGrid(random.pick(rates), now - random.int(20, 90) * DAY),
       createdAt: iso(now - random.int(1, 400) * DAY),
     });
   }
-  for (const profile of profiles) {
-    profile.merchantsCount = merchants.filter(
-      (merchant) => merchant.commissionProfile?.id === profile.id,
-    ).length;
-  }
+  const gridTarget = (index: number) => {
+    const merchant = merchants[index];
+    const tiers = merchant?.commissionGrid?.tiers;
+    if (merchant === undefined || tiers === undefined) throw new Error('seed: no merchant grid');
+    return { merchant, tiers };
+  };
+  const firstTarget = gridTarget(1);
+  const secondTarget = gridTarget(2);
 
   const companies: S['CompanyAccount'][] = COMPANY_NAMES.map((name, index) => ({
     id: index === 0 ? COMPANY_TENANT.id : random.uuid(),
@@ -458,6 +445,7 @@ function buildAdmin(now: number, merchantRate: number) {
     city: index === 0 ? 'Tunis' : random.pick(CITIES),
     status: index === 0 ? 'APPROVED' : random.next() < 0.85 ? 'APPROVED' : 'PENDING_KYC',
     employeesCount: index === 0 ? 84 : random.int(12, 640),
+    commissionGrid: defaultGrid(150, now - 120 * DAY),
     createdAt: iso(now - random.int(5, 500) * DAY),
   }));
 
@@ -465,28 +453,35 @@ function buildAdmin(now: number, merchantRate: number) {
   const approvals: MockApproval[] = [
     {
       id: random.uuid(),
-      type: 'COMMISSION_RATE_CHANGE',
+      type: 'COMMISSION_GRID_CHANGE',
       status: 'PENDING',
-      subject: 'Partenaire',
-      oldRateBps: 100,
-      newRateBps: 120,
+      subject: firstTarget.merchant.name,
+      commissionGrid: {
+        previous: firstTarget.tiers,
+        proposed: [
+          { rateBps: 180, minMillimes: null, maxMillimes: null },
+          { rateBps: 120, minMillimes: 2_000_000, maxMillimes: null },
+        ],
+      },
       reason: 'Révision annuelle des partenariats',
       initiatorName: otherAdmin.name,
       initiatorId: otherAdmin.id,
-      profileId: profiles[2]?.id,
+      owner: { merchantId: firstTarget.merchant.id },
       createdAt: iso(now - 3 * 60 * MINUTE),
     },
     {
       id: random.uuid(),
-      type: 'COMMISSION_RATE_CHANGE',
+      type: 'COMMISSION_GRID_CHANGE',
       status: 'PENDING',
-      subject: 'Premium',
-      oldRateBps: 250,
-      newRateBps: 230,
+      subject: secondTarget.merchant.name,
+      commissionGrid: {
+        previous: secondTarget.tiers,
+        proposed: [{ rateBps: 230, minMillimes: null, maxMillimes: null }],
+      },
       reason: 'Alignement sur la concurrence',
       initiatorName: otherAdmin.name,
       initiatorId: otherAdmin.id,
-      profileId: profiles[3]?.id,
+      owner: { merchantId: secondTarget.merchant.id },
       createdAt: iso(now - 26 * 60 * MINUTE),
     },
     {
@@ -553,7 +548,6 @@ function buildAdmin(now: number, merchantRate: number) {
   return {
     merchants,
     companies,
-    profiles,
     approvals,
     batches,
     audit,
@@ -562,6 +556,8 @@ function buildAdmin(now: number, merchantRate: number) {
       creditValidityMonths: 12,
       maxFamilyMembers: 4,
       orderFeeRateBps: 150,
+      vatRateBps: 1_900,
+      stampDutyMillimes: 1_000,
       expiredCreditsDestination: 'PLATFORM_REVENUE' as const,
       creditTypes: DEFAULT_TYPE_SETTINGS.map((item) => ({ ...item })),
     },

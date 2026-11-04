@@ -56,7 +56,10 @@
       "email": "Manager e-mail",
       "city": "City",
       "required": "Required field.",
-      "invalidFormat": "Invalid format."
+      "invalidFormat": "Invalid format.",
+      "defaultRate": "Default commission rate (%)",
+      "defaultRateHint": "Default line of the grid. Example: 2 for 2 %.",
+      "defaultRateInvalid": "Enter a rate between 0 and 100 %, 2 decimals at most."
     },
     "submit": "Create the merchant",
     "createdToast": "{name} was created (KYC pending). Invitation sent to the owner.",
@@ -91,31 +94,37 @@
       "email": "Manager e-mail",
       "city": "City",
       "required": "Required field.",
-      "invalidFormat": "Invalid format."
+      "invalidFormat": "Invalid format.",
+      "defaultRate": "Default commission rate (%)",
+      "defaultRateHint": "Default line of the grid. Example: 2 for 2 %.",
+      "defaultRateInvalid": "Enter a rate between 0 and 100 %, 2 decimals at most."
     },
     "submit": "Create the company",
     "createdToast": "{name} was created (KYC pending). Invitation sent to the owner.",
     "duplicate": "A company already has this name."
   },
   "commissions": {
-    "title": "Commission profiles",
-    "description": "Any rate change must be approved by a second administrator.",
-    "name": "Profile",
-    "rate": "Rate",
-    "merchants": "Merchants",
-    "updated": "Updated on",
+    "title": "Commission grids",
+    "description": "Grid of each company (rate on each order) and of each merchant (rate on each payout). Any change must be approved by a second administrator and only applies from then on.",
+    "updated": "In force since",
     "change": "Request a change",
     "changeFor": "Request a change for {name}",
-    "formTitle": "Change the rate of {name}",
-    "current": "Current rate: {rate}",
-    "newRate": "New rate (%)",
+    "formTitle": "Change the default rate of {name}",
+    "current": "Current default rate: {rate}. Tranches are kept.",
+    "newRate": "New default rate (%)",
     "newRateHint": "Example: 1.75 for 1.75%.",
     "rateInvalid": "Enter a rate between 0 and 100%, 2 decimals at most.",
     "reason": "Reason",
     "reasonHint": "The reason is shown to the approving administrator.",
     "submit": "Send for approval",
     "createdToast": "Request sent. Another administrator must approve it.",
-    "pending": "A request is already pending for this profile."
+    "pending": "A request is already pending for this grid.",
+    "companiesTitle": "Companies",
+    "merchantsTitle": "Merchants",
+    "companiesName": "Company",
+    "merchantsName": "Merchant",
+    "grid": "Grid",
+    "noGrid": "No grid: the rate of the settings applies."
   },
   "approvals": {
     "title": "Approvals",
@@ -136,7 +145,8 @@
     "types": {
       "COMMISSION_RATE_CHANGE": "Rate change",
       "SETTINGS_CHANGE": "Settings change",
-      "DISPUTE_REFUND": "Dispute refund"
+      "DISPUTE_REFUND": "Dispute refund",
+      "COMMISSION_GRID_CHANGE": "Grid change"
     },
     "approveTitle": "Approve this request?",
     "approveMessage": "The change will apply immediately and be logged.",
@@ -217,7 +227,11 @@
     "destinations": {
       "PLATFORM_REVENUE": "FlexiPay revenue",
       "COMPANY_RETURN": "Back to the company"
-    }
+    },
+    "vat": "VAT on the commission (%)",
+    "vatHint": "Applied to the rounded commission. Example: 19.",
+    "stamp": "Stamp duty (TND)",
+    "stampHint": "Added to each order and withheld from each payout. Example: 1.000."
   },
   "kyc": {
     "open": "Open",
@@ -446,7 +460,8 @@
       "MERCHANT_BURST": "Close payments at a merchant",
       "NEAR_DAILY_LIMIT": "Payment near the daily limit",
       "RIB_CHANGE_PAYOUT": "Bank details changed, then payout",
-      "NEW_DEVICE_PAYMENT": "New device, then payment"
+      "NEW_DEVICE_PAYMENT": "New device, then payment",
+      "COMMISSION_GRID_MISSING": "Missing commission grid"
     },
     "severities": {
       "HIGH": "High",

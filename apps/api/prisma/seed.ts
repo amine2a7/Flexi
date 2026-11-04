@@ -72,10 +72,9 @@ interface Snapshot {
   admin: {
     merchants: S['MerchantAccount'][];
     companies: S['CompanyAccount'][];
-    profiles: S['CommissionProfile'][];
     approvals: (Omit<S['Approval'], 'initiatedByMe'> & {
       initiatorId: string;
-      profileId?: string;
+      owner?: { companyId: string } | { merchantId: string };
     })[];
     batches: S['SettlementBatch'][];
     audit: S['AuditLogEntry'][];
@@ -273,14 +272,10 @@ const summary = await prisma.$transaction(
         dailyLimitMillimes: big(item.dailyLimitMillimes),
       })),
     });
-    await tx.commissionProfile.createMany({
-      data: snap.admin.profiles.map((profile) => ({
-        id: profile.id,
-        name: profile.name,
-        rateBps: profile.rateBps,
-        updatedAt: at(profile.updatedAt),
-      })),
-    });
+    // Commission grids replaced the profiles (decision of 2026-11-03): one default line each.
+    type Tier = S['CommissionTier'];
+    const grids: { companyId?: string; merchantId?: string; tiers: Tier[] }[] = [];
+    const oneLine = (rateBps: number): Tier[] => [{ rateBps, minMillimes: null, maxMillimes: null }];
     const rateOf = (type: CreditType) =>
       settings.creditTypes.find((item) => item.creditType === type)?.commissionRateBps ?? 0;
 
@@ -328,7 +323,6 @@ const summary = await prisma.$transaction(
         acceptedCreditTypes: merchant.acceptedCreditTypes,
         paymentCode: own ? snap.merchant.profile.paymentCode : paymentCode(merchant.id),
         iban: sealNullable(iban),
-        commissionProfileId: merchant.commissionProfile?.id ?? null,
         createdAt: at(merchant.createdAt),
       };
     });
@@ -339,7 +333,6 @@ const summary = await prisma.$transaction(
       CARBURANT: 'FUEL_STATION',
       CADEAUX: 'GIFT_SHOP',
     };
-    const standard = snap.admin.profiles[0]?.id ?? '';
     for (const shop of snap.shops) {
       if (merchantRows.some((row) => row.name === shop.name)) continue;
       const id = `0193${digitsOf(shop.name, 4)}-${digitsOf(`${shop.name}b`, 4)}-7000-8000-${digitsOf(`${shop.name}c`, 12)}`;
@@ -355,11 +348,35 @@ const summary = await prisma.$transaction(
         acceptedCreditTypes: shop.types,
         paymentCode: paymentCode(id),
         iban: seal(`TN59${digitsOf(id, 20)}`),
-        commissionProfileId: standard,
         createdAt: new Date(now.getTime() - 300 * DAY),
       });
+      grids.push({ merchantId: id, tiers: oneLine(snap.merchant.rateBps) });
     }
     await tx.merchant.createMany({ data: merchantRows });
+    for (const merchant of snap.admin.merchants) {
+      if (merchant.commissionGrid !== null)
+        grids.push({ merchantId: merchant.id, tiers: merchant.commissionGrid.tiers });
+    }
+    for (const company of snap.admin.companies)
+      grids.push({
+        companyId: company.id,
+        tiers: company.commissionGrid?.tiers ?? oneLine(settings.orderFeeRateBps),
+      });
+    for (const grid of grids)
+      await tx.commissionGrid.create({
+        data: {
+          ...(grid.companyId === undefined ? {} : { companyId: grid.companyId }),
+          ...(grid.merchantId === undefined ? {} : { merchantId: grid.merchantId }),
+          tiers: {
+            create: grid.tiers.map((tier, position) => ({
+              position,
+              rateBps: tier.rateBps,
+              minMillimes: tier.minMillimes === null ? null : big(tier.minMillimes),
+              maxMillimes: tier.maxMillimes === null ? null : big(tier.maxMillimes),
+            })),
+          },
+        },
+      });
     const merchantByName = new Map(merchantRows.map((row) => [row.name, row]));
     await tx.pointOfSale.createMany({
       data: snap.merchant.profile.pointsOfSale.map((point) => ({
@@ -1223,22 +1240,26 @@ const summary = await prisma.$transaction(
     }
 
     // -------------------------------------------------------------- approvals, audit, messages
-    const profileByName = new Map(snap.admin.profiles.map((item) => [item.name, item.id]));
     for (const approval of snap.admin.approvals) {
       const decided = approval.status !== 'PENDING';
-      const commission = approval.type === 'COMMISSION_RATE_CHANGE';
+      const grid = approval.type === 'COMMISSION_GRID_CHANGE';
+      const rate = approval.type === 'COMMISSION_RATE_CHANGE';
       await tx.approval.create({
         data: {
           id: approval.id,
           type: approval.type,
           status: approval.status,
           subject: approval.subject,
-          payload: commission
+          // Former profile requests keep their rates only (profiles replaced by grids).
+          payload: grid
             ? {
-                profileId: approval.profileId ?? profileByName.get(approval.subject) ?? '',
-                newRateBps: approval.newRateBps ?? 0,
+                owner: approval.owner ?? {},
+                tiers: approval.commissionGrid?.proposed ?? [],
+                previous: approval.commissionGrid?.previous ?? null,
               }
-            : { ...settings, payoutMinimumMillimes: 10_000 },
+            : rate
+              ? { newRateBps: approval.newRateBps ?? 0 }
+              : { ...settings, payoutMinimumMillimes: 10_000 },
           oldRateBps: approval.oldRateBps ?? null,
           newRateBps: approval.newRateBps ?? null,
           reason: approval.reason ?? '',

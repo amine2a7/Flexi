@@ -1,7 +1,7 @@
 import type { Schemas } from '@flexipay/api-client';
 import { http, HttpResponse } from 'msw';
 import { demoIban } from '../admin-seed';
-import { currentAccount, db } from '../db';
+import { currentAccount, db, defaultRateOf } from '../db';
 import { MERCHANT_TENANT } from '../fixtures/accounts';
 import { createRandom } from '../fixtures/random';
 import { fileResponse, renderDemoDocument } from './demo-document';
@@ -128,7 +128,7 @@ function ensureLines(batch: S['SettlementBatch']): AdminPayout[] {
     commissionLeft -= commission;
     const creditType = merchant.acceptedCreditTypes[0] ?? 'RESTAURATION';
     const rate =
-      merchant.commissionProfile?.rateBps ??
+      defaultRateOf(merchant.commissionGrid) ??
       db.admin.settings.creditTypes.find((item) => item.creditType === creditType)
         ?.commissionRateBps ??
       0;

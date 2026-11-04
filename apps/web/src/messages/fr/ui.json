@@ -56,7 +56,9 @@
     "limitUsed": "{spent} dépensés aujourd'hui sur {limit}",
     "noTransfer": "Chaque type a son propre solde : aucun transfert ni paiement entre types.",
     "insufficient": "Solde {type} insuffisant : il manque {missing}.",
-    "rateByType": "Taux du type de crédit"
+    "rateByType": "Non communiqué",
+    "gridDefault": "par défaut",
+    "gridTranches": "{count, plural, one {+ # tranche} other {+ # tranches}}"
   },
   "amountField": {
     "hint": "Exemple : 18,500",

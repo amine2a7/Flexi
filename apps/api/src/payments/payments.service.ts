@@ -261,7 +261,11 @@ export class PaymentsService {
     });
     return {
       transactionId: posted.transactionId,
-      rateBps: await this.settings.commissionRate(tx, payment.merchantId, payment.creditType),
+      rateBps: await this.settings.commissionRate(
+        tx,
+        { merchantId: payment.merchantId },
+        payment.amount,
+      ),
     };
   }
 
@@ -721,7 +725,11 @@ export class PaymentsService {
       const collected = payment.status === 'CONFIRMED' || payment.status === 'SETTLED';
       const rate =
         payment.commissionRateBps ??
-        (await this.settings.commissionRate(tx, payment.merchantId, payment.creditType));
+        (await this.settings.commissionRate(
+          tx,
+          { merchantId: payment.merchantId },
+          payment.amountMillimes,
+        ));
       const commission = collected ? commissionOf(payment.amountMillimes, rate) : 0n;
       return {
         ...merchantPayment(payment),

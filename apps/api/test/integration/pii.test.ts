@@ -50,6 +50,7 @@ describe('personal data encrypted at rest', () => {
         name: `Café ${randomUUID().slice(0, 6)}`,
         category: 'CAFE',
         acceptedCreditTypes: ['RESTAURATION'],
+        commissionGrid: [{ rateBps: 200, minMillimes: null, maxMillimes: null }],
         city: 'Tunis',
         phone: number,
         email: `pii-${randomUUID().slice(0, 8)}@exemple.tn`,

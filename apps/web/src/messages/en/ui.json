@@ -56,7 +56,9 @@
     "limitUsed": "{spent} spent today out of {limit}",
     "noTransfer": "Each type has its own balance: no transfer or payment between types.",
     "insufficient": "Not enough {type} balance: {missing} missing.",
-    "rateByType": "Credit type rate"
+    "rateByType": "Not disclosed",
+    "gridDefault": "by default",
+    "gridTranches": "{count, plural, one {+ # tranche} other {+ # tranches}}"
   },
   "amountField": {
     "hint": "Example: 18.500",

@@ -145,13 +145,14 @@ describe('sign-in accounts created with their owner', () => {
         name: `Café ${randomUUID().slice(0, 6)}`,
         category: 'CAFE',
         acceptedCreditTypes: ['RESTAURATION'],
+        commissionGrid: [{ rateBps: 200, minMillimes: null, maxMillimes: null }],
         city: 'Tunis',
         phone: '+21671222333',
         email: merchantEmail,
       },
     });
     expect(merchant.status).toBe(201);
-    expect(merchant.body.commissionProfile).toBeNull();
+    expect(merchant.body.commissionGrid).toMatchObject({ tiers: [{ rateBps: 200 }] });
     expect(
       await db.system((tx) => tx.user.findUnique({ where: { email: merchantEmail } })),
     ).toMatchObject({
@@ -169,6 +170,7 @@ describe('sign-in accounts created with their owner', () => {
         city: 'Sfax',
         phone: '+21674111222',
         email: companyEmail,
+        commissionGrid: [{ rateBps: 150, minMillimes: null, maxMillimes: null }],
       },
     });
     expect(company.status).toBe(201);

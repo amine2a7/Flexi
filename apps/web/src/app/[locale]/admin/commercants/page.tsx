@@ -71,7 +71,7 @@ export default function AdminMerchantsPage() {
     {
       key: 'profile',
       header: t('profile'),
-      cell: (row) => <CommissionLabel profile={row.commissionProfile} />,
+      cell: (row) => <CommissionLabel grid={row.commissionGrid} />,
     },
     {
       key: 'created',

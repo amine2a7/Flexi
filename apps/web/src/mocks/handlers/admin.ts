@@ -1,7 +1,7 @@
 import type { Schemas } from '@flexipay/api-client';
 import { http, HttpResponse } from 'msw';
 import { CREDIT_TYPES } from '../credit-types';
-import { db, type MockApproval } from '../db';
+import { db, defaultRateOf, type MockApproval } from '../db';
 import { MERCHANT_TENANT } from '../fixtures/accounts';
 import {
   apiUrl,
@@ -22,8 +22,13 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE = /^\+216[0-9]{8}$/;
 
 function publicApproval(approval: MockApproval, accountId: string): S['Approval'] {
-  const { initiatorId, profileId: _profileId, settings: _settings, ...rest } = approval;
+  const { initiatorId, owner: _owner, settings: _settings, ...rest } = approval;
   return { ...rest, initiatedByMe: initiatorId === accountId };
+}
+
+/** Grid entered at creation (the API validates the tranches, the window shows the errors). */
+function gridOf(tiers: S['CommissionTier'][] | undefined): S['CommissionGrid'] | null {
+  return tiers === undefined ? null : { tiers, effectiveFrom: new Date().toISOString() };
 }
 
 function requiredFields(body: Record<string, unknown>, fields: readonly string[]) {
@@ -122,13 +127,6 @@ export const adminHandlers = [
       errors.push({ pointer: '/acceptedCreditTypes', code: 'REQUIRED' });
     }
     if (errors.length > 0) return validationProblem(errors);
-    // Optional own profile; without it the rate of each credit type applies (decision 2026-10-14).
-    const profile =
-      body.commissionProfileId === undefined
-        ? null
-        : db.admin.profiles.find((item) => item.id === body.commissionProfileId);
-    if (profile === undefined)
-      return validationProblem([{ pointer: '/commissionProfileId', code: 'INVALID_ENUM' }]);
     if (
       db.admin.merchants.some(
         (merchant) => merchant.name.toLowerCase() === body.name.trim().toLowerCase(),
@@ -143,12 +141,10 @@ export const adminHandlers = [
       acceptedCreditTypes: [...new Set(body.acceptedCreditTypes)],
       city: body.city.trim(),
       status: 'PENDING_KYC',
-      commissionProfile:
-        profile === null ? null : { id: profile.id, name: profile.name, rateBps: profile.rateBps },
+      commissionGrid: gridOf(body.commissionGrid),
       createdAt: new Date().toISOString(),
     };
     db.admin.merchants.unshift(merchant);
-    if (profile !== null) profile.merchantsCount += 1;
     audit('merchants.create', merchant.name);
     return HttpResponse.json<S['MerchantAccount']>(merchant, { status: 201 });
   }),
@@ -213,6 +209,7 @@ export const adminHandlers = [
       city: body.city.trim(),
       status: 'PENDING_KYC',
       employeesCount: 0,
+      commissionGrid: gridOf(body.commissionGrid),
       createdAt: new Date().toISOString(),
     };
     db.admin.companies.unshift(company);
@@ -220,52 +217,41 @@ export const adminHandlers = [
     return HttpResponse.json<S['CompanyAccount']>(company, { status: 201 });
   }),
 
-  http.get(apiUrl('/v1/admin/commission-profiles'), async () => {
-    const account = await guardRead('ADMIN');
+  http.post(apiUrl('/v1/admin/commission-grids/change-requests'), async ({ request }) => {
+    const account = await guardWrite(request, 'ADMIN');
     if (isResponse(account)) return account;
-    return HttpResponse.json<S['CommissionProfileList']>({ data: db.admin.profiles });
+    const body = (await request.json()) as S['CommissionGridChangeRequest'];
+    if (body.reason.trim() === '')
+      return validationProblem([{ pointer: '/reason', code: 'REQUIRED' }]);
+    const owner =
+      body.merchantId !== undefined
+        ? { merchantId: body.merchantId }
+        : { companyId: body.companyId ?? '' };
+    const target =
+      'merchantId' in owner
+        ? db.admin.merchants.find((item) => item.id === owner.merchantId)
+        : db.admin.companies.find((item) => item.id === owner.companyId);
+    if (target === undefined) return problem(404, 'NOT_FOUND');
+    const sameOwner = (approval: MockApproval) =>
+      approval.owner !== undefined && JSON.stringify(approval.owner) === JSON.stringify(owner);
+    if (db.admin.approvals.some((approval) => approval.status === 'PENDING' && sameOwner(approval)))
+      return problem(409, 'RESOURCE_STATE_CONFLICT');
+    const approval: MockApproval = {
+      id: crypto.randomUUID(),
+      type: 'COMMISSION_GRID_CHANGE',
+      status: 'PENDING',
+      subject: target.name,
+      commissionGrid: { previous: target.commissionGrid?.tiers ?? null, proposed: body.tiers },
+      reason: body.reason.trim(),
+      initiatorName: account.displayName,
+      initiatorId: account.id,
+      owner,
+      createdAt: new Date().toISOString(),
+    };
+    db.admin.approvals.unshift(approval);
+    audit('commissions.request', target.name);
+    return HttpResponse.json<S['Approval']>(publicApproval(approval, account.id), { status: 201 });
   }),
-
-  http.post(
-    apiUrl('/v1/admin/commission-profiles/:profileId/change-requests'),
-    async ({ request, params }) => {
-      const account = await guardWrite(request, 'ADMIN');
-      if (isResponse(account)) return account;
-      const profile = db.admin.profiles.find((item) => item.id === params.profileId);
-      if (profile === undefined) return problem(404, 'NOT_FOUND');
-      const body = (await request.json()) as S['CommissionChangeRequest'];
-      if (!Number.isInteger(body.newRateBps) || body.newRateBps < 0 || body.newRateBps > 10_000) {
-        return validationProblem([{ pointer: '/newRateBps', code: 'TOO_BIG' }]);
-      }
-      if (body.reason.trim() === '')
-        return validationProblem([{ pointer: '/reason', code: 'REQUIRED' }]);
-      if (
-        db.admin.approvals.some(
-          (approval) => approval.status === 'PENDING' && approval.profileId === profile.id,
-        )
-      ) {
-        return problem(409, 'RESOURCE_STATE_CONFLICT');
-      }
-      const approval: MockApproval = {
-        id: crypto.randomUUID(),
-        type: 'COMMISSION_RATE_CHANGE',
-        status: 'PENDING',
-        subject: profile.name,
-        oldRateBps: profile.rateBps,
-        newRateBps: body.newRateBps,
-        reason: body.reason.trim(),
-        initiatorName: account.displayName,
-        initiatorId: account.id,
-        profileId: profile.id,
-        createdAt: new Date().toISOString(),
-      };
-      db.admin.approvals.unshift(approval);
-      audit('commissions.request', profile.name);
-      return HttpResponse.json<S['Approval']>(publicApproval(approval, account.id), {
-        status: 201,
-      });
-    },
-  ),
 
   http.get(apiUrl('/v1/admin/approvals'), async ({ request }) => {
     const account = await guardRead('ADMIN');
@@ -285,17 +271,19 @@ export const adminHandlers = [
     if (approval.initiatorId === account.id) return problem(403, 'FORBIDDEN'); // rule 12
     if (approval.status !== 'PENDING') return problem(409, 'RESOURCE_STATE_CONFLICT');
     approval.status = 'APPROVED';
-    if (approval.type === 'COMMISSION_RATE_CHANGE' && approval.newRateBps !== undefined) {
-      const profile = db.admin.profiles.find((item) => item.id === approval.profileId);
-      if (profile !== undefined) {
-        profile.rateBps = approval.newRateBps;
-        profile.updatedAt = new Date().toISOString();
-        for (const merchant of db.admin.merchants) {
-          if (merchant.commissionProfile?.id === profile.id)
-            merchant.commissionProfile.rateBps = profile.rateBps;
-        }
-        if (db.merchant.profile.commissionProfile?.id === profile.id)
-          db.merchant.rateBps = profile.rateBps;
+    if (approval.type === 'COMMISSION_GRID_CHANGE' && approval.commissionGrid !== undefined) {
+      const owner = approval.owner;
+      const grid = gridOf(approval.commissionGrid.proposed);
+      const target =
+        owner === undefined
+          ? undefined
+          : 'merchantId' in owner
+            ? db.admin.merchants.find((item) => item.id === owner.merchantId)
+            : db.admin.companies.find((item) => item.id === owner.companyId);
+      if (target !== undefined) target.commissionGrid = grid;
+      if (owner !== undefined && 'merchantId' in owner && owner.merchantId === MERCHANT_TENANT.id) {
+        db.merchant.profile.commissionGrid = grid;
+        db.merchant.rateBps = defaultRateOf(grid) ?? db.merchant.rateBps;
       }
     }
     if (approval.type === 'SETTINGS_CHANGE' && approval.settings !== undefined)

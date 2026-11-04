@@ -25,13 +25,8 @@
     "permissions": ["audit.read"]
   },
   {
-    "method": "GET",
-    "path": "/v1/admin/commission-profiles",
-    "permissions": ["commissions.read"]
-  },
-  {
     "method": "POST",
-    "path": "/v1/admin/commission-profiles/:profileId/change-requests",
+    "path": "/v1/admin/commission-grids/change-requests",
     "permissions": ["commissions.request"]
   },
   {

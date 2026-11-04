@@ -1,5 +1,8 @@
 import type { Schemas } from '@flexipay/api-client';
 import { DEFAULT_TYPE_SETTINGS } from './credit-types';
+
+const defaultRateOf = (grid: Schemas['CommissionGrid'] | null) =>
+  grid?.tiers.find((tier) => tier.minMillimes === null && tier.maxMillimes === null)?.rateBps ?? null;
 import { COMPANY_TENANT, MERCHANT_TENANT } from './fixtures/accounts';
 import { DAY, FIRST_NAMES, LAST_NAMES, MINUTE, createRandom, iso } from './fixtures/random';
 
@@ -114,7 +117,7 @@ export function buildOtherPayouts(
     const creditType = random.pick(merchant.acceptedCreditTypes);
     // Own rate of the shop, otherwise the rate of the credit type (decision of 2026-10-14).
     const rate =
-      merchant.commissionProfile?.rateBps ??
+      defaultRateOf(merchant.commissionGrid) ??
       DEFAULT_TYPE_SETTINGS.find((item) => item.creditType === creditType)?.commissionRateBps ??
       0;
     const commission = Math.floor((gross * rate + 5_000) / 10_000);

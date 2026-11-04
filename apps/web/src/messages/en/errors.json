@@ -19,5 +19,6 @@
   "pinInvalid": "PIN refused.",
   "pinLocked": "PIN refused. Try again in 15 min.",
   "pinRetryIn": "Try again in {minutes} min.",
-  "pinSignInAgain": "For your security, sign in again with your password and code to pay again."
+  "pinSignInAgain": "For your security, sign in again with your password and code to pay again.",
+  "commissionGridMissing": "No commission grid is set for this account: operation refused. Operations and Finance have been told."
 }

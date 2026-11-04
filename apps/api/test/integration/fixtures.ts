@@ -16,6 +16,13 @@ export const sealed = (value: string) => sealPii(dataKey(), value);
 /** Lookup index of a user phone (users.phone_hash). */
 export const phoneKey = (phone: string) => phoneIndex(dataKey(), phone);
 
+/** One-line commission grid (default rate) for a shop or a company created in a test. */
+export const oneLineGrid = (rateBps = 200) => ({
+  create: { tiers: { create: [{ position: 0, rateBps }] } },
+});
+/** Same grid as an API body (window « Commission »). */
+export const gridBody = (rateBps = 200) => [{ rateBps, minMillimes: null, maxMillimes: null }];
+
 /** Platform and credit type settings of the demo (idempotent). */
 export async function seedSettings(db: DbService): Promise<void> {
   await db.system(async (tx) => {
@@ -61,6 +68,7 @@ export async function createCompany(db: DbService, name = `Société ${randomUUI
         phone: sealed('+21671000000'),
         email: 'contact@societe.test',
         status: 'APPROVED',
+        commissionGrids: oneLineGrid(150),
       },
     }),
   );

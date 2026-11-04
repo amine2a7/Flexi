@@ -56,7 +56,10 @@
       "email": "E-mail du responsable",
       "city": "Ville",
       "required": "Champ obligatoire.",
-      "invalidFormat": "Format invalide."
+      "invalidFormat": "Format invalide.",
+      "defaultRate": "Taux de commission par défaut (%)",
+      "defaultRateHint": "Ligne par défaut de la grille. Exemple : 2 pour 2 %.",
+      "defaultRateInvalid": "Saisissez un taux entre 0 et 100 %, 2 décimales au plus."
     },
     "submit": "Créer le commerçant",
     "createdToast": "{name} a été créé (en attente KYC). Invitation envoyée au responsable.",
@@ -91,31 +94,37 @@
       "email": "E-mail du responsable",
       "city": "Ville",
       "required": "Champ obligatoire.",
-      "invalidFormat": "Format invalide."
+      "invalidFormat": "Format invalide.",
+      "defaultRate": "Taux de commission par défaut (%)",
+      "defaultRateHint": "Ligne par défaut de la grille. Exemple : 2 pour 2 %.",
+      "defaultRateInvalid": "Saisissez un taux entre 0 et 100 %, 2 décimales au plus."
     },
     "submit": "Créer l'entreprise",
     "createdToast": "{name} a été créée (en attente KYC). Invitation envoyée au responsable.",
     "duplicate": "Une entreprise porte déjà ce nom."
   },
   "commissions": {
-    "title": "Profils de commission",
-    "description": "Toute modification de taux doit être validée par un second administrateur.",
-    "name": "Profil",
-    "rate": "Taux",
-    "merchants": "Commerçants",
-    "updated": "Mis à jour le",
+    "title": "Grilles de commission",
+    "description": "Grille de chaque entreprise (taux sur chaque commande) et de chaque commerçant (taux sur chaque virement). Tout changement doit être validé par un second administrateur et ne vaut que pour l'avenir.",
+    "updated": "En vigueur depuis le",
     "change": "Demander un changement",
     "changeFor": "Demander un changement pour {name}",
-    "formTitle": "Changer le taux de {name}",
-    "current": "Taux actuel : {rate}",
-    "newRate": "Nouveau taux (%)",
+    "formTitle": "Changer le taux par défaut de {name}",
+    "current": "Taux par défaut actuel : {rate}. Les tranches sont conservées.",
+    "newRate": "Nouveau taux par défaut (%)",
     "newRateHint": "Exemple : 1,75 pour 1,75 %.",
     "rateInvalid": "Saisissez un taux entre 0 et 100 %, 2 décimales au plus.",
     "reason": "Motif",
     "reasonHint": "Le motif est visible par l'administrateur qui validera.",
     "submit": "Envoyer pour validation",
     "createdToast": "Demande envoyée. Un autre administrateur doit la valider.",
-    "pending": "Une demande est déjà en attente pour ce profil."
+    "pending": "Une demande est déjà en attente pour cette grille.",
+    "companiesTitle": "Entreprises",
+    "merchantsTitle": "Commerçants",
+    "companiesName": "Entreprise",
+    "merchantsName": "Commerçant",
+    "grid": "Grille",
+    "noGrid": "Aucune grille : le taux du paramétrage s’applique."
   },
   "approvals": {
     "title": "Validations",
@@ -136,7 +145,8 @@
     "types": {
       "COMMISSION_RATE_CHANGE": "Changement de taux",
       "SETTINGS_CHANGE": "Modification du paramétrage",
-      "DISPUTE_REFUND": "Remboursement d'un litige"
+      "DISPUTE_REFUND": "Remboursement d'un litige",
+      "COMMISSION_GRID_CHANGE": "Changement de grille"
     },
     "approveTitle": "Valider cette demande ?",
     "approveMessage": "La modification s'appliquera immédiatement et sera journalisée.",
@@ -217,7 +227,11 @@
     "destinations": {
       "PLATFORM_REVENUE": "Revenu FlexiPay",
       "COMPANY_RETURN": "Retour à l'entreprise"
-    }
+    },
+    "vat": "TVA sur la commission (%)",
+    "vatHint": "Appliquée à la commission arrondie. Exemple : 19.",
+    "stamp": "Timbre fiscal (TND)",
+    "stampHint": "Ajouté à chaque commande et retenu sur chaque virement. Exemple : 1,000."
   },
   "kyc": {
     "open": "Ouvrir",
@@ -446,7 +460,8 @@
       "MERCHANT_BURST": "Paiements rapprochés chez un commerçant",
       "NEAR_DAILY_LIMIT": "Paiement proche du plafond journalier",
       "RIB_CHANGE_PAYOUT": "RIB modifié puis virement",
-      "NEW_DEVICE_PAYMENT": "Nouvel appareil puis paiement"
+      "NEW_DEVICE_PAYMENT": "Nouvel appareil puis paiement",
+      "COMMISSION_GRID_MISSING": "Grille de commission manquante"
     },
     "severities": {
       "HIGH": "Élevée",

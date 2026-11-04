@@ -44,6 +44,7 @@ describe('four eyes', () => {
         name: `Café ${randomUUID().slice(0, 6)}`,
         category: 'CAFE',
         acceptedCreditTypes: ['RESTAURATION'],
+        commissionGrid: [{ rateBps: 200, minMillimes: null, maxMillimes: null }],
         city: 'Tunis',
         phone: '+21671222333',
         email: `kyc-${randomUUID().slice(0, 8)}@exemple.tn`,
@@ -73,15 +74,28 @@ describe('four eyes', () => {
 
   it('the super-admin who requested a rate change never approves it', async () => {
     const author = await admin('SUPER_ADMIN', 'Auteur C.');
-    const profile = await db.system((tx) =>
-      tx.commissionProfile.create({
-        data: { name: `Profil ${randomUUID().slice(0, 8)}`, rateBps: 180 },
+    const company = await db.system((tx) =>
+      tx.company.create({
+        data: {
+          name: `Société ${randomUUID().slice(0, 8)}`,
+          city: 'Tunis',
+          phone: sealed('+21671000000'),
+          email: 'contact@societe.test',
+          status: 'APPROVED',
+          commissionGrids: { create: { tiers: { create: [{ position: 0, rateBps: 180 }] } } },
+        },
       }),
     );
     const requested = await author.client.call(
       'POST',
-      `/v1/admin/commission-profiles/${profile.id}/change-requests`,
-      { body: { newRateBps: 210, reason: 'Révision' } },
+      '/v1/admin/commission-grids/change-requests',
+      {
+        body: {
+          companyId: company.id,
+          tiers: [{ rateBps: 210, minMillimes: null, maxMillimes: null }],
+          reason: 'Révision',
+        },
+      },
     );
     const id = String(requested.body.id);
     expect((await author.client.call('POST', `/v1/admin/approvals/${id}/approve`)).status).toBe(

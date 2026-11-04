@@ -22,6 +22,7 @@ import { principal } from '../common/request-context.js';
 import { pathId, sendOutcome } from '../common/responses.js';
 import { creditType, parse, positiveMillimes } from '../common/validation.js';
 import { PaymentsService } from '../payments/payments.service.js';
+import { currentGridInclude, gridBody } from '../platform/commission-grids.js';
 import { CREDIT_TYPES } from '../platform/settings.service.js';
 import { PayoutsService } from './payouts.service.js';
 
@@ -195,7 +196,7 @@ export class MerchantController {
       const merchant = await tx.merchant.findUniqueOrThrow({
         where: { id: merchantId },
         include: {
-          commissionProfile: true,
+          commissionGrids: currentGridInclude,
           pointsOfSale: { orderBy: { name: 'asc' } },
           users: { orderBy: { displayName: 'asc' } },
         },
@@ -211,14 +212,7 @@ export class MerchantController {
         acceptedCreditTypes: CREDIT_TYPES.filter((type) =>
           merchant.acceptedCreditTypes.includes(type),
         ),
-        commissionProfile:
-          merchant.commissionProfile === null
-            ? null
-            : {
-                id: merchant.commissionProfile.id,
-                name: merchant.commissionProfile.name,
-                rateBps: merchant.commissionProfile.rateBps,
-              },
+        commissionGrid: gridBody(merchant.commissionGrids),
         pointsOfSale: merchant.pointsOfSale.map((point) => ({
           id: point.id,
           name: point.name,

@@ -12,7 +12,7 @@ const { DbService } = await import('../../src/common/db.service.js');
 const { LedgerService, accounts } = await import('../../src/ledger/ledger.service.js');
 const { PayoutsService } = await import('../../src/payouts/payouts.service.js');
 const { hashSecret } = await import('../../src/auth/password.js');
-const { createCompany, createEmployee, createUser, sealed, seedSettings, signedIn } =
+const { createCompany, createEmployee, createUser, sealed, seedSettings, signedIn, oneLineGrid } =
   await import('./fixtures.js');
 
 const env = loadEnv();
@@ -46,6 +46,7 @@ async function createMerchant() {
   return db.system((tx) =>
     tx.merchant.create({
       data: {
+        commissionGrids: oneLineGrid(),
         name: `Café ${randomUUID().slice(0, 5)}`,
         category: 'CAFE',
         city: 'Tunis',
@@ -263,15 +264,28 @@ describe('concurrent decisions on one financial object', () => {
     const initiator = await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Amine K.'));
     const second = await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Hela R.'));
     const third = await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Mehdi S.'));
-    const profile = await db.system((tx) =>
-      tx.commissionProfile.create({
-        data: { name: `Profil ${randomUUID().slice(0, 8)}`, rateBps: 180 },
+    const company = await db.system((tx) =>
+      tx.company.create({
+        data: {
+          name: `Société ${randomUUID().slice(0, 8)}`,
+          city: 'Tunis',
+          phone: sealed('+21671000000'),
+          email: 'contact@societe.test',
+          status: 'APPROVED',
+          commissionGrids: { create: { tiers: { create: [{ position: 0, rateBps: 180 }] } } },
+        },
       }),
     );
     const requested = await initiator.call(
       'POST',
-      `/v1/admin/commission-profiles/${profile.id}/change-requests`,
-      { body: { newRateBps: 210, reason: 'Révision' } },
+      '/v1/admin/commission-grids/change-requests',
+      {
+        body: {
+          companyId: company.id,
+          tiers: [{ rateBps: 210, minMillimes: null, maxMillimes: null }],
+          reason: 'Révision',
+        },
+      },
     );
     expect(requested.status).toBe(201);
     const id = String(requested.body.id);
@@ -282,8 +296,14 @@ describe('concurrent decisions on one financial object', () => {
     expect(statuses(results)).toEqual([200, 409]);
     const row = await db.system((tx) => tx.approval.findUniqueOrThrow({ where: { id } }));
     const rate = (
-      await db.system((tx) => tx.commissionProfile.findUniqueOrThrow({ where: { id: profile.id } }))
-    ).rateBps;
+      await db.system((tx) =>
+        tx.commissionGrid.findFirstOrThrow({
+          where: { companyId: company.id },
+          orderBy: [{ effectiveFrom: 'desc' }, { id: 'desc' }],
+          include: { tiers: true },
+        }),
+      )
+    ).tiers[0]?.rateBps;
     expect(row.status === 'APPROVED' ? rate : 180).toBe(row.status === 'APPROVED' ? 210 : rate);
   });
 });

@@ -5,6 +5,7 @@ import { FourEyesService } from '../common/four-eyes.service.js';
 import { uuidv7 } from '../common/crypto.js';
 import { DbService, type Tx } from '../common/db.service.js';
 import { commissionOf, fromMillimes, toMillimes } from '../common/money.js';
+import { currentGridInclude, defaultRate, gridBody } from '../platform/commission-grids.js';
 import { Paginator, type Page } from '../common/pagination.js';
 import { ApiProblem, problems, validationFailed } from '../common/problem.js';
 import { principal } from '../common/request-context.js';
@@ -113,7 +114,7 @@ export class PayoutsService {
     return this.db.user(async (tx) => {
       const merchant = await tx.merchant.findUniqueOrThrow({
         where: { id: merchantId },
-        include: { commissionProfile: true },
+        include: { commissionGrids: currentGridInclude },
       });
       const today = startOfBusinessDay(businessDay());
       const collected = { status: { in: ['CONFIRMED' as const, 'SETTLED' as const] } };
@@ -165,7 +166,7 @@ export class PayoutsService {
         receivablesMillimes: toMillimes(receivables._sum.amountMillimes ?? 0n),
         nextSettlementDate:
           receivables._min.settlementDate === null ? null : dayOf(receivables._min.settlementDate),
-        commissionRateBps: merchant.commissionProfile?.rateBps ?? null,
+        commissionRateBps: defaultRate(gridBody(merchant.commissionGrids)),
         recentPayments: recent.map(merchantPayment),
         monthlyFlows: flows.map((flow) => ({
           month: flow.month,
@@ -245,7 +246,7 @@ export class PayoutsService {
         throw new ApiProblem(422, 'INSUFFICIENT_FUNDS', {
           missingMillimes: toMillimes(gross - available),
         });
-      const rate = await this.settings.commissionRate(tx, merchantId, input.creditType);
+      const rate = await this.settings.commissionRate(tx, { merchantId }, gross);
       const commission = commissionOf(gross, rate);
       const quote = await tx.payoutQuote.create({
         data: {
@@ -288,7 +289,7 @@ export class PayoutsService {
       data: { usedAt: new Date() },
     });
     if (taken.count !== 1) throw problems.conflict();
-    const rate = await this.settings.commissionRate(tx, merchantId, quote.creditType);
+    const rate = await this.settings.commissionRate(tx, { merchantId }, quote.grossMillimes);
     if (quote.expiresAt.getTime() < Date.now() || quote.commissionRateBps !== rate)
       throw problems.conflict();
     const found = await tx.merchant.findUniqueOrThrow({ where: { id: merchantId } });

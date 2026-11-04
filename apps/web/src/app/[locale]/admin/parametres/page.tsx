@@ -118,6 +118,18 @@ export default function SettingsPage() {
               icon={<Percent className="size-icon-md" />}
             />
             <StatCard
+              label={t('vat')}
+              value={<Rate bps={settings.data.vatRateBps} />}
+              hint={t('vatHint')}
+              icon={<Percent className="size-icon-md" />}
+            />
+            <StatCard
+              label={t('stamp')}
+              value={<Amount millimes={settings.data.stampDutyMillimes} size="title" />}
+              hint={t('stampHint')}
+              icon={<Wallet className="size-icon-md" />}
+            />
+            <StatCard
               label={t('creditValidity')}
               value={t('creditValidityValue', { months: settings.data.creditValidityMonths })}
               icon={<CalendarClock className="size-icon-md" />}
@@ -182,6 +194,8 @@ function ChangeSettings({
     creditValidity: String(current.creditValidityMonths),
     maxFamily: String(current.maxFamilyMembers),
     orderFee: bpsToText(current.orderFeeRateBps, locale),
+    vat: bpsToText(current.vatRateBps, locale),
+    stamp: formatMillimes(current.stampDutyMillimes, locale),
     expiredDestination: current.expiredCreditsDestination,
     reason: '',
   });
@@ -210,6 +224,8 @@ function ChangeSettings({
       creditValidityMonths: integerIn(draft.creditValidity, 1, 60),
       maxFamilyMembers: integerIn(draft.maxFamily, 0, 10),
       orderFeeRateBps: parseBps(draft.orderFee, locale),
+      vatRateBps: parseBps(draft.vat, locale),
+      stampDutyMillimes: parseMillimes(draft.stamp, locale),
     };
     const message = t('invalid');
     const errors: Partial<Record<keyof typeof draft, string>> = {
@@ -217,6 +233,10 @@ function ChangeSettings({
       ...(settings.creditValidityMonths === undefined ? { creditValidity: message } : {}),
       ...(settings.maxFamilyMembers === undefined ? { maxFamily: message } : {}),
       ...(settings.orderFeeRateBps === undefined ? { orderFee: message } : {}),
+      ...(settings.vatRateBps === undefined || settings.vatRateBps > 10_000
+        ? { vat: message }
+        : {}),
+      ...(settings.stampDutyMillimes === undefined ? { stamp: message } : {}),
       ...(draft.reason.trim() === '' ? { reason: tRoot('admin.merchants.form.required') } : {}),
     };
     const parsedTypes = types.map((item) => ({
@@ -259,7 +279,9 @@ function ChangeSettings({
       settings.payoutMinimumMillimes === undefined ||
       settings.creditValidityMonths === undefined ||
       settings.maxFamilyMembers === undefined ||
-      settings.orderFeeRateBps === undefined
+      settings.orderFeeRateBps === undefined ||
+      settings.vatRateBps === undefined ||
+      settings.stampDutyMillimes === undefined
     ) {
       return;
     }
@@ -273,6 +295,8 @@ function ChangeSettings({
             creditValidityMonths: settings.creditValidityMonths,
             maxFamilyMembers: settings.maxFamilyMembers,
             orderFeeRateBps: settings.orderFeeRateBps,
+            vatRateBps: settings.vatRateBps,
+            stampDutyMillimes: settings.stampDutyMillimes,
             expiredCreditsDestination: draft.expiredDestination,
             creditTypes: validTypes,
           },
@@ -347,6 +371,28 @@ function ChangeSettings({
             value={draft.orderFee}
             onChange={(event) => {
               set('orderFee')(event.target.value);
+            }}
+          />
+          <TextField
+            label={t('vat')}
+            hint={t('vatHint')}
+            error={invalid.vat}
+            inputMode="decimal"
+            dir="ltr"
+            value={draft.vat}
+            onChange={(event) => {
+              set('vat')(event.target.value);
+            }}
+          />
+          <TextField
+            label={t('stamp')}
+            hint={t('stampHint')}
+            error={invalid.stamp}
+            inputMode="decimal"
+            dir="ltr"
+            value={draft.stamp}
+            onChange={(event) => {
+              set('stamp')(event.target.value);
             }}
           />
           <SelectField

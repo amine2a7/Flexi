@@ -11,7 +11,7 @@ const { loadEnv } = await import('../../src/config/env.js');
 const { createApp } = await import('../../src/app.factory.js');
 const { DbService } = await import('../../src/common/db.service.js');
 const { FraudService } = await import('../../src/risk/fraud.service.js');
-const { createCompany, createEmployee, createUser, sealed, seedSettings, signedIn } =
+const { createCompany, createEmployee, createUser, sealed, seedSettings, signedIn, oneLineGrid } =
   await import('./fixtures.js');
 
 const env = loadEnv();
@@ -37,6 +37,7 @@ async function shopAndEmployee() {
   const merchant = await db.system((tx) =>
     tx.merchant.create({
       data: {
+        commissionGrids: oneLineGrid(),
         name: `Café ${randomUUID().slice(0, 5)}`,
         category: 'CAFE',
         city: 'Tunis',

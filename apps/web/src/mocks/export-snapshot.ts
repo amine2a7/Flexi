@@ -63,7 +63,6 @@ const snapshot = {
   admin: {
     merchants: db.admin.merchants,
     companies: db.admin.companies,
-    profiles: db.admin.profiles,
     approvals: db.admin.approvals,
     batches: db.admin.batches,
     audit: db.admin.audit,

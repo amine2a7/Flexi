@@ -1,8 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ENV } from '../config/env.provider.js';
 import type { Env } from '../config/env.js';
-import type { Tx } from '../common/db.service.js';
+import { AuditService } from '../common/audit.service.js';
+import { uuidv7 } from '../common/crypto.js';
+import { asService, DbService, type Tx } from '../common/db.service.js';
+import { ApiProblem } from '../common/problem.js';
 import { toMillimes } from '../common/money.js';
+import { gridRate, type GridOwner } from './commission-grids.js';
 import type {
   CreditType,
   CreditTypeSetting,
@@ -40,7 +44,11 @@ export function typeSettingsBody(row: CreditTypeSetting): CreditTypeSettingsBody
 
 @Injectable()
 export class SettingsService {
-  constructor(@Inject(ENV) private readonly env: Env) {}
+  constructor(
+    @Inject(ENV) private readonly env: Env,
+    @Inject(DbService) private readonly db: DbService,
+    @Inject(AuditService) private readonly audit: AuditService,
+  ) {}
 
   async platform(tx: Tx): Promise<PlatformSettings> {
     const row = await tx.platformSettings.findUnique({ where: { id: 1 } });
@@ -61,17 +69,39 @@ export class SettingsService {
   }
 
   /**
-   * Commission rate of a shop for a credit type (decision of 2026-10-14): its own commission
-   * profile when it has one, otherwise the rate of the credit type. Frozen in the payout request.
+   * Commission rate of an amount on the grid of a company (order) or a shop (payout, payment),
+   * decisions of 2026-11-03 and 2026-11-04: the tranche that contains the amount, else the default
+   * line. Read under the internal service role: a beneficiary paying a shop never reads its grid.
+   * No fallback rate: without a grid the operation is refused and Opérations and Finance are told.
    */
-  async commissionRate(tx: Tx, merchantId: string, type: CreditType): Promise<number> {
-    const merchant = await tx.merchant.findUnique({
-      where: { id: merchantId },
-      select: { commissionProfile: { select: { rateBps: true } } },
+  async commissionRate(tx: Tx, owner: GridOwner, amountMillimes: bigint): Promise<number> {
+    const rate = await asService(tx, () => gridRate(tx, owner, amountMillimes));
+    if (rate === undefined) {
+      await this.reportMissingGrid(owner);
+      throw new ApiProblem(422, 'COMMISSION_GRID_MISSING');
+    }
+    return rate;
+  }
+
+  /**
+   * Alert (Opérations) and audit entry (Finance) in their own transaction: the refused operation
+   * is rolled back, the report stays.
+   */
+  private async reportMissingGrid(owner: GridOwner): Promise<void> {
+    await this.db.system(async (tx) => {
+      const id = 'companyId' in owner ? owner.companyId : owner.merchantId;
+      const found =
+        'companyId' in owner
+          ? await tx.company.findUnique({ where: { id }, select: { name: true } })
+          : await tx.merchant.findUnique({ where: { id }, select: { name: true } });
+      const subject = (found?.name ?? id).slice(0, 120);
+      const inserted = await tx.$executeRaw`
+        INSERT INTO fraud_alerts (id, kind, severity, subject, subject_key)
+        VALUES (${uuidv7()}::uuid, 'COMMISSION_GRID_MISSING'::"FraudAlertKind",
+                'HIGH'::"FraudAlertSeverity", ${subject}, ${id})
+        ON CONFLICT (kind, subject_key) DO NOTHING`;
+      if (inserted > 0) await this.audit.record(tx, 'commissions.gridMissing', subject);
     });
-    return (
-      merchant?.commissionProfile?.rateBps ?? (await this.creditType(tx, type)).commissionRateBps
-    );
   }
 
   async enabledTypes(tx: Tx): Promise<Set<CreditType>> {
