@@ -1,6 +1,6 @@
 // Visual control (design web objective of 2026-10-30): one capture of each page per space, in
 // French and Arabic, for the project's device (desktop or mobile), in docs/design/captures/<space>/.
-// Run on the mocked API: CAPTURE_SPACE=commun|commercant|entreprise|admin.
+// Run on the demo API (pnpm demo): CAPTURE_SPACE=commun|commercant|entreprise|admin.
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { test, type Page } from '@playwright/test';

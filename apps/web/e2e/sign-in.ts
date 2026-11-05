@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 
-/** Demo accounts of the seed and of the mock (same password and MFA code). */
+/** Demo accounts of the seed (same password and MFA code). */
 export const PASSWORD = 'Test1234!';
 export const MFA = '123456';
 

@@ -12,7 +12,6 @@ export default [
       'next-env.d.ts',
       'playwright-report/**',
       'test-results/**',
-      'public/mockServiceWorker.js',
     ],
   },
   ...createConfig({ tsconfigRootDir: import.meta.dirname }),

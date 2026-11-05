@@ -1,7 +1,8 @@
 import { createConfig } from '@flexipay/config/eslint';
 
 export default [
-  { ignores: ['src/generated/**', 'var/**'] },
+  // prisma/volume: generator of the volume data set (former web mock), run by tsx only.
+  { ignores: ['src/generated/**', 'var/**', 'prisma/volume/**'] },
   ...createConfig({ tsconfigRootDir: import.meta.dirname }),
   {
     // Developer scripts in plain JavaScript (Node globals).
@@ -10,7 +11,7 @@ export default [
   },
   {
     // Database seed: a command-line program, like the scripts.
-    files: ['prisma/seed.ts'],
+    files: ['prisma/seed.ts', 'prisma/seed-volume.ts', 'prisma/demo/**/*.ts'],
     rules: { 'no-console': 'off' },
   },
   {

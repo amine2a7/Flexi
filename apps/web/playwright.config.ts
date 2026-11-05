@@ -1,10 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// Explicit ports, never 3000 (often used by another local server): the dev server of the suite
-// and an API origin where nothing listens, so a request escaping the mocks fails at once.
+// Explicit ports, never 3000 (often used by another local server). The web only talks to the API
+// (no mocks since 2026-11-05): the suite runs against the API of `pnpm demo` (demo seed).
 const DEV_PORT = Number(process.env.E2E_WEB_PORT ?? 3101);
 const PROD_PORT = Number(process.env.E2E_BUILD_PORT ?? 3102);
-const UNUSED_API_ORIGIN = `http://localhost:${process.env.E2E_API_PORT ?? '3199'}`;
+const API_ORIGIN = `http://localhost:${process.env.E2E_API_PORT ?? '3198'}`;
 const DEV_URL = `http://localhost:${String(DEV_PORT)}`;
 const PROD_URL = `http://localhost:${String(PROD_PORT)}`;
 
@@ -29,7 +29,7 @@ export default defineConfig({
     reducedMotion: 'reduce',
   },
   projects: [
-    // Development server with the API mocked by MSW: no backend needed.
+    // Development server on the demo API (`pnpm demo` running, or API_PORT=3198 + demo seed).
     {
       name: 'desktop',
       testIgnore: '**/production/**',
@@ -40,7 +40,7 @@ export default defineConfig({
       testIgnore: '**/production/**',
       use: { ...devices['Pixel 5'], baseURL: DEV_URL },
     },
-    // Real production build served by `next start`: CSP, headers, no mocks.
+    // Real production build served by `next start`: CSP, headers, no development panel.
     {
       name: 'built',
       testMatch: '**/production/**/*.spec.ts',
@@ -51,7 +51,7 @@ export default defineConfig({
     {
       command: 'pnpm dev',
       url: `${DEV_URL}/fr`,
-      env: { WEB_PORT: String(DEV_PORT), NEXT_PUBLIC_API_BASE_URL: UNUSED_API_ORIGIN },
+      env: { WEB_PORT: String(DEV_PORT), NEXT_PUBLIC_API_BASE_URL: API_ORIGIN },
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },
@@ -60,8 +60,6 @@ export default defineConfig({
       ? []
       : [
           {
-            // `next build` directly: the `build` script deletes public/mockServiceWorker.js, which the dev
-            // server above needs while both run together (the script itself is covered by Vitest).
             command: `pnpm exec next build && pnpm start -p ${String(PROD_PORT)}`,
             url: `${PROD_URL}/fr`,
             reuseExistingServer: !process.env.CI,

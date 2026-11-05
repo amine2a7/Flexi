@@ -7,7 +7,6 @@ import type { ReactNode } from 'react';
 import { getDirection } from '@/i18n/direction';
 import { routing } from '@/i18n/routing';
 import { cn } from '@/lib/cn';
-import { MockGate } from '@/mocks/mock-gate';
 import { fontArabic, fontDisplay, fontSans, fontTicket } from '../fonts';
 import '../globals.css';
 
@@ -43,9 +42,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
       )}
     >
       <body>
-        <NextIntlClientProvider>
-          <MockGate>{children}</MockGate>
-        </NextIntlClientProvider>
+        <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>
     </html>
   );

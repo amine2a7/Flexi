@@ -5,8 +5,6 @@
 .next-build/
 next-env.d.ts
 *.tsbuildinfo
-# Generated at dev time only (scripts/sync-mock-worker.mjs), never shipped
-public/mockServiceWorker.js
 # Playwright
 playwright-report/
 test-results/

@@ -1,6 +1,8 @@
-// Development data: the same accounts and the same data as the mocked API of the web app (MSW),
-// loaded into the local PostgreSQL. Run once on an empty database:
-//   pnpm --filter @flexipay/api db:reset && pnpm --filter @flexipay/api db:seed
+// Volume data (performance tests later, request of 2026-11-05): a large generated data set (32
+// companies, 51 merchants, hundreds of payments), loaded into the local PostgreSQL. Never run
+// automatically: the demo uses prisma/seed.ts (one example per case). Run once on an empty database:
+//   pnpm --filter @flexipay/api db:reset && pnpm --filter @flexipay/api db:seed:volume
+// The generator (prisma/volume/) is the former mocked API of the web app, kept for its data only.
 // Every amount goes through the ledger (double entry, balances checked, reconciled at the end).
 // When the demo history does not fund itself (MSW figures are independent of each other), an
 // OPENING_BALANCE transaction (escrow -> wallet) brings the missing amount: it is the only entry
@@ -127,10 +129,10 @@ const seal = (value: string) => sealPii(keys.data, value);
 const sealNullable = (value: string | null) => (value === null ? null : seal(value));
 const DEMO_IBAN = 'TN5904018104003691234821';
 
-/** Initial data of MSW, printed by the web exporter (same generators, same seeds). */
+/** Generated data, printed by the volume exporter (fixed random seeds). */
 function readSnapshot(): Snapshot {
   const apiDir = join(dirname(fileURLToPath(import.meta.url)), '..');
-  const exporter = join(apiDir, '..', 'web', 'src', 'mocks', 'export-snapshot.ts');
+  const exporter = join(apiDir, 'prisma', 'volume', 'export-snapshot.ts');
   const output = execFileSync(process.execPath, ['--import', 'tsx', exporter], {
     cwd: apiDir,
     encoding: 'utf8',
@@ -275,7 +277,9 @@ const summary = await prisma.$transaction(
     // Commission grids replaced the profiles (decision of 2026-11-03): one default line each.
     type Tier = S['CommissionTier'];
     const grids: { companyId?: string; merchantId?: string; tiers: Tier[] }[] = [];
-    const oneLine = (rateBps: number): Tier[] => [{ rateBps, minMillimes: null, maxMillimes: null }];
+    const oneLine = (rateBps: number): Tier[] => [
+      { rateBps, minMillimes: null, maxMillimes: null },
+    ];
     const rateOf = (type: CreditType) =>
       settings.creditTypes.find((item) => item.creditType === type)?.commissionRateBps ?? 0;
 

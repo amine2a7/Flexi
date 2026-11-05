@@ -2,17 +2,18 @@
 
 import { FlaskConical } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { DEMO_ACCOUNT_HINTS, DEMO_MFA_CODE } from '@/mocks/fixtures/accounts';
+import { DEMO_ACCOUNT_HINTS, DEMO_MFA_CODE, DEV_PANEL_MARKER } from './demo-accounts-data';
 
 interface DemoAccountsProps {
   readonly onPick: (account: { identifier: string; password: string }) => void;
 }
 
-/** Development panel of /login: demo accounts of the mocked API (never in a production build). */
+/** Development panel of /login: accounts of the demo seed (never in a production build). */
 export function DemoAccounts({ onPick }: DemoAccountsProps) {
   const t = useTranslations('dev');
   return (
     <aside
+      data-marker={DEV_PANEL_MARKER}
       aria-labelledby="demo-accounts-title"
       className="flex flex-col gap-3 rounded-card-desktop border border-warning bg-warning-soft p-4 text-warning-text"
     >

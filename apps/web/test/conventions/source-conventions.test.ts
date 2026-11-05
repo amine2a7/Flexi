@@ -62,11 +62,13 @@ describe('source conventions', () => {
   });
 
   it('never touches browser storage or document.cookie (tokens live in HttpOnly cookies)', () => {
-    expect(offenders(/\b(localStorage|indexedDB)\b|document\.cookie/, /\.tsx?$/)).toEqual([]);
-    // Only the development mock API (src/mocks, absent from the build) keeps fictional demo data
-    // in sessionStorage.
+    expect(offenders(/\b(sessionStorage|indexedDB)\b|document\.cookie/, /\.tsx?$/)).toEqual([]);
+    // One exception: the open or closed categories of the side menu (a display preference, never
+    // a token nor business data), remembered per user in this browser (request of 2026-11-05).
     expect(
-      offenders(/\bsessionStorage\b/, /\.tsx?$/).filter((place) => !place.startsWith('mocks/')),
+      offenders(/\blocalStorage\b/, /\.tsx?$/).filter(
+        (place) => !place.startsWith('lib/ui/menu-state.ts:'),
+      ),
     ).toEqual([]);
   });
 

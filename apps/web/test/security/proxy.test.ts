@@ -19,7 +19,7 @@ describe('proxy matcher', () => {
     '/favicon.ico',
     '/icon.svg',
     '/robots.txt',
-    '/mockServiceWorker.js',
+    '/worker.js',
   ])('skips the static file %s', (path) => {
     expect(matcher.test(path)).toBe(false);
   });

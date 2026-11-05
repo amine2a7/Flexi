@@ -37,7 +37,6 @@ test.describe('application skeleton', () => {
   }) => {
     test.skip(isMobile, 'keyboard navigation is a desktop concern');
     await page.goto('/fr');
-    // The app renders once the API mock worker is ready (development): wait for it.
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await page.keyboard.press('Tab');
     const skip = page.getByRole('link', { name: 'Aller au contenu principal' });
@@ -60,16 +59,6 @@ test.describe('application skeleton', () => {
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
     );
     expect(overflow).toBe(false);
-  });
-
-  test('registers the API mock service worker in development', async ({ page }) => {
-    await page.goto('/fr');
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    const active = await page.evaluate(async () => {
-      const registration = await navigator.serviceWorker.getRegistration();
-      return registration?.active?.scriptURL ?? null;
-    });
-    expect(active).toContain('/mockServiceWorker.js');
   });
 
   test('raises no console error and no page error', async ({ page }) => {

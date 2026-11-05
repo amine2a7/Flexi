@@ -1,14 +1,10 @@
 // TEST-FIRST (decision C of 2026-10-23): the web shows a page, a menu entry or an action only when
 // the session (`/v1/me` permissions) allows it. A display comfort: the API refuses anyway.
 import { describe, expect, it } from 'vitest';
-import { createDemoAccounts } from '@/mocks/fixtures/accounts';
 import { can, canOpen, firstOpenPage } from '@/lib/session/permissions';
+import { sessionOf } from '../fixtures/sessions';
 
-const account = (identifier: string) => {
-  const found = createDemoAccounts().find((item) => item.identifier === identifier);
-  if (found === undefined) throw new Error(identifier);
-  return found;
-};
+const account = sessionOf;
 
 describe('page permissions', () => {
   it('support never opens the dashboard, settings, audit, orders or payouts', () => {

@@ -9,14 +9,6 @@ async function submitPassword(page: Page, account: string, password: string): Pr
   await page.getByRole('button', { name: 'Composter mon ticket' }).click();
 }
 
-/** True when the API mock answers (the first sign-in test changes the account). */
-async function mocked(page: Page): Promise<boolean> {
-  return page.evaluate(async () => {
-    const registration = await navigator.serviceWorker.getRegistration();
-    return registration?.active?.scriptURL.includes('/mockServiceWorker.js') ?? false;
-  });
-}
-
 test.describe('sign-in', () => {
   test('a wrong password is refused without saying which part is wrong', async ({ page }) => {
     await submitPassword(page, 'commercant@flexipay.test', 'Mauvais-mot-2026');
@@ -58,9 +50,8 @@ test.describe('sign-in', () => {
   });
 
   test('the first sign-in asks for a new password before anything else', async ({ page }) => {
-    await page.goto('/fr/login');
-    test.skip(!(await mocked(page)), 'changes the account: mocked API only');
-    await submitPassword(page, 'premiere@flexipay.test', 'Temp1234!');
+    // The demo seed keeps this account at its first sign-in: the test never sets the password.
+    await submitPassword(page, 'premiere@flexipay.test', PASSWORD);
     await expect(
       page.getByRole('heading', { name: 'Choisissez votre mot de passe' }),
     ).toBeVisible();

@@ -1,4 +1,4 @@
-// Every page of the three spaces, opened by an account of the space (mocked API): no page error,
+// Every page of the three spaces, opened by an account of the space (demo API): no page error,
 // no console error, no error screen, no API failure. Detail pages are reached from their list.
 import { expect, test } from '@playwright/test';
 import { dismissTour, signIn } from './sign-in';
