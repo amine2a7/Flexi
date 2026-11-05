@@ -8,6 +8,7 @@ import { messageKey } from '@/i18n/keys';
 import { Link } from '@/i18n/navigation';
 import { getApi, newIdempotencyKey } from '@/lib/api/client';
 import { errorMessageKey } from '@/lib/api/problem';
+import { usePlatformTerms } from '@/lib/api/use-platform-terms';
 import { useApiQuery } from '@/lib/api/use-api-query';
 import { formatDateTime } from '@/lib/format/date';
 import { formatMillimesWithCurrency } from '@/lib/format/money';
@@ -18,6 +19,7 @@ import {
   OrderStatusBadge,
   OrderSummaryCard,
   ReasonDialog,
+  QuoteNotice,
   type Order,
 } from '@/components/orders/order-parts';
 import { Button, buttonClasses } from '@/components/ui/button';
@@ -73,6 +75,7 @@ function AdminOrderView({
 }) {
   const t = useTranslations('orders');
   const tRoot = useTranslations();
+  const { threshold } = usePlatformTerms();
   const locale = useLocale();
   const toast = useToast();
   const [dialog, setDialog] = useState<Dialog>(undefined);
@@ -165,6 +168,7 @@ function AdminOrderView({
         actions={<OrderStatusBadge status={order.status} />}
       />
       <div className="flex flex-col gap-6">
+        <QuoteNotice order={order} />
         {error !== undefined ? (
           <Alert tone="danger">{tRoot(messageKey(errorMessageKey(error)))}</Alert>
         ) : null}
@@ -201,7 +205,7 @@ function AdminOrderView({
                       title={t('admin.fourEyesTitle')}
                     >
                       {order.firstValidation === undefined
-                        ? t('admin.fourEyesInfo')
+                        ? t('admin.fourEyesInfo', { threshold })
                         : order.firstValidation.byMe
                           ? t('admin.firstByMe', {
                               date: formatDateTime(order.firstValidation.occurredAt, locale),

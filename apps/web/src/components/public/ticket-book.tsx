@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { buttonClasses } from '@/components/ui/button';
 import { CreditTypeBadge } from '@/components/ui/credit-type';
+import { usePlatformTerms } from '@/lib/api/use-platform-terms';
 import type { CreditType } from '@/lib/credit-types';
 import { cn } from '@/lib/cn';
 
@@ -32,6 +33,7 @@ export function Barcode({ className }: { className?: string }) {
 /** Book of tickets of the hero: one ticket at a time, "detach" shows the next one. */
 export function TicketBook() {
   const t = useTranslations('landing.book');
+  const { settlementDays } = usePlatformTerms();
   const [index, setIndex] = useState(0);
   const ticket = TICKETS[index] ?? FIRST;
   const last = index === TICKETS.length - 1;
@@ -56,7 +58,7 @@ export function TicketBook() {
               <span>{t('number', { n: index + 1, total: TICKETS.length })}</span>
               <span>{t(`${ticket.key}.tag`)}</span>
             </p>
-            <h2 className="font-display text-display-md">{t(`${ticket.key}.title`)}</h2>
+            <h2 className="font-display text-display-md">{t(`${ticket.key}.title`, { days: settlementDays })}</h2>
             <p className="text-body-lg text-paper-ink">{t(`${ticket.key}.text`)}</p>
             <ul className="mt-auto flex flex-wrap gap-2 pt-4">
               {ticket.types.map((type) => (

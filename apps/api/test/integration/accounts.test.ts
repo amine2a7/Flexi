@@ -1,5 +1,5 @@
 // TEST-FIRST: creating an employee, a merchant or a company creates its sign-in account and sends
-// an invitation (temporary password, 72 h), through the local outbox for now (decision 2026-10-14).
+// an invitation (temporary password, 7 days by default: settings of 2026-11-05), through the local outbox for now (decision 2026-10-14).
 import { randomUUID } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -88,8 +88,8 @@ describe('sign-in accounts created with their owner', () => {
       mfaSecretEnc: null,
     });
     const hours = ((user?.tempPasswordExpiresAt?.getTime() ?? 0) - Date.now()) / 3_600_000;
-    expect(hours).toBeGreaterThan(71);
-    expect(hours).toBeLessThanOrEqual(72);
+    expect(hours).toBeGreaterThan(7 * 24 - 1);
+    expect(hours).toBeLessThanOrEqual(7 * 24);
 
     const invitation = await invitationTo(email);
     expect(invitation.text).toContain('/fr/login');

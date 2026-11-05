@@ -1,7 +1,7 @@
 {
   "dashboard": {
     "title": "Dashboard",
-    "description": "Collect with the customer code, follow your receivables and D+2 settlements.",
+    "description": "Collect with the customer code, follow your receivables and D+{days} settlements.",
     "collect": "Collect a payment",
     "today": "Collected today",
     "todayCount": "{count, plural, one {# payment} other {# payments}}",
@@ -9,7 +9,7 @@
     "seeReceivables": "See receivables",
     "nextSettlement": "Next settlement",
     "noSettlement": "No settlement planned",
-    "settlementRule": "Settled after 2 working days",
+    "settlementRule": "Settled after {days} working days",
     "rate": "Commission rate",
     "rateHint": "Applied to your payouts",
     "recent": "Latest collections",
@@ -61,8 +61,8 @@
     "step1": "The customer opens the app and shows an 8-digit code.",
     "step2": "You enter this code and the amount to collect.",
     "step3": "The customer confirms with a PIN: you see « accepted » or « refused ».",
-    "ruleNote": "The amount is settled at D+2, with a {rate} commission deducted.",
-    "acceptedMessage": "The amount is collected and will be settled at D+2.",
+    "ruleNote": "The amount is settled at D+{days}, with a {rate} commission deducted.",
+    "acceptedMessage": "The amount is collected and will be settled at D+{days}.",
     "backToDashboard": "Back to the dashboard",
     "cancelledToast": "Request cancelled: nothing was collected.",
     "myQr": "My FlexiPay QR",
@@ -71,7 +71,7 @@
     "qrLabel": "Merchant QR {code}",
     "creditType": "Credit type",
     "creditTypeHint": "The customer pays with the balance of this type only.",
-    "ruleNoteByType": "The amount is settled at D+2, less the commission of the credit type.",
+    "ruleNoteByType": "The amount is settled at D+{days}, less the commission of the credit type.",
     "pollFailed": "The state of the payment cannot be checked. Look at the history before collecting again."
   },
   "history": {
@@ -84,10 +84,10 @@
   },
   "receivables": {
     "title": "Receivables",
-    "description": "Confirmed payments awaiting settlement after 2 working days.",
+    "description": "Confirmed payments awaiting settlement after {days} working days.",
     "requestPayout": "Request a payout",
     "total": "Total awaiting settlement",
-    "totalHint": "Settled automatically after 2 working days, or through a payout request.",
+    "totalHint": "Settled automatically after {days} working days, or through a payout request.",
     "reference": "Reference",
     "confirmedAt": "Confirmed on",
     "settlementDate": "Planned settlement",
@@ -162,7 +162,7 @@
   },
   "settlements": {
     "title": "Settlements and documents",
-    "description": "Your settlements and monthly documents.",
+    "description": "Your D+{days} settlements and monthly documents.",
     "tabSettlements": "Settlements",
     "tabDocuments": "Documents",
     "date": "Settlement date",
@@ -220,10 +220,16 @@
       "SETTLED": "Amount settled to your account",
       "REFUSED": "Payment refused or cancelled",
       "DISPUTED": "Payment disputed",
-      "REFUNDED": "Payment refunded to the customer (dispute accepted)"
+      "REFUNDED": "Payment cancelled or refunded to the customer"
     },
     "open": "Open",
-    "openPayment": "Open payment {reference}"
+    "openPayment": "Open payment {reference}",
+    "cancel": "Cancel the payment",
+    "cancelTitle": "Cancel payment {reference}?",
+    "cancelText": "The customer gets the amount back and your receivable drops by as much. Possible for {hours} h after the confirmation, while the payment is in no payout.",
+    "cancelConfirm": "Cancel the payment",
+    "cancelled": "Payment cancelled: the customer is refunded.",
+    "cancelTooLate": "The cancellation window is over: contact the support."
   },
   "statistics": {
     "title": "Statistics",

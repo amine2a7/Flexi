@@ -17,8 +17,8 @@
       "text": "In “Collect”, enter the customer’s 8-digit code and the amount. They confirm with their PIN. They can also scan your QR."
     },
     "s3": {
-      "title": "Get settled at D+2",
-      "text": "Each confirmed payment is settled at D+2, minus the commission of its type. Follow it in “Receivables” then “Payouts”."
+      "title": "Get settled at D+{days}",
+      "text": "Each confirmed payment is settled at D+{days}, minus the commission of its type. Follow it in “Receivables” then “Payouts”."
     },
     "s4": {
       "title": "Your credit types",

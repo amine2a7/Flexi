@@ -1,15 +1,22 @@
 import { LifeBuoy } from 'lucide-react';
 import Image from 'next/image';
-import { useTranslations } from 'next-intl';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { messageKey } from '@/i18n/keys';
+import { fetchPlatformTerms, termValues } from '@/lib/api/platform-terms';
 import { cn } from '@/lib/cn';
 import { HELP_ANCHORS, HELP_SECTIONS } from '@/components/public/help-topics';
 
 /** Help centre, public and reachable from every space (/aide#<space>). */
-export default function HelpPage() {
-  const t = useTranslations('help');
-  const tRoot = useTranslations();
+export default async function HelpPage() {
+  const t = await getTranslations('help');
+  const tRoot = await getTranslations();
+  const terms = termValues(await fetchPlatformTerms(), (await getLocale()));
+  const values = {
+    days: terms.invitationDays,
+    settlementDays: terms.settlementDays,
+    threshold: terms.threshold,
+  };
   return (
     <div className="mx-auto flex w-full max-w-desktop-max-width flex-col gap-8 px-4 py-8 lg:flex-row lg:px-8">
       <nav aria-label={t('toc')} className="lg:sticky lg:top-12 lg:w-sidebar-width lg:self-start">
@@ -59,7 +66,7 @@ export default function HelpPage() {
                   <div className="flex flex-col gap-2">
                     <h3 className="text-title-sm text-text">{title}</h3>
                     <p className="text-body text-text-muted">
-                      {tRoot(messageKey(`help.topics.${topic.key}.text`))}
+                      {tRoot(messageKey(`help.topics.${topic.key}.text`), values)}
                     </p>
                   </div>
                   {topic.capture !== undefined ? (

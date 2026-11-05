@@ -31,7 +31,7 @@
     "merchant": {
       "title": "Merchants",
       "p1": "Collect by code or QR, with no terminal.",
-      "p2": "Settlement at D+2, commission known in advance.",
+      "p2": "Settlement at D+{days}, commission known in advance.",
       "p3": "History, receivables and payouts in one place."
     },
     "employee": {
@@ -53,7 +53,7 @@
     },
     "s3": {
       "title": "The merchant is settled",
-      "text": "Confirmed payments are transferred at D+2, commission deducted."
+      "text": "Confirmed payments are transferred at D+{days}, commission deducted."
     }
   },
   "footer": {
@@ -85,7 +85,7 @@
     },
     "t4": {
       "tag": "The merchant",
-      "title": "The merchant is paid at D+2",
+      "title": "The merchant is paid at D+{days}",
       "text": "Payments add up on their own. The merchant requests the transfer, the commission is already computed.",
       "fine": "No more counting vouchers at night."
     },
@@ -114,7 +114,7 @@
     "merchant": {
       "tag": "Merchant voucher",
       "title": "You collect",
-      "text": "A QR at the till, a payment confirmed in seconds, a transfer at D+2. No more vouchers to count at night or to drop at the bank.",
+      "text": "A QR at the till, a payment confirmed in seconds, a transfer at D+{days}. No more vouchers to count at night or to drop at the bank.",
       "cta": "Become a partner →"
     }
   }

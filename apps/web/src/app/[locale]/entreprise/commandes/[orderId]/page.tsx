@@ -18,6 +18,7 @@ import {
   OrderHistory,
   OrderStatusBadge,
   OrderSummaryCard,
+  QuoteNotice,
   type Order,
 } from '@/components/orders/order-parts';
 import { Button, buttonClasses } from '@/components/ui/button';
@@ -147,6 +148,7 @@ function OrderView({
         {error !== undefined ? (
           <Alert tone="danger">{tRoot(messageKey(errorMessageKey(error)))}</Alert>
         ) : null}
+        <QuoteNotice order={order} />
         {order.status === 'REFUSED' ? (
           <Alert tone="danger" title={t('company.refusedTitle')}>
             <span dir="auto">{order.refusalReason}</span>

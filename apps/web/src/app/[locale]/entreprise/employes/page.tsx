@@ -3,6 +3,7 @@
 import type { Schemas } from '@flexipay/api-client';
 import { FileUp, UserPlus, WalletCards } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { usePlatformTerms } from '@/lib/api/use-platform-terms';
 import { useState, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
 import { Link } from '@/i18n/navigation';
@@ -289,6 +290,7 @@ function AddEmployee({
   const t = useTranslations('company.employees');
   const tRoot = useTranslations();
   const toast = useToast();
+  const { invitationDays } = usePlatformTerms();
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof Draft, string>>>({});
   const [error, setError] = useState<unknown>(undefined);
@@ -333,7 +335,7 @@ function AddEmployee({
       open={open}
       onOpenChange={onOpenChange}
       title={t('formTitle')}
-      description={t('formDescription')}
+      description={t('formDescription', { days: invitationDays })}
     >
       <form onSubmit={(event) => void onSubmit(event)} className="flex flex-col gap-4" noValidate>
         {error !== undefined ? (

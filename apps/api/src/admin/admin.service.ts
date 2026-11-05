@@ -123,6 +123,14 @@ export interface PlatformSettingsInput {
   vatRateBps: number;
   stampDutyMillimes: number;
   expiredCreditsDestination: 'PLATFORM_REVENUE' | 'COMPANY_RETURN';
+  fundingAccount: { bankName: string; holder: string; rib: string; iban: string };
+  secondValidationThresholdMillimes: number;
+  quoteValidityDays: number;
+  invitationValidityDays: number;
+  otpValidityMinutes: number;
+  pinLockMinutes: number[];
+  paymentCancelHours: number;
+  settlementDelayDays: number;
   creditTypes: {
     creditType: CreditType;
     enabled: boolean;
@@ -852,6 +860,19 @@ export class AdminService {
         vatRateBps: platform.vatRateBps,
         stampDutyMillimes: toMillimes(platform.stampDutyMillimes),
         expiredCreditsDestination: platform.expiredCreditsDestination,
+        fundingAccount: {
+          bankName: platform.fundingBankName,
+          holder: platform.fundingHolder,
+          rib: platform.fundingRib,
+          iban: platform.fundingIban,
+        },
+        secondValidationThresholdMillimes: toMillimes(platform.secondValidationThresholdMillimes),
+        quoteValidityDays: platform.quoteValidityDays,
+        invitationValidityDays: platform.invitationValidityDays,
+        otpValidityMinutes: platform.otpValidityMinutes,
+        pinLockMinutes: platform.pinLockMinutes,
+        paymentCancelHours: platform.paymentCancelHours,
+        settlementDelayDays: platform.settlementDelayDays,
         creditTypes: types.map(typeSettingsBody),
       };
     });
@@ -887,6 +908,14 @@ export class AdminService {
   }
 
   private async applySettings(tx: Tx, settings: PlatformSettingsInput): Promise<void> {
+    // History: the names of the changed settings go to the audit log (never their values).
+    const before: Record<string, unknown> = await this.platformSettings();
+    const changed = Object.keys(settings).filter(
+      (key) =>
+        JSON.stringify(before[key]) !== JSON.stringify(settings[key as keyof PlatformSettingsInput]),
+    );
+    if (changed.length > 0)
+      await this.audit.record(tx, 'settings.apply', changed.join(', ').slice(0, 200));
     await tx.platformSettings.update({
       where: { id: 1 },
       data: {
@@ -897,6 +926,17 @@ export class AdminService {
         vatRateBps: settings.vatRateBps,
         stampDutyMillimes: BigInt(settings.stampDutyMillimes),
         expiredCreditsDestination: settings.expiredCreditsDestination,
+        fundingBankName: settings.fundingAccount.bankName,
+        fundingHolder: settings.fundingAccount.holder,
+        fundingRib: settings.fundingAccount.rib,
+        fundingIban: settings.fundingAccount.iban,
+        secondValidationThresholdMillimes: BigInt(settings.secondValidationThresholdMillimes),
+        quoteValidityDays: settings.quoteValidityDays,
+        invitationValidityDays: settings.invitationValidityDays,
+        otpValidityMinutes: settings.otpValidityMinutes,
+        pinLockMinutes: settings.pinLockMinutes,
+        paymentCancelHours: settings.paymentCancelHours,
+        settlementDelayDays: settings.settlementDelayDays,
         updatedAt: new Date(),
       },
     });

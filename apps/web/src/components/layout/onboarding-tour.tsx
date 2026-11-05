@@ -16,6 +16,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { usePlatformTerms } from '@/lib/api/use-platform-terms';
 import { useCallback, useState } from 'react';
 import { messageKey } from '@/i18n/keys';
 import { getApi } from '@/lib/api/client';
@@ -61,6 +62,7 @@ export function useOnboardingTour(role: Role, me: Schemas['Me']) {
 export function OnboardingTour({ role, onClose }: { role: TourRole; onClose: () => void }) {
   const t = useTranslations('tour');
   const tRoot = useTranslations();
+  const { settlementDays } = usePlatformTerms();
   const icons = STEPS[role];
   const [index, setIndex] = useState(0);
   const Icon = icons[index] ?? Wallet;
@@ -73,7 +75,7 @@ export function OnboardingTour({ role, onClose }: { role: TourRole; onClose: () 
       onOpenChange={(next) => {
         if (!next) onClose();
       }}
-      title={tRoot(messageKey(`${step}.title`))}
+      title={tRoot(messageKey(`${step}.title`), { days: settlementDays })}
       description={t('progress', { current: index + 1, total: icons.length })}
     >
       {/* Animation 16: each step slides in (320 ms) when the tour moves on. */}
@@ -84,7 +86,7 @@ export function OnboardingTour({ role, onClose }: { role: TourRole; onClose: () 
         >
           <Icon className="size-avatar-lg" strokeWidth={1.5} />
         </span>
-        <p className="text-body-lg text-text">{tRoot(messageKey(`${step}.text`))}</p>
+        <p className="text-body-lg text-text">{tRoot(messageKey(`${step}.text`), { days: settlementDays })}</p>
         <ol aria-hidden="true" className="flex gap-2">
           {icons.map((_, position) => (
             <li

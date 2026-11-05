@@ -29,6 +29,7 @@ import {
   reason,
 } from '../common/validation.js';
 import { commissionGridSchema } from '@flexipay/shared';
+import { SettingsService } from '../platform/settings.service.js';
 import { AdminService } from './admin.service.js';
 
 const accountStatus = z.enum(['PENDING_KYC', 'APPROVED', 'REJECTED', 'SUSPENDED']);
@@ -55,6 +56,19 @@ const settingsBody = z.strictObject({
     vatRateBps: rateBps,
     stampDutyMillimes: millimes,
     expiredCreditsDestination: z.enum(['PLATFORM_REVENUE', 'COMPANY_RETURN']),
+    fundingAccount: z.strictObject({
+      bankName: z.string().trim().min(1).max(120),
+      holder: z.string().trim().min(1).max(120),
+      rib: z.string().regex(/^[0-9]{20}$/),
+      iban: z.string().regex(/^TN[0-9]{22}$/),
+    }),
+    secondValidationThresholdMillimes: positiveMillimes,
+    quoteValidityDays: z.number().int().min(1).max(90),
+    invitationValidityDays: z.number().int().min(1).max(30),
+    otpValidityMinutes: z.number().int().min(1).max(30),
+    pinLockMinutes: z.array(z.number().int().min(1).max(1440)).min(1).max(5),
+    paymentCancelHours: z.number().int().min(0).max(72),
+    settlementDelayDays: z.number().int().min(1).max(10),
     creditTypes: z
       .array(
         z.strictObject({
@@ -407,7 +421,20 @@ export class AdminController {
 /** Public "Contact us" form of the home page (contract: public, rate limited). */
 @Controller('v1/public')
 export class PublicController {
-  constructor(@Inject(ContactService) private readonly contact: ContactService) {}
+  constructor(
+    @Inject(ContactService) private readonly contact: ContactService,
+    @Inject(SettingsService) private readonly settings: SettingsService,
+  ) {}
+
+  /**
+   * Terms of the platform shown in the texts of the pages (settlement cycle, validities...):
+   * values of the settings, never written in the web (request of 2026-11-05). Nothing sensitive.
+   */
+  @Public()
+  @Get('terms')
+  terms() {
+    return this.settings.terms();
+  }
 
   @Public()
   @Post('contact-messages')

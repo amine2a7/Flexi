@@ -1,11 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ENV } from '../config/env.provider.js';
-import type { Env } from '../config/env.js';
 import { AuditService } from '../common/audit.service.js';
 import { uuidv7 } from '../common/crypto.js';
 import { asService, DbService, type Tx } from '../common/db.service.js';
 import { ApiProblem } from '../common/problem.js';
 import { toMillimes } from '../common/money.js';
+import { addDays, businessDay, dateOnly } from '../common/tunis.js';
 import { gridRate, type GridOwner } from './commission-grids.js';
 import type {
   CreditType,
@@ -20,9 +19,6 @@ export const CREDIT_TYPES: readonly CreditType[] = [
   'CARBURANT',
   'CADEAUX',
 ];
-
-/** Four-eyes threshold on credit orders (decision): above 10 000,000 TND, two administrators. */
-export const SECOND_VALIDATION_THRESHOLD = 10_000_000n;
 
 export interface CreditTypeSettingsBody {
   creditType: CreditType;
@@ -45,7 +41,6 @@ export function typeSettingsBody(row: CreditTypeSetting): CreditTypeSettingsBody
 @Injectable()
 export class SettingsService {
   constructor(
-    @Inject(ENV) private readonly env: Env,
     @Inject(DbService) private readonly db: DbService,
     @Inject(AuditService) private readonly audit: AuditService,
   ) {}
@@ -56,13 +51,32 @@ export class SettingsService {
     return row;
   }
 
-  /** Settings of the 4 types, in display order. */
   /** VAT rate and stamp duty of the settings (super-admin), frozen in each order and payout. */
   async taxes(tx: Tx): Promise<{ vatRateBps: number; stampDutyMillimes: bigint }> {
     const row = await this.platform(tx);
     return { vatRateBps: row.vatRateBps, stampDutyMillimes: row.stampDutyMillimes };
   }
 
+  /** Public terms of the platform (texts of the pages): values of the settings only. */
+  async terms() {
+    const row = await this.db.system((tx) => this.platform(tx));
+    return {
+      settlementDelayDays: row.settlementDelayDays,
+      invitationValidityDays: row.invitationValidityDays,
+      quoteValidityDays: row.quoteValidityDays,
+      paymentCancelHours: row.paymentCancelHours,
+      payoutMinimumMillimes: toMillimes(row.payoutMinimumMillimes),
+      secondValidationThresholdMillimes: toMillimes(row.secondValidationThresholdMillimes),
+    };
+  }
+
+  /** Settlement date of a payment confirmed `now`: D + the settlement cycle (business days). */
+  async settlementDate(tx: Tx, now: Date): Promise<Date> {
+    const { settlementDelayDays } = await this.platform(tx);
+    return dateOnly(addDays(businessDay(now), settlementDelayDays));
+  }
+
+  /** Settings of the 4 types, in display order. */
   async creditTypes(tx: Tx): Promise<CreditTypeSetting[]> {
     const rows = await tx.creditTypeSetting.findMany();
     return CREDIT_TYPES.flatMap((type) => rows.filter((row) => row.creditType === type));
@@ -116,13 +130,14 @@ export class SettingsService {
     );
   }
 
-  /** FlexiPay bank account where companies transfer their orders (server configuration). */
-  fundingAccount(): { bankName: string; holder: string; rib: string; iban: string } {
+  /** FlexiPay bank account where companies transfer their orders (settings of the super-admin). */
+  async fundingAccount(): Promise<{ bankName: string; holder: string; rib: string; iban: string }> {
+    const row = await this.db.user((tx) => this.platform(tx));
     return {
-      bankName: this.env.FUNDING_BANK_NAME,
-      holder: this.env.FUNDING_HOLDER,
-      rib: this.env.FUNDING_RIB,
-      iban: this.env.FUNDING_IBAN,
+      bankName: row.fundingBankName,
+      holder: row.fundingHolder,
+      rib: row.fundingRib,
+      iban: row.fundingIban,
     };
   }
 }

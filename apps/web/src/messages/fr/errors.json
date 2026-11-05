@@ -17,8 +17,10 @@
   "network": "Connexion impossible. Vérifiez votre réseau puis réessayez.",
   "generic": "L'opération n'a pas abouti. Réessayez.",
   "pinInvalid": "PIN refusé.",
-  "pinLocked": "PIN refusé. Réessayez dans 15 min.",
+  "pinLocked": "PIN refusé. Réessayez plus tard.",
   "pinRetryIn": "Réessayez dans {minutes} min.",
   "pinSignInAgain": "Pour votre sécurité, reconnectez-vous avec votre mot de passe et votre code pour payer à nouveau.",
-  "commissionGridMissing": "Aucune grille de commission n'est définie pour ce compte : opération refusée. Les équipes Opérations et Finance sont prévenues."
+  "commissionGridMissing": "Aucune grille de commission n'est définie pour ce compte : opération refusée. Les équipes Opérations et Finance sont prévenues.",
+  "quoteExpired": "Le devis de cette commande a expiré : créez une nouvelle commande.",
+  "cancelWindowOver": "Le délai d'annulation de ce paiement est dépassé."
 }

@@ -1,10 +1,11 @@
 import { Building2, Store, UserRound, type LucideIcon } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { ContactForm } from '@/components/public/contact-form';
 import { buttonClasses } from '@/components/ui/button';
 import { TicketBook } from '@/components/public/ticket-book';
 import { CreditTypeBadge } from '@/components/ui/credit-type';
+import { fetchPlatformTerms, termValues } from '@/lib/api/platform-terms';
 import { CREDIT_TYPES } from '@/lib/credit-types';
 
 const AUDIENCES: readonly { key: 'company' | 'merchant' | 'employee'; icon: LucideIcon }[] = [
@@ -15,9 +16,11 @@ const AUDIENCES: readonly { key: 'company' | 'merchant' | 'employee'; icon: Luci
 const STEPS = ['s1', 's2', 's3'] as const;
 
 /** Public home: presentation, credit types, benefits per audience, 3 steps, contact form. */
-export default function LandingPage() {
-  const t = useTranslations('landing');
-  const tContact = useTranslations('contact');
+export default async function LandingPage() {
+  const t = await getTranslations('landing');
+  const tContact = await getTranslations('contact');
+  const terms = termValues(await fetchPlatformTerms(), (await getLocale()));
+  const days = { days: terms.settlementDays };
   return (
     <>
       <section className="bg-navy text-on-navy">
@@ -88,7 +91,7 @@ export default function LandingPage() {
               </div>
               <div className="flex flex-1 flex-col gap-3 p-6">
                 <h3 className="font-display text-display-md">{t(`forWho.${key}.title`)}</h3>
-                <p className="text-body text-paper-ink">{t(`forWho.${key}.text`)}</p>
+                <p className="text-body text-paper-ink">{t(`forWho.${key}.text`, days)}</p>
                 <Link
                   href={key === 'employee' ? '/login' : '/#contact'}
                   className="mt-auto inline-flex min-h-touch-target-min items-center text-label text-emerald-text underline-offset-4 hover:underline"
@@ -115,7 +118,7 @@ export default function LandingPage() {
                 </span>
                 <span className="flex flex-col gap-1">
                   <h3 className="text-title-sm text-text">{t(`steps.${step}.title`)}</h3>
-                  <p className="text-body text-text-muted">{t(`steps.${step}.text`)}</p>
+                  <p className="text-body text-text-muted">{t(`steps.${step}.text`, days)}</p>
                 </span>
               </li>
             ))}

@@ -2,6 +2,7 @@
 
 import type { Schemas } from '@flexipay/api-client';
 import { useTranslations } from 'next-intl';
+import { usePlatformTerms } from '@/lib/api/use-platform-terms';
 import { useState, type SyntheticEvent } from 'react';
 import { getApi } from '@/lib/api/client';
 import { errorMessageKey } from '@/lib/api/problem';
@@ -35,6 +36,7 @@ export function CreateAdministrator({
   onCreated: () => void;
 }) {
   const t = useTranslations('admin.users.createForm');
+  const { invitationDays } = usePlatformTerms();
   const tToast = useTranslations('admin.users.toast');
   const tReason = useTranslations('common.reason');
   const tSubRole = useTranslations('subRole');
@@ -79,7 +81,7 @@ export function CreateAdministrator({
       open={open}
       onOpenChange={onOpenChange}
       title={t('title')}
-      description={t('description')}
+      description={t('description', { days: invitationDays })}
     >
       <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-4" noValidate>
         <TextField

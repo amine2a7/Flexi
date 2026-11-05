@@ -46,6 +46,25 @@ export function OrderStatusBadge({ status }: { status: Schemas['OrderStatus'] })
 }
 
 /** True when the server answered that the order changed meanwhile (409). */
+/**
+ * Quote of an order (validity of the settings, frozen at creation): its end while it runs, a
+ * warning once it expired without a declared transfer (nothing more can be done but cancel).
+ */
+export function QuoteNotice({ order }: { order: Order }) {
+  const t = useTranslations('orders.quote');
+  const locale = useLocale();
+  const until = formatDateTime(order.quoteExpiresAt, locale);
+  if (order.quoteExpired) {
+    return (
+      <Alert tone="warning" title={t('expiredTitle')}>
+        {t('expiredText', { date: until })}
+      </Alert>
+    );
+  }
+  if (order.status !== 'AWAITING_CONFIRMATION' && order.status !== 'AWAITING_PAYMENT') return null;
+  return <p className="text-caption text-text-muted">{t('validUntil', { date: until })}</p>;
+}
+
 export function isStateConflict(error: unknown): boolean {
   return asProblem(error)?.code === 'RESOURCE_STATE_CONFLICT';
 }

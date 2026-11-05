@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { InvitationService } from '../auth/invitation.service.js';
+import { InvitationService, invitationExpiry } from '../auth/invitation.service.js';
 import {
   changeRefusal,
   graceEnd,
@@ -264,7 +264,7 @@ export class UsersService {
         data: {
           passwordHash: prepared.passwordHash,
           mustChangePassword: true,
-          tempPasswordExpiresAt: new Date(Date.now() + 72 * 3_600_000),
+          tempPasswordExpiresAt: await invitationExpiry(tx),
         },
       });
       await tx.session.updateMany({

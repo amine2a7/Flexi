@@ -6,8 +6,17 @@ import { problems } from '../common/problem.js';
 import type { Role, SubRole } from '../generated/prisma/client.js';
 import { hashSecret } from './password.js';
 
-/** Validity of a temporary password (contract: first sign-in within 72 h). */
-export const TEMPORARY_PASSWORD_TTL_MS = 72 * 3_600_000;
+/**
+ * End of a temporary password (invitation): the validity of the settings (7 days by default,
+ * request of 2026-11-05), read in the transaction that writes the account.
+ */
+export async function invitationExpiry(tx: Tx, now = Date.now()): Promise<Date> {
+  const settings = await tx.platformSettings.findUniqueOrThrow({
+    where: { id: 1 },
+    select: { invitationValidityDays: true },
+  });
+  return new Date(now + settings.invitationValidityDays * 86_400_000);
+}
 
 // No look-alike characters (0/O, 1/l/I): the password is typed from an e-mail.
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
@@ -68,7 +77,7 @@ export class InvitationService {
    */
   async create(tx: Tx, prepared: readonly PreparedInvitation[]): Promise<void> {
     if (prepared.length === 0) return;
-    const expires = new Date(Date.now() + TEMPORARY_PASSWORD_TTL_MS);
+    const expires = await invitationExpiry(tx);
     try {
       await tx.user.createMany({
         data: prepared.map(({ invitee, passwordHash }) => ({

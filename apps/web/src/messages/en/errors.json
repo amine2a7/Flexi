@@ -17,8 +17,10 @@
   "network": "Cannot connect. Check your network and try again.",
   "generic": "The operation did not go through. Try again.",
   "pinInvalid": "PIN refused.",
-  "pinLocked": "PIN refused. Try again in 15 min.",
+  "pinLocked": "PIN refused. Try again later.",
   "pinRetryIn": "Try again in {minutes} min.",
   "pinSignInAgain": "For your security, sign in again with your password and code to pay again.",
-  "commissionGridMissing": "No commission grid is set for this account: operation refused. Operations and Finance have been told."
+  "commissionGridMissing": "No commission grid is set for this account: operation refused. Operations and Finance have been told.",
+  "quoteExpired": "The quote of this order has expired: create a new order.",
+  "cancelWindowOver": "The cancellation window of this payment is over."
 }

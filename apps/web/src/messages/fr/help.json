@@ -26,7 +26,7 @@
     },
     "firstLogin": {
       "title": "Première connexion",
-      "text": "Connectez-vous avec le mot de passe temporaire reçu (valable 72 h), choisissez un nouveau mot de passe dans les 10 minutes, puis activez la double authentification en scannant le QR affiché. Notez vos codes de secours."
+      "text": "Connectez-vous avec le mot de passe temporaire reçu (valable {days} jours), choisissez un nouveau mot de passe dans les 10 minutes, puis activez la double authentification en scannant le QR affiché. Notez vos codes de secours."
     },
     "forgotPassword": {
       "title": "Mot de passe oublié",
@@ -74,7 +74,7 @@
     },
     "merchantReceivables": {
       "title": "Créances",
-      "text": "Les montants confirmés qui seront réglés à J+2, jour par jour."
+      "text": "Les montants confirmés qui seront réglés à J+{settlementDays}, jour par jour."
     },
     "merchantPayouts": {
       "title": "Virements",
@@ -118,7 +118,7 @@
     },
     "adminOrders": {
       "title": "Commandes",
-      "text": "Confirmez les commandes, vérifiez la preuve de virement et validez : chaque type est alors crédité. Au-delà de 10 000,000 TND, un second administrateur doit valider."
+      "text": "Confirmez les commandes, vérifiez la preuve de virement et validez : chaque type est alors crédité. Au-delà de {threshold}, un second administrateur doit valider."
     },
     "adminPayouts": {
       "title": "Virements commerçants et règlements",

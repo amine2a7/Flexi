@@ -87,7 +87,7 @@
     "emptyTitle": "No employees",
     "emptyMessage": "Add your employees one by one or import a CSV file.",
     "formTitle": "Add an employee",
-    "formDescription": "A temporary password (valid for 72 h) will be sent to the employee.",
+    "formDescription": "A temporary password (valid for {days} days) will be sent to the employee.",
     "phoneHint": "Format: +216 followed by 8 digits.",
     "submit": "Create the employee",
     "created": "{name} has been added. A temporary password has been sent.",

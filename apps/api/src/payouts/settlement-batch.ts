@@ -3,7 +3,8 @@ import type { Tx } from '../common/db.service.js';
 import { addDays, businessDay, dateOnly } from '../common/tunis.js';
 
 /**
- * Next scheduled batch a checked payout joins, created at D+2 when there is none. It stays locked
+ * Next scheduled batch a checked payout joins, created at D + the settlement cycle of the settings
+ * (2 by default) when there is none. It stays locked
  * while the payout joins it: the settlement job (SKIP LOCKED) leaves it for its next run instead
  * of executing it without this payout (ledger-auditor N1).
  */
@@ -14,6 +15,10 @@ export async function nextBatch(tx: Tx) {
      WHERE status = 'SCHEDULED' AND settlement_date > ${dateOnly(today)}::date
      ORDER BY settlement_date LIMIT 1 FOR UPDATE`;
   if (open !== undefined) return tx.settlementBatch.findUniqueOrThrow({ where: { id: open.id } });
+  const { settlementDelayDays } = await tx.platformSettings.findUniqueOrThrow({
+    where: { id: 1 },
+    select: { settlementDelayDays: true },
+  });
   const [sequence] = await tx.$queryRaw<
     { value: bigint }[]
   >`SELECT nextval('batch_reference_seq') AS value`;
@@ -21,7 +26,7 @@ export async function nextBatch(tx: Tx) {
     data: {
       id: uuidv7(),
       reference: `LOT-${today.slice(0, 4)}-${String(sequence?.value ?? 0n)}`,
-      settlementDate: dateOnly(addDays(today, 2)),
+      settlementDate: dateOnly(addDays(today, settlementDelayDays)),
     },
   });
 }

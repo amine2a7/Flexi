@@ -535,6 +535,28 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/public/terms': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Conditions de la plateforme affichées dans les textes des pages
+     * @description Route **publique** (`@Public()`) : valeurs du paramétrage citées par les pages (cycle de
+     *     règlement, validités, seuils), jamais écrites en dur dans le web (demande du 2026-11-05).
+     *     Aucune donnée sensible.
+     */
+    get: operations['getPlatformTerms'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/public/contact-messages': {
     parameters: {
       query?: never;
@@ -734,6 +756,30 @@ export interface paths {
      *     une annulation passe alors par une demande motivée validée par l'Administrateur.
      */
     post: operations['cancelMerchantPayment'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/merchant/payments/{paymentId}/refund': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Annuler un paiement confirmé dans le délai du paramétrage (24 h par défaut)
+     * @description Le gérant annule un paiement confirmé tant que le délai d'annulation du paramétrage
+     *     (`paymentCancelHours`) n'est pas écoulé, que le paiement n'est dans aucun virement et
+     *     qu'aucun litige n'est ouvert. Contre-passation dans le grand livre : le portefeuille du
+     *     commerce rend le montant, l'employé le retrouve dans des lots de l'échéance d'origine.
+     *     Statut `REFUNDED`. Délai écoulé : `409 CANCEL_WINDOW_OVER` ; autre état : `409 RESOURCE_STATE_CONFLICT`.
+     */
+    post: operations['refundMerchantPayment'];
     delete?: never;
     options?: never;
     head?: never;
@@ -3496,6 +3542,10 @@ export interface components {
     };
     /** CreditOrder */
     CreditOrder: {
+      /** @description Fin du devis (validité du paramétrage, figée à la création). */
+      quoteExpiresAt: components['schemas']['Timestamp'];
+      /** @description Devis expiré sans virement déclaré ; ni confirmation ni déclaration (`409 QUOTE_EXPIRED`). */
+      quoteExpired: boolean;
       id: components['schemas']['Uuid'];
       reference: string;
       status: components['schemas']['OrderStatus'];
@@ -3525,6 +3575,8 @@ export interface components {
      * @description Commande avec sa déclaration de virement, son dernier motif et son historique.
      */
     CreditOrderDetail: {
+      quoteExpiresAt: components['schemas']['Timestamp'];
+      quoteExpired: boolean;
       id: components['schemas']['Uuid'];
       reference: string;
       status: components['schemas']['OrderStatus'];
@@ -4085,8 +4137,42 @@ export interface components {
       data: components['schemas']['AuditLogEntry'][];
       page: components['schemas']['PageInfo'];
     };
-    /** PlatformSettings */
+    /**
+     * PlatformSettings
+     * @description Toutes les valeurs métier de la plateforme (demande du 2026-11-05) : aucune n'est écrite en
+     *     dur dans le code. Toute modification est une demande soumise à double validation.
+     */
     PlatformSettings: {
+      fundingAccount: components['schemas']['FundingBankAccount'];
+      /** @description Au-delà de ce montant, une commande exige deux administrateurs (figé dans chaque commande). */
+      secondValidationThresholdMillimes: components['schemas']['PositiveAmountMillimes'];
+      /**
+       * Format: int32
+       * @description Validité du devis d'une commande, en jours (figée à la création).
+       */
+      quoteValidityDays: number;
+      /**
+       * Format: int32
+       * @description Validité du mot de passe temporaire d'une invitation, en jours.
+       */
+      invitationValidityDays: number;
+      /**
+       * Format: int32
+       * @description Validité du code de connexion (OTP), en minutes.
+       */
+      otpValidityMinutes: number;
+      /** @description Paliers de blocage du PIN, en minutes ; au-delà du dernier, reconnexion complète. */
+      pinLockMinutes: number[];
+      /**
+       * Format: int32
+       * @description Délai d'annulation d'un paiement confirmé par le commerçant, en heures (0 = jamais).
+       */
+      paymentCancelHours: number;
+      /**
+       * Format: int32
+       * @description Cycle de règlement (J + n jours ouvrés).
+       */
+      settlementDelayDays: number;
       expiredCreditsDestination: components['schemas']['ExpiredCreditsDestination'];
       payoutMinimumMillimes: components['schemas']['AmountMillimes'];
       /** Format: int32 */
@@ -4110,6 +4196,22 @@ export interface components {
      * @enum {string}
      */
     ExpiredCreditsDestination: 'PLATFORM_REVENUE' | 'COMPANY_RETURN';
+    /**
+     * PlatformTerms
+     * @description Valeurs publiques du paramétrage (textes des pages).
+     */
+    PlatformTerms: {
+      /** Format: int32 */
+      settlementDelayDays: number;
+      /** Format: int32 */
+      invitationValidityDays: number;
+      /** Format: int32 */
+      quoteValidityDays: number;
+      /** Format: int32 */
+      paymentCancelHours: number;
+      payoutMinimumMillimes: components['schemas']['AmountMillimes'];
+      secondValidationThresholdMillimes: components['schemas']['PositiveAmountMillimes'];
+    };
     /** PlatformSettingsChange */
     PlatformSettingsChange: {
       settings: components['schemas']['PlatformSettings'];
@@ -4148,7 +4250,9 @@ export interface components {
       | 'SERVICE_UNAVAILABLE'
       | 'PIN_INVALID'
       | 'PIN_LOCKED'
-      | 'COMMISSION_GRID_MISSING';
+      | 'COMMISSION_GRID_MISSING'
+      | 'QUOTE_EXPIRED'
+      | 'CANCEL_WINDOW_OVER';
     /**
      * ProblemBase
      * @description Membres communs de toute erreur RFC 9457 (`application/problem+json`). Schéma de base
@@ -5578,6 +5682,30 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  getPlatformTerms: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PlatformTerms'];
+        };
+      };
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   createContactMessage: {
     parameters: {
       query?: never;
@@ -5952,6 +6080,45 @@ export interface operations {
           'application/json': components['schemas']['MerchantPayment'];
         };
       };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  refundMerchantPayment: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        paymentId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Paiement annulé. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MerchantPayment'];
+        };
+      };
+      400: components['responses']['BadRequest'];
       401: components['responses']['Unauthorized'];
       403: components['responses']['Forbidden'];
       404: components['responses']['NotFound'];
@@ -9213,6 +9380,8 @@ export const problemCodeValues: ReadonlyArray<
   'PIN_INVALID',
   'PIN_LOCKED',
   'COMMISSION_GRID_MISSING',
+  'QUOTE_EXPIRED',
+  'CANCEL_WINDOW_OVER',
 ];
 export const userStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['UserStatus']

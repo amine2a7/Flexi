@@ -5,10 +5,11 @@ import { ApiProblem } from '../common/problem.js';
 import { hashSecret, verifySecret } from '../auth/password.js';
 import { SessionService } from '../auth/session.service.js';
 
-/** 3 wrong PINs lock it: 15 min, then 30, then 60 (TIMED_LOCKS), then until a full sign-in. */
+/**
+ * 3 wrong PINs lock it, for the successive durations of the settings (15, 30, 60 min by default,
+ * pin_lock_minutes), then until a full sign-in.
+ */
 const MAX_FAILURES = 3;
-const FIRST_LOCK_MINUTES = 15;
-const TIMED_LOCKS = 3;
 /** Obvious sequences refused for a new PIN (spec 01 §3). */
 const WEAK = new Set([
   '0000',
@@ -72,16 +73,19 @@ export class PinService {
       const target = `employé ${employeeId}`;
       await this.audit.record(tx, 'pin.failed', target);
       if (reserved.pin_failures < MAX_FAILURES) return;
-      // Old values on the right-hand side: level 0 -> 15 min, 1 -> 30, 2 -> 60, 3 -> sign-in.
+      // Old values on the right-hand side: level 0 -> 1st duration, 1 -> 2nd... past the last
+      // one -> sign-in (durations of the settings).
       const [locked] = await tx.$queryRaw<
         { pin_lock_level: number; pin_requires_reauth: boolean }[]
       >`
-        UPDATE employees SET pin_failures = 0, pin_lock_level = pin_lock_level + 1,
-               pin_requires_reauth = pin_lock_level + 1 > ${TIMED_LOCKS},
-               pin_locked_until = CASE WHEN pin_lock_level + 1 > ${TIMED_LOCKS} THEN NULL
-                 ELSE now() + make_interval(mins => ${FIRST_LOCK_MINUTES} * (2 ^ pin_lock_level)::int) END
-         WHERE id = ${employeeId}::uuid AND pin_failures >= ${MAX_FAILURES}
-        RETURNING pin_lock_level, pin_requires_reauth`;
+        UPDATE employees e SET pin_failures = 0, pin_lock_level = e.pin_lock_level + 1,
+               pin_requires_reauth = e.pin_lock_level + 1 > cardinality(s.pin_lock_minutes),
+               pin_locked_until = CASE WHEN e.pin_lock_level + 1 > cardinality(s.pin_lock_minutes)
+                 THEN NULL
+                 ELSE now() + make_interval(mins => s.pin_lock_minutes[e.pin_lock_level + 1]) END
+          FROM platform_settings s
+         WHERE s.id = 1 AND e.id = ${employeeId}::uuid AND e.pin_failures >= ${MAX_FAILURES}
+        RETURNING e.pin_lock_level, e.pin_requires_reauth`;
       if (locked === undefined) return;
       if (locked.pin_requires_reauth) {
         // Whoever holds the session loses it: only a complete sign-in lifts the block (S24).

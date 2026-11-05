@@ -15,6 +15,7 @@ const PUBLIC_ROUTES = new Set([
   '/v1/auth/password/forgot',
   '/v1/auth/password/reset',
   '/v1/public/contact-messages',
+  '/v1/public/terms',
 ]);
 /**
  * Copies of the requests that change something, kept until their response (or failure) to replay

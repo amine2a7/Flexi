@@ -19,6 +19,8 @@ const MESSAGE_KEYS: Readonly<Record<string, string>> = {
   RATE_LIMITED: 'errors.rateLimited',
   INTERNAL_ERROR: 'errors.internalError',
   SERVICE_UNAVAILABLE: 'errors.serviceUnavailable',
+  QUOTE_EXPIRED: 'errors.quoteExpired',
+  CANCEL_WINDOW_OVER: 'errors.cancelWindowOver',
 };
 
 /**

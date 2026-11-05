@@ -60,7 +60,7 @@
     },
     "resend": {
       "title": "Renvoyer l'invitation à {name} ?",
-      "effect": "Un nouveau mot de passe temporaire (72 h) lui sera envoyé par e-mail ; ses sessions seront fermées.",
+      "effect": "Un nouveau mot de passe temporaire ({days} jours) lui sera envoyé par e-mail ; ses sessions seront fermées.",
       "confirm": "Renvoyer l'invitation"
     },
     "unlock": {

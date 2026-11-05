@@ -4,6 +4,7 @@ import { ArrowLeftRight, CalendarClock, HandCoins, Percent, Wallet } from 'lucid
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
+import { usePlatformTerms } from '@/lib/api/use-platform-terms';
 import { useApiQuery } from '@/lib/api/use-api-query';
 import { formatCalendarDate, formatDateTime, formatShortMonth } from '@/lib/format/date';
 import { formatMillimesWithCurrency } from '@/lib/format/money';
@@ -20,6 +21,7 @@ import { useCan } from '@/lib/session/session-context';
 
 export default function MerchantDashboardPage() {
   const t = useTranslations('merchant.dashboard');
+  const { settlementDays } = usePlatformTerms();
   const tTypes = useTranslations('ui.creditTypes');
   const canCollect = useCan('payments.collect');
   const locale = useLocale();
@@ -29,7 +31,7 @@ export default function MerchantDashboardPage() {
     <>
       <PageHeader
         title={t('title')}
-        description={t('description')}
+        description={t('description', { days: settlementDays })}
         actions={
           !canCollect ? undefined : (
             <Link
@@ -95,7 +97,7 @@ export default function MerchantDashboardPage() {
                   ? t('noSettlement')
                   : formatCalendarDate(dashboard.data.nextSettlementDate, locale)
               }
-              hint={t('settlementRule')}
+              hint={t('settlementRule', { days: settlementDays })}
               icon={<CalendarClock className="size-icon-md" />}
             />
             <StatCard

@@ -60,7 +60,7 @@
     },
     "resend": {
       "title": "Resend the invitation to {name}?",
-      "effect": "A new temporary password (72 h) will be e-mailed; their sessions will end.",
+      "effect": "A new temporary password ({days} days) will be e-mailed; their sessions will end.",
       "confirm": "Resend the invitation"
     },
     "unlock": {

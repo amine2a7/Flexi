@@ -1,31 +1,70 @@
 'use client';
 
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Undo2 } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
-import { getApi } from '@/lib/api/client';
+import { messageKey } from '@/i18n/keys';
+import { getApi, newIdempotencyKey } from '@/lib/api/client';
+import { asProblem, errorMessageKey } from '@/lib/api/problem';
 import { useApiQuery } from '@/lib/api/use-api-query';
+import { usePlatformTerms } from '@/lib/api/use-platform-terms';
+import { useCan } from '@/lib/session/session-context';
 import { formatCalendarDate, formatDateTime } from '@/lib/format/date';
 import { formatRateBps } from '@/lib/format/money';
 import { Amount, AmountBreakdown } from '@/components/ui/amount';
-import { buttonClasses } from '@/components/ui/button';
+import { Button, buttonClasses } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
 import { CreditTypeBadge } from '@/components/ui/credit-type';
 import { Alert, DescriptionList, PageHeader } from '@/components/ui/layout-blocks';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
+import { ConfirmDialog } from '@/components/ui/modal';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Timeline } from '@/components/ui/timeline';
+import { useToast } from '@/components/ui/toast';
 
-/** Payment detail: customer, amount, frozen commission, D+2 settlement and steps (UX §6.7). */
+/** Payment detail: customer, amount, frozen commission, settlement date and steps (UX §6.7). */
 export default function PaymentDetailPage() {
   const { paymentId } = useParams<{ paymentId: string }>();
   const t = useTranslations('merchant.paymentDetail');
+  const tRoot = useTranslations();
   const locale = useLocale();
+  const toast = useToast();
+  const canRefund = useCan('payments.refund');
+  const { cancelHours } = usePlatformTerms();
   const payment = useApiQuery(
     () => getApi().GET('/v1/merchant/payments/{paymentId}', { params: { path: { paymentId } } }),
     [paymentId],
   );
+  const [confirming, setConfirming] = useState(false);
+  const [refundKey, setRefundKey] = useState(newIdempotencyKey);
+  const [refunding, setRefunding] = useState(false);
+
+  /** Cancellation within the window of the settings: the API checks the delay and the state. */
+  async function refund() {
+    setRefunding(true);
+    try {
+      const { data, error } = await getApi().POST('/v1/merchant/payments/{paymentId}/refund', {
+        params: { path: { paymentId }, header: { 'Idempotency-Key': refundKey } },
+      });
+      setConfirming(false);
+      setRefundKey(newIdempotencyKey());
+      if (data !== undefined) {
+        toast.notify('success', t('cancelled'));
+        payment.reload();
+        return;
+      }
+      toast.notify(
+        'error',
+        asProblem(error)?.code === 'CANCEL_WINDOW_OVER'
+          ? t('cancelTooLate')
+          : tRoot(messageKey(errorMessageKey(error))),
+      );
+    } finally {
+      setRefunding(false);
+    }
+  }
 
   return (
     <>
@@ -41,7 +80,33 @@ export default function PaymentDetailPage() {
         <>
           <PageHeader
             title={t('title', { reference: payment.data.reference })}
-            actions={<StatusBadge status={payment.data.status} />}
+            actions={
+              <div className="flex flex-wrap items-center gap-3">
+                <StatusBadge status={payment.data.status} />
+                {canRefund && payment.data.status === 'CONFIRMED' ? (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon={<Undo2 aria-hidden="true" className="size-icon-sm rtl:-scale-x-100" />}
+                    onClick={() => {
+                      setConfirming(true);
+                    }}
+                  >
+                    {t('cancel')}
+                  </Button>
+                ) : null}
+              </div>
+            }
+          />
+          <ConfirmDialog
+            open={confirming}
+            onOpenChange={setConfirming}
+            title={t('cancelTitle', { reference: payment.data.reference })}
+            description={t('cancelText', { hours: cancelHours })}
+            confirmLabel={t('cancelConfirm')}
+            confirmVariant="danger"
+            loading={refunding}
+            onConfirm={() => void refund()}
           />
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>
@@ -100,7 +165,9 @@ export default function PaymentDetailPage() {
                   title: t(`event.${event.status}`),
                   meta: formatDateTime(event.occurredAt, locale),
                   tone:
-                    event.status === 'REFUSED' || event.status === 'DISPUTED'
+                    event.status === 'REFUSED' ||
+                    event.status === 'DISPUTED' ||
+                    event.status === 'REFUNDED'
                       ? 'danger'
                       : 'default',
                 }))}

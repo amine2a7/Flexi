@@ -23,6 +23,7 @@ const MERCHANT_OWNER = [
   'stats.read',
   'sales.read',
   'payments.collect',
+  'payments.refund',
   'receivables.read',
   'payouts.read',
   'payouts.request',

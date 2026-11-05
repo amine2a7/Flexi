@@ -2,13 +2,13 @@ import { PiiService } from '../common/pii.js';
 import { Inject, Injectable } from '@nestjs/common';
 import { AuditService } from '../common/audit.service.js';
 import { randomDigits, uuidv7 } from '../common/crypto.js';
-import { DbService, type Tx } from '../common/db.service.js';
+import { asService, DbService, type Tx } from '../common/db.service.js';
 import { commissionOf, fromMillimes, toMillimes } from '../common/money.js';
 import { Paginator, type Page } from '../common/pagination.js';
 import { ApiProblem, problems, validationFailed } from '../common/problem.js';
 import { permissionsOf } from '../common/permissions.js';
 import { principal } from '../common/request-context.js';
-import { addDays, businessDay, dateOnly, dayOf, startOfBusinessDay } from '../common/tunis.js';
+import { businessDay, dayOf, startOfBusinessDay } from '../common/tunis.js';
 import type { CreditType, Payment, PaymentEvent } from '../generated/prisma/client.js';
 import { InsufficientFundsError, LedgerService, accounts } from '../ledger/ledger.service.js';
 import { CREDIT_TYPES, SettingsService } from '../platform/settings.service.js';
@@ -304,7 +304,7 @@ export class PaymentsService {
         confirmedAt: now,
         transactionId,
         commissionRateBps: rateBps,
-        settlementDate: dateOnly(addDays(businessDay(now), 2)),
+        settlementDate: await this.settings.settlementDate(tx, now),
       },
     });
     await tx.paymentEvent.create({
@@ -397,7 +397,7 @@ export class PaymentsService {
         channel: 'MERCHANT_CODE',
         confirmedAt: now,
         commissionRateBps: rateBps,
-        settlementDate: dateOnly(addDays(businessDay(now), 2)),
+        settlementDate: await this.settings.settlementDate(tx, now),
         transactionId,
         ...snapshot,
         events: {
@@ -653,6 +653,87 @@ export class PaymentsService {
       await tx.paymentEvent.create({ data: { id: uuidv7(), paymentId, status: 'REFUSED' } });
       return merchantPayment(await tx.payment.findUniqueOrThrow({ where: { id: paymentId } }));
     });
+  }
+
+  /**
+   * Cancellation of a confirmed payment by the shop (Gérant), within the window of the settings
+   * (24 h by default, request of 2026-11-05), while it is in no payout and no dispute. One
+   * balanced reversal: the shop wallet gives the amount back, the employee wallet gets it in lots
+   * of the expiry of origin (the lots the payment consumed). Lock order as the disputes: the two
+   * accounts first, then the payment.
+   */
+  async refundByMerchant(tx: Tx, paymentId: string, key: string) {
+    const who = principal();
+    const found = await tx.payment.findUnique({ where: { id: paymentId } });
+    // Another shop's payment does not exist for this one (404, like a missing one).
+    if (found === null) throw problems.notFound();
+    if (found.merchantId !== who.merchantId) throw problems.notFound();
+    const employeeWallet = accounts.employeeWallet(found.employeeId, found.creditType);
+    const shopWallet = accounts.merchantWallet(found.merchantId, found.creditType);
+    await asService(tx, () => this.ledger.lockAccounts(tx, [employeeWallet, shopWallet]));
+    await tx.$queryRaw`SELECT id FROM payments WHERE id = ${paymentId}::uuid FOR UPDATE`;
+    const payment = await tx.payment.findUniqueOrThrow({ where: { id: paymentId } });
+    // Even a dispute the shop cannot read (closed, RLS) forbids the cancellation.
+    const disputed = await asService(tx, () => tx.dispute.count({ where: { paymentId } }));
+    if (
+      payment.status !== 'CONFIRMED' ||
+      payment.payoutId !== null ||
+      payment.transactionId === null ||
+      payment.confirmedAt === null ||
+      disputed > 0
+    ) {
+      throw problems.conflict();
+    }
+    const { paymentCancelHours } = await this.settings.platform(tx);
+    if (payment.confirmedAt.getTime() + paymentCancelHours * 3_600_000 <= Date.now()) {
+      throw new ApiProblem(409, 'CANCEL_WINDOW_OVER');
+    }
+    const transactionId = payment.transactionId;
+    await asService(tx, async () => {
+      // The lots the payment consumed (one debit per lot): every debit must carry its lot.
+      const parts = await tx.$queryRaw<{ amount: bigint; expires_at: Date }[]>`
+        SELECT e.amount_millimes AS amount, l.expires_at
+          FROM ledger_entries e
+          JOIN ledger_accounts a ON a.id = e.account_id
+          JOIN credit_lots l ON l.id = e.lot_id
+         WHERE e.transaction_id = ${transactionId}::uuid
+           AND a.code = ${employeeWallet.code} AND e.direction = 'D'
+         ORDER BY l.expires_at, e.id`;
+      const lotted = parts.reduce((sum, part) => sum + part.amount, 0n);
+      if (lotted !== payment.amountMillimes) {
+        throw new Error('payment cancellation: lot debits do not match the payment');
+      }
+      if ((await this.ledger.balance(tx, shopWallet)) < payment.amountMillimes) {
+        throw problems.conflict();
+      }
+      const posted = await this.ledger.post(tx, {
+        type: 'PAYMENT_CANCELLATION',
+        reference: `${payment.reference}-ANN`,
+        tenantId: payment.merchantId,
+        userId: who.userId,
+        idempotencyKey: key,
+        entries: [
+          { account: shopWallet, direction: 'D', amount: payment.amountMillimes },
+          { account: employeeWallet, direction: 'C', amount: payment.amountMillimes },
+        ],
+      });
+      for (const part of parts) {
+        await this.ledger.addLot(tx, {
+          account: employeeWallet,
+          creditType: payment.creditType,
+          amount: part.amount,
+          expiresAt: part.expires_at,
+          sourceTransactionId: posted.transactionId,
+        });
+      }
+    });
+    const updated = await tx.payment.update({
+      where: { id: paymentId },
+      data: { status: 'REFUNDED' },
+    });
+    await tx.paymentEvent.create({ data: { id: uuidv7(), paymentId, status: 'REFUNDED' } });
+    await this.audit.record(tx, 'payments.cancelConfirmed', payment.reference);
+    return merchantPayment(updated);
   }
 
   async merchantPayments(

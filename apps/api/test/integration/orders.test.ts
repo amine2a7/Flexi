@@ -100,7 +100,10 @@ describe('commission, VAT and stamp duty of an order (decisions of 2026-11-03)',
       stampDutyMillimes: 1_000,
       totalMillimes: 10_596_000,
     });
-    const created = await owner.call('POST', '/v1/company/orders', { body: { lines }, headers: key() });
+    const created = await owner.call('POST', '/v1/company/orders', {
+      body: { lines },
+      headers: key(),
+    });
     expect(created.body).toMatchObject({ totalMillimes: 10_596_000, vatMillimes: 95_000 });
     const id = String(created.body.id);
     await admin.call('POST', `/v1/admin/credit-orders/${id}/confirm`);
@@ -129,7 +132,12 @@ describe('commission, VAT and stamp duty of an order (decisions of 2026-11-03)',
     expect(pdf.headers.get('content-type')).toBe('application/pdf');
     const text = Buffer.from(await pdf.arrayBuffer()).toString('latin1');
     expect(text.startsWith('%PDF-1.4')).toBe(true);
-    for (const expected of ['Commission FlexiPay \\(5 %\\)', 'TVA sur la commission \\(19 %\\)', 'Timbre fiscal', '10 596,000 TND'])
+    for (const expected of [
+      'Commission FlexiPay \\(5 %\\)',
+      'TVA sur la commission \\(19 %\\)',
+      'Timbre fiscal',
+      '10 596,000 TND',
+    ])
       expect(text).toContain(expected);
   });
 
@@ -167,14 +175,21 @@ describe('commission, VAT and stamp duty of an order (decisions of 2026-11-03)',
       await createUser(db, env, 'COMPANY', { companyId: company.id }, 'Nadia T.'),
     );
     const lines = [{ creditType: 'RESTAURATION', amountMillimes: 1_000_000 }];
-    const created = await owner.call('POST', '/v1/company/orders', { body: { lines }, headers: key() });
+    const created = await owner.call('POST', '/v1/company/orders', {
+      body: { lines },
+      headers: key(),
+    });
     await db.system((tx) =>
       tx.commissionGrid.create({
         data: { companyId: company.id, tiers: { create: [{ position: 0, rateBps: 100 }] } },
       }),
     );
     const detail = await owner.call('GET', `/v1/company/orders/${String(created.body.id)}`);
-    expect(detail.body).toMatchObject({ feeRateBps: 500, feesMillimes: 50_000, vatMillimes: 9_500 });
+    expect(detail.body).toMatchObject({
+      feeRateBps: 500,
+      feesMillimes: 50_000,
+      vatMillimes: 9_500,
+    });
     const next = await owner.call('POST', '/v1/company/order-quotes', { body: { lines } });
     expect(next.body).toMatchObject({ feeRateBps: 100, feesMillimes: 10_000 });
   });
@@ -371,6 +386,26 @@ describe('credit order circuit', () => {
     );
     // A company cannot reach the admin routes.
     expect((await first.owner.call('GET', '/v1/admin/credit-orders')).status).toBe(403);
+  });
+
+  // Settings of 2026-11-05: the quote validity and the four-eyes threshold are frozen at creation.
+  it('freezes the quote end and the second validation; an expired quote is not confirmed', async () => {
+    const { owner, adminA } = await setup();
+    const created = await owner.call('POST', '/v1/company/orders', {
+      body: { lines: [{ creditType: 'RESTAURATION', amountMillimes: 100_000 }] },
+      headers: key(),
+    });
+    const id = String(created.body.id);
+    const days = (Date.parse(String(created.body.quoteExpiresAt)) - Date.now()) / 86_400_000;
+    expect(Math.round(days)).toBe(7);
+    expect(created.body.quoteExpired).toBe(false);
+    await db.system((tx) =>
+      tx.creditOrder.update({ where: { id }, data: { quoteExpiresAt: new Date(Date.now() - 1) } }),
+    );
+    expect((await owner.call('GET', `/v1/company/orders/${id}`)).body.quoteExpired).toBe(true);
+    expect((await adminA.call('POST', `/v1/admin/credit-orders/${id}/confirm`)).body.code).toBe(
+      'QUOTE_EXPIRED',
+    );
   });
 });
 

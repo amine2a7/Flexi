@@ -3,6 +3,7 @@
 import type { Schemas } from '@flexipay/api-client';
 import { ArrowLeft } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import { usePlatformTerms } from '@/lib/api/use-platform-terms';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
@@ -63,6 +64,7 @@ export default function AdminUserPage() {
 function UserView({ user, onChange }: { user: User; onChange: () => void }) {
   const t = useTranslations('admin.users');
   const tReason = useTranslations('common.reason');
+  const { invitationDays } = usePlatformTerms();
   const tRole = useTranslations('layout.role');
   const tSubRole = useTranslations('subRole');
   const locale = useLocale();
@@ -162,7 +164,7 @@ function UserView({ user, onChange }: { user: User; onChange: () => void }) {
     ],
     deactivate: isEmployee ? [] : [tReason('deactivate.effect')],
     role: [tReason('role.effect')],
-    resend: [tReason('resend.effect')],
+    resend: [tReason('resend.effect', { days: invitationDays })],
     unlock: [tReason('unlock.effect')],
   };
 

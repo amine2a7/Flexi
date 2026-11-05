@@ -2,6 +2,7 @@
 
 import type { Schemas } from '@flexipay/api-client';
 import { useLocale, useTranslations } from 'next-intl';
+import { usePlatformTerms } from '@/lib/api/use-platform-terms';
 import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
@@ -19,6 +20,7 @@ import { useCanOpen } from '@/lib/session/session-context';
 
 export default function ReceivablesPage() {
   const t = useTranslations('merchant.receivables');
+  const { settlementDays } = usePlatformTerms();
   const locale = useLocale();
   const tTypes = useTranslations('ui.creditTypes');
   const canPayouts = useCanOpen('/commercant/virements');
@@ -79,7 +81,7 @@ export default function ReceivablesPage() {
     <>
       <PageHeader
         title={t('title')}
-        description={t('description')}
+        description={t('description', { days: settlementDays })}
         actions={
           canPayouts ? (
             <Link href="/commercant/virements" className={buttonClasses('primary')}>
@@ -92,7 +94,7 @@ export default function ReceivablesPage() {
         <StatCard
           label={t('total')}
           value={total === undefined ? '…' : <Amount millimes={total} size="title" />}
-          hint={t('totalHint')}
+          hint={t('totalHint', { days: settlementDays })}
         />
       </div>
       <Card>

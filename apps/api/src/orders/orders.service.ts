@@ -20,11 +20,7 @@ import type {
   Prisma,
 } from '../generated/prisma/client.js';
 import { LedgerService, accounts } from '../ledger/ledger.service.js';
-import {
-  CREDIT_TYPES,
-  SECOND_VALIDATION_THRESHOLD,
-  SettingsService,
-} from '../platform/settings.service.js';
+import { CREDIT_TYPES, SettingsService } from '../platform/settings.service.js';
 
 type OrderRow = CreditOrder & {
   lines: CreditOrderLine[];
@@ -60,6 +56,18 @@ function sortedLines(lines: readonly CreditOrderLine[]) {
   );
 }
 
+/**
+ * The quote of an order ends after the validity of the settings (frozen at creation), as long as
+ * no transfer was declared: past it, neither the confirmation nor a declaration is accepted.
+ */
+export function quoteExpired(order: CreditOrder, now = new Date()): boolean {
+  return (
+    (order.status === 'AWAITING_CONFIRMATION' || order.status === 'AWAITING_PAYMENT') &&
+    order.declaredAt === null &&
+    order.quoteExpiresAt.getTime() <= now.getTime()
+  );
+}
+
 export function orderSummary(order: OrderRow) {
   return {
     id: order.id,
@@ -76,6 +84,8 @@ export function orderSummary(order: OrderRow) {
     stampDutyMillimes: toMillimes(order.stampDutyMillimes),
     totalMillimes: toMillimes(order.totalMillimes),
     createdAt: order.createdAt.toISOString(),
+    quoteExpiresAt: order.quoteExpiresAt.toISOString(),
+    quoteExpired: quoteExpired(order),
     paymentReference: order.paymentReference,
     ...(order.declaredAmountMillimes === null
       ? {}
@@ -132,7 +142,7 @@ export class OrdersService {
       ...(order.proofRejectionReason === null
         ? {}
         : { proofRejectionReason: order.proofRejectionReason }),
-      requiresSecondValidation: order.amountMillimes > SECOND_VALIDATION_THRESHOLD,
+      requiresSecondValidation: order.secondValidationRequired,
       ...(order.firstValidatedAt === null || order.status !== 'AWAITING_VALIDATION'
         ? {}
         : {
@@ -242,10 +252,12 @@ export class OrdersService {
     if (who.companyId === null) throw problems.forbidden();
     const amount = await this.checkLines(tx, lines);
     const { rate, taxes, fees } = await this.fees(tx, amount);
+    const platform = await this.settings.platform(tx);
     const [sequence] = await tx.$queryRaw<
       { value: bigint }[]
     >`SELECT nextval('order_reference_seq') AS value`;
     const id = uuidv7();
+    const now = new Date();
     await tx.creditOrder.create({
       data: {
         id,
@@ -260,6 +272,8 @@ export class OrdersService {
         stampDutyMillimes: fees.stamp,
         totalMillimes: amount + fees.commission + fees.vat + fees.stamp,
         paymentReference: `FXP-${randomDigits(8)}`,
+        quoteExpiresAt: new Date(now.getTime() + platform.quoteValidityDays * 86_400_000),
+        secondValidationRequired: amount > platform.secondValidationThresholdMillimes,
         lines: {
           create: lines.map((line) => ({
             creditType: line.creditType,
@@ -419,6 +433,7 @@ export class OrdersService {
     await this.lock(tx, id);
     const order = await this.load(tx, id);
     if (order.status !== 'AWAITING_PAYMENT') throw problems.conflict();
+    if (quoteExpired(order)) throw new ApiProblem(409, 'QUOTE_EXPIRED');
     const key = await this.storage.put(input.file.buffer);
     await tx.creditOrder.update({
       where: { id },
@@ -458,6 +473,7 @@ export class OrdersService {
       await this.lock(tx, id);
       const order = await this.load(tx, id);
       if (order.status !== 'AWAITING_CONFIRMATION') throw problems.conflict();
+      if (quoteExpired(order)) throw new ApiProblem(409, 'QUOTE_EXPIRED');
       await tx.creditOrder.update({ where: { id }, data: { status: 'AWAITING_PAYMENT' } });
       // The invoice is issued at confirmation (to pay), paid at validation.
       const [sequence] = await tx.$queryRaw<
@@ -533,7 +549,7 @@ export class OrdersService {
     await this.lock(tx, id);
     const order = await this.load(tx, id);
     if (order.status !== 'AWAITING_VALIDATION') throw problems.conflict();
-    if (order.amountMillimes > SECOND_VALIDATION_THRESHOLD) {
+    if (order.secondValidationRequired) {
       if (order.firstValidatorId === null) {
         await tx.creditOrder.update({
           where: { id },

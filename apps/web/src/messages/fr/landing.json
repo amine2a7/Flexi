@@ -31,7 +31,7 @@
     "merchant": {
       "title": "Commerçants",
       "p1": "Encaissement par code ou QR, sans terminal.",
-      "p2": "Règlement à J+2, commission connue à l’avance.",
+      "p2": "Règlement à J+{days}, commission connue à l’avance.",
       "p3": "Historique, créances et virements au même endroit."
     },
     "employee": {
@@ -53,7 +53,7 @@
     },
     "s3": {
       "title": "Le commerçant est réglé",
-      "text": "Les paiements confirmés lui sont virés à J+2, commission déduite."
+      "text": "Les paiements confirmés lui sont virés à J+{days}, commission déduite."
     }
   },
   "footer": {
@@ -85,7 +85,7 @@
     },
     "t4": {
       "tag": "Le commerçant",
-      "title": "Le commerçant est payé à J+2",
+      "title": "Le commerçant est payé à J+{days}",
       "text": "Les encaissements s’additionnent tout seuls. Il demande son virement, la commission est déjà calculée.",
       "fine": "Le soir, on ne compte plus les tickets."
     },
@@ -114,7 +114,7 @@
     "merchant": {
       "tag": "Ticket commerçant",
       "title": "Vous encaissez",
-      "text": "Un QR à la caisse, un paiement validé en quelques secondes, un virement à J+2. Plus de tickets à compter le soir ni à déposer en agence.",
+      "text": "Un QR à la caisse, un paiement validé en quelques secondes, un virement à J+{days}. Plus de tickets à compter le soir ni à déposer en agence.",
       "cta": "Devenir partenaire →"
     }
   }

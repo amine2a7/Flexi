@@ -28,7 +28,6 @@ import { canSignIn } from '../common/account-lifecycle.js';
 
 /** MFA is mandatory for these roles (spec 01 §3); optional for beneficiaries (PIN + device). */
 const MFA_REQUIRED: ReadonlySet<Role> = new Set(['ADMIN', 'COMPANY', 'MERCHANT']);
-const CHALLENGE_TTL_MS = 5 * 60_000;
 const ENROLL_TTL_MS = 10 * 60_000;
 const RESET_LINK_TTL_MS = 15 * 60_000;
 const RESET_OTP_TTL_MS = 10 * 60_000;
@@ -177,11 +176,16 @@ export class AuthService {
     return this.db.system(async (tx): Promise<LoginOutcome> => {
       await this.clearFailures(tx, user);
       if (user.mfaSecretEnc !== null) {
+        // Validity of the sign-in code: settings of the super-admin (5 min by default).
+        const { otpValidityMinutes } = await tx.platformSettings.findUniqueOrThrow({
+          where: { id: 1 },
+          select: { otpValidityMinutes: true },
+        });
         const challenge = await tx.mfaChallenge.create({
           data: {
             id: uuidv7(),
             userId: user.id,
-            expiresAt: new Date(Date.now() + CHALLENGE_TTL_MS),
+            expiresAt: new Date(Date.now() + otpValidityMinutes * 60_000),
           },
         });
         return {

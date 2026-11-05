@@ -498,21 +498,38 @@ enum ExpiredCreditsDestination {
 }
 
 model PlatformSettings {
-  id                        Int                       @id @default(1)
-  payoutMinimumMillimes     BigInt                    @map("payout_minimum_millimes")
-  creditValidityMonths      Int                       @map("credit_validity_months")
-  maxFamilyMembers          Int                       @map("max_family_members")
-  orderFeeRateBps           Int                       @map("order_fee_rate_bps")
+  id                                Int                       @id @default(1)
+  payoutMinimumMillimes             BigInt                    @map("payout_minimum_millimes")
+  creditValidityMonths              Int                       @map("credit_validity_months")
+  maxFamilyMembers                  Int                       @map("max_family_members")
+  orderFeeRateBps                   Int                       @map("order_fee_rate_bps")
   /// VAT on the commission and stamp duty (decision of 2026-11-03), set by the super-admin.
-  vatRateBps                Int                       @default(1900) @map("vat_rate_bps")
-  stampDutyMillimes         BigInt                    @default(1000) @map("stamp_duty_millimes")
+  vatRateBps                        Int                       @default(1900) @map("vat_rate_bps")
+  stampDutyMillimes                 BigInt                    @default(1000) @map("stamp_duty_millimes")
   /// Where the remainder of expired lots goes (provisional, decision of 2026-10-14).
-  expiredCreditsDestination ExpiredCreditsDestination @default(PLATFORM_REVENUE) @map("expired_credits_destination")
+  expiredCreditsDestination         ExpiredCreditsDestination @default(PLATFORM_REVENUE) @map("expired_credits_destination")
   /// Grace period of a deactivated employee, in days (decision e3 of 2026-10-22).
-  accountGraceDays          Int                       @default(30) @map("account_grace_days")
+  accountGraceDays                  Int                       @default(30) @map("account_grace_days")
   /// Thresholds of the fraud rules (decision of 2026-10-31), set by the super-admin.
-  fraudRules                Json                      @default("{\"refusedCount\":5,\"refusedMinutes\":10,\"merchantCount\":3,\"merchantMinutes\":5,\"limitPercent\":80,\"ribPayoutHours\":24}") @map("fraud_rules")
-  updatedAt                 DateTime                  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  fraudRules                        Json                      @default("{\"refusedCount\":5,\"refusedMinutes\":10,\"merchantCount\":3,\"merchantMinutes\":5,\"limitPercent\":80,\"ribPayoutHours\":24}") @map("fraud_rules")
+  /// FlexiPay bank account where companies transfer their orders (request of 2026-11-05).
+  fundingBankName                   String                    @default("Banque Internationale Arabe de Tunisie (BIAT)") @map("funding_bank_name") @db.VarChar(120)
+  fundingHolder                     String                    @default("FlexiPay SA") @map("funding_holder") @db.VarChar(120)
+  fundingRib                        String                    @default("08006000671234567891") @map("funding_rib") @db.VarChar(20)
+  fundingIban                       String                    @default("TN5908006000671234567891") @map("funding_iban") @db.VarChar(24)
+  /// Above this amount, a credit order needs two administrators (frozen in each order).
+  secondValidationThresholdMillimes BigInt                    @default(10000000) @map("second_validation_threshold_millimes")
+  quoteValidityDays                 Int                       @default(7) @map("quote_validity_days")
+  invitationValidityDays            Int                       @default(7) @map("invitation_validity_days")
+  /// Validity of the sign-in code (MFA challenge).
+  otpValidityMinutes                Int                       @default(5) @map("otp_validity_minutes")
+  /// Successive PIN locks, in minutes; past the last one, only a full sign-in lifts the lock.
+  pinLockMinutes                    Int[]                     @default([15, 30, 60]) @map("pin_lock_minutes")
+  /// A shop may cancel a confirmed payment within this window (hours).
+  paymentCancelHours                Int                       @default(24) @map("payment_cancel_hours")
+  /// Settlement cycle: a payment is settled D + this number of business days.
+  settlementDelayDays               Int                       @default(2) @map("settlement_delay_days")
+  updatedAt                         DateTime                  @default(now()) @map("updated_at") @db.Timestamptz(3)
 
   @@map("platform_settings")
 }
@@ -569,34 +586,37 @@ model AuditLog {
 // ------------------------------------------------------------------ credit orders
 
 model CreditOrder {
-  id                     String      @id @default(uuid(7)) @db.Uuid
-  reference              String      @unique @db.VarChar(32)
-  companyId              String      @map("company_id") @db.Uuid
-  status                 OrderStatus @default(AWAITING_CONFIRMATION)
-  amountMillimes         BigInt      @map("amount_millimes")
-  feeRateBps             Int         @map("fee_rate_bps")
-  feesMillimes           BigInt      @map("fees_millimes")
+  id                       String      @id @default(uuid(7)) @db.Uuid
+  reference                String      @unique @db.VarChar(32)
+  companyId                String      @map("company_id") @db.Uuid
+  status                   OrderStatus @default(AWAITING_CONFIRMATION)
+  amountMillimes           BigInt      @map("amount_millimes")
+  feeRateBps               Int         @map("fee_rate_bps")
+  feesMillimes             BigInt      @map("fees_millimes")
   /// VAT on the commission and stamp duty, frozen in the order (decision of 2026-11-03).
-  vatRateBps             Int         @default(0) @map("vat_rate_bps")
-  vatMillimes            BigInt      @default(0) @map("vat_millimes")
-  stampDutyMillimes      BigInt      @default(0) @map("stamp_duty_millimes")
-  totalMillimes          BigInt      @map("total_millimes")
+  vatRateBps               Int         @default(0) @map("vat_rate_bps")
+  vatMillimes              BigInt      @default(0) @map("vat_millimes")
+  stampDutyMillimes        BigInt      @default(0) @map("stamp_duty_millimes")
+  totalMillimes            BigInt      @map("total_millimes")
   /// Reference to write on the bank transfer.
-  paymentReference       String      @map("payment_reference") @db.VarChar(32)
-  declaredAmountMillimes BigInt?     @map("declared_amount_millimes")
-  transferReference      String?     @map("transfer_reference") @db.VarChar(64)
-  transferDate           DateTime?   @map("transfer_date") @db.Date
-  declaredAt             DateTime?   @map("declared_at") @db.Timestamptz(3)
-  proofStorageKey        String?     @map("proof_storage_key")
-  proofFileName          String?     @map("proof_file_name") @db.VarChar(255)
-  proofContentType       String?     @map("proof_content_type") @db.VarChar(40)
-  proofSizeBytes         Int?        @map("proof_size_bytes")
-  refusalReason          String?     @map("refusal_reason") @db.VarChar(500)
-  proofRejectionReason   String?     @map("proof_rejection_reason") @db.VarChar(500)
-  firstValidatorId       String?     @map("first_validator_id") @db.Uuid
-  firstValidatorName     String?     @map("first_validator_name") @db.VarChar(120)
-  firstValidatedAt       DateTime?   @map("first_validated_at") @db.Timestamptz(3)
-  createdAt              DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  paymentReference         String      @map("payment_reference") @db.VarChar(32)
+  declaredAmountMillimes   BigInt?     @map("declared_amount_millimes")
+  transferReference        String?     @map("transfer_reference") @db.VarChar(64)
+  transferDate             DateTime?   @map("transfer_date") @db.Date
+  declaredAt               DateTime?   @map("declared_at") @db.Timestamptz(3)
+  proofStorageKey          String?     @map("proof_storage_key")
+  proofFileName            String?     @map("proof_file_name") @db.VarChar(255)
+  proofContentType         String?     @map("proof_content_type") @db.VarChar(40)
+  proofSizeBytes           Int?        @map("proof_size_bytes")
+  refusalReason            String?     @map("refusal_reason") @db.VarChar(500)
+  proofRejectionReason     String?     @map("proof_rejection_reason") @db.VarChar(500)
+  firstValidatorId         String?     @map("first_validator_id") @db.Uuid
+  firstValidatorName       String?     @map("first_validator_name") @db.VarChar(120)
+  firstValidatedAt         DateTime?   @map("first_validated_at") @db.Timestamptz(3)
+  /// End of the quote and four-eyes rule, frozen at creation (settings of 2026-11-05).
+  quoteExpiresAt           DateTime    @default(dbgenerated("(now() + '7 days'::interval)")) @map("quote_expires_at") @db.Timestamptz(3)
+  secondValidationRequired Boolean     @default(false) @map("second_validation_required")
+  createdAt                DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
 
   company Company            @relation(fields: [companyId], references: [id])
   lines   CreditOrderLine[]

@@ -2,6 +2,7 @@
 
 import type { Schemas } from '@flexipay/api-client';
 import { useLocale, useTranslations } from 'next-intl';
+import { usePlatformTerms } from '@/lib/api/use-platform-terms';
 import { useState } from 'react';
 import { getApi } from '@/lib/api/client';
 import { usePagedList } from '@/lib/api/use-paged-list';
@@ -16,10 +17,11 @@ type Tab = 'settlements' | 'documents';
 
 export default function SettlementsPage() {
   const t = useTranslations('merchant.settlements');
+  const { settlementDays } = usePlatformTerms();
   const [tab, setTab] = useState<Tab>('settlements');
   return (
     <>
-      <PageHeader title={t('title')} description={t('description')} />
+      <PageHeader title={t('title')} description={t('description', { days: settlementDays })} />
       <Card>
         <Tabs
           label={t('title')}

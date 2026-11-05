@@ -87,7 +87,7 @@
     "emptyTitle": "Aucun employé",
     "emptyMessage": "Ajoutez vos employés un par un ou importez un fichier CSV.",
     "formTitle": "Ajouter un employé",
-    "formDescription": "Un mot de passe temporaire (valable 72 h) sera envoyé à l'employé.",
+    "formDescription": "Un mot de passe temporaire (valable {days} jours) sera envoyé à l'employé.",
     "phoneHint": "Format : +216 suivi de 8 chiffres.",
     "submit": "Créer l'employé",
     "created": "{name} a été ajouté. Un mot de passe temporaire lui a été envoyé.",

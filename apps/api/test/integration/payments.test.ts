@@ -12,8 +12,16 @@ const { LedgerService, accounts } = await import('../../src/ledger/ledger.servic
 const { PayoutsService } = await import('../../src/payouts/payouts.service.js');
 const { JobsService } = await import('../../src/jobs/jobs.service.js');
 const { hashSecret } = await import('../../src/auth/password.js');
-const { createCompany, createEmployee, createUser, sealed, seedSettings, signedIn, oneLineGrid, ledgerLines } =
-  await import('./fixtures.js');
+const {
+  createCompany,
+  createEmployee,
+  createUser,
+  sealed,
+  seedSettings,
+  signedIn,
+  oneLineGrid,
+  ledgerLines,
+} = await import('./fixtures.js');
 
 const env = loadEnv();
 const db = new DbService(env);
@@ -325,12 +333,20 @@ describe('payout and settlement', () => {
     ]);
     expect(String(requested.body.maskedIban)).toMatch(/^•••• \d{4}$/);
     // Commission invoice of the payout in PDF (task 10): commission, VAT, stamp duty, net.
-    const invoice = await fetch(`${base}/v1/merchant/payouts/${String(requested.body.id)}/invoice`, {
-      headers: { Cookie: `__Host-fp_at=${shop.cookie('__Host-fp_at') ?? ''}` },
-    });
+    const invoice = await fetch(
+      `${base}/v1/merchant/payouts/${String(requested.body.id)}/invoice`,
+      {
+        headers: { Cookie: `__Host-fp_at=${shop.cookie('__Host-fp_at') ?? ''}` },
+      },
+    );
     expect(invoice.status).toBe(200);
     const text = Buffer.from(await invoice.arrayBuffer()).toString('latin1');
-    for (const expected of ['Commission FlexiPay \\(2 %\\)', '-0,171 TND', '-1,000 TND', '42,929 TND'])
+    for (const expected of [
+      'Commission FlexiPay \\(2 %\\)',
+      '-0,171 TND',
+      '-1,000 TND',
+      '42,929 TND',
+    ])
       expect(text).toContain(expected);
     expect((await shop.call('GET', '/v1/merchant/receivables')).body.totalMillimes).toBe(0);
     // A quote is used once.
@@ -420,13 +436,20 @@ describe('payout and settlement', () => {
     const merchant = await createMerchant();
     const shop = await merchantClient(merchant.id);
     await employee.call('POST', '/v1/employee/payments', {
-      body: { merchantCode: merchant.paymentCode, creditType: 'RESTAURATION', amountMillimes: 45_000, pin: PIN },
+      body: {
+        merchantCode: merchant.paymentCode,
+        creditType: 'RESTAURATION',
+        amountMillimes: 45_000,
+        pin: PIN,
+      },
       headers: key(),
     });
     const quote = await shop.call('POST', '/v1/merchant/payout-quotes', {
       body: { creditType: 'RESTAURATION', grossMillimes: 45_000 },
     });
-    await db.system((tx) => tx.platformSettings.update({ where: { id: 1 }, data: { vatRateBps: 1_800 } }));
+    await db.system((tx) =>
+      tx.platformSettings.update({ where: { id: 1 }, data: { vatRateBps: 1_800 } }),
+    );
     try {
       const requested = await shop.call('POST', '/v1/merchant/payouts', {
         body: { quoteId: quote.body.quoteId },
@@ -438,7 +461,9 @@ describe('payout and settlement', () => {
       );
       expect(written).toBe(0);
     } finally {
-      await db.system((tx) => tx.platformSettings.update({ where: { id: 1 }, data: { vatRateBps: 1_900 } }));
+      await db.system((tx) =>
+        tx.platformSettings.update({ where: { id: 1 }, data: { vatRateBps: 1_900 } }),
+      );
     }
   });
 
@@ -447,14 +472,21 @@ describe('payout and settlement', () => {
     const merchant = await createMerchant(['RESTAURATION'], 10_000);
     const shop = await merchantClient(merchant.id);
     await employee.call('POST', '/v1/employee/payments', {
-      body: { merchantCode: merchant.paymentCode, creditType: 'RESTAURATION', amountMillimes: 45_000, pin: PIN },
+      body: {
+        merchantCode: merchant.paymentCode,
+        creditType: 'RESTAURATION',
+        amountMillimes: 45_000,
+        pin: PIN,
+      },
       headers: key(),
     });
     const quote = await shop.call('POST', '/v1/merchant/payout-quotes', {
       body: { creditType: 'RESTAURATION', grossMillimes: 45_000 },
     });
     expect(quote.status).toBe(400);
-    expect(quote.body.details).toMatchObject({ fields: [{ pointer: '/grossMillimes', code: 'TOO_SMALL' }] });
+    expect(quote.body.details).toMatchObject({
+      fields: [{ pointer: '/grossMillimes', code: 'TOO_SMALL' }],
+    });
   });
 
   it('gives the balance back when the request is rejected (reversal)', async () => {
@@ -490,7 +522,9 @@ describe('payout and settlement', () => {
     expect((await shop.call('GET', '/v1/merchant/receivables')).body.totalMillimes).toBe(30_000);
     // The reversal gives the VAT and the stamp duty back too.
     const reversal = await ledgerLines(db, `${String(requested.body.reference)}-REJ`);
-    expect(reversal.filter((line) => line.code === 'VAT_COLLECTED' || line.code === 'STAMP_DUTY')).toEqual([
+    expect(
+      reversal.filter((line) => line.code === 'VAT_COLLECTED' || line.code === 'STAMP_DUTY'),
+    ).toEqual([
       { code: 'STAMP_DUTY', direction: 'D', amount: 1_000 },
       { code: 'VAT_COLLECTED', direction: 'D', amount: Number(requested.body.vatMillimes) },
     ]);
@@ -564,6 +598,82 @@ const freshApp = async () => {
   base = await listen(app);
 };
 
+// TEST-FIRST (request of 2026-11-05): the shop cancels a confirmed payment within the window of
+// the settings (24 h by default); a reversal gives the amount back to the employee's lots.
+describe('cancellation of a confirmed payment by the shop', () => {
+  beforeAll(freshApp);
+
+  async function paid(amount: number) {
+    const funded = await fundedEmployee(60_000n);
+    const merchant = await createMerchant();
+    const pay = await funded.client.call('POST', '/v1/employee/payments', {
+      body: {
+        merchantCode: merchant.paymentCode,
+        creditType: 'RESTAURATION',
+        amountMillimes: amount,
+        pin: PIN,
+      },
+      headers: key(),
+    });
+    expect(pay.status).toBe(201);
+    const shop = await merchantClient(merchant.id);
+    const list = await shop.call('GET', '/v1/merchant/payments');
+    const paymentId = (list.body.data as { id: string }[])[0]?.id ?? '';
+    return { ...funded, merchant, shop, paymentId };
+  }
+
+  it('gives the amount back to the employee within the window, once', async () => {
+    const { employee, client, merchant, shop, paymentId } = await paid(20_000);
+    const path = `/v1/merchant/payments/${paymentId}/refund`;
+    expect((await shop.call('POST', path)).body.code).toBe('IDEMPOTENCY_KEY_REQUIRED');
+    const headers = key();
+    const refunded = await shop.call('POST', path, { headers });
+    expect(refunded.status).toBe(200);
+    expect(refunded.body).toMatchObject({ id: paymentId, status: 'REFUNDED' });
+    const replay = await shop.call('POST', path, { headers });
+    expect(replay.status).toBe(200);
+    expect((await shop.call('POST', path, { headers: key() })).body.code).toBe(
+      'RESOURCE_STATE_CONFLICT',
+    );
+    const wallet = accounts.employeeWallet(employee.id, 'RESTAURATION');
+    await db.system(async (tx) => {
+      expect(await ledger.balance(tx, accounts.merchantWallet(merchant.id, 'RESTAURATION'))).toBe(
+        0n,
+      );
+      expect(await ledger.balance(tx, wallet)).toBe(60_000n);
+      const lots = await ledger.lots(tx, wallet);
+      expect(lots.reduce((sum, lot) => sum + lot.remaining, 0n)).toBe(60_000n);
+      const reconciled = await ledger.reconcile(tx);
+      expect(reconciled.lotMismatches).toEqual([]);
+    });
+    const balances = await client.call('GET', '/v1/employee/wallet');
+    expect((balances.body.balances as { balanceMillimes: number }[])[0]?.balanceMillimes).toBe(
+      60_000,
+    );
+  });
+
+  it('refuses past the window of the settings, for a cashier and for another shop', async () => {
+    const { merchant, shop, paymentId } = await paid(5_000);
+    const path = `/v1/merchant/payments/${paymentId}/refund`;
+    const cashier = await signedIn(
+      base,
+      await createUser(db, env, 'MERCHANT', { merchantId: merchant.id }, 'Caissier C.', 'CASHIER'),
+    );
+    expect((await cashier.call('POST', path, { headers: key() })).status).toBe(403);
+    const other = await merchantClient((await createMerchant()).id);
+    expect((await other.call('POST', path, { headers: key() })).status).toBe(404);
+    await db.system((tx) =>
+      tx.payment.update({
+        where: { id: paymentId },
+        data: { confirmedAt: new Date(Date.now() - 25 * 3_600_000) },
+      }),
+    );
+    expect((await shop.call('POST', path, { headers: key() })).body.code).toBe(
+      'CANCEL_WINDOW_OVER',
+    );
+  });
+});
+
 describe('settlement batches: Finance release in four eyes, simulated bank (task 9)', () => {
   beforeAll(freshApp);
 
@@ -572,10 +682,17 @@ describe('settlement batches: Finance release in four eyes, simulated bank (task
     const { client: employee } = await fundedEmployee(30_000n);
     const merchant = await createMerchant();
     if (iban !== undefined)
-      await db.system((tx) => tx.merchant.update({ where: { id: merchant.id }, data: { iban: sealed(iban) } }));
+      await db.system((tx) =>
+        tx.merchant.update({ where: { id: merchant.id }, data: { iban: sealed(iban) } }),
+      );
     const shop = await merchantClient(merchant.id);
     await employee.call('POST', '/v1/employee/payments', {
-      body: { merchantCode: merchant.paymentCode, creditType: 'RESTAURATION', amountMillimes: 30_000, pin: PIN },
+      body: {
+        merchantCode: merchant.paymentCode,
+        creditType: 'RESTAURATION',
+        amountMillimes: 30_000,
+        pin: PIN,
+      },
       headers: key(),
     });
     const quote = await shop.call('POST', '/v1/merchant/payout-quotes', {
@@ -585,16 +702,32 @@ describe('settlement batches: Finance release in four eyes, simulated bank (task
       body: { quoteId: quote.body.quoteId },
       headers: key(),
     });
-    const finance = await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Finance A.', 'FINANCE'));
-    const approved = await finance.call('POST', `/v1/admin/payout-requests/${String(requested.body.id)}/approve`, {
-      headers: key(),
-    });
-    return { merchant, shop, finance, payoutId: String(requested.body.id), batchId: String(approved.body.batchId) };
+    const finance = await signedIn(
+      base,
+      await createUser(db, env, 'ADMIN', {}, 'Finance A.', 'FINANCE'),
+    );
+    const approved = await finance.call(
+      'POST',
+      `/v1/admin/payout-requests/${String(requested.body.id)}/approve`,
+      {
+        headers: key(),
+      },
+    );
+    return {
+      merchant,
+      shop,
+      finance,
+      payoutId: String(requested.body.id),
+      batchId: String(approved.body.batchId),
+    };
   }
 
   const dueToday = async (batchId: string) => {
     const owner = await ownerClient();
-    await owner.query('UPDATE settlement_batches SET settlement_date = current_date WHERE id = $1', [batchId]);
+    await owner.query(
+      'UPDATE settlement_batches SET settlement_date = current_date WHERE id = $1',
+      [batchId],
+    );
     await owner.end();
   };
 
@@ -603,22 +736,35 @@ describe('settlement batches: Finance release in four eyes, simulated bank (task
     await dueToday(batchId);
     // Not released: the job leaves it.
     await app.get(PayoutsService).executeDueBatches();
-    expect((await shop.call('GET', `/v1/merchant/payouts/${payoutId}`)).body.status).toBe('CHECKED');
-    const requested = await finance.call('POST', `/v1/admin/settlements/${batchId}/release-requests`, {
-      body: { reason: 'Lot contrôlé' },
-    });
+    expect((await shop.call('GET', `/v1/merchant/payouts/${payoutId}`)).body.status).toBe(
+      'CHECKED',
+    );
+    const requested = await finance.call(
+      'POST',
+      `/v1/admin/settlements/${batchId}/release-requests`,
+      {
+        body: { reason: 'Lot contrôlé' },
+      },
+    );
     expect(requested.status).toBe(201);
     expect(requested.body).toMatchObject({ type: 'BATCH_RELEASE', status: 'PENDING' });
     const id = String(requested.body.id);
     expect((await finance.call('POST', `/v1/admin/approvals/${id}/approve`)).status).toBe(403);
-    const second = await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Finance B.', 'FINANCE'));
+    const second = await signedIn(
+      base,
+      await createUser(db, env, 'ADMIN', {}, 'Finance B.', 'FINANCE'),
+    );
     expect((await second.call('POST', `/v1/admin/approvals/${id}/approve`)).status).toBe(200);
-    expect((await finance.call('GET', `/v1/admin/settlements/${batchId}`)).body.status).toBe('RELEASED');
+    expect((await finance.call('GET', `/v1/admin/settlements/${batchId}`)).body.status).toBe(
+      'RELEASED',
+    );
     await app.get(PayoutsService).executeDueBatches();
     const batch = await finance.call('GET', `/v1/admin/settlements/${batchId}`);
     expect(batch.body).toMatchObject({ status: 'PAID' });
     expect(String(batch.body.bankReference)).toMatch(/^SIM-/);
-    expect((await shop.call('GET', `/v1/merchant/payouts/${payoutId}`)).body.status).toBe('EXECUTED');
+    expect((await shop.call('GET', `/v1/merchant/payouts/${payoutId}`)).body.status).toBe(
+      'EXECUTED',
+    );
     const books = await db.system((tx) => ledger.reconcile(tx));
     expect(books.ok).toBe(true);
   });
@@ -626,7 +772,10 @@ describe('settlement batches: Finance release in four eyes, simulated bank (task
   it('a transfer rejected by the bank is reversed: the merchant gets its balance back and is told', async () => {
     const { merchant, shop, batchId, payoutId } = await approvedPayout('TN5912345678901234560000');
     const owner = await ownerClient();
-    await owner.query(`UPDATE settlement_batches SET settlement_date = current_date, status = 'RELEASED' WHERE id = $1`, [batchId]);
+    await owner.query(
+      `UPDATE settlement_batches SET settlement_date = current_date, status = 'RELEASED' WHERE id = $1`,
+      [batchId],
+    );
     await owner.end();
     await app.get(PayoutsService).executeDueBatches();
     const detail = await shop.call('GET', `/v1/merchant/payouts/${payoutId}`);
@@ -636,7 +785,9 @@ describe('settlement batches: Finance release in four eyes, simulated bank (task
       reason: 'Compte clôturé',
     });
     expect(
-      await db.system((tx) => ledger.balance(tx, accounts.merchantWallet(merchant.id, 'RESTAURATION'))),
+      await db.system((tx) =>
+        ledger.balance(tx, accounts.merchantWallet(merchant.id, 'RESTAURATION')),
+      ),
     ).toBe(30_000n);
     expect((await shop.call('GET', '/v1/merchant/receivables')).body.totalMillimes).toBe(30_000);
     const books = await db.system((tx) => ledger.reconcile(tx));
@@ -742,7 +893,10 @@ describe('daily reconciliation (ledger-auditor C8)', () => {
       expect(alert?.target).toContain(wallet);
       // R2: an alert in the Security screen, the balance itself is never corrected.
       const raised = await db.system((tx) =>
-        tx.fraudAlert.findFirst({ where: { kind: 'LEDGER_MISMATCH' }, orderBy: { occurredAt: 'desc' } }),
+        tx.fraudAlert.findFirst({
+          where: { kind: 'LEDGER_MISMATCH' },
+          orderBy: { occurredAt: 'desc' },
+        }),
       );
       // One alert a day: it may already name another account found earlier today.
       expect(raised).toMatchObject({ severity: 'HIGH', status: 'OPEN' });

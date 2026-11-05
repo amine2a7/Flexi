@@ -3,6 +3,7 @@
 import type { Schemas } from '@flexipay/api-client';
 import { ChevronRight } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import { usePlatformTerms } from '@/lib/api/use-platform-terms';
 import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
 import { usePagedList } from '@/lib/api/use-paged-list';
@@ -16,6 +17,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 
 export default function AdminSettlementsPage() {
   const t = useTranslations('admin.settlements');
+  const { settlementDays } = usePlatformTerms();
   const locale = useLocale();
   const list = usePagedList(
     (cursor, withCount) =>
@@ -94,7 +96,7 @@ export default function AdminSettlementsPage() {
   ];
   return (
     <>
-      <PageHeader title={t('title')} description={t('description')} />
+      <PageHeader title={t('title')} description={t('description', { days: settlementDays })} />
       <Card>
         <DataTable
           caption={t('title')}

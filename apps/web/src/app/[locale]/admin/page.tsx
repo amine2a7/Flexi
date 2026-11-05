@@ -15,6 +15,7 @@ import {
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
+import { usePlatformTerms } from '@/lib/api/use-platform-terms';
 import { useApiQuery } from '@/lib/api/use-api-query';
 import { formatDateTime, formatShortMonth } from '@/lib/format/date';
 import { formatMillimesWithCurrency } from '@/lib/format/money';
@@ -31,6 +32,7 @@ import { ErrorState, LoadingBlock } from '@/components/ui/states';
 
 export default function AdminDashboardPage() {
   const t = useTranslations('admin.dashboard');
+  const { settlementDays } = usePlatformTerms();
   const tTypes = useTranslations('ui.creditTypes');
   const locale = useLocale();
   const dashboard = useApiQuery(() => getApi().GET('/v1/admin/dashboard'), []);
@@ -141,7 +143,7 @@ export default function AdminDashboardPage() {
             <StatCard
               label={t('nextSettlement')}
               value={<Amount millimes={dashboard.data.nextSettlementNetMillimes} size="title" />}
-              hint={t('nextSettlementHint')}
+              hint={t('nextSettlementHint', { days: settlementDays })}
               icon={<CalendarClock className="size-icon-md" />}
             />
             <StatCard

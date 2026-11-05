@@ -9,6 +9,7 @@ import { messageKey } from '@/i18n/keys';
 import { Link } from '@/i18n/navigation';
 import { getApi, newIdempotencyKey } from '@/lib/api/client';
 import { asProblem, errorMessageKey } from '@/lib/api/problem';
+import { usePlatformTerms } from '@/lib/api/use-platform-terms';
 import { useApiQuery } from '@/lib/api/use-api-query';
 import { formatMillimesWithCurrency, formatRateBps } from '@/lib/format/money';
 import { parseMillimes } from '@/lib/format/money-input';
@@ -40,6 +41,7 @@ const VALIDITY_SECONDS = 60;
  */
 export default function CollectPage() {
   const t = useTranslations('merchant.collect');
+  const { settlementDays } = usePlatformTerms();
   const tRoot = useTranslations();
   const locale = useLocale();
   const toast = useToast();
@@ -273,8 +275,8 @@ export default function CollectPage() {
               {ownRate === undefined ? null : (
                 <p className="text-caption text-text-muted">
                   {ownRate === null
-                    ? t('ruleNoteByType')
-                    : t('ruleNote', { rate: formatRateBps(ownRate, locale) })}
+                    ? t('ruleNoteByType', { days: settlementDays })
+                    : t('ruleNote', { rate: formatRateBps(ownRate, locale), days: settlementDays })}
                 </p>
               )}
             </form>
@@ -305,7 +307,7 @@ export default function CollectPage() {
         <ResultScreen
           tone="success"
           title={t('acceptedTitle')}
-          description={t('acceptedMessage')}
+          description={t('acceptedMessage', { days: settlementDays })}
           actions={resultActions}
         >
           <p className="text-amount-xl tabular-nums" dir="ltr">

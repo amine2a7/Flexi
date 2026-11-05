@@ -1,7 +1,7 @@
 {
   "dashboard": {
     "title": "Tableau de bord",
-    "description": "Encaissez vos ventes sans papier : code client, créances et règlements à J+2.",
+    "description": "Encaissez vos ventes sans papier : code client, créances et règlements à J+{days}.",
     "collect": "Encaisser un paiement",
     "today": "Encaissé aujourd'hui",
     "todayCount": "{count, plural, one {# paiement} other {# paiements}}",
@@ -9,7 +9,7 @@
     "seeReceivables": "Voir les créances",
     "nextSettlement": "Prochain règlement",
     "noSettlement": "Aucun règlement prévu",
-    "settlementRule": "Règlement à J+2 ouvrés",
+    "settlementRule": "Règlement à J+{days} ouvrés",
     "rate": "Taux de commission",
     "rateHint": "Appliqué à vos virements",
     "recent": "Derniers encaissements",
@@ -61,8 +61,8 @@
     "step1": "Le client ouvre son application et affiche son code à 8 chiffres.",
     "step2": "Vous saisissez ce code et le montant à encaisser.",
     "step3": "Le client confirme avec son PIN : vous voyez « accepté » ou « refusé ».",
-    "ruleNote": "Le montant sera réglé à J+2, commission de {rate} déduite.",
-    "acceptedMessage": "Le montant est encaissé et sera réglé à J+2.",
+    "ruleNote": "Le montant sera réglé à J+{days}, commission de {rate} déduite.",
+    "acceptedMessage": "Le montant est encaissé et sera réglé à J+{days}.",
     "backToDashboard": "Retour au tableau de bord",
     "cancelledToast": "Demande annulée : rien n'a été encaissé.",
     "myQr": "Mon QR FlexiPay",
@@ -71,7 +71,7 @@
     "qrLabel": "QR commerçant {code}",
     "creditType": "Type de crédit",
     "creditTypeHint": "Le client paie avec son solde de ce type uniquement.",
-    "ruleNoteByType": "Le montant sera réglé à J+2, commission du type de crédit déduite.",
+    "ruleNoteByType": "Le montant sera réglé à J+{days}, commission du type de crédit déduite.",
     "pollFailed": "Impossible de vérifier l'état du paiement. Consultez l'historique avant d'encaisser à nouveau."
   },
   "history": {
@@ -84,10 +84,10 @@
   },
   "receivables": {
     "title": "Créances",
-    "description": "Paiements confirmés, en attente de règlement à J+2.",
+    "description": "Paiements confirmés, en attente de règlement à J+{days}.",
     "requestPayout": "Demander un virement",
     "total": "Total en attente de règlement",
-    "totalHint": "Réglé automatiquement à J+2, ou par demande de virement.",
+    "totalHint": "Réglé automatiquement à J+{days}, ou par demande de virement.",
     "reference": "Référence",
     "confirmedAt": "Confirmé le",
     "settlementDate": "Règlement prévu",
@@ -162,7 +162,7 @@
   },
   "settlements": {
     "title": "Règlements et documents",
-    "description": "Vos règlements J+2 et vos documents mensuels.",
+    "description": "Vos règlements J+{days} et vos documents mensuels.",
     "tabSettlements": "Règlements",
     "tabDocuments": "Documents",
     "date": "Date de règlement",
@@ -220,10 +220,16 @@
       "SETTLED": "Montant réglé sur votre compte",
       "REFUSED": "Paiement refusé ou annulé",
       "DISPUTED": "Paiement en litige",
-      "REFUNDED": "Paiement remboursé au client (litige accepté)"
+      "REFUNDED": "Paiement annulé ou remboursé au client"
     },
     "open": "Ouvrir",
-    "openPayment": "Ouvrir le paiement {reference}"
+    "openPayment": "Ouvrir le paiement {reference}",
+    "cancel": "Annuler le paiement",
+    "cancelTitle": "Annuler le paiement {reference} ?",
+    "cancelText": "Le client retrouve le montant sur son solde et votre créance diminue d'autant. Possible pendant {hours} h après la confirmation, tant que le paiement n'est dans aucun virement.",
+    "cancelConfirm": "Annuler le paiement",
+    "cancelled": "Paiement annulé : le client est remboursé.",
+    "cancelTooLate": "Le délai d'annulation est dépassé : ouvrez une demande auprès du support."
   },
   "statistics": {
     "title": "Statistiques",

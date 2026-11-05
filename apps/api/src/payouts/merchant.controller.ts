@@ -98,6 +98,22 @@ export class MerchantController {
     return this.payments.cancel(pathId('paymentId', paymentId));
   }
 
+  /** Cancellation of a confirmed payment within the window of the settings (money: key). */
+  @Can('payments.refund')
+  @Post('payments/:paymentId/refund')
+  async refund(
+    @Param('paymentId') paymentId: string,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const id = pathId('paymentId', paymentId);
+    const outcome = await this.idempotency.run(req, async (tx, key) => ({
+      status: 200,
+      body: await this.payments.refundByMerchant(tx, id, key),
+    }));
+    return sendOutcome(res, outcome);
+  }
+
   @Can('receivables.read')
   @Get('receivables')
   receivables(@Query() query: Record<string, unknown>) {
