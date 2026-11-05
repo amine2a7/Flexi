@@ -101,7 +101,7 @@
     "description": "Convertissez vos créances en virement vers votre compte bancaire, puis suivez vos demandes.",
     "simulate": "Simuler un virement",
     "amount": "Montant à virer (TND)",
-    "amountHint": "Montant brut, avant commission. Minimum : 20,000 TND.",
+    "amountHint": "Montant brut, avant commission, TVA et timbre fiscal. Le minimum est fixé par FlexiPay.",
     "amountPreview": "Montant lu : {amount}",
     "amountInvalid": "Montant invalide : chiffres et séparateur décimal, 3 décimales au plus.",
     "simulateSubmit": "Simuler",

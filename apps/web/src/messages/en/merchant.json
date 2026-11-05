@@ -101,7 +101,7 @@
     "description": "Turn your receivables into a payout to your bank account, then follow your requests.",
     "simulate": "Simulate a payout",
     "amount": "Amount to pay out (TND)",
-    "amountHint": "Gross amount, before commission. Minimum: 20.000 TND.",
+    "amountHint": "Gross amount, before commission, VAT and stamp duty. FlexiPay sets the minimum.",
     "amountPreview": "Amount read: {amount}",
     "amountInvalid": "Invalid amount: digits and a decimal separator, 3 decimals at most.",
     "simulateSubmit": "Simulate",

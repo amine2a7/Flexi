@@ -44,8 +44,10 @@ const CATEGORIES: Schemas['MerchantCategory'][] = [
 
 /** Text of a value as the administrator types it (locale decimal separator, no grouping). */
 const decimalText = (value: number, digits: number, locale: Locale) => {
-  const text = (value / 10 ** digits).toFixed(digits).replace(/\.?0+$/, '');
-  return locale === 'en' ? text : text.replace('.', ',');
+  const unit = 10 ** digits;
+  const fraction = String(value % unit).padStart(digits, '0').replace(/0+$/, '');
+  const whole = String(Math.trunc(value / unit));
+  return fraction === '' ? whole : `${whole}${locale === 'en' ? '.' : ','}${fraction}`;
 };
 
 /** Lines of the editor from the grid in force (the default line first). */
@@ -112,7 +114,7 @@ function RecordView({
   const t = useTranslations('admin.record');
   const tCategory = useTranslations('category');
   const tTypes = useTranslations('admin.approvals.types');
-  const locale = useLocale() as Locale;
+  const locale = useLocale();
   const isCompany = 'companyId' in owner;
   const canEdit = useCan(isCompany ? 'companies.manage' : 'merchants.manage');
   const canGrid = useCan('commissions.request');
@@ -420,7 +422,7 @@ function ChangeGrid({
   const t = useTranslations('admin.record');
   const tRoot = useTranslations();
   const toast = useToast();
-  const locale = useLocale() as Locale;
+  const locale = useLocale();
   const [rows, setRows] = useState<GridRow[]>(() => rowsOf(record.commissionGrid, locale));
   const [errors, setErrors] = useState<Map<number, GridErrorCode | 'rate' | 'from' | 'to'>>(
     new Map(),

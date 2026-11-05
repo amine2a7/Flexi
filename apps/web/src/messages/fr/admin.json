@@ -175,7 +175,7 @@
     "iban": "IBAN",
     "action": "Action",
     "release": "Demander la libération",
-    "releaseTitle": "Libérer le lot",
+    "releaseTitle": "Demander la libération du lot",
     "releaseDescription": "Un autre administrateur doit valider la libération ; le lot part ensuite à la banque à sa date.",
     "releaseRequested": "Demande envoyée. Un autre administrateur doit la valider.",
     "releaseNeeded": "Lot à libérer par Finance (double validation) avant son départ à la banque.",

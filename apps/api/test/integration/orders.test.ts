@@ -129,7 +129,7 @@ describe('commission, VAT and stamp duty of an order (decisions of 2026-11-03)',
     expect(pdf.headers.get('content-type')).toBe('application/pdf');
     const text = Buffer.from(await pdf.arrayBuffer()).toString('latin1');
     expect(text.startsWith('%PDF-1.4')).toBe(true);
-    for (const expected of ['Commission FlexiPay (5 %)', 'TVA sur la commission (19 %)', 'Timbre fiscal', '10 596,000 TND'])
+    for (const expected of ['Commission FlexiPay \\(5 %\\)', 'TVA sur la commission \\(19 %\\)', 'Timbre fiscal', '10 596,000 TND'])
       expect(text).toContain(expected);
   });
 

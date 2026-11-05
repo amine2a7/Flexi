@@ -40,6 +40,16 @@
     "permissions": ["companies.manage"]
   },
   {
+    "method": "PATCH",
+    "path": "/v1/admin/companies/:companyId",
+    "permissions": ["companies.manage"]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/admin/companies/:companyId/record",
+    "permissions": ["accounts.read"]
+  },
+  {
     "method": "GET",
     "path": "/v1/admin/contact-messages",
     "permissions": ["messages.read"]
@@ -180,9 +190,24 @@
     "permissions": ["accounts.read"]
   },
   {
+    "method": "PATCH",
+    "path": "/v1/admin/merchants/:merchantId",
+    "permissions": ["merchants.manage"]
+  },
+  {
     "method": "PUT",
     "path": "/v1/admin/merchants/:merchantId/credit-types",
     "permissions": ["merchants.manage"]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/admin/merchants/:merchantId/iban-change-requests",
+    "permissions": ["merchants.manage"]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/admin/merchants/:merchantId/record",
+    "permissions": ["accounts.read"]
   },
   {
     "method": "GET",
@@ -223,6 +248,11 @@
     "method": "GET",
     "path": "/v1/admin/settlements/:batchId",
     "permissions": ["adminPayouts.read"]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/admin/settlements/:batchId/release-requests",
+    "permissions": ["payouts.decide"]
   },
   {
     "method": "GET",
@@ -337,6 +367,11 @@
   {
     "method": "GET",
     "path": "/v1/company/invoices",
+    "permissions": ["invoices.read"]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/company/invoices/:invoiceId/pdf",
     "permissions": ["invoices.read"]
   },
   {
@@ -477,6 +512,11 @@
   {
     "method": "GET",
     "path": "/v1/merchant/payouts/:payoutId",
+    "permissions": ["payouts.read"]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/merchant/payouts/:payoutId/invoice",
     "permissions": ["payouts.read"]
   },
   {

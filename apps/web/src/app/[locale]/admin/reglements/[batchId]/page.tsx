@@ -104,7 +104,7 @@ export default function SettlementBatchPage() {
               <div className="flex items-center gap-3">
                 <StatusBadge status={batch.data.status} />
                 {batch.data.status === 'SCHEDULED' && canRelease ? (
-                  <ReleaseButton batchId={batch.data.id} onDone={batch.reload} />
+                  <ReleaseButton batch={batch.data} onDone={batch.reload} />
                 ) : null}
               </div>
             }
@@ -166,7 +166,14 @@ export default function SettlementBatchPage() {
 }
 
 /** Finance asks the release of the batch; another administrator approves it (four eyes). */
-function ReleaseButton({ batchId, onDone }: { batchId: string; onDone: () => void }) {
+function ReleaseButton({
+  batch,
+  onDone,
+}: {
+  batch: Schemas['SettlementBatchDetail'];
+  onDone: () => void;
+}) {
+  const batchId = batch.id;
   const t = useTranslations('admin.settlements');
   const toast = useToast();
   const [open, setOpen] = useState(false);
@@ -185,7 +192,11 @@ function ReleaseButton({ batchId, onDone }: { batchId: string; onDone: () => voi
           open
           onOpenChange={setOpen}
           title={t('releaseTitle')}
-          summary={[]}
+          summary={[
+            { label: t('reference'), value: batch.reference },
+            { label: t('merchants'), value: batch.merchantsCount },
+            { label: t('net'), value: <Amount millimes={batch.netMillimes} /> },
+          ]}
           effects={[t('releaseDescription')]}
           confirmLabel={t('release')}
           confirmVariant="primary"

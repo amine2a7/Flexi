@@ -4,7 +4,6 @@ import type { Schemas } from '@flexipay/api-client';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
-import type { Locale } from '@/i18n/routing';
 import { getApi } from '@/lib/api/client';
 import { asProblem, errorMessageKey, fieldErrors as readFieldErrors } from '@/lib/api/problem';
 import { Button } from '@/components/ui/button';
@@ -74,7 +73,7 @@ export function AccountForm({
   const tWindow = useTranslations('admin.commissionWindow');
   const tCategory = useTranslations('category');
   const toast = useToast();
-  const locale = useLocale() as Locale;
+  const locale = useLocale();
   const [step, setStep] = useState<1 | 2>(1);
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [types, setTypes] = useState<CreditType[]>([]);

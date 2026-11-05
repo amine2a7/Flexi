@@ -8,6 +8,7 @@ export default [
       '.next/**',
       '.next-test/**',
       '.next-e2e/**',
+      '.next-build/**',
       'next-env.d.ts',
       'playwright-report/**',
       'test-results/**',

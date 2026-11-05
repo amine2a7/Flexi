@@ -175,7 +175,7 @@
     "iban": "IBAN",
     "action": "Action",
     "release": "Ask for the release",
-    "releaseTitle": "Release the batch",
+    "releaseTitle": "Ask for the release of the batch",
     "releaseDescription": "Another administrator must approve the release; the batch then goes to the bank on its date.",
     "releaseRequested": "Request sent. Another administrator must approve it.",
     "releaseNeeded": "Batch to release by Finance (four eyes) before it goes to the bank.",

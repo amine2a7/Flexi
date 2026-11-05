@@ -91,7 +91,7 @@ export function CommissionGridEditor({
   errors: ReadonlyMap<number, GridErrorCode | 'rate' | 'from' | 'to'>;
 }) {
   const t = useTranslations('admin.commissionWindow');
-  const locale = useLocale() as Locale;
+  const locale = useLocale();
   const set = (index: number, field: keyof GridRow) => (value: string) => {
     onChange(rows.map((row, at) => (at === index ? { ...row, [field]: value } : row)));
   };
@@ -215,14 +215,15 @@ export function CommissionGridEditor({
 /** Indicative example of the computation (shared rule); the official amount comes from the API. */
 function GridPreview({ kind, rows }: { kind: 'company' | 'merchant'; rows: readonly GridRow[] }) {
   const t = useTranslations('admin.commissionWindow');
-  const locale = useLocale() as Locale;
+  const locale = useLocale();
   const [amountText, setAmountText] = useState('');
   const settings = useApiQuery(() => getApi().GET('/v1/admin/settings'), []);
-  const taxes: Pick<Schemas['PlatformSettings'], 'vatRateBps' | 'stampDutyMillimes'> =
-    settings.status === 'success' ? settings.data : { vatRateBps: 1_900, stampDutyMillimes: 1_000 };
+  // The preview uses the VAT and stamp duty of the settings only: never a value of its own.
+  const taxes: Pick<Schemas['PlatformSettings'], 'vatRateBps' | 'stampDutyMillimes'> | undefined =
+    settings.status === 'success' ? settings.data : undefined;
   const { tiers } = readGrid(rows, locale);
   const amount = parseMillimes(amountText, locale);
-  const shown = tiers !== undefined && amount !== undefined && amount > 0;
+  const shown = tiers !== undefined && taxes !== undefined && amount !== undefined && amount > 0;
   return (
     <Card>
       <CardTitle>{t('preview')}</CardTitle>
@@ -255,7 +256,7 @@ function PreviewLines({
   taxes: { vatRateBps: number; stampDutyMillimes: number };
 }) {
   const t = useTranslations('admin.commissionWindow');
-  const locale = useLocale() as Locale;
+  const locale = useLocale();
   const rate = (bps: number) => formatRateBps(bps, locale);
   const lines =
     kind === 'company'
