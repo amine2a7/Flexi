@@ -56,12 +56,18 @@ const settingsBody = z.strictObject({
     vatRateBps: rateBps,
     stampDutyMillimes: millimes,
     expiredCreditsDestination: z.enum(['PLATFORM_REVENUE', 'COMPANY_RETURN']),
-    fundingAccount: z.strictObject({
-      bankName: z.string().trim().min(1).max(120),
-      holder: z.string().trim().min(1).max(120),
-      rib: z.string().regex(/^[0-9]{20}$/),
-      iban: z.string().regex(/^TN[0-9]{22}$/),
-    }),
+    // A Tunisian IBAN is TN59 followed by the RIB: both must name the same account (S-PA-01).
+    fundingAccount: z
+      .strictObject({
+        bankName: z.string().trim().min(1).max(120),
+        holder: z.string().trim().min(1).max(120),
+        rib: z.string().regex(/^[0-9]{20}$/),
+        iban: z.string().regex(/^TN[0-9]{22}$/),
+      })
+      .refine((account) => account.iban === `TN59${account.rib}`, {
+        path: ['iban'],
+        params: { fieldCode: 'INVALID_FORMAT' },
+      }),
     secondValidationThresholdMillimes: positiveMillimes,
     quoteValidityDays: z.number().int().min(1).max(90),
     invitationValidityDays: z.number().int().min(1).max(30),

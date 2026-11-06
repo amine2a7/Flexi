@@ -5,7 +5,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { InvitationService } from '../auth/invitation.service.js';
 import { AuditService } from '../common/audit.service.js';
 import { uuidv7 } from '../common/crypto.js';
-import { DbService, type Tx } from '../common/db.service.js';
+import { asService, DbService, type Tx } from '../common/db.service.js';
 import { fromMillimes, toMillimes } from '../common/money.js';
 import { Paginator, type Page } from '../common/pagination.js';
 import { ApiProblem, problems, validationFailed } from '../common/problem.js';
@@ -122,7 +122,26 @@ export class CompanyService {
     return new Map(rows.map((row) => [row.employeeId, row._sum.amountMillimes ?? 0n]));
   }
 
-  private employeeBody(employee: Employee, allocated: bigint) {
+  /**
+   * Invited employees whose temporary password expired before the first sign-in (request of
+   * 2026-11-05). Read under the internal service role: a company never reads the accounts (0009).
+   */
+  private async expiredInvitations(tx: Tx, employeeIds: string[]): Promise<Set<string>> {
+    if (employeeIds.length === 0) return new Set();
+    const rows = await asService(tx, () =>
+      tx.user.findMany({
+        where: {
+          employeeId: { in: employeeIds },
+          mustChangePassword: true,
+          tempPasswordExpiresAt: { lt: new Date() },
+        },
+        select: { employeeId: true },
+      }),
+    );
+    return new Set(rows.flatMap((row) => (row.employeeId === null ? [] : [row.employeeId])));
+  }
+
+  private employeeBody(employee: Employee, allocated: bigint, invitationExpired = false) {
     return {
       id: employee.id,
       employeeNumber: employee.employeeNumber,
@@ -132,6 +151,8 @@ export class CompanyService {
       phone: this.pii.open(employee.phone),
       status: employee.status,
       monthAllocatedMillimes: toMillimes(allocated),
+      ...(invitationExpired ? { invitationExpired: true } : {}),
+      ...(employee.departmentId === null ? {} : { departmentId: employee.departmentId }),
       ...(employee.graceUntil === null ? {} : { graceUntil: employee.graceUntil.toISOString() }),
     };
   }
@@ -233,10 +254,16 @@ export class CompanyService {
         ? await tx.employee.count({ where, take: 10_001 })
         : undefined;
       const settings = await tx.platformSettings.findUniqueOrThrow({ where: { id: 1 } });
+      const expired = await this.expiredInvitations(
+        tx,
+        rows.filter((row) => row.status === 'INVITED').map((row) => row.id),
+      );
       return {
         ...this.paginator.page(
           request,
-          rows.map((row) => this.employeeBody(row, allocated.get(row.id) ?? 0n)),
+          rows.map((row) =>
+            this.employeeBody(row, allocated.get(row.id) ?? 0n, expired.has(row.id)),
+          ),
           filters,
           count,
         ),
@@ -662,11 +689,17 @@ export class CompanyService {
     const request = this.paginator.request(query, {});
     return this.db.user(async (tx) => {
       const where = {
-        order: {
-          status: {
-            notIn: ['CANCELLED' as const, 'REFUSED' as const, 'AWAITING_CONFIRMATION' as const],
+        // Issued invoices, and the cancelled ones with their credit note.
+        OR: [
+          {
+            order: {
+              status: {
+                notIn: ['CANCELLED' as const, 'REFUSED' as const, 'AWAITING_CONFIRMATION' as const],
+              },
+            },
           },
-        },
+          { status: 'CANCELLED' as const },
+        ],
         ...(request.createdFrom === undefined && request.createdTo === undefined
           ? {}
           : {
@@ -693,6 +726,8 @@ export class CompanyService {
           totalMillimes: toMillimes(row.totalMillimes),
           issuedAt: row.issuedAt.toISOString(),
           status: row.status,
+          ...(row.creditNoteNumber === null ? {} : { creditNoteNumber: row.creditNoteNumber }),
+          ...(row.cancelledAt === null ? {} : { cancelledAt: row.cancelledAt.toISOString() }),
         })),
         {},
         count,

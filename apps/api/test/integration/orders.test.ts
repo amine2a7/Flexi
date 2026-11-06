@@ -388,6 +388,25 @@ describe('credit order circuit', () => {
     expect((await first.owner.call('GET', '/v1/admin/credit-orders')).status).toBe(403);
   });
 
+  it('cancelling an order awaiting payment cancels its invoice with a credit note', async () => {
+    const { owner, adminA } = await setup();
+    const created = await owner.call('POST', '/v1/company/orders', {
+      body: { lines: [{ creditType: 'RESTAURATION', amountMillimes: 100_000 }] },
+      headers: key(),
+    });
+    const id = String(created.body.id);
+    await adminA.call('POST', `/v1/admin/credit-orders/${id}/confirm`);
+    expect((await owner.call('POST', `/v1/company/orders/${id}/cancel`)).body.status).toBe(
+      'CANCELLED',
+    );
+    const invoices = await owner.call('GET', '/v1/company/invoices');
+    const invoice = (
+      invoices.body.data as { orderReference: string; status: string; creditNoteNumber?: string }[]
+    ).find((item) => item.orderReference === created.body.reference);
+    expect(invoice?.status).toBe('CANCELLED');
+    expect(invoice?.creditNoteNumber).toMatch(/^AV-[0-9]{4}-[0-9]+$/);
+  });
+
   // Settings of 2026-11-05: the quote validity and the four-eyes threshold are frozen at creation.
   it('freezes the quote end and the second validation; an expired quote is not confirmed', async () => {
     const { owner, adminA } = await setup();

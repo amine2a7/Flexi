@@ -103,6 +103,7 @@ enum OrderEventAction {
 enum InvoiceStatus {
   PAID
   UNPAID
+  CANCELLED
 }
 
 enum PaymentStatus {
@@ -242,8 +243,22 @@ model Company {
   invoices        Invoice[]
   kycFiles        KycFile[]
   commissionGrids CommissionGrid[]
+  departments     Department[]
 
   @@map("companies")
+}
+
+/// Department of a company (cahier ENT-04): groups its employees.
+model Department {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  companyId String   @map("company_id") @db.Uuid
+  name      String   @db.VarChar(80)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  company   Company    @relation(fields: [companyId], references: [id])
+  employees Employee[]
+
+  @@map("departments")
 }
 
 /// Commission grid of a company or a merchant (decision of 2026-11-03). Versions are immutable:
@@ -357,9 +372,11 @@ model Employee {
   pinRequiresReauth Boolean        @default(false) @map("pin_requires_reauth")
   /// End of the grace period of a deactivated employee (only spending its balance until then).
   graceUntil        DateTime?      @map("grace_until") @db.Timestamptz(3)
+  departmentId      String?        @map("department_id") @db.Uuid
   createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
 
   company      Company       @relation(fields: [companyId], references: [id])
+  department   Department?   @relation(fields: [departmentId], references: [id])
   user         User?
   payments     Payment[]
   paymentCodes PaymentCode[]
@@ -663,6 +680,9 @@ model Invoice {
   totalMillimes BigInt        @map("total_millimes")
   status        InvoiceStatus
   issuedAt      DateTime      @default(now()) @map("issued_at") @db.Timestamptz(3)
+  /// Credit note of an invoice cancelled with its order (request of 2026-11-05).
+  creditNoteNumber String?    @unique @map("credit_note_number") @db.VarChar(32)
+  cancelledAt   DateTime?     @map("cancelled_at") @db.Timestamptz(3)
 
   company Company     @relation(fields: [companyId], references: [id])
   order   CreditOrder @relation(fields: [orderId], references: [id])

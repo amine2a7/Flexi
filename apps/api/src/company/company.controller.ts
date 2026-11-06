@@ -6,6 +6,7 @@ import {
   Inject,
   Param,
   Post,
+  Put,
   Query,
   Req,
   Res,
@@ -22,6 +23,7 @@ import { creditType, email, parse, phoneNumber, positiveMillimes } from '../comm
 import { OrdersService } from '../orders/orders.service.js';
 import { SettingsService } from '../platform/settings.service.js';
 import { CompanyService } from './company.service.js';
+import { DepartmentsService } from './departments.service.js';
 import { UsersService } from '../users/users.service.js';
 import { accessReason } from '../users/users.controller.js';
 
@@ -65,6 +67,7 @@ export class CompanyController {
     @Inject(SettingsService) private readonly settings: SettingsService,
     @Inject(IdempotencyService) private readonly idempotency: IdempotencyService,
     @Inject(UsersService) private readonly users: UsersService,
+    @Inject(DepartmentsService) private readonly departments: DepartmentsService,
   ) {}
 
   @Can('balances.read')
@@ -79,6 +82,30 @@ export class CompanyController {
     return this.company.employees(
       query,
       parse(employeesQuery, { status: query.status, q: query.q }, 'query'),
+    );
+  }
+
+  @Can('employees.read')
+  @Get('departments')
+  departmentList() {
+    return this.departments.list();
+  }
+
+  @Can('employees.manage')
+  @Post('departments')
+  @HttpCode(201)
+  createDepartment(@Body() body: unknown) {
+    return this.departments.create(
+      parse(z.strictObject({ name: z.string().trim().min(1).max(80) }), body).name,
+    );
+  }
+
+  @Can('employees.manage')
+  @Put('employees/:employeeId/department')
+  assignDepartment(@Param('employeeId') employeeId: string, @Body() body: unknown) {
+    return this.departments.assign(
+      pathId('employeeId', employeeId),
+      parse(z.strictObject({ departmentId: z.uuid().nullable() }), body).departmentId,
     );
   }
 

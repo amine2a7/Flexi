@@ -15,7 +15,7 @@
     "env:init": "node scripts/init-env.mjs",
     "db:setup": "tsx --env-file-if-exists=../../infra/.env scripts/db-setup.ts",
     "db:migrate": "tsx --env-file-if-exists=../../infra/.env scripts/db-migrate.ts",
-    "db:seed": "tsx --env-file-if-exists=../../infra/.env prisma/seed-volume.ts",
+    "db:seed": "tsx --env-file-if-exists=../../infra/.env prisma/seed.ts",
     "db:seed:volume": "tsx --env-file-if-exists=../../infra/.env prisma/seed-volume.ts",
     "db:encrypt-pii": "tsx --env-file-if-exists=../../infra/.env scripts/encrypt-pii.ts",
     "db:reset": "tsx --env-file-if-exists=../../infra/.env scripts/db-setup.ts --reset",

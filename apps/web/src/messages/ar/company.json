@@ -105,7 +105,8 @@
         "reactivate": "تمت إعادة تفعيل الموظف.",
         "deactivate": "تم إلغاء تفعيل الموظف."
       }
-    }
+    },
+    "invitationExpired": "انتهت صلاحية الدعوة"
   },
   "import": {
     "title": "استيراد الموظفين",
@@ -183,7 +184,8 @@
     "status": "الحالة",
     "emptyTitle": "لا توجد فواتير",
     "pdf": "PDF",
-    "download": "تنزيل"
+    "download": "تنزيل",
+    "creditNote": "إشعار دائن {number}"
   },
   "reporting": {
     "title": "التقارير",
@@ -198,5 +200,19 @@
     "balanceDescription": "التوزيع حسب نوع الرصيد.",
     "emptyTitle": "لا توجد بيانات بعد",
     "emptyMessage": "ستظهر بعد طلبك الأول."
+  },
+  "departments": {
+    "title": "الأقسام",
+    "description": "جمّع موظفيك حسب القسم.",
+    "name": "اسم القسم",
+    "employees": "الموظفون",
+    "employeeCount": "{count, plural, one {# موظف} other {# موظفين}}",
+    "create": "إنشاء قسم",
+    "submit": "إنشاء القسم",
+    "created": "تم إنشاء القسم «{name}».",
+    "duplicate": "يوجد قسم بهذا الاسم.",
+    "required": "أدخل اسمًا.",
+    "emptyTitle": "لا قسم",
+    "emptyText": "أنشئ قسمًا أول لتجميع موظفيك."
   }
 }

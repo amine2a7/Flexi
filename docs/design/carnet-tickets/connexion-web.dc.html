@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Connexion · Ticket FlexiPay</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&amp;family=IBM+Plex+Mono:wght@500&amp;family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#087A4C}a:hover{color:#0B1D33}
+@keyframes fp-print{from{clip-path:inset(0 0 100% 0);transform:translateY(-14px)}to{clip-path:inset(0 0 0 0);transform:none}}
+@keyframes fp-peek{from{opacity:0;transform:translateY(34px)}to{opacity:1;transform:none}}
+@keyframes fp-stamp{0%{opacity:0;transform:rotate(-12deg) scale(2.4)}70%{opacity:1;transform:rotate(-12deg) scale(.94)}100%{opacity:1;transform:rotate(-12deg) scale(1)}}
+@keyframes fp-shakeA{20%{transform:translateX(-10px) rotate(-1deg)}40%{transform:translateX(9px) rotate(1deg)}60%{transform:translateX(-6px)}80%{transform:translateX(3px)}}
+@keyframes fp-shakeB{20%{transform:translateX(-10px) rotate(-1deg)}40%{transform:translateX(9px) rotate(1deg)}60%{transform:translateX(-6px)}80%{transform:translateX(3px)}}
+@keyframes fp-thump{40%{transform:scale(.985)}}
+@keyframes fp-tear{0%{transform:none;opacity:1}30%{transform:rotate(-3deg) translate(-6px,-4px)}100%{transform:rotate(-24deg) translate(-180px,-160px);opacity:0}}
+@keyframes fp-fall{from{transform:translateY(-30px) rotate(0);opacity:1}to{transform:translateY(560px) rotate(var(--r));opacity:.2}}
+@keyframes fp-fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes fp-spin{to{transform:rotate(360deg)}}
+.fp-print{animation:fp-print 900ms cubic-bezier(.2,0,0,1) both}
+.fp-peek{animation:fp-peek 420ms cubic-bezier(.34,1.56,.64,1) 820ms both}
+.fp-stamp{animation:fp-stamp 300ms cubic-bezier(.2,0,0,1) both}
+.fp-shakeA{animation:fp-shakeA 420ms cubic-bezier(.2,0,0,1)}
+.fp-shakeB{animation:fp-shakeB 420ms cubic-bezier(.2,0,0,1)}
+.fp-thump{animation:fp-thump 260ms cubic-bezier(.2,0,0,1) 180ms}
+.fp-tear{animation:fp-tear 700ms cubic-bezier(.4,0,1,1) 500ms forwards}
+.fp-fall{animation:fp-fall var(--d) cubic-bezier(.4,0,.6,1) var(--w) both}
+.fp-fade{animation:fp-fade 320ms cubic-bezier(.2,0,0,1) both}
+.fp-spin{animation:fp-spin .7s linear infinite}
+.fp-line:focus{outline:none;border-bottom-color:#12D68A}
+.fp-btn{transition:transform 120ms cubic-bezier(.2,0,0,1)}
+.fp-btn:active{transform:scale(.98)}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #12D68A;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.fp-print,.fp-peek,.fp-stamp,.fp-shakeA,.fp-shakeB,.fp-thump,.fp-fade{animation:none}.fp-tear{animation:none;opacity:0}.fp-fall{display:none}}
+</style>
+</helmet>
+<div style="font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: #0F1B2A; background: #F4F6F9; min-height: 860px; display: flex; flex-wrap: wrap; font-size: 14px">
+
+  <aside style="flex: 1 1 360px; max-width: 100%; box-sizing: border-box; background: #0B1D33; color: #E9EEF5; padding: 44px 48px; display: flex; flex-direction: column; gap: 28px; justify-content: space-between">
+    <div style="display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 16px">
+      <span style="width: 36px; height: 36px; border-radius: 10px; background: #12D68A; display: grid; place-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="#0B1D33" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg></span>
+      FlexiPay
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px">
+      <h1 style="margin: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 58px; line-height: .95; letter-spacing: .01em; text-wrap: balance">Le ticket resto,<br><span style="color: #12D68A">sans le papier.</span></h1>
+      <p style="margin: 0; color: #B9C6D6; max-width: 36ch; font-size: 15px">Restauration, habillement, carburant, cadeaux : vos crédits vous attendent de l'autre côté de ce ticket.</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <span style="display: inline-flex; align-items: center; gap: 6px; border: 1px solid #22385A; border-radius: 999px; padding: 4px 11px; font-size: 12.5px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #14A06A"></span>Restauration</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; border: 1px solid #22385A; border-radius: 999px; padding: 4px 11px; font-size: 12.5px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #2F6FE0"></span>Habillement</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; border: 1px solid #22385A; border-radius: 999px; padding: 4px 11px; font-size: 12.5px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #D9761A"></span>Carburant</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; border: 1px solid #22385A; border-radius: 999px; padding: 4px 11px; font-size: 12.5px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #8A4FD6"></span>Cadeaux</span>
+      </div>
+    </div>
+    <div style="border-top: 1px solid #22385A; padding-top: 18px; min-height: 64px" aria-live="polite">
+      <div style="font-size: 11px; letter-spacing: .12em; color: #12D68A; font-weight: 600">{{factTitle}}</div>
+      <sc-for list="{{factList}}" as="f" hint-placeholder-count="1"><p class="fp-fade" style="margin: 6px 0 0; color: #DCE4EE; max-width: 40ch">{{f.text}}</p></sc-for>
+    </div>
+  </aside>
+
+  <main style="flex: 999 1 520px; min-width: 0; display: flex; justify-content: center; align-items: center; padding: 110px 24px 48px; box-sizing: border-box; position: relative; overflow: hidden">
+    <div style="position: relative; width: 420px; max-width: 100%">
+
+      <div class="{{mascotCls}}" style="position: absolute; left: 50%; top: -86px; width: 160px; margin-left: -80px; z-index: 3">
+        <div class="fp-peek">
+          <svg width="160" height="110" viewBox="0 0 160 110" role="img" aria-label="{{mascotLabel}}">
+            <circle cx="80" cy="72" r="38" fill="#FFFFFF" stroke="#0B1D33" stroke-width="4"></circle>
+            <circle cx="80" cy="72" r="28" fill="none" stroke="#E1E6ED" stroke-width="2"></circle>
+            <circle cx="60" cy="82" r="5" fill="#FF9F9F" opacity=".55"></circle>
+            <circle cx="100" cy="82" r="5" fill="#FF9F9F" opacity=".55"></circle>
+            <sc-if value="{{eyesOpen}}" hint-placeholder-val="{{ true }}">
+              <g style="transform: translate({{pupilX}}, {{pupilY}}); transition: transform 200ms cubic-bezier(.2,0,0,1)">
+                <ellipse cx="68" cy="66" rx="4.2" ry="5.4" fill="#0B1D33"></ellipse>
+                <ellipse cx="92" cy="66" rx="4.2" ry="5.4" fill="#0B1D33"></ellipse>
+                <circle cx="69.4" cy="64.2" r="1.3" fill="#FFFFFF"></circle>
+                <circle cx="93.4" cy="64.2" r="1.3" fill="#FFFFFF"></circle>
+              </g>
+            </sc-if>
+            <sc-if value="{{eyesHappy}}" hint-placeholder-val="{{ false }}">
+              <path d="M62 67 Q68 59 74 67 M86 67 Q92 59 98 67" fill="none" stroke="#0B1D33" stroke-width="3.2" stroke-linecap="round"></path>
+            </sc-if>
+            <path d="{{mouth}}" fill="{{mouthFill}}" stroke="#0B1D33" stroke-width="3" stroke-linecap="round" style="transition: d 200ms"></path>
+            <g style="transform-box: fill-box; transform-origin: 50% 100%; transform: rotate({{forkRot}}) translateY({{handY}}); transition: transform 380ms cubic-bezier(.34,1.56,.64,1)">
+              <rect x="22" y="38" width="3" height="16" rx="1.5" fill="#0B1D33"></rect>
+              <rect x="27" y="38" width="3" height="16" rx="1.5" fill="#0B1D33"></rect>
+              <rect x="32" y="38" width="3" height="16" rx="1.5" fill="#0B1D33"></rect>
+              <rect x="22" y="52" width="13" height="7" rx="3" fill="#0B1D33"></rect>
+              <rect x="26.5" y="58" width="4" height="47" rx="2" fill="#0B1D33"></rect>
+            </g>
+            <g style="transform-box: fill-box; transform-origin: 50% 100%; transform: rotate({{knifeRot}}) translateY({{handY}}); transition: transform 380ms cubic-bezier(.34,1.56,.64,1) 40ms">
+              <path d="M128 38 Q141 50 136 70 L128 70 Z" fill="#DCE3EB" stroke="#0B1D33" stroke-width="2" stroke-linejoin="round"></path>
+              <rect x="128" y="69" width="5" height="36" rx="2" fill="#0B1D33"></rect>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <sc-if value="{{confetti}}" hint-placeholder-val="{{ false }}">
+        <div aria-hidden="true" style="position: absolute; left: -60px; right: -60px; top: -40px; height: 0; z-index: 4; pointer-events: none">
+          <sc-for list="{{bits}}" as="b" hint-placeholder-count="16"><span class="fp-fall" style="position: absolute; left: {{b.left}}; width: 20px; height: 11px; border-radius: 2px; background: {{b.color}}; --r: {{b.rot}}; --d: {{b.dur}}; --w: {{b.wait}}"></span></sc-for>
+        </div>
+      </sc-if>
+
+      <form onSubmit="{{submit}}" class="fp-print" style="position: relative; z-index: 2; display: block" aria-labelledby="tk-title" novalidate>
+        <div class="{{ticketCls}}" style="background: #FFFCF3; border-radius: 14px; box-shadow: 0 1px 0 #E6E0CC, 0 18px 40px rgba(11,29,51,.14); position: relative">
+
+          <div class="{{stubCls}}" style="background: #0B1D33; color: #FFFFFF; border-radius: 14px 14px 0 0; padding: 18px 22px 16px; position: relative; z-index: 2">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px">
+              <span id="tk-title" style="font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 26px; letter-spacing: .06em">TICKET DE CONNEXION</span>
+              <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #9FB2C8">N° {{serial}}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 12px; margin-top: 6px; font-size: 12.5px; color: #B9C6D6">
+              <span>Valeur : <b style="color: #12D68A">{{value}}</b></span>
+              <span>Valable aujourd'hui</span>
+            </div>
+          </div>
+
+          <div aria-hidden="true" style="position: relative; height: 0; border-top: 2px dashed #CFC8B2; margin: 0 14px">
+            <span style="position: absolute; left: -26px; top: -12px; width: 22px; height: 22px; border-radius: 50%; background: #F4F6F9"></span>
+            <span style="position: absolute; right: -26px; top: -12px; width: 22px; height: 22px; border-radius: 50%; background: #F4F6F9"></span>
+          </div>
+
+          <div style="padding: 22px 26px 18px; display: flex; flex-direction: column; gap: 16px; position: relative">
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <label for="lg-email" style="font-size: 11px; letter-spacing: .1em; font-weight: 600; color: #5B6878">VOTRE E-MAIL</label>
+              <input id="lg-email" class="fp-line" type="email" autocomplete="username" value="{{email}}" onChange="{{onEmail}}" onFocus="{{focusEmail}}" onBlur="{{blur}}" placeholder="prenom@entreprise.tn" style="height: 40px; border: 0; border-bottom: 2px solid #D9D2BC; background: transparent; font: inherit; font-size: 15px; color: #0F1B2A; padding: 0 2px; transition: border-color 200ms">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <div style="display: flex; justify-content: space-between; align-items: center">
+                <label for="lg-pw" style="font-size: 11px; letter-spacing: .1em; font-weight: 600; color: #5B6878">MOT DE PASSE</label>
+                <button type="button" onClick="{{toggleShow}}" aria-pressed="{{showPressed}}" style="border: 0; background: none; font: inherit; font-size: 12.5px; font-weight: 600; color: #087A4C; cursor: pointer; padding: 4px; min-height: 32px">{{showLabel}}</button>
+              </div>
+              <input id="lg-pw" class="fp-line" type="{{pwType}}" autocomplete="current-password" value="{{pw}}" onChange="{{onPw}}" onFocus="{{focusPw}}" onBlur="{{blur}}" onKeyUp="{{onKey}}" style="height: 40px; border: 0; border-bottom: 2px solid #D9D2BC; background: transparent; font: inherit; font-size: 15px; color: #0F1B2A; padding: 0 2px; transition: border-color 200ms">
+              <sc-if value="{{caps}}" hint-placeholder-val="{{ false }}"><span class="fp-fade" style="font-size: 12.5px; color: #8A5300">{{capsText}}</span></sc-if>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px">
+              <label for="lg-keep" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer"><input id="lg-keep" type="checkbox" style="width: 16px; height: 16px; accent-color: #0B1D33">Rester connecté</label>
+              <a href="#">{{forgotLabel}}</a>
+            </div>
+
+            <button type="submit" class="fp-btn" disabled="{{busy}}" style="height: 52px; border: 0; border-radius: 10px; background: #0B1D33; color: #FFFFFF; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px">
+              <sc-if value="{{loading}}" hint-placeholder-val="{{ false }}"><span class="fp-spin" style="width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.35); border-top-color: #FFFFFF; border-radius: 50%; display: inline-block"></span></sc-if>
+              <span>{{btnLabel}}</span>
+            </button>
+
+            <div aria-live="polite" style="min-height: 40px">
+              <sc-if value="{{hasError}}" hint-placeholder-val="{{ false }}">
+                <div class="fp-fade" style="color: #B42318; font-size: 13.5px; font-weight: 500">{{errorText}} <sc-if value="{{showReset}}" hint-placeholder-val="{{ false }}"><a href="#" style="color: #B42318; font-weight: 600">Réinitialiser mon mot de passe</a></sc-if></div>
+              </sc-if>
+              <sc-if value="{{ok}}" hint-placeholder-val="{{ false }}">
+                <div class="fp-fade" style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap">
+                  <span><b style="display: block; color: #0B6E47; font-size: 15px">{{okTitle}}</b><span style="font-size: 13px; color: #5B6878">Plus qu'une étape : votre code de vérification.</span></span>
+                  <button type="button" onClick="{{reset}}" style="border: 1px solid #D9D2BC; background: transparent; border-radius: 8px; height: 36px; padding: 0 12px; font: inherit; font-size: 12.5px; cursor: pointer">Rejouer</button>
+                </div>
+              </sc-if>
+            </div>
+
+            <sc-if value="{{stampOn}}" hint-placeholder-val="{{ false }}">
+              <div class="fp-stamp" aria-hidden="true" style="position: absolute; left: 50%; top: 38%; margin-left: -120px; width: 240px; text-align: center; border: 5px double {{stampColor}}; color: {{stampColor}}; border-radius: 10px; padding: 6px 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 40px; letter-spacing: .12em; background: rgba(255,252,243,.6); pointer-events: none">{{stampText}}</div>
+            </sc-if>
+          </div>
+
+          <div style="border-top: 1px dashed #E2DBC6; padding: 12px 26px 16px; display: flex; justify-content: space-between; align-items: center; gap: 14px">
+            <span aria-hidden="true" style="height: 30px; width: 150px; background: repeating-linear-gradient(90deg, #0B1D33 0 2px, transparent 2px 4px, #0B1D33 4px 5px, transparent 5px 8px, #0B1D33 8px 11px, transparent 11px 13px)"></span>
+            <span style="font-size: 11px; color: #7A7360; text-align: end; max-width: 200px">{{fine}}</span>
+          </div>
+        </div>
+      </form>
+      <p style="text-align: center; font-size: 12.5px; color: #5B6878; margin: 16px 0 0">Démo : n'importe quel e-mail, mot de passe <b style="font-family: 'IBM Plex Mono', ui-monospace, monospace">Test1234!</b></p>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"ton":{"editor":"enum","options":["léger","sobre"],"default":"léger"},"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = { email: '', pw: '', focus: '', show: false, caps: false, phase: 'idle', step: 0, tries: 0, err: '', stamp: false, fact: 0 };
+  }
+  componentDidMount() { this.fi = setInterval(() => this.setState({ fact: this.state.fact + 1 }), 5000); }
+  componentWillUnmount() { clearInterval(this.fi); (this.ts || []).forEach(clearTimeout); }
+  later(f, ms) { this.ts = this.ts || []; this.ts.push(setTimeout(f, ms)); }
+  fun() { return (this.props.ton ?? 'léger') !== 'sobre'; }
+  submit(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (this.state.phase === 'loading' || this.state.phase === 'ok') return;
+    const s = this.state;
+    if (!s.email.trim() || !s.pw) { this.setState({ err: this.fun() ? 'Un ticket vierge, ça ne se composte pas : remplissez l’e-mail et le mot de passe.' : 'Renseignez votre e-mail et votre mot de passe.', tries: s.tries + 1, phase: 'ko' }); return; }
+    this.setState({ phase: 'loading', step: 0, err: '', stamp: false });
+    this.later(() => this.setState({ step: 1 }), 600);
+    this.later(() => this.setState({ step: 2 }), 1200);
+    this.later(() => {
+      if (this.state.pw === 'Test1234!') {
+        this.setState({ phase: 'ok', stamp: true });
+      } else {
+        const t = this.state.tries + 1;
+        const fun = ['Ce ticket n’est pas valable : l’e-mail ou le mot de passe est incorrect.', 'Toujours refusé. Même la chakchouka a besoin de la bonne recette : vérifiez le mot de passe.', 'Trois essais. Respirez : un mot de passe oublié, ça arrive aux meilleurs chefs.'];
+        const plain = ['E-mail ou mot de passe incorrect.', 'E-mail ou mot de passe incorrect. Vérifiez les majuscules.', 'Plusieurs essais incorrects. Vous pouvez réinitialiser votre mot de passe.'];
+        this.setState({ phase: 'ko', tries: t, stamp: true, err: (this.fun() ? fun : plain)[Math.min(t, 3) - 1] });
+        this.later(() => this.setState({ stamp: false }), 1600);
+      }
+    }, 1700);
+  }
+  renderVals() {
+    const s = this.state, fun = this.fun();
+    const pwFocus = s.focus === 'pw', mailFocus = s.focus === 'email';
+    const covering = pwFocus && !s.show && s.phase !== 'ok';
+    const peeking = pwFocus && s.show && s.phase !== 'ok';
+    const ko = s.phase === 'ko', ok = s.phase === 'ok', loading = s.phase === 'loading';
+    let px = 0, py = 0;
+    if (mailFocus) { px = Math.min(s.email.length * 0.35, 7) - 3.5; py = 2.5; }
+    if (loading) py = -2.5;
+    if (ko) py = 2.5;
+    const mouth = ok ? 'M64 82 Q80 98 96 82 Z' : loading ? 'M75 84 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0' : ko ? 'M68 90 Q80 80 92 90' : 'M68 83 Q80 92 92 83';
+    const loadFun = ['On compte les millimes…', 'On réchauffe le serveur…', 'On vérifie que ce ticket n’est pas photocopié…'];
+    const facts = fun ? [
+      'Un ticket papier perdu est perdu. Un compte FlexiPay, lui, vous attend sagement.',
+      'Votre ticket ne finit plus dans la machine à laver.',
+      'Pas de monnaie à rendre : on paie au millime près.',
+      'Le seul papier qui reste, c’est celui-ci. Et il est en pixels.'
+    ] : [
+      'Vos crédits sont disponibles dès la validation de votre employeur.',
+      'Chaque paiement est confirmé par votre code PIN.',
+      'Vos soldes sont séparés par type de crédit.'
+    ];
+    const colors = ['#14A06A', '#2F6FE0', '#D9761A', '#8A4FD6', '#12D68A'];
+    const bits = Array.from({ length: 16 }, (_, i) => ({
+      left: ((i * 37) % 100) + '%', color: colors[i % 5], rot: ((i % 2 ? 1 : -1) * (180 + i * 40)) + 'deg',
+      dur: (1300 + (i % 5) * 180) + 'ms', wait: (650 + (i % 6) * 70) + 'ms'
+    }));
+    return {
+      factTitle: fun ? 'LE SAVIEZ-VOUS ?' : 'BON À SAVOIR',
+      factList: [{ text: facts[s.fact % facts.length], key: s.fact }],
+      email: s.email, pw: s.pw,
+      onEmail: (e) => this.setState({ email: e.target.value, phase: ko ? 'idle' : s.phase, err: '' }),
+      onPw: (e) => this.setState({ pw: e.target.value, phase: ko ? 'idle' : s.phase, err: '' }),
+      focusEmail: () => this.setState({ focus: 'email' }),
+      focusPw: () => this.setState({ focus: 'pw' }),
+      blur: () => this.setState({ focus: '' }),
+      onKey: (e) => this.setState({ caps: !!(e.getModifierState && e.getModifierState('CapsLock')) }),
+      caps: s.caps && pwFocus, capsText: fun ? 'Majuscules activées : on vous entend crier d’ici.' : 'Majuscules activées.',
+      toggleShow: () => this.setState({ show: !s.show }),
+      showLabel: s.show ? 'Masquer' : 'Afficher', showPressed: s.show ? 'true' : 'false', pwType: s.show ? 'text' : 'password',
+      forgotLabel: fun ? 'Ticket perdu ? Mot de passe oublié' : 'Mot de passe oublié ?',
+      serial: '000 482 ' + String(915 + s.tries).padStart(3, '0'),
+      value: fun ? '1 connexion + bonne humeur' : '1 connexion',
+      fine: fun ? 'Non échangeable, non remboursable, mais réutilisable à volonté.' : 'Connexion sécurisée · vérification en deux étapes',
+      busy: loading || ok, loading,
+      btnLabel: loading ? (fun ? loadFun[s.step] : 'Connexion…') : ok ? 'Ticket composté' : 'Composter mon ticket',
+      hasError: !!s.err, errorText: s.err, showReset: s.tries >= 3,
+      ok, okTitle: fun ? 'Ticket composté. Bon appétit !' : 'Identifiants vérifiés.',
+      stampOn: s.stamp, stampText: ok ? 'COMPOSTÉ' : 'REFUSÉ', stampColor: ok ? '#0B7F4F' : '#B42318',
+      ticketCls: ko && s.tries ? (s.tries % 2 ? 'fp-shakeA' : 'fp-shakeB') : (ok ? 'fp-thump' : ''),
+      stubCls: ok ? 'fp-tear' : '',
+      confetti: ok && fun, bits,
+      mascotCls: ko && s.tries ? (s.tries % 2 ? 'fp-shakeA' : 'fp-shakeB') : '',
+      mascotLabel: covering ? 'La mascotte se cache les yeux' : ok ? 'La mascotte est ravie' : 'La mascotte FlexiPay',
+      eyesOpen: !ok, eyesHappy: ok,
+      pupilX: px + 'px', pupilY: py + 'px',
+      mouth, mouthFill: ok ? '#0B1D33' : loading ? '#0B1D33' : 'none',
+      forkRot: covering ? '38deg' : peeking ? '20deg' : '0deg',
+      knifeRot: covering ? '-38deg' : peeking ? '-20deg' : '0deg',
+      handY: covering ? '-6px' : '0px',
+      submit: (e) => this.submit(e),
+      reset: () => { (this.ts || []).forEach(clearTimeout); this.setState({ phase: 'idle', stamp: false, err: '', pw: '', tries: 0, step: 0 }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

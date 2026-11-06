@@ -70,7 +70,7 @@ export class SettingsService {
     };
   }
 
-  /** Settlement date of a payment confirmed `now`: D + the settlement cycle (business days). */
+  /** Settlement date of a payment confirmed `now`: its business day + the settlement cycle (days). */
   async settlementDate(tx: Tx, now: Date): Promise<Date> {
     const { settlementDelayDays } = await this.platform(tx);
     return dateOnly(addDays(businessDay(now), settlementDelayDays));

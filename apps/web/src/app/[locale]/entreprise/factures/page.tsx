@@ -30,7 +30,20 @@ export default function InvoicesPage() {
       align: 'end',
       cell: (row) => <Amount millimes={row.totalMillimes} />,
     },
-    { key: 'status', header: t('status'), cell: (row) => <StatusBadge status={row.status} /> },
+    {
+      key: 'status',
+      header: t('status'),
+      cell: (row) => (
+        <span className="flex flex-col items-start gap-1">
+          <StatusBadge status={row.status} />
+          {row.creditNoteNumber === undefined ? null : (
+            <span className="text-caption text-text-muted">
+              {t('creditNote', { number: row.creditNoteNumber })}
+            </span>
+          )}
+        </span>
+      ),
+    },
     {
       key: 'pdf',
       header: t('pdf'),

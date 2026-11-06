@@ -28,6 +28,7 @@ const PAGE_PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
   '/entreprise': ['balances.read'],
   '/entreprise/employes': ['employees.read'],
   '/entreprise/employes/import': ['employees.manage'],
+  '/entreprise/departements': ['employees.read'],
   '/entreprise/commandes': ['orders.read'],
   '/entreprise/commandes/nouvelle': ['orders.create'],
   '/entreprise/attribution': ['credits.allocate'],

@@ -105,7 +105,8 @@
         "reactivate": "Employee reactivated.",
         "deactivate": "Employee deactivated."
       }
-    }
+    },
+    "invitationExpired": "Invitation expired"
   },
   "import": {
     "title": "Import employees",
@@ -183,7 +184,8 @@
     "status": "Status",
     "emptyTitle": "No invoices",
     "pdf": "PDF",
-    "download": "Download"
+    "download": "Download",
+    "creditNote": "Credit note {number}"
   },
   "reporting": {
     "title": "Reporting",
@@ -198,5 +200,19 @@
     "balanceDescription": "Split by credit type.",
     "emptyTitle": "No data yet",
     "emptyMessage": "It will appear after your first order."
+  },
+  "departments": {
+    "title": "Departments",
+    "description": "Group your employees by department.",
+    "name": "Department name",
+    "employees": "Employees",
+    "employeeCount": "{count, plural, one {# employee} other {# employees}}",
+    "create": "Create a department",
+    "submit": "Create the department",
+    "created": "Department “{name}” created.",
+    "duplicate": "A department already has this name.",
+    "required": "Enter a name.",
+    "emptyTitle": "No department",
+    "emptyText": "Create a first department to group your employees."
   }
 }

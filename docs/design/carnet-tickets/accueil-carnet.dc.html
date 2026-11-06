@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Accueil · Le carnet FlexiPay</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&amp;family=IBM+Plex+Mono:wght@500&amp;family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#087A4C}a:hover{color:#0B1D33}
+@keyframes fp-cover{0%{transform:rotateY(0)}100%{transform:rotateY(-168deg)}}
+@keyframes fp-tearoff{0%{transform:none;opacity:1}25%{transform:rotate(2deg) translate(4px,-6px)}100%{transform:rotate(18deg) translate(260px,-220px);opacity:0}}
+@keyframes fp-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes fp-slot{0%{transform:none;opacity:1}100%{transform:translateY(60px) scale(.92);opacity:0}}
+@keyframes fp-pop{0%{opacity:0;transform:scale(.6)}100%{opacity:1;transform:scale(1)}}
+@keyframes fp-wiggle{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+.fp-cover{animation:fp-cover 1100ms cubic-bezier(.6,0,.2,1) 600ms forwards}
+.fp-tearoff{animation:fp-tearoff 650ms cubic-bezier(.4,0,1,1) forwards}
+.fp-rise{animation:fp-rise 420ms cubic-bezier(.2,0,0,1) both}
+.fp-d1{animation-delay:120ms}.fp-d2{animation-delay:240ms}.fp-d3{animation-delay:360ms}
+.fp-slot{animation:fp-slot 520ms cubic-bezier(.4,0,1,1) forwards}
+.fp-pop{animation:fp-pop 420ms cubic-bezier(.34,1.56,.64,1) both}
+.fp-wiggle{animation:fp-wiggle 1.6s ease-in-out infinite}
+.fp-btn{transition:transform 120ms cubic-bezier(.2,0,0,1)}
+.fp-btn:active{transform:scale(.97)}
+.fp-card{transition:transform 200ms cubic-bezier(.2,0,0,1),box-shadow 200ms}
+.fp-card:hover{transform:translateY(-4px) rotate(-.6deg);box-shadow:0 14px 30px rgba(11,29,51,.12)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #12D68A;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.fp-cover{animation:none;display:none}.fp-tearoff,.fp-rise,.fp-pop,.fp-slot,.fp-wiggle{animation:none}.fp-card:hover{transform:none}}
+</style>
+</helmet>
+<div style="font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: #0F1B2A; background: #F4F6F9; font-size: 15px">
+
+  <header style="background: #0B1D33; color: #FFFFFF">
+    <div style="max-width: 1180px; margin: 0 auto; padding: 18px 24px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center">
+      <div style="display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 17px"><span style="width: 34px; height: 34px; border-radius: 9px; background: #12D68A; display: grid; place-items: center"><svg width="17" height="17" viewBox="0 0 24 24" fill="#0B1D33" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg></span>FlexiPay</div>
+      <nav aria-label="Navigation principale" style="display: flex; flex-wrap: wrap; gap: 18px; align-items: center; font-size: 14px">
+        <a href="#histoire" style="color: #C6D2E0; text-decoration: none">Comment ça marche</a>
+        <a href="#pour-qui" style="color: #C6D2E0; text-decoration: none">Pour qui</a>
+        <a href="#contact" style="color: #C6D2E0; text-decoration: none">Nous contacter</a>
+        <a href="Login.dc.html" class="fp-btn" style="background: #12D68A; color: #0B1D33; text-decoration: none; font-weight: 600; border-radius: 9px; padding: 9px 16px">Se connecter</a>
+      </nav>
+    </div>
+  </header>
+
+  <section id="histoire" style="background: #0B1D33; color: #FFFFFF; padding: 40px 24px 80px">
+    <div style="max-width: 1180px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 48px; align-items: center">
+      <div style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 18px">
+        <span class="fp-rise" style="font-size: 12px; letter-spacing: .14em; color: #12D68A; font-weight: 600">TITRES-RESTAURANT ET AVANTAGES SALARIÉS · TUNISIE</span>
+        <h1 class="fp-rise fp-d1" style="margin: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 76px; line-height: .92; text-wrap: balance">On a ouvert le dernier carnet de tickets.<br><span style="color: #12D68A">Il ne reste que des pixels.</span></h1>
+        <p class="fp-rise fp-d2" style="margin: 0; color: #B9C6D6; max-width: 46ch; font-size: 17px">FlexiPay remplace les tickets papier par des crédits sur téléphone : restauration, habillement, carburant et cadeaux. Détachez les tickets pour voir comment ça marche.</p>
+        <div class="fp-rise fp-d3" style="display: flex; flex-wrap: wrap; gap: 10px">
+          <a href="#contact" class="fp-btn" style="background: #12D68A; color: #0B1D33; text-decoration: none; font-weight: 700; border-radius: 10px; padding: 14px 20px">Équiper mon entreprise</a>
+          <a href="#contact" class="fp-btn" style="border: 1px solid #3A5276; color: #FFFFFF; text-decoration: none; font-weight: 600; border-radius: 10px; padding: 14px 20px">Devenir commerçant partenaire</a>
+        </div>
+      </div>
+
+      <div style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 18px">
+        <div style="position: relative; width: 360px; max-width: 100%; height: 440px; perspective: 1400px">
+          <div aria-hidden="true" style="position: absolute; inset: 16px -10px -14px 10px; background: #13294A; border-radius: 16px; transform: rotate(3deg)"></div>
+          <div aria-hidden="true" style="position: absolute; inset: 10px -6px -8px 6px; background: #EDE7D4; border-radius: 14px; transform: rotate(1.6deg)"></div>
+          <div aria-hidden="true" style="position: absolute; inset: 5px -3px -4px 3px; background: #F5F0E0; border-radius: 14px; transform: rotate(.8deg)"></div>
+
+          <sc-if value="{{hasNext}}" hint-placeholder-val="{{ true }}">
+            <article aria-hidden="true" style="position: absolute; inset: 0; background: #FFFCF3; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; color: #0F1B2A">
+              <div style="height: 10px; background: {{next.color}}"></div>
+              <div style="padding: 22px 26px; display: flex; flex-direction: column; gap: 12px; flex: 1">
+                <div style="display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #7A7360"><span>TICKET {{next.n}}/5</span><span>{{next.tag}}</span></div>
+                <div style="font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 38px; line-height: 1">{{next.title}}</div>
+                <p style="margin: 0; color: #4A5565">{{next.text}}</p>
+              </div>
+            </article>
+          </sc-if>
+
+          <article class="{{topCls}}" aria-live="polite" style="position: absolute; inset: 0; background: #FFFCF3; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; color: #0F1B2A; box-shadow: 0 18px 40px rgba(0,0,0,.25)">
+            <div style="height: 10px; background: {{cur.color}}"></div>
+            <div style="padding: 22px 26px; display: flex; flex-direction: column; gap: 12px; flex: 1">
+              <div style="display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #7A7360"><span>TICKET {{cur.n}}/5</span><span>{{cur.tag}}</span></div>
+              <div style="font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 38px; line-height: 1">{{cur.title}}</div>
+              <p style="margin: 0; color: #4A5565">{{cur.text}}</p>
+              <div style="margin-top: auto; display: flex; gap: 8px; flex-wrap: wrap">
+                <sc-for list="{{cur.chips}}" as="c" hint-placeholder-count="2"><span style="display: inline-flex; align-items: center; gap: 6px; background: #FFFFFF; border: 1px solid #E6E0CC; border-radius: 999px; padding: 4px 10px; font-size: 12.5px; font-weight: 600"><span style="width: 8px; height: 8px; border-radius: 2px; background: {{c.color}}"></span>{{c.label}}</span></sc-for>
+              </div>
+            </div>
+            <div aria-hidden="true" style="border-top: 2px dashed #D9D2BC; margin: 0 14px; position: relative"><span style="position: absolute; left: -26px; top: -12px; width: 22px; height: 22px; border-radius: 50%; background: #0B1D33"></span><span style="position: absolute; right: -26px; top: -12px; width: 22px; height: 22px; border-radius: 50%; background: #0B1D33"></span></div>
+            <div style="padding: 12px 26px 16px; display: flex; justify-content: space-between; align-items: center; gap: 10px">
+              <span aria-hidden="true" style="height: 26px; width: 120px; background: repeating-linear-gradient(90deg, #0B1D33 0 2px, transparent 2px 4px, #0B1D33 4px 5px, transparent 5px 8px, #0B1D33 8px 11px, transparent 11px 13px)"></span>
+              <span style="font-size: 11px; color: #7A7360; text-align: end">{{cur.fine}}</span>
+            </div>
+          </article>
+
+          <div class="fp-cover" aria-hidden="true" style="position: absolute; inset: 0; transform-origin: left center; backface-visibility: hidden; background: #12305A; border-radius: 14px; border: 2px solid #2A4A78; display: flex; flex-direction: column; justify-content: space-between; padding: 30px; box-sizing: border-box; color: #FFFFFF">
+            <div style="font-size: 12px; letter-spacing: .16em; color: #12D68A; font-weight: 600">CARNET N° 1 · DERNIÈRE ÉDITION</div>
+            <div style="font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 56px; line-height: .95">CARNET DE TICKETS</div>
+            <div style="display: flex; justify-content: space-between; align-items: end; font-size: 13px; color: #B9C6D6"><span>5 tickets<br>Valable partout en Tunisie</span><span style="width: 44px; height: 44px; border-radius: 12px; background: #12D68A; display: grid; place-items: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="#0B1D33"><path d="M13 2 4 14h7l-1 8 9-12h-7z"></path></svg></span></div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: center">
+          <sc-if value="{{canTear}}" hint-placeholder-val="{{ true }}">
+            <button class="fp-btn" onClick="{{tear}}" style="height: 46px; padding: 0 20px; border: 0; border-radius: 10px; background: #FFFFFF; color: #0B1D33; font: inherit; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px"><span class="fp-wiggle" style="display: inline-flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B1D33" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M8.6 7.6 20 18M8.6 16.4 20 6"></path></svg></span>Détacher le ticket</button>
+          </sc-if>
+          <sc-if value="{{isLast}}" hint-placeholder-val="{{ false }}">
+            <button class="fp-btn" onClick="{{restart}}" style="height: 46px; padding: 0 20px; border: 1px solid #3A5276; border-radius: 10px; background: transparent; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Rouvrir le carnet</button>
+          </sc-if>
+          <span style="font-size: 13px; color: #B9C6D6">{{leftLabel}}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pour-qui" style="padding: 72px 24px">
+    <div style="max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px">
+      <div><span style="font-size: 12px; letter-spacing: .14em; color: #087A4C; font-weight: 600">POUR QUI</span><h2 style="margin: 6px 0 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size: 46px; line-height: 1">Un carnet, trois façons de s'en servir</h2></div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px">
+        <article class="fp-card" style="background: #FFFCF3; border: 1px solid #E6E0CC; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+          <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #7A7360">TICKET ENTREPRISE</span>
+          <h3 style="margin: 0; font-size: 22px">Vous offrez</h3>
+          <p style="margin: 0; color: #4A5565">Commandez des crédits par virement, répartissez-les entre vos équipes par type, et suivez tout en temps réel. Fini les carnets à distribuer le 1er du mois.</p>
+          <a href="#contact" style="font-weight: 600; margin-top: auto">Équiper mon entreprise →</a>
+        </article>
+        <article class="fp-card" style="background: #FFFCF3; border: 1px solid #E6E0CC; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+          <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #7A7360">TICKET BÉNÉFICIAIRE</span>
+          <h3 style="margin: 0; font-size: 22px">Vous profitez</h3>
+          <p style="margin: 0; color: #4A5565">Vos soldes par type sur votre téléphone. Vous montrez votre code, vous tapez votre PIN, c'est payé. Au millime près, sans monnaie rendue en bonbons.</p>
+          <a href="Login.dc.html" style="font-weight: 600; margin-top: auto">Activer mon compte →</a>
+        </article>
+        <article class="fp-card" style="background: #FFFCF3; border: 1px solid #E6E0CC; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+          <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: #7A7360">TICKET COMMERÇANT</span>
+          <h3 style="margin: 0; font-size: 22px">Vous encaissez</h3>
+          <p style="margin: 0; color: #4A5565">Un QR à la caisse, un paiement validé en quelques secondes, un virement à J+2. Plus de tickets à compter le soir ni à déposer en agence.</p>
+          <a href="#contact" style="font-weight: 600; margin-top: auto">Devenir partenaire →</a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" style="padding: 0 24px 80px">
+    <div style="max-width: 1180px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start">
+      <div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+        <span style="font-size: 12px; letter-spacing: .14em; color: #087A4C; font-weight: 600">NOUS CONTACTER</span>
+        <h2 style="margin: 0; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size: 46px; line-height: 1">Glissez-nous un ticket</h2>
+        <p style="margin: 0; color: #4A5565; max-width: 42ch">Une question, une démo, un partenariat ? Remplissez le ticket : il arrive directement dans notre boîte, et on vous répond par e-mail.</p>
+      </div>
+      <div style="flex: 1 1 460px; min-width: 0; position: relative">
+        <sc-if value="{{notSent}}" hint-placeholder-val="{{ true }}">
+          <form class="{{formCls}}" onSubmit="{{send}}" style="background: #FFFCF3; border: 1px solid #E6E0CC; border-radius: 14px; overflow: hidden">
+            <div style="background: #0B1D33; color: #FFFFFF; padding: 14px 22px; display: flex; justify-content: space-between; font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: .06em"><span>TICKET DE CONTACT</span><span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; font-weight: 500; color: #9FB2C8; align-self: center">N° 000 120 774</span></div>
+            <div style="padding: 20px 22px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px">
+              <div style="display: flex; flex-direction: column; gap: 4px"><label for="c-nom" style="font-size: 11px; letter-spacing: .1em; font-weight: 600; color: #5B6878">NOM</label><input id="c-nom" autocomplete="name" style="height: 38px; border: 0; border-bottom: 2px solid #D9D2BC; background: transparent; font: inherit"></div>
+              <div style="display: flex; flex-direction: column; gap: 4px"><label for="c-mail" style="font-size: 11px; letter-spacing: .1em; font-weight: 600; color: #5B6878">E-MAIL</label><input id="c-mail" type="email" autocomplete="email" style="height: 38px; border: 0; border-bottom: 2px solid #D9D2BC; background: transparent; font: inherit"></div>
+              <div style="display: flex; flex-direction: column; gap: 4px"><label for="c-soc" style="font-size: 11px; letter-spacing: .1em; font-weight: 600; color: #5B6878">SOCIÉTÉ</label><input id="c-soc" autocomplete="organization" style="height: 38px; border: 0; border-bottom: 2px solid #D9D2BC; background: transparent; font: inherit"></div>
+              <div style="display: flex; flex-direction: column; gap: 4px"><label for="c-type" style="font-size: 11px; letter-spacing: .1em; font-weight: 600; color: #5B6878">VOUS ÊTES</label><select id="c-type" style="height: 38px; border: 0; border-bottom: 2px solid #D9D2BC; background: transparent; font: inherit"><option>Une entreprise</option><option>Un commerçant</option><option>Autre</option></select></div>
+              <div style="display: flex; flex-direction: column; gap: 4px; grid-column: 1 / -1"><label for="c-msg" style="font-size: 11px; letter-spacing: .1em; font-weight: 600; color: #5B6878">VOTRE MESSAGE</label><textarea id="c-msg" rows="3" style="border: 0; border-bottom: 2px solid #D9D2BC; background: transparent; font: inherit; resize: vertical"></textarea></div>
+            </div>
+            <div style="padding: 0 22px 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap">
+              <span style="font-size: 12px; color: #7A7360">Pas de spam. Juste une réponse.</span>
+              <button type="submit" class="fp-btn" style="height: 48px; padding: 0 22px; border: 0; border-radius: 10px; background: #0B1D33; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Envoyer mon ticket</button>
+            </div>
+          </form>
+        </sc-if>
+        <sc-if value="{{sent}}" hint-placeholder-val="{{ false }}">
+          <div class="fp-pop" role="status" style="background: #FFFFFF; border: 1px solid #E1E6ED; border-radius: 14px; padding: 36px 24px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+            <div style="width: 84px; height: 84px; border-radius: 50%; background: #E2F6EC; display: grid; place-items: center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0B7F4F" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></div>
+            <b style="font-size: 20px">Ticket bien reçu.</b>
+            <span style="color: #5B6878">Il est dans notre boîte. On vous répond par e-mail.</span>
+            <button onClick="{{again}}" style="margin-top: 6px; border: 1px solid #E1E6ED; background: #FFFFFF; border-radius: 9px; height: 40px; padding: 0 14px; font: inherit; cursor: pointer">Envoyer un autre ticket</button>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </section>
+
+  <footer style="background: #0B1D33; color: #9FB2C8; padding: 28px 24px; font-size: 13px">
+    <div style="max-width: 1180px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between">
+      <span>© 2026 FlexiPay · Tunis</span>
+      <span style="display: flex; gap: 18px; flex-wrap: wrap"><a href="#" style="color: #C6D2E0">Aide</a><a href="#" style="color: #C6D2E0">Conditions</a><a href="#" style="color: #C6D2E0">Confidentialité</a><span>FR · العربية · EN</span></span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1960}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { idx: 0, tearing: false, sent: false, sending: false }; }
+  componentDidMount() { this.auto = setInterval(() => { if (this.state.idx < 4 && !this.state.tearing) this.tear(); }, 5200); }
+  componentWillUnmount() { clearInterval(this.auto); clearTimeout(this.t); clearTimeout(this.t2); }
+  tear() { if (this.state.tearing || this.state.idx >= 4) return; this.setState({ tearing: true }); this.t = setTimeout(() => this.setState({ idx: this.state.idx + 1, tearing: false }), 640); }
+  renderVals() {
+    const s = this.state;
+    const T = { r: { color: '#14A06A', label: 'Restauration' }, h: { color: '#2F6FE0', label: 'Habillement' }, c: { color: '#D9761A', label: 'Carburant' }, k: { color: '#8A4FD6', label: 'Cadeaux' } };
+    const ch = [
+      { n: 1, tag: 'L’ENTREPRISE', color: '#12D68A', title: 'Une entreprise commande ses crédits', text: 'Elle choisit les montants par type et fait un virement. FlexiPay vérifie, puis crédite. Aucun carnet à imprimer, aucun coursier.', chips: [T.r, T.c], fine: 'Ne jetez pas ce ticket : il est en pixels.' },
+      { n: 2, tag: 'LA RÉPARTITION', color: '#2F6FE0', title: 'Elle les distribue à ses équipes', text: 'En quelques clics, ou par fichier pour 500 personnes d’un coup. Chacun reçoit ses soldes, séparés par type.', chips: [T.r, T.h, T.c, T.k], fine: 'Plus jamais « il me manque un carnet ».' },
+      { n: 3, tag: 'LE BÉNÉFICIAIRE', color: '#D9761A', title: 'Le bénéficiaire paie avec son téléphone', text: 'Il montre son code au commerçant et confirme avec son PIN. Le montant exact, au millime près.', chips: [T.r], fine: 'Pas de monnaie rendue en bonbons.' },
+      { n: 4, tag: 'LE COMMERÇANT', color: '#8A4FD6', title: 'Le commerçant est payé à J+2', text: 'Les encaissements s’additionnent tout seuls. Il demande son virement, la commission est déjà calculée.', chips: [T.r, T.k], fine: 'Le soir, on ne compte plus les tickets.' },
+      { n: 5, tag: 'LA FIN', color: '#0B1D33', title: 'C’était le dernier ticket papier', text: 'Le carnet est vide. Le reste se passe sur FlexiPay : rejoignez-nous ou glissez-nous un ticket de contact.', chips: [], fine: 'Fin du carnet. Début de FlexiPay.' }
+    ];
+    const i = s.idx;
+    return {
+      cur: ch[i], next: ch[Math.min(i + 1, 4)], hasNext: i < 4,
+      topCls: s.tearing ? 'fp-tearoff' : '',
+      canTear: i < 4, isLast: i === 4,
+      leftLabel: i < 4 ? 'Il reste ' + (5 - i) + ' tickets dans le carnet' : 'Carnet vide',
+      tear: () => this.tear(),
+      restart: () => this.setState({ idx: 0, tearing: false }),
+      notSent: !s.sent, sent: s.sent, formCls: s.sending ? 'fp-slot' : '',
+      send: (e) => { if (e && e.preventDefault) e.preventDefault(); this.setState({ sending: true }); this.t2 = setTimeout(() => this.setState({ sent: true, sending: false }), 520); },
+      again: () => this.setState({ sent: false })
+    };
+  }
+}
+</script>
+</body>
+</html>

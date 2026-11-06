@@ -105,7 +105,8 @@
         "reactivate": "Employé réactivé.",
         "deactivate": "Employé désactivé."
       }
-    }
+    },
+    "invitationExpired": "Invitation expirée"
   },
   "import": {
     "title": "Importer des employés",
@@ -183,7 +184,8 @@
     "status": "Statut",
     "emptyTitle": "Aucune facture",
     "pdf": "PDF",
-    "download": "Télécharger"
+    "download": "Télécharger",
+    "creditNote": "Avoir {number}"
   },
   "reporting": {
     "title": "Reporting",
@@ -198,5 +200,19 @@
     "balanceDescription": "Répartition par type de crédit.",
     "emptyTitle": "Pas encore de données",
     "emptyMessage": "Elles apparaîtront après votre première commande."
+  },
+  "departments": {
+    "title": "Départements",
+    "description": "Regroupez vos employés par département.",
+    "name": "Nom du département",
+    "employees": "Employés",
+    "employeeCount": "{count, plural, one {# employé} other {# employés}}",
+    "create": "Créer un département",
+    "submit": "Créer le département",
+    "created": "Département « {name} » créé.",
+    "duplicate": "Un département porte déjà ce nom.",
+    "required": "Saisissez un nom.",
+    "emptyTitle": "Aucun département",
+    "emptyText": "Créez un premier département pour regrouper vos employés."
   }
 }

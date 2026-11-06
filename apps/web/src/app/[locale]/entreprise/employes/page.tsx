@@ -19,7 +19,7 @@ import { FilterBar } from '@/components/ui/filter-bar';
 import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { Modal } from '@/components/ui/modal';
 import { ReasonDialog } from '@/components/ui/reason-dialog';
-import { UserStatusBadge } from '@/components/ui/status-badge';
+import { StatusBadge, UserStatusBadge } from '@/components/ui/status-badge';
 import { useToast } from '@/components/ui/toast';
 import { useCan, useCanOpen } from '@/lib/session/session-context';
 
@@ -110,7 +110,12 @@ export default function EmployeesPage() {
       key: 'status',
       header: t('status'),
       card: 'title',
-      cell: (row) => <UserStatusBadge status={row.status} graceUntil={row.graceUntil} />,
+      cell: (row) =>
+        row.invitationExpired === true ? (
+          <StatusBadge status="EXPIRED" labelKey="company.employees.invitationExpired" />
+        ) : (
+          <UserStatusBadge status={row.status} graceUntil={row.graceUntil} />
+        ),
       sortValue: (row) => row.status,
     },
     ...(canManage

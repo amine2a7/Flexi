@@ -241,3 +241,19 @@ Revue : `docs/handoff/reviews/securite-grilles-commission.md` (verdict OK). Acti
 | GC-T4 | T      | Grille modifiée ou supprimée en base (historique falsifié)      | GRANT SELECT/INSERT, aucune politique UPDATE/DELETE                       | Maîtrisé                                           |
 | GC-T5 | D      | Famine du pool ou inondation d'audit sur grille manquante       | Alerte dédoublonnée                                                       | Ouvert S-GC-03 Basse                               |
 | GC-T6 | I      | Support qui lit toutes les conditions commerciales              | Aucun (`accounts.read` suffit)                                            | Ouvert S-GC-04 Basse                               |
+
+## 6. Paramètres en base et annulation d'un paiement confirmé (2026-11-05)
+
+Revue : `docs/handoff/reviews/securite-parametres-2026-11-05.md` (verdict OK). Actifs ajoutés : compte de réception FlexiPay (`platform_settings.funding_*`, auparavant configuration serveur), paramètres de sécurité en base (paliers PIN, validité OTP et invitation), seuil quatre yeux figé par commande, route publique `GET /v1/public/terms`, opération `PAYMENT_CANCELLATION` (permission `payments.refund`, Gérant).
+
+| ID    | STRIDE | Menace                                                                       | Contrôle en place                                                                                 | État / constat                      |
+| ----- | ------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| PA-T1 | T      | Compte de réception FlexiPay détourné (IBAN modifié) ou erroné               | Quatre yeux `SETTINGS_CHANGE`, format + CHECK SQL ; pas de clé mod 97, pas d'avant/après, défaut démo | Ouvert S-PA-01 Moyenne              |
+| PA-T2 | T/E    | Affaiblissement des contrôles par paramétrage (PIN, OTP, seuil quatre yeux)  | Quatre yeux, bornes Zod + CHECK, seuil figé par commande                                          | Maîtrisé                            |
+| PA-T3 | S      | Mot de passe temporaire intercepté, valable plus longtemps (7–30 j vs 72 h)  | MFA pour entreprise/commerçant ; décision 2026-11-05 à confirmer                                  | Ouvert S-PA-02 Moyenne (DÉCISION)   |
+| PA-T4 | E/T    | Annulation par un Caissier, un autre commerçant, ou rejouée / concurrente    | Permission Gérant, 404 inter-tenant, Idempotency-Key, verrous comptes puis paiement ; testé       | Maîtrisé (tests de refus S-PA-05 Basse) |
+| PA-T5 | T      | Annulation d'un paiement déjà viré ou en litige (fonds repris deux fois)     | Revérification `payoutId`, litige (lecture SYSTEM), solde sous verrou                             | Maîtrisé (non testé, S-PA-05)       |
+| PA-T6 | I      | Contrôle interne publié (seuil quatre yeux) sur route publique               | Aucun                                                                                             | Ouvert S-PA-03 Basse                |
+| PA-T7 | D      | Quota public partagé par le rendu serveur du web                             | Limite 30/min/IP                                                                                  | Ouvert S-PA-06 Basse                |
+| PA-T8 | E      | Banalisation de `asService` pour des écritures inter-tenants                 | Tenant vérifié avant élévation                                                                    | Ouvert S-PA-07 Basse                |
+| PA-T9 | R      | Contre-passation non reliée à l'opération d'origine                          | Référence `-ANN`, audit `payments.cancelConfirmed`                                                | Ouvert S-PA-04 Basse                |

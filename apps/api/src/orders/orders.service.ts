@@ -381,6 +381,21 @@ export class OrdersService {
       if (order.status !== 'AWAITING_CONFIRMATION' && order.status !== 'AWAITING_PAYMENT')
         throw problems.conflict();
       await tx.creditOrder.update({ where: { id }, data: { status: 'CANCELLED' } });
+      // Invoice already issued (awaiting payment, nothing paid): a credit note cancels it.
+      const invoice = await tx.invoice.findUnique({ where: { orderId: id } });
+      if (invoice?.status === 'UNPAID') {
+        const [sequence] = await tx.$queryRaw<
+          { value: bigint }[]
+        >`SELECT nextval('credit_note_number_seq') AS value`;
+        await tx.invoice.update({
+          where: { id: invoice.id },
+          data: {
+            status: 'CANCELLED',
+            creditNoteNumber: `AV-${businessDay().slice(0, 4)}-${String(sequence?.value ?? 0n)}`,
+            cancelledAt: new Date(),
+          },
+        });
+      }
       await this.event(tx, id, 'CANCELLED');
       await this.audit.record(tx, 'orders.cancel', order.reference);
       return this.detail(await this.load(tx, id));

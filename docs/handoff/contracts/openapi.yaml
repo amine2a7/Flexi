@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: FlexiPay API
-  version: 0.14.0
+  version: 0.15.0
   summary: Conventions transverses, authentification web et profil (WB2, espace Commun).
   description: |
     # Contrat d'API FlexiPay (version 0.2.2)
@@ -2259,6 +2259,106 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CompanyDashboard'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/departments:
+    get:
+      tags: [company]
+      operationId: listCompanyDepartments
+      summary: Départements de l'entreprise (cahier ENT-04), avec leur nombre d'employés
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepartmentList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [company]
+      operationId: createCompanyDepartment
+      summary: Créer un département (nom unique dans l'entreprise, sinon 409)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepartmentCreate'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/employees/{employeeId}/department:
+    put:
+      tags: [company]
+      operationId: assignEmployeeDepartment
+      summary: Rattacher un employé à un département (ou le détacher avec null)
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepartmentAssignment'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeDepartment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -7467,12 +7567,77 @@ components:
         de grâce jusqu'à `graceUntil`).
       type: string
       enum: [INVITED, ACTIVE, SUSPENDED, DEACTIVATED]
+    Department:
+      title: Department
+      type: object
+      additionalProperties: false
+      required: [id, name, employeeCount]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        employeeCount:
+          type: integer
+          format: int32
+          minimum: 0
+    DepartmentList:
+      title: DepartmentList
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          maxItems: 500
+          items:
+            $ref: '#/components/schemas/Department'
+    DepartmentCreate:
+      title: DepartmentCreate
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+    DepartmentAssignment:
+      title: DepartmentAssignment
+      type: object
+      additionalProperties: false
+      required: [departmentId]
+      properties:
+        departmentId:
+          oneOf:
+            - $ref: '#/components/schemas/Uuid'
+            - type: 'null'
+    EmployeeDepartment:
+      title: EmployeeDepartment
+      type: object
+      additionalProperties: false
+      required: [employeeId, departmentId]
+      properties:
+        employeeId:
+          $ref: '#/components/schemas/Uuid'
+        departmentId:
+          oneOf:
+            - $ref: '#/components/schemas/Uuid'
+            - type: 'null'
     Employee:
       title: Employee
       type: object
       additionalProperties: false
       required: [id, employeeNumber, firstName, lastName, email, phone, status, monthAllocatedMillimes]
       properties:
+        departmentId:
+          description: Département de l'employé (absent sans département).
+          $ref: '#/components/schemas/Uuid'
+        invitationExpired:
+          description: Invité dont le mot de passe temporaire a expiré avant la première connexion (absent sinon).
+          type: boolean
         id:
           $ref: '#/components/schemas/Uuid'
         employeeNumber:
@@ -8111,9 +8276,9 @@ components:
           $ref: '#/components/schemas/AmountMillimes'
     InvoiceStatus:
       title: InvoiceStatus
-      description: Facture — Payée, À payer.
+      description: Facture — Payée, À payer, Annulée (avoir).
       type: string
-      enum: [PAID, UNPAID]
+      enum: [PAID, UNPAID, CANCELLED]
     Invoice:
       title: Invoice
       type: object
@@ -8136,6 +8301,12 @@ components:
           $ref: '#/components/schemas/Timestamp'
         status:
           $ref: '#/components/schemas/InvoiceStatus'
+        creditNoteNumber:
+          description: Numéro de l'avoir d'une facture annulée avec sa commande (statut CANCELLED).
+          type: string
+          maxLength: 32
+        cancelledAt:
+          $ref: '#/components/schemas/Timestamp'
     InvoicePage:
       title: InvoicePage
       description: Liste paginée de Invoice (§7).

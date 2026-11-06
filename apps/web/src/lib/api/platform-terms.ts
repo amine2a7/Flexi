@@ -30,7 +30,8 @@ export async function fetchPlatformTerms(): Promise<PlatformTerms | undefined> {
   const origin = getApiOrigin();
   if (origin === undefined) return undefined;
   try {
-    const response = await fetch(`${origin}/v1/public/terms`, { cache: 'no-store' });
+    // Cached a minute: the server rendering never spends the rate limit of the API (S-PA-06).
+    const response = await fetch(`${origin}/v1/public/terms`, { next: { revalidate: 60 } });
     return response.ok ? ((await response.json()) as PlatformTerms) : undefined;
   } catch {
     return undefined;

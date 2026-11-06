@@ -659,7 +659,7 @@ export class PaymentsService {
    * Cancellation of a confirmed payment by the shop (Gérant), within the window of the settings
    * (24 h by default, request of 2026-11-05), while it is in no payout and no dispute. One
    * balanced reversal: the shop wallet gives the amount back, the employee wallet gets it in lots
-   * of the expiry of origin (the lots the payment consumed). Lock order as the disputes: the two
+   * of the expiry of origin (the lots the payment consumed), valid 30 days at least. Lock order as the disputes: the two
    * accounts first, then the payment.
    */
   async refundByMerchant(tx: Tx, paymentId: string, key: string) {
@@ -717,12 +717,15 @@ export class PaymentsService {
           { account: employeeWallet, direction: 'C', amount: payment.amountMillimes },
         ],
       });
+      // Like a dispute refund: valid 30 days at least, never a credit already expired (ledger-
+      // auditor, 2026-11-05; to confirm by Amine).
+      const floor = Date.now() + 30 * 86_400_000;
       for (const part of parts) {
         await this.ledger.addLot(tx, {
           account: employeeWallet,
           creditType: payment.creditType,
           amount: part.amount,
-          expiresAt: part.expires_at,
+          expiresAt: new Date(Math.max(part.expires_at.getTime(), floor)),
           sourceTransactionId: posted.transactionId,
         });
       }
