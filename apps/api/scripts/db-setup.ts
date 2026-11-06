@@ -36,7 +36,8 @@ try {
       'SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1 AND pid <> pg_backend_pid()',
       [urls.dbName],
     );
-    await admin.query(`DROP DATABASE ${ident}`);
+    // FORCE: a running API (pnpm demo) may reconnect between the termination and the drop.
+    await admin.query(`DROP DATABASE ${ident} WITH (FORCE)`);
     console.log(`database ${urls.dbName} dropped`);
   }
   if (!exists || reset) {

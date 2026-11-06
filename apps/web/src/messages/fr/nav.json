@@ -2,43 +2,44 @@
   "skip": "Aller au contenu principal",
   "language": "Langue",
   "merchant": {
-    "dashboard": "Tableau de bord",
+    "dashboard": "Accueil",
     "collect": "Encaisser",
-    "history": "Historique",
+    "history": "Transactions",
     "receivables": "Créances",
     "payouts": "Virements",
-    "settlements": "Règlements",
-    "shop": "Mon commerce",
+    "settlements": "Factures et règlements",
+    "shop": "Ma fiche",
     "statistics": "Statistiques",
     "settings": "Paramètres",
     "support": "Support"
   },
   "company": {
-    "dashboard": "Tableau de bord",
+    "dashboard": "Accueil",
     "employees": "Employés",
     "orders": "Commandes",
-    "allocation": "Attribution",
+    "allocation": "Attributions",
     "invoices": "Factures",
     "settings": "Paramètres",
     "support": "Support",
-    "reporting": "Reporting"
+    "reporting": "Suivi de consommation",
+    "departments": "Départements"
   },
   "admin": {
-    "dashboard": "Supervision",
+    "dashboard": "Vue d'ensemble",
     "merchants": "Commerçants",
     "companies": "Entreprises",
     "orders": "Commandes",
-    "commissions": "Commissions",
-    "approvals": "Validations",
-    "settlements": "Règlements",
+    "commissions": "Grilles de commission",
+    "approvals": "Validations en attente",
+    "settlements": "Lots",
     "audit": "Journal d'audit",
-    "settings": "Paramétrage",
-    "kyc": "Dossiers KYC",
+    "settings": "Paramètres",
+    "kyc": "Comptes et KYC",
     "payouts": "Virements commerçants",
     "transactions": "Transactions",
     "messages": "Messages",
     "users": "Utilisateurs",
-    "security": "Sécurité & conformité",
+    "security": "Alertes",
     "reporting": "Reporting"
   },
   "beneficiary": {
@@ -47,5 +48,18 @@
     "history": "Historique",
     "profile": "Profil",
     "security": "Sécurité"
-  }
+  },
+  "groups": {
+    "steering": "Pilotage",
+    "clients": "Clients",
+    "operations": "Opérations",
+    "finance": "Finance",
+    "support": "Support",
+    "credits": "Crédits",
+    "team": "Équipe",
+    "account": "Compte",
+    "sales": "Ventes",
+    "money": "Argent"
+  },
+  "groupCounter": "{label} : {count} à traiter"
 }

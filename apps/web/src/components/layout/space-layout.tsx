@@ -21,10 +21,11 @@ import { ToastProvider } from '@/components/ui/toast';
 import { CounterBadge } from './counter-badge';
 import { LocaleSwitcher } from './locale-switcher';
 import { HELP_ANCHORS } from '@/components/public/help-topics';
-import { NAVIGATION, isActive } from './nav-config';
+import { NAVIGATION, isActive, isGroup, navLinks, type NavEntry } from './nav-config';
 import { OnboardingTour, hasTour, useOnboardingTour } from './onboarding-tour';
 import { useNavCounters } from './nav-counters';
 import { SessionWatch } from './session-watch';
+import { SideNav } from './side-nav';
 import { SkipLink } from './skip-link';
 
 type Role = Schemas['Role'];
@@ -147,11 +148,18 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
-  // Only the pages the session may open (decision C); the API refuses the others anyway.
-  const items = useMemo(
-    () => (NAVIGATION[role] ?? []).filter((item) => canOpen(me, item.href)),
+  // Only the pages the session may open (decision C); a category left empty is hidden. The API
+  // refuses the others anyway.
+  const entries = useMemo(
+    () =>
+      (NAVIGATION[role] ?? []).flatMap((entry): NavEntry[] => {
+        if (!isGroup(entry)) return canOpen(me, entry.href) ? [entry] : [];
+        const items = entry.items.filter((item) => canOpen(me, item.href));
+        return items.length === 0 ? [] : [{ ...entry, items }];
+      }),
     [role, me],
   );
+  const items = useMemo(() => navLinks(entries), [entries]);
   const home = SPACE_HOME[role] ?? '/';
   const counts = useNavCounters(me, pathname);
   const pageOpen = canOpen(me, pathname);
@@ -172,41 +180,16 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
     'flex min-h-touch-target-mobile w-full items-center gap-3 rounded-button px-3 text-label text-on-navy-muted transition-colors duration-fast hover:bg-navy-deep hover:text-on-navy focus-visible:focus-ring-on-dark lg:min-h-touch-target-min';
 
   const navList = (
-    <ul className="flex flex-col gap-1">
-      {items.map((item) => {
-        const active = isActive(item, pathname, home);
-        const Icon = item.icon;
-        const label = t(messageKey(item.labelKey));
-        const count = item.counter === undefined ? 0 : (counts[item.counter] ?? 0);
-        return (
-          <li key={item.href}>
-            <Link
-              href={item.href}
-              onClick={() => {
-                setMenuOpen(false);
-              }}
-              aria-current={active ? 'page' : undefined}
-              className={cn(
-                'flex min-h-touch-target-mobile items-center gap-3 rounded-button px-3 text-label transition-colors duration-fast focus-visible:focus-ring-on-dark lg:min-h-touch-target-min',
-                active
-                  ? 'bg-navy-deep text-on-navy'
-                  : 'text-on-navy-muted hover:bg-navy-deep hover:text-on-navy',
-              )}
-            >
-              <Icon aria-hidden="true" className="size-icon-md shrink-0" />
-              <span className="flex-1">{label}</span>
-              {count > 0 ? (
-                <CounterBadge
-                  count={count}
-                  label={t('layout.counter', { label, count })}
-                  className="flex min-w-icon-lg items-center justify-center rounded-badge bg-emerald px-2 text-micro font-label text-on-emerald"
-                />
-              ) : null}
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
+    <SideNav
+      entries={entries}
+      pathname={pathname}
+      home={home}
+      counts={counts}
+      userId={me.id}
+      onNavigate={() => {
+        setMenuOpen(false);
+      }}
+    />
   );
 
   const brand = (

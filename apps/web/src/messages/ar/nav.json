@@ -2,43 +2,44 @@
   "skip": "الانتقال إلى المحتوى الرئيسي",
   "language": "اللغة",
   "merchant": {
-    "dashboard": "لوحة القيادة",
+    "dashboard": "الرئيسية",
     "collect": "تحصيل",
-    "history": "السجل",
+    "history": "المعاملات",
     "receivables": "المستحقات",
     "payouts": "التحويلات",
-    "settlements": "التسويات",
-    "shop": "محلّي",
+    "settlements": "الفواتير والتسويات",
+    "shop": "بطاقتي",
     "statistics": "الإحصائيات",
     "settings": "الإعدادات",
     "support": "الدعم"
   },
   "company": {
-    "dashboard": "لوحة القيادة",
+    "dashboard": "الرئيسية",
     "employees": "الموظفون",
     "orders": "الطلبيات",
-    "allocation": "التوزيع",
+    "allocation": "التوزيعات",
     "invoices": "الفواتير",
     "settings": "الإعدادات",
     "support": "الدعم",
-    "reporting": "التقارير"
+    "reporting": "متابعة الاستهلاك",
+    "departments": "الأقسام"
   },
   "admin": {
-    "dashboard": "الإشراف",
+    "dashboard": "نظرة عامة",
     "merchants": "التجار",
     "companies": "المؤسسات",
     "orders": "الطلبيات",
-    "commissions": "العمولات",
-    "approvals": "المصادقات",
-    "settlements": "التسويات",
+    "commissions": "جداول العمولات",
+    "approvals": "المصادقات المعلقة",
+    "settlements": "الدفعات",
     "audit": "سجل التدقيق",
     "settings": "الإعدادات",
-    "kyc": "ملفات التحقق",
+    "kyc": "الحسابات و KYC",
     "payouts": "تحويلات التجار",
     "transactions": "المعاملات",
     "messages": "الرسائل",
     "users": "المستخدمون",
-    "security": "الأمان والامتثال",
+    "security": "التنبيهات",
     "reporting": "التقارير"
   },
   "beneficiary": {
@@ -47,5 +48,18 @@
     "history": "السجل",
     "profile": "الملف",
     "security": "الأمان"
-  }
+  },
+  "groups": {
+    "steering": "القيادة",
+    "clients": "الحرفاء",
+    "operations": "العمليات",
+    "finance": "المالية",
+    "support": "الدعم",
+    "credits": "الأرصدة",
+    "team": "الفريق",
+    "account": "الحساب",
+    "sales": "المبيعات",
+    "money": "المال"
+  },
+  "groupCounter": "{label}: {count} للمعالجة"
 }

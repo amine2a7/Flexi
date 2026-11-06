@@ -118,6 +118,16 @@ const motionPlugin = plugin((api) => {
   api.addUtilities({
     // SVG shapes transformed around their own box (bars that grow from their start).
     '.fp-box-fill': { 'transform-box': 'fill-box' },
+    // Accordion of the side menu (request of 2026-11-05): the height of a category opens and
+    // closes in the base duration (200 ms); no movement when motion is reduced.
+    '.fp-accordion': {
+      display: 'grid',
+      'grid-template-rows': '0fr',
+      transition: `grid-template-rows ${d('base')} ${e('out')}`,
+    },
+    '.fp-accordion[data-open="true"]': { 'grid-template-rows': '1fr' },
+    '.fp-accordion > *': { overflow: 'hidden', 'min-height': '0' },
+    '@media (prefers-reduced-motion: reduce)': { '.fp-accordion': { transition: 'none' } },
   });
 
   api.addComponents({

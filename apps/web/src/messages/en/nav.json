@@ -2,43 +2,44 @@
   "skip": "Skip to main content",
   "language": "Language",
   "merchant": {
-    "dashboard": "Dashboard",
+    "dashboard": "Home",
     "collect": "Collect",
-    "history": "History",
+    "history": "Transactions",
     "receivables": "Receivables",
     "payouts": "Payouts",
-    "settlements": "Settlements",
+    "settlements": "Invoices and settlements",
     "shop": "My shop",
     "statistics": "Statistics",
     "settings": "Settings",
     "support": "Support"
   },
   "company": {
-    "dashboard": "Dashboard",
+    "dashboard": "Home",
     "employees": "Employees",
     "orders": "Orders",
-    "allocation": "Allocation",
+    "allocation": "Allocations",
     "invoices": "Invoices",
     "settings": "Settings",
     "support": "Support",
-    "reporting": "Reporting"
+    "reporting": "Consumption tracking",
+    "departments": "Departments"
   },
   "admin": {
     "dashboard": "Overview",
     "merchants": "Merchants",
     "companies": "Companies",
     "orders": "Orders",
-    "commissions": "Commissions",
-    "approvals": "Approvals",
-    "settlements": "Settlements",
+    "commissions": "Commission grids",
+    "approvals": "Pending approvals",
+    "settlements": "Batches",
     "audit": "Audit log",
     "settings": "Settings",
-    "kyc": "KYC files",
+    "kyc": "Accounts and KYC",
     "payouts": "Merchant payouts",
     "transactions": "Transactions",
     "messages": "Messages",
     "users": "Users",
-    "security": "Security & compliance",
+    "security": "Alerts",
     "reporting": "Reporting"
   },
   "beneficiary": {
@@ -47,5 +48,18 @@
     "history": "History",
     "profile": "Profile",
     "security": "Security"
-  }
+  },
+  "groups": {
+    "steering": "Steering",
+    "clients": "Clients",
+    "operations": "Operations",
+    "finance": "Finance",
+    "support": "Support",
+    "credits": "Credits",
+    "team": "Team",
+    "account": "Account",
+    "sales": "Sales",
+    "money": "Money"
+  },
+  "groupCounter": "{label}: {count} to handle"
 }
