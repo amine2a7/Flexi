@@ -244,6 +244,7 @@ model Company {
   kycFiles        KycFile[]
   commissionGrids CommissionGrid[]
   departments     Department[]
+  orderQuotes     OrderQuote[]
 
   @@map("companies")
 }
@@ -643,6 +644,29 @@ model CreditOrder {
   @@index([companyId, createdAt])
   @@index([status])
   @@map("credit_orders")
+}
+
+/// Quote of a credit order, frozen for the validity of the settings; an order takes its amounts.
+model OrderQuote {
+  id                String    @id @default(uuid(7)) @db.Uuid
+  companyId         String    @map("company_id") @db.Uuid
+  /// [{ creditType, amountMillimes }] as quoted.
+  lines             Json
+  amountMillimes    BigInt    @map("amount_millimes")
+  feeRateBps        Int       @map("fee_rate_bps")
+  feesMillimes      BigInt    @map("fees_millimes")
+  vatRateBps        Int       @map("vat_rate_bps")
+  vatMillimes       BigInt    @map("vat_millimes")
+  stampDutyMillimes BigInt    @map("stamp_duty_millimes")
+  totalMillimes     BigInt    @map("total_millimes")
+  expiresAt         DateTime  @map("expires_at") @db.Timestamptz(3)
+  usedAt            DateTime? @map("used_at") @db.Timestamptz(3)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+  @@map("order_quotes")
 }
 
 model CreditOrderLine {

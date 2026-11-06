@@ -7831,8 +7831,13 @@ components:
       description: Récapitulatif calculé par le serveur.
       type: object
       additionalProperties: false
-      required: [lines, amountMillimes, feeRateBps, feesMillimes, vatRateBps, vatMillimes, stampDutyMillimes, totalMillimes]
+      required: [quoteId, expiresAt, lines, amountMillimes, feeRateBps, feesMillimes, vatRateBps, vatMillimes, stampDutyMillimes, totalMillimes]
       properties:
+        quoteId:
+          description: Devis figé jusqu'à expiresAt ; la commande créée avec cet identifiant en reprend les montants.
+          $ref: '#/components/schemas/Uuid'
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
         lines:
           type: array
           minItems: 1
@@ -7858,10 +7863,14 @@ components:
           $ref: '#/components/schemas/PositiveAmountMillimes'
     CreditOrderCreate:
       title: CreditOrderCreate
+      description: Soit quoteId (montants du devis figé, 409 QUOTE_EXPIRED après expiration, 409 si déjà utilisé), soit lines (montants calculés maintenant).
       type: object
       additionalProperties: false
-      required: [lines]
+      minProperties: 1
+      maxProperties: 1
       properties:
+        quoteId:
+          $ref: '#/components/schemas/Uuid'
         lines:
           description: Un montant par type de crédit commandé (types distincts).
           type: array

@@ -209,10 +209,10 @@ export class CompanyController {
     @Res({ passthrough: true }) res: Response,
     @Body() body: unknown,
   ) {
-    const input = parse(z.strictObject({ lines }), body);
+    const input = parse(z.union([z.strictObject({ quoteId: z.uuid() }), z.strictObject({ lines })]), body);
     const outcome = await this.idempotency.run(req, async (tx) => ({
       status: 201,
-      body: await this.orders.create(tx, input.lines),
+      body: await this.orders.create(tx, input),
     }));
     return sendOutcome(res, outcome);
   }

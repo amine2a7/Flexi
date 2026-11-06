@@ -222,11 +222,35 @@ export class OrdersService {
     return { rate, taxes, fees: feesOf(amount, rate, taxes) };
   }
 
+  /** Quote, frozen for the validity of the settings: an order created from it takes its amounts. */
   async quote(lines: OrderLineInput[]) {
     return this.db.user(async (tx) => {
+      const who = principal();
+      if (who.companyId === null) throw problems.forbidden();
       const amount = await this.checkLines(tx, lines);
       const { rate, taxes, fees } = await this.fees(tx, amount);
+      const platform = await this.settings.platform(tx);
+      const quote = await tx.orderQuote.create({
+        data: {
+          id: uuidv7(),
+          companyId: who.companyId,
+          lines: lines.map((line) => ({
+            creditType: line.creditType,
+            amountMillimes: line.amountMillimes,
+          })),
+          amountMillimes: amount,
+          feeRateBps: rate,
+          feesMillimes: fees.commission,
+          vatRateBps: taxes.vatRateBps,
+          vatMillimes: fees.vat,
+          stampDutyMillimes: fees.stamp,
+          totalMillimes: amount + fees.commission + fees.vat + fees.stamp,
+          expiresAt: new Date(Date.now() + platform.quoteValidityDays * 86_400_000),
+        },
+      });
       return {
+        quoteId: quote.id,
+        expiresAt: quote.expiresAt.toISOString(),
         lines: sortedLines(
           lines.map((line) => ({
             ...line,
@@ -240,24 +264,50 @@ export class OrdersService {
         vatRateBps: taxes.vatRateBps,
         vatMillimes: toMillimes(fees.vat),
         stampDutyMillimes: toMillimes(fees.stamp),
-        totalMillimes: toMillimes(amount + fees.commission + fees.vat + fees.stamp),
+        totalMillimes: toMillimes(quote.totalMillimes),
       };
     });
   }
 
+  /**
+   * The frozen quote of the company, taken once (even by two requests at the same time): its
+   * amounts, rate and end, whatever the grid or the taxes became meanwhile.
+   */
+  private async takeQuote(tx: Tx, companyId: string, quoteId: string) {
+    const quote = await tx.orderQuote.findUnique({ where: { id: quoteId } });
+    if (quote?.companyId !== companyId) throw problems.notFound();
+    if (quote.expiresAt.getTime() <= Date.now()) throw new ApiProblem(409, 'QUOTE_EXPIRED');
+    const taken = await tx.orderQuote.updateMany({
+      where: { id: quoteId, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+    if (taken.count !== 1) throw problems.conflict();
+    return {
+      lines: quote.lines as unknown as OrderLineInput[],
+      amount: quote.amountMillimes,
+      rate: quote.feeRateBps,
+      vatRateBps: quote.vatRateBps,
+      fees: { commission: quote.feesMillimes, vat: quote.vatMillimes, stamp: quote.stampDutyMillimes },
+      expiresAt: quote.expiresAt,
+    };
+  }
+
   // ---------------------------------------------------------------- company
 
-  async create(tx: Tx, lines: OrderLineInput[]) {
+  /** From a frozen quote (its amounts) or from lines (amounts of the settings now). */
+  async create(tx: Tx, input: { quoteId: string } | { lines: OrderLineInput[] }) {
     const who = principal();
     if (who.companyId === null) throw problems.forbidden();
-    const amount = await this.checkLines(tx, lines);
-    const { rate, taxes, fees } = await this.fees(tx, amount);
     const platform = await this.settings.platform(tx);
+    const frozen =
+      'quoteId' in input
+        ? await this.takeQuote(tx, who.companyId, input.quoteId)
+        : await this.liveQuote(tx, input.lines, platform.quoteValidityDays);
+    const { lines, amount, rate, fees } = frozen;
     const [sequence] = await tx.$queryRaw<
       { value: bigint }[]
     >`SELECT nextval('order_reference_seq') AS value`;
     const id = uuidv7();
-    const now = new Date();
     await tx.creditOrder.create({
       data: {
         id,
@@ -267,12 +317,12 @@ export class OrdersService {
         amountMillimes: amount,
         feeRateBps: rate,
         feesMillimes: fees.commission,
-        vatRateBps: taxes.vatRateBps,
+        vatRateBps: frozen.vatRateBps,
         vatMillimes: fees.vat,
         stampDutyMillimes: fees.stamp,
         totalMillimes: amount + fees.commission + fees.vat + fees.stamp,
         paymentReference: `FXP-${randomDigits(8)}`,
-        quoteExpiresAt: new Date(now.getTime() + platform.quoteValidityDays * 86_400_000),
+        quoteExpiresAt: frozen.expiresAt,
         secondValidationRequired: amount > platform.secondValidationThresholdMillimes,
         lines: {
           create: lines.map((line) => ({
@@ -286,6 +336,19 @@ export class OrdersService {
     const order = await this.load(tx, id);
     await this.audit.record(tx, 'orders.create', order.reference);
     return orderSummary(order);
+  }
+
+  private async liveQuote(tx: Tx, lines: OrderLineInput[], validityDays: number) {
+    const amount = await this.checkLines(tx, lines);
+    const { rate, taxes, fees } = await this.fees(tx, amount);
+    return {
+      lines,
+      amount,
+      rate,
+      vatRateBps: taxes.vatRateBps,
+      fees,
+      expiresAt: new Date(Date.now() + validityDays * 86_400_000),
+    };
   }
 
   private orderWhere(

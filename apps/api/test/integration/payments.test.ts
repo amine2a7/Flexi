@@ -672,6 +672,37 @@ describe('cancellation of a confirmed payment by the shop', () => {
       'CANCEL_WINDOW_OVER',
     );
   });
+
+  it('refuses a payment already in a payout', async () => {
+    const { shop, paymentId } = await paid(20_000);
+    const quote = await shop.call('POST', '/v1/merchant/payout-quotes', {
+      body: { creditType: 'RESTAURATION', grossMillimes: 20_000 },
+    });
+    const payout = await shop.call('POST', '/v1/merchant/payouts', {
+      body: { quoteId: quote.body.quoteId },
+      headers: key(),
+    });
+    expect(payout.status).toBe(201);
+    const refused = await shop.call('POST', `/v1/merchant/payments/${paymentId}/refund`, {
+      headers: key(),
+    });
+    expect(refused.body.code).toBe('RESOURCE_STATE_CONFLICT');
+  });
+
+  it('a double click at the same time cancels once', async () => {
+    const { employee, shop, paymentId } = await paid(20_000);
+    const path = `/v1/merchant/payments/${paymentId}/refund`;
+    const outcomes = await Promise.all([
+      shop.call('POST', path, { headers: key() }),
+      shop.call('POST', path, { headers: key() }),
+    ]);
+    expect(outcomes.map((outcome) => outcome.status).sort()).toEqual([200, 409]);
+    await db.system(async (tx) => {
+      expect(await ledger.balance(tx, accounts.employeeWallet(employee.id, 'RESTAURATION'))).toBe(
+        60_000n,
+      );
+    });
+  });
 });
 
 describe('settlement batches: Finance release in four eyes, simulated bank (task 9)', () => {

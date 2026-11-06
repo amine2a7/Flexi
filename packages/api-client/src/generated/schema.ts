@@ -3586,6 +3586,9 @@ export interface components {
      * @description Récapitulatif calculé par le serveur.
      */
     CreditOrderQuote: {
+      /** @description Devis figé jusqu'à expiresAt ; la commande créée avec cet identifiant en reprend les montants. */
+      quoteId: components['schemas']['Uuid'];
+      expiresAt: components['schemas']['Timestamp'];
       lines: components['schemas']['CreditOrderLine'][];
       amountMillimes: components['schemas']['PositiveAmountMillimes'];
       feeRateBps: components['schemas']['RateBps'];
@@ -3598,10 +3601,14 @@ export interface components {
       stampDutyMillimes: components['schemas']['AmountMillimes'];
       totalMillimes: components['schemas']['PositiveAmountMillimes'];
     };
-    /** CreditOrderCreate */
+    /**
+     * CreditOrderCreate
+     * @description Soit quoteId (montants du devis figé, 409 QUOTE_EXPIRED après expiration, 409 si déjà utilisé), soit lines (montants calculés maintenant).
+     */
     CreditOrderCreate: {
+      quoteId?: components['schemas']['Uuid'];
       /** @description Un montant par type de crédit commandé (types distincts). */
-      lines: components['schemas']['CreditOrderLine'][];
+      lines?: components['schemas']['CreditOrderLine'][];
     };
     /** CreditOrder */
     CreditOrder: {

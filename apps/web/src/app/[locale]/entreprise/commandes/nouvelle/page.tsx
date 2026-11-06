@@ -93,7 +93,7 @@ export default function NewOrderPage() {
     try {
       const { data, error: problem } = await getApi().POST('/v1/company/orders', {
         params: { header: { 'Idempotency-Key': intentKey } },
-        body: { lines: quote.lines },
+        body: { quoteId: quote.quoteId },
       });
       setConfirming(false);
       if (data === undefined) setError(problem);

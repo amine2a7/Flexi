@@ -194,6 +194,40 @@ describe('commission, VAT and stamp duty of an order (decisions of 2026-11-03)',
     expect(next.body).toMatchObject({ feeRateBps: 100, feesMillimes: 10_000 });
   });
 
+  it('the order takes the frozen quote: a grid change between the two does not alter it', async () => {
+    const company = await companyWithGrid([{ rateBps: 500 }]);
+    const owner = await signedIn(
+      base,
+      await createUser(db, env, 'COMPANY', { companyId: company.id }, 'Nadia T.'),
+    );
+    const lines = [{ creditType: 'RESTAURATION', amountMillimes: 1_000_000 }];
+    const quote = await owner.call('POST', '/v1/company/order-quotes', { body: { lines } });
+    expect(quote.body).toMatchObject({ feeRateBps: 500, totalMillimes: 1_060_500 });
+    await db.system((tx) =>
+      tx.commissionGrid.create({
+        data: { companyId: company.id, tiers: { create: [{ position: 0, rateBps: 100 }] } },
+      }),
+    );
+    const quoteId = String(quote.body.quoteId);
+    const created = await owner.call('POST', '/v1/company/orders', {
+      body: { quoteId },
+      headers: key(),
+    });
+    expect(created.status).toBe(201);
+    expect(created.body).toMatchObject({
+      feeRateBps: 500,
+      feesMillimes: 50_000,
+      totalMillimes: 1_060_500,
+      quoteExpiresAt: quote.body.expiresAt,
+    });
+    // A quote is used once.
+    const again = await owner.call('POST', '/v1/company/orders', {
+      body: { quoteId },
+      headers: key(),
+    });
+    expect(again.body.code).toBe('RESOURCE_STATE_CONFLICT');
+  });
+
   it('a company without a grid cannot order', async () => {
     const company = await db.system((tx) =>
       tx.company.create({
