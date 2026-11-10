@@ -2279,6 +2279,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/admin/payout-requests/{payoutId}/payment': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Enregistrer le paiement d'un virement accepté (`CHECKED` → `EXECUTED`)
+     * @description Référence du virement bancaire, date et montant (le net ; sinon motif obligatoire). Écriture du grand livre : à payer → banque.
+     */
+    post: operations['recordAdminPayoutPayment'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/settlements/{batchId}/payment': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Enregistrer le paiement d'un lot (chaque virement du lot passe « Payé », bug 6)
+     * @description Montant = somme des nets du lot (sinon motif). Le lot passe `PAID` avec la référence bancaire.
+     */
+    post: operations['recordSettlementBatchPayment'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/admin/settlements/{batchId}': {
     parameters: {
       query?: never;
@@ -3197,6 +3237,7 @@ export interface components {
       deductedMillimes?: components['schemas']['AmountMillimes'];
       netMillimes: components['schemas']['AmountMillimes'];
       requestedAt: components['schemas']['Timestamp'];
+      payment?: components['schemas']['PayoutPayment'];
       /** @description RIB masqué (4 derniers chiffres). */
       maskedIban: string;
     };
@@ -3220,6 +3261,7 @@ export interface components {
       stampDutyMillimes: components['schemas']['AmountMillimes'];
       netMillimes: components['schemas']['AmountMillimes'];
       requestedAt: components['schemas']['Timestamp'];
+      payment?: components['schemas']['PayoutPayment'];
       /** @description RIB masqué (4 derniers chiffres). */
       maskedIban: string;
       history: components['schemas']['PayoutEvent'][];
@@ -4013,8 +4055,31 @@ export interface components {
       netMillimes: components['schemas']['AmountMillimes'];
       status: components['schemas']['SettlementBatchStatus'];
     };
+    /**
+     * PayoutPayment
+     * @description Paiement enregistré par Finance (virement fait depuis la banque de FlexiPay, hors plateforme).
+     */
+    PayoutPayment: {
+      bankReference: string;
+      paidOn: components['schemas']['CalendarDate'];
+      amountMillimes: components['schemas']['AmountMillimes'];
+      /** @description Motif saisi quand le montant n'est pas le net. */
+      note?: string;
+    };
+    /**
+     * PayoutPaymentRecord
+     * @description Montant différent du net à virer → `reason` obligatoire (400 REQUIRED sur /reason, `params.expectedMillimes`).
+     */
+    PayoutPaymentRecord: {
+      bankReference: string;
+      paidOn: components['schemas']['CalendarDate'];
+      amountMillimes: components['schemas']['PositiveAmountMillimes'];
+      reason?: string;
+    };
     /** SettlementBatchDetail */
     SettlementBatchDetail: {
+      /** @description Date du virement bancaire du lot, enregistrée par Finance. */
+      paidOn?: components['schemas']['CalendarDate'];
       id: components['schemas']['Uuid'];
       reference: string;
       settlementDate: components['schemas']['CalendarDate'];
@@ -4133,6 +4198,7 @@ export interface components {
       stampDutyMillimes: components['schemas']['AmountMillimes'];
       netMillimes: components['schemas']['AmountMillimes'];
       requestedAt: components['schemas']['Timestamp'];
+      payment?: components['schemas']['PayoutPayment'];
       iban: string;
       /** @description Lot de règlement qui contient le virement validé. */
       batchId?: components['schemas']['Uuid'];
@@ -4157,6 +4223,7 @@ export interface components {
       stampDutyMillimes: components['schemas']['AmountMillimes'];
       netMillimes: components['schemas']['AmountMillimes'];
       requestedAt: components['schemas']['Timestamp'];
+      payment?: components['schemas']['PayoutPayment'];
       iban: string;
       batchId?: components['schemas']['Uuid'];
       batchReference?: string;
@@ -9158,6 +9225,92 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Approval'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  recordAdminPayoutPayment: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        payoutId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PayoutPaymentRecord'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminPayoutRequestDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  recordSettlementBatchPayment: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        batchId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PayoutPaymentRecord'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SettlementBatchDetail'];
         };
       };
       400: components['responses']['BadRequest'];

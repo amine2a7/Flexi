@@ -78,6 +78,8 @@ const EXPECTED: Record<string, Sub[]> = {
   'AdminPayoutsController.get': BACK_OFFICE,
   'AdminPayoutsController.approve': MONEY,
   'AdminPayoutsController.reject': MONEY,
+  'AdminPayoutsController.recordPayment': MONEY,
+  'AdminPayoutsController.recordBatchPayment': MONEY,
   'AdminPayoutsController.batches': BACK_OFFICE,
   'AdminPayoutsController.batch': BACK_OFFICE,
   'FraudAlertsController.list': RISK,

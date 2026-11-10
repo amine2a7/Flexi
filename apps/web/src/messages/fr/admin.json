@@ -635,5 +635,18 @@
       "iban": "RIB",
       "commissionGrid": "Grille de commission"
     }
+  },
+  "payment": {
+    "record": "Enregistrer le paiement",
+    "title": "Enregistrer le paiement de {reference}",
+    "net": "Net à virer",
+    "bankReference": "Référence du virement bancaire",
+    "paidOn": "Date du virement",
+    "amount": "Montant viré (TND)",
+    "differs": "Le montant n'est pas le net à virer : indiquez le motif.",
+    "reason": "Motif",
+    "confirm": "Valider",
+    "cancel": "Annuler",
+    "done": "{reference} : paiement enregistré, virement payé."
   }
 }

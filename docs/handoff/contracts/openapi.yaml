@@ -5296,6 +5296,100 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/admin/payout-requests/{payoutId}/payment:
+    post:
+      tags: [admin]
+      operationId: recordAdminPayoutPayment
+      summary: Enregistrer le paiement d'un virement accepté (`CHECKED` → `EXECUTED`)
+      description: |
+        Référence du virement bancaire, date et montant (le net ; sinon motif obligatoire). Écriture du grand livre : à payer → banque.
+      x-financial: true
+      parameters:
+        - name: payoutId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayoutPaymentRecord'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPayoutRequestDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/settlements/{batchId}/payment:
+    post:
+      tags: [admin]
+      operationId: recordSettlementBatchPayment
+      summary: "Enregistrer le paiement d'un lot (chaque virement du lot passe « Payé », bug 6)"
+      description: |
+        Montant = somme des nets du lot (sinon motif). Le lot passe `PAID` avec la référence bancaire.
+      x-financial: true
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayoutPaymentRecord'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementBatchDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/admin/settlements/{batchId}:
     get:
       tags: [admin]
@@ -7031,6 +7125,8 @@ components:
           $ref: '#/components/schemas/AmountMillimes'
         requestedAt:
           $ref: '#/components/schemas/Timestamp'
+        payment:
+          $ref: '#/components/schemas/PayoutPayment'
         maskedIban:
           description: RIB masqué (4 derniers chiffres).
           type: string
@@ -7072,6 +7168,8 @@ components:
           $ref: '#/components/schemas/AmountMillimes'
         requestedAt:
           $ref: '#/components/schemas/Timestamp'
+        payment:
+          $ref: '#/components/schemas/PayoutPayment'
         maskedIban:
           description: RIB masqué (4 derniers chiffres).
           type: string
@@ -8669,12 +8767,52 @@ components:
           $ref: '#/components/schemas/AmountMillimes'
         status:
           $ref: '#/components/schemas/SettlementBatchStatus'
+    PayoutPayment:
+      title: PayoutPayment
+      description: Paiement enregistré par Finance (virement fait depuis la banque de FlexiPay, hors plateforme).
+      type: object
+      additionalProperties: false
+      required: [bankReference, paidOn, amountMillimes]
+      properties:
+        bankReference:
+          type: string
+          minLength: 1
+          maxLength: 40
+        paidOn:
+          $ref: '#/components/schemas/CalendarDate'
+        amountMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        note:
+          description: Motif saisi quand le montant n'est pas le net.
+          type: string
+          maxLength: 500
+    PayoutPaymentRecord:
+      title: PayoutPaymentRecord
+      description: Montant différent du net à virer → `reason` obligatoire (400 REQUIRED sur /reason, `params.expectedMillimes`).
+      type: object
+      additionalProperties: false
+      required: [bankReference, paidOn, amountMillimes]
+      properties:
+        bankReference:
+          type: string
+          minLength: 1
+          maxLength: 40
+        paidOn:
+          $ref: '#/components/schemas/CalendarDate'
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        reason:
+          type: string
+          maxLength: 500
     SettlementBatchDetail:
       title: SettlementBatchDetail
       type: object
       additionalProperties: false
       required: [id, reference, settlementDate, merchantsCount, grossMillimes, commissionMillimes, vatMillimes, stampDutyMillimes, netMillimes, status, releasedAt, sentAt, bankReference, payouts]
       properties:
+        paidOn:
+          description: Date du virement bancaire du lot, enregistrée par Finance.
+          $ref: '#/components/schemas/CalendarDate'
         id:
           $ref: '#/components/schemas/Uuid'
         reference:
@@ -8914,6 +9052,8 @@ components:
           $ref: '#/components/schemas/AmountMillimes'
         requestedAt:
           $ref: '#/components/schemas/Timestamp'
+        payment:
+          $ref: '#/components/schemas/PayoutPayment'
         iban:
           type: string
           pattern: '^TN[0-9]{22}$'
@@ -8964,6 +9104,8 @@ components:
           $ref: '#/components/schemas/AmountMillimes'
         requestedAt:
           $ref: '#/components/schemas/Timestamp'
+        payment:
+          $ref: '#/components/schemas/PayoutPayment'
         iban:
           type: string
           pattern: '^TN[0-9]{22}$'

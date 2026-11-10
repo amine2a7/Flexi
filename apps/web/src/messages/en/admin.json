@@ -635,5 +635,18 @@
       "iban": "Bank account",
       "commissionGrid": "Commission grid"
     }
+  },
+  "payment": {
+    "record": "Record the payment",
+    "title": "Record the payment of {reference}",
+    "net": "Net to transfer",
+    "bankReference": "Bank transfer reference",
+    "paidOn": "Transfer date",
+    "amount": "Amount transferred (TND)",
+    "differs": "The amount is not the net to transfer: give the reason.",
+    "reason": "Reason",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "done": "{reference}: payment recorded, transfer paid."
   }
 }

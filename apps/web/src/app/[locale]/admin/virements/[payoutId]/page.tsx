@@ -13,6 +13,7 @@ import { useApiQuery } from '@/lib/api/use-api-query';
 import { formatDateTime } from '@/lib/format/date';
 import { formatMillimesWithCurrency, formatRateBps } from '@/lib/format/money';
 import { isStateConflict, ReasonDialog } from '@/components/orders/order-parts';
+import { RecordPaymentButton } from '@/components/payouts/record-payment-dialog';
 import { AmountBreakdown } from '@/components/ui/amount';
 import { Button, buttonClasses } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
@@ -143,7 +144,19 @@ function PayoutView({
       <PageHeader
         title={t('detailTitle', { reference: payout.reference })}
         description={payout.merchantName}
-        actions={<StatusBadge status={payout.status} context="payout" />}
+        actions={
+          <div className="flex items-center gap-3">
+            <StatusBadge status={payout.status} context="payout" />
+            {payout.status === 'CHECKED' && canDecide ? (
+              <RecordPaymentButton
+                target={{ payoutId: payout.id }}
+                reference={payout.reference}
+                netMillimes={payout.netMillimes}
+                onDone={onConflict}
+              />
+            ) : null}
+          </div>
+        }
       />
       <div className="flex flex-col gap-6">
         {error !== undefined ? (

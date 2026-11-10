@@ -59,6 +59,16 @@ function payoutBody(payout: PayoutRequest) {
     netMillimes: toMillimes(payout.netMillimes),
     deductedMillimes: toMillimes(payout.deductedMillimes),
     requestedAt: payout.requestedAt.toISOString(),
+    ...(payout.bankReference === null || payout.paidOn === null
+      ? {}
+      : {
+          payment: {
+            bankReference: payout.bankReference,
+            paidOn: dayOf(payout.paidOn),
+            amountMillimes: toMillimes(payout.paidAmountMillimes ?? payout.netMillimes),
+            ...(payout.paymentNote === null ? {} : { note: payout.paymentNote }),
+          },
+        }),
   };
 }
 
@@ -746,26 +756,29 @@ export class PayoutsService {
   }
 
   async batch(id: string) {
-    return this.db.user(async (tx) => {
-      const batch = await tx.settlementBatch.findUnique({ where: { id } });
-      if (batch === null) throw problems.notFound();
-      const payouts = await tx.payoutRequest.findMany({
-        where: { batchId: id },
-        include: ADMIN_INCLUDE,
-        orderBy: { requestedAt: 'asc' },
-      });
-      return {
-        id: batch.id,
-        reference: batch.reference,
-        settlementDate: dayOf(batch.settlementDate),
-        status: batch.status,
-        releasedAt: batch.releasedAt?.toISOString() ?? null,
-        sentAt: batch.sentAt?.toISOString() ?? null,
-        bankReference: batch.bankReference,
-        ...this.batchTotals(payouts),
-        payouts: payouts.map((row) => adminPayout(row, this.pii)),
-      };
+    return this.db.user((tx) => this.batchIn(tx, id));
+  }
+
+  private async batchIn(tx: Tx, id: string) {
+    const batch = await tx.settlementBatch.findUnique({ where: { id } });
+    if (batch === null) throw problems.notFound();
+    const payouts = await tx.payoutRequest.findMany({
+      where: { batchId: id },
+      include: ADMIN_INCLUDE,
+      orderBy: { requestedAt: 'asc' },
     });
+    return {
+      id: batch.id,
+      reference: batch.reference,
+      settlementDate: dayOf(batch.settlementDate),
+      status: batch.status,
+      releasedAt: batch.releasedAt?.toISOString() ?? null,
+      sentAt: batch.sentAt?.toISOString() ?? null,
+      bankReference: batch.bankReference,
+      ...(batch.paidOn === null ? {} : { paidOn: dayOf(batch.paidOn) }),
+      ...this.batchTotals(payouts),
+      payouts: payouts.map((row) => adminPayout(row, this.pii)),
+    };
   }
 
   /**
@@ -820,33 +833,9 @@ export class PayoutsService {
         if (moved.count !== 1) continue;
         // A merchant debt (accepted dispute on a paid payment) is deducted from what the bank
         // sends (decision of 2026-10-31); the payout records it.
-        const debtAccount = accounts.merchantDebt(payout.merchantId);
-        const debt = await this.ledger.balance(tx, debtAccount);
+        const debt = await this.ledger.balance(tx, accounts.merchantDebt(payout.merchantId));
         const deducted = debt < payout.netMillimes ? debt : payout.netMillimes;
-        await this.ledger.post(tx, {
-          type: 'PAYOUT_EXECUTED',
-          reference: payout.reference,
-          entries: [
-            { account: accounts.payoutPayable(), direction: 'D', amount: payout.netMillimes },
-            ...(payout.netMillimes - deducted > 0n
-              ? [
-                  {
-                    account: accounts.bankPayment(),
-                    direction: 'C' as const,
-                    amount: payout.netMillimes - deducted,
-                  },
-                ]
-              : []),
-            ...(deducted > 0n
-              ? [{ account: debtAccount, direction: 'C' as const, amount: deducted }]
-              : []),
-          ],
-        });
-        if (deducted > 0n)
-          await tx.payoutRequest.update({
-            where: { id: payout.id },
-            data: { deductedMillimes: deducted },
-          });
+        await this.postExecuted(tx, payout, deducted);
         await tx.payoutEvent.create({
           data: { id: uuidv7(), payoutId: payout.id, status: 'SENT', occurredAt: new Date() },
         });
@@ -864,6 +853,157 @@ export class PayoutsService {
       });
       await this.audit.record(tx, 'settlements.send', batch.reference, 'Système');
       return { reference: batch.reference, lines, sent: payouts.map((payout) => payout.id) };
+    });
+  }
+
+  /**
+   * Payment recorded by Finance (processus 6, bug 6): the transfer was made from FlexiPay's bank
+   * outside the platform. Every accepted payout of the target (one payout, or a whole batch) is
+   * posted (payable to the bank, a debt deducted as in the batch run) and paid; its sales are
+   * settled. The amount entered must equal the net to transfer, otherwise a reason is required.
+   */
+  async recordPayment(
+    tx: Tx,
+    target: { payoutId: string } | { batchId: string },
+    input: { bankReference: string; paidOn: string; amountMillimes: bigint; reason?: string },
+  ) {
+    const scope =
+      'payoutId' in target
+        ? await tx.payoutRequest.findUnique({ where: { id: target.payoutId } })
+        : null;
+    if ('payoutId' in target && scope === null) throw problems.notFound();
+    const batchId = 'batchId' in target ? target.batchId : undefined;
+    if (batchId !== undefined) {
+      const [batch] = await tx.$queryRaw<{ status: string }[]>`
+        SELECT status::text AS status FROM settlement_batches WHERE id = ${batchId}::uuid FOR UPDATE`;
+      if (batch === undefined) throw problems.notFound();
+      if (batch.status !== 'SCHEDULED' && batch.status !== 'RELEASED') throw problems.conflict();
+    }
+    const where =
+      batchId === undefined
+        ? { id: scope?.id ?? '', status: 'CHECKED' as const }
+        : { batchId, status: 'CHECKED' as const };
+    const candidates = await tx.payoutRequest.findMany({ where });
+    // Accounts first and all at once, as everywhere (ledger-auditor C4), then the payouts.
+    await this.ledger.lockAccounts(tx, [
+      accounts.payoutPayable(),
+      accounts.bankPayment(),
+      ...candidates.map((payout) => accounts.merchantDebt(payout.merchantId)),
+    ]);
+    const payouts = await tx.$queryRaw<{ id: string }[]>`
+      SELECT id FROM payout_requests
+       WHERE id = ANY(${candidates.map((payout) => payout.id)}::uuid[]) AND status = 'CHECKED'
+       ORDER BY id FOR UPDATE`;
+    if (payouts.length === 0) throw problems.conflict();
+    const locked = candidates.filter((payout) => payouts.some((row) => row.id === payout.id));
+    const due = await this.dueOf(tx, locked);
+    const expected = due.reduce((sum, line) => sum + line.bank, 0n);
+    if (input.amountMillimes !== expected && (input.reason ?? '').trim() === '')
+      throw validationFailed([
+        {
+          in: 'body',
+          pointer: '/reason',
+          code: 'REQUIRED',
+          params: { expectedMillimes: toMillimes(expected) },
+        },
+      ]);
+    const now = new Date();
+    const paidOn = dateOnly(input.paidOn);
+    for (const line of due) {
+      await this.postExecuted(tx, line.payout, line.deducted);
+      await tx.payoutRequest.update({
+        where: { id: line.payout.id },
+        data: {
+          status: 'EXECUTED',
+          bankReference: input.bankReference,
+          paidOn,
+          paidAmountMillimes: batchId === undefined ? input.amountMillimes : line.bank,
+          paymentNote: (input.reason ?? '').trim() === '' ? null : (input.reason ?? '').trim(),
+        },
+      });
+      await tx.payoutEvent.create({
+        data: {
+          id: uuidv7(),
+          payoutId: line.payout.id,
+          status: 'EXECUTED',
+          occurredAt: now,
+          actorId: principal().userId,
+        },
+      });
+      await this.settleSales(tx, line.payout.id, now);
+    }
+    if (batchId !== undefined) {
+      await tx.settlementBatch.update({
+        where: { id: batchId },
+        data: { status: 'PAID', bankReference: input.bankReference, paidOn, sentAt: now },
+      });
+      await this.audit.record(tx, 'settlements.recordPayment', batchId);
+      return this.batchIn(tx, batchId);
+    }
+    await this.audit.record(tx, 'payouts.recordPayment', locked[0]?.reference ?? '');
+    const updated = await this.loadAdmin(tx, locked[0]?.id ?? '');
+    return { ...adminPayout(updated, this.pii), history: history(updated.events) };
+  }
+
+  /** What the bank sends for each payout: its net, less a merchant debt deducted (2026-10-31). */
+  private async dueOf(tx: Tx, payouts: readonly PayoutRequest[]) {
+    const debts = new Map<string, bigint>();
+    const lines: { payout: PayoutRequest; deducted: bigint; bank: bigint }[] = [];
+    for (const payout of payouts) {
+      const debt =
+        debts.get(payout.merchantId) ??
+        (await this.ledger.balance(tx, accounts.merchantDebt(payout.merchantId)));
+      const deducted = debt < payout.netMillimes ? debt : payout.netMillimes;
+      debts.set(payout.merchantId, debt - deducted);
+      lines.push({ payout, deducted, bank: payout.netMillimes - deducted });
+    }
+    return lines;
+  }
+
+  /** Ledger of an executed payout: the payable goes to the bank (and to the debt deducted). */
+  private async postExecuted(tx: Tx, payout: PayoutRequest, deducted: bigint): Promise<void> {
+    const debtAccount = accounts.merchantDebt(payout.merchantId);
+    await this.ledger.post(tx, {
+      type: 'PAYOUT_EXECUTED',
+      reference: payout.reference,
+      entries: [
+        { account: accounts.payoutPayable(), direction: 'D', amount: payout.netMillimes },
+        ...(payout.netMillimes - deducted > 0n
+          ? [
+              {
+                account: accounts.bankPayment(),
+                direction: 'C' as const,
+                amount: payout.netMillimes - deducted,
+              },
+            ]
+          : []),
+        ...(deducted > 0n ? [{ account: debtAccount, direction: 'C' as const, amount: deducted }] : []),
+      ],
+    });
+    if (deducted > 0n)
+      await tx.payoutRequest.update({
+        where: { id: payout.id },
+        data: { deductedMillimes: deducted },
+      });
+  }
+
+  /** The sales a paid payout covered are settled. */
+  private async settleSales(tx: Tx, payoutId: string, now: Date): Promise<void> {
+    const settled = await tx.payment.findMany({
+      where: { payoutId, status: 'CONFIRMED' },
+      select: { id: true },
+    });
+    await tx.payment.updateMany({
+      where: { id: { in: settled.map((row) => row.id) } },
+      data: { status: 'SETTLED' },
+    });
+    await tx.paymentEvent.createMany({
+      data: settled.map((row) => ({
+        id: uuidv7(),
+        paymentId: row.id,
+        status: 'SETTLED' as const,
+        occurredAt: now,
+      })),
     });
   }
 
@@ -898,22 +1038,7 @@ export class PayoutsService {
           await tx.payoutEvent.create({
             data: { id: uuidv7(), payoutId: payout.id, status: 'EXECUTED', occurredAt: now },
           });
-          const settled = await tx.payment.findMany({
-            where: { payoutId: payout.id, status: 'CONFIRMED' },
-            select: { id: true },
-          });
-          await tx.payment.updateMany({
-            where: { id: { in: settled.map((row) => row.id) } },
-            data: { status: 'SETTLED' },
-          });
-          await tx.paymentEvent.createMany({
-            data: settled.map((row) => ({
-              id: uuidv7(),
-              paymentId: row.id,
-              status: 'SETTLED' as const,
-              occurredAt: now,
-            })),
-          });
+          await this.settleSales(tx, payout.id, now);
           continue;
         }
         // Rejected by the bank: the order and the request are reversed (the merchant gets its

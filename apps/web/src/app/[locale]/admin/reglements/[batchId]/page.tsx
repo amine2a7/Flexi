@@ -19,6 +19,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { ReasonDialog } from '@/components/ui/reason-dialog';
 import { useToast } from '@/components/ui/toast';
 import { useCan } from '@/lib/session/session-context';
+import { RecordPaymentButton } from '@/components/payouts/record-payment-dialog';
 
 
 /** Settlement batch: totals and the validated payouts that compose it. */
@@ -105,6 +106,18 @@ export default function SettlementBatchPage() {
                 <StatusBadge status={batch.data.status} />
                 {batch.data.status === 'SCHEDULED' && canRelease ? (
                   <ReleaseButton batch={batch.data} onDone={batch.reload} />
+                ) : null}
+                {(batch.data.status === 'SCHEDULED' || batch.data.status === 'RELEASED') &&
+                canRelease &&
+                batch.data.payouts.some((payout) => payout.status === 'CHECKED') ? (
+                  <RecordPaymentButton
+                    target={{ batchId: batch.data.id }}
+                    reference={batch.data.reference}
+                    netMillimes={batch.data.payouts
+                      .filter((payout) => payout.status === 'CHECKED')
+                      .reduce((sum, payout) => sum + payout.netMillimes, 0)}
+                    onDone={batch.reload}
+                  />
                 ) : null}
               </div>
             }

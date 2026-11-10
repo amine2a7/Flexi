@@ -18,6 +18,14 @@ import { pathId, sendOutcome } from '../common/responses.js';
 import { creditType, parse, reason } from '../common/validation.js';
 import { PayoutsService } from './payouts.service.js';
 
+/** Payment recorded by Finance: bank reference, date, amount; a reason when it is not the net. */
+const payment = z.strictObject({
+  bankReference: z.string().trim().min(1).max(40),
+  paidOn: z.iso.date(),
+  amountMillimes: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+  reason: z.string().trim().max(500).optional(),
+});
+
 @Roles('ADMIN')
 @Controller('v1/admin')
 export class AdminPayoutsController {
@@ -93,5 +101,49 @@ export class AdminPayoutsController {
   @Get('settlements/:batchId')
   batch(@Param('batchId') batchId: string) {
     return this.payouts.batch(pathId('batchId', batchId));
+  }
+
+  /** Financial (ledger of the execution): Idempotency-Key required (rule 4). */
+  @Can('payouts.decide')
+  @Post('payout-requests/:payoutId/payment')
+  @HttpCode(200)
+  async recordPayment(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @Param('payoutId') payoutId: string,
+    @Body() body: unknown,
+  ) {
+    const id = pathId('payoutId', payoutId);
+    const input = parse(payment, body);
+    const outcome = await this.idempotency.run(req, async (tx) => ({
+      status: 200,
+      body: await this.payouts.recordPayment(tx, { payoutId: id }, {
+        ...input,
+        amountMillimes: BigInt(input.amountMillimes),
+      }),
+    }));
+    return sendOutcome(res, outcome);
+  }
+
+  /** The payment of a batch pays every payout of the batch (bug 6). */
+  @Can('payouts.decide')
+  @Post('settlements/:batchId/payment')
+  @HttpCode(200)
+  async recordBatchPayment(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @Param('batchId') batchId: string,
+    @Body() body: unknown,
+  ) {
+    const id = pathId('batchId', batchId);
+    const input = parse(payment, body);
+    const outcome = await this.idempotency.run(req, async (tx) => ({
+      status: 200,
+      body: await this.payouts.recordPayment(tx, { batchId: id }, {
+        ...input,
+        amountMillimes: BigInt(input.amountMillimes),
+      }),
+    }));
+    return sendOutcome(res, outcome);
   }
 }

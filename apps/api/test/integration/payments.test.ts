@@ -709,7 +709,7 @@ describe('settlement batches: Finance release in four eyes, simulated bank (task
   beforeAll(freshApp);
 
   /** A payout of 30 TND approved into its batch; the IBAN of the shop decides the bank return. */
-  async function approvedPayout(iban?: string) {
+  async function approvedPayout(iban?: string, by?: Awaited<ReturnType<typeof signedIn>>) {
     const { client: employee } = await fundedEmployee(30_000n);
     const merchant = await createMerchant();
     if (iban !== undefined)
@@ -733,10 +733,9 @@ describe('settlement batches: Finance release in four eyes, simulated bank (task
       body: { quoteId: quote.body.quoteId },
       headers: key(),
     });
-    const finance = await signedIn(
-      base,
-      await createUser(db, env, 'ADMIN', {}, 'Finance A.', 'FINANCE'),
-    );
+    const finance =
+      by ??
+      (await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Finance A.', 'FINANCE')));
     const approved = await finance.call(
       'POST',
       `/v1/admin/payout-requests/${String(requested.body.id)}/approve`,
@@ -761,6 +760,39 @@ describe('settlement batches: Finance release in four eyes, simulated bank (task
     );
     await owner.end();
   };
+
+  // Bug 6 (processus v2): recording the bank payment of a batch pays each payout of the batch.
+  it('recording the payment of a batch of 3 pays the 3 payouts', async () => {
+    const first = await approvedPayout();
+    const others = [
+      await approvedPayout(undefined, first.finance),
+      await approvedPayout(undefined, first.finance),
+    ];
+    expect(others.map((other) => other.batchId)).toEqual([first.batchId, first.batchId]);
+    const path = `/v1/admin/settlements/${first.batchId}/payment`;
+    const batch = await first.finance.call('GET', `/v1/admin/settlements/${first.batchId}`);
+    const net = Number(batch.body.netMillimes);
+    const body = { bankReference: 'VIR-FP-000231', paidOn: '2026-11-16', amountMillimes: net };
+    // Another amount than the net needs a reason.
+    const short = await first.finance.call('POST', path, {
+      body: { ...body, amountMillimes: net - 1 },
+      headers: key(),
+    });
+    expect(short.status).toBe(400);
+    const paid = await first.finance.call('POST', path, { body, headers: key() });
+    expect(paid.status).toBe(200);
+    expect(paid.body).toMatchObject({ status: 'PAID', bankReference: 'VIR-FP-000231' });
+    for (const { shop, payoutId } of [first, ...others]) {
+      const detail = await shop.call('GET', `/v1/merchant/payouts/${payoutId}`);
+      expect(detail.body).toMatchObject({
+        status: 'EXECUTED',
+        payment: { bankReference: 'VIR-FP-000231', paidOn: '2026-11-16' },
+      });
+    }
+    expect((await first.finance.call('POST', path, { body, headers: key() })).status).toBe(409);
+    const books = await db.system((tx) => ledger.reconcile(tx));
+    expect(books.ok).toBe(true);
+  });
 
   it('a batch leaves only once Finance released it in four eyes', async () => {
     const { finance, batchId, payoutId, shop } = await approvedPayout();

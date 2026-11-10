@@ -856,6 +856,11 @@ model PayoutRequest {
   transactionId      String?      @map("transaction_id") @db.Uuid
   /// Merchant debt (accepted dispute on a paid payment) deducted from this payout when executed.
   deductedMillimes   BigInt       @default(0) @map("deducted_millimes")
+  /// Payment recorded by Finance (bank transfer made outside the platform).
+  bankReference      String?      @map("bank_reference") @db.VarChar(40)
+  paidOn             DateTime?    @map("paid_on") @db.Date
+  paidAmountMillimes BigInt?      @map("paid_amount_millimes")
+  paymentNote        String?      @map("payment_note") @db.VarChar(500)
   requestedAt        DateTime     @default(now()) @map("requested_at") @db.Timestamptz(3)
 
   merchant Merchant         @relation(fields: [merchantId], references: [id])
@@ -891,6 +896,7 @@ model SettlementBatch {
   releasedAt     DateTime?        @map("released_at") @db.Timestamptz(3)
   sentAt         DateTime?        @map("sent_at") @db.Timestamptz(3)
   bankReference  String?          @map("bank_reference") @db.VarChar(40)
+  paidOn         DateTime?        @map("paid_on") @db.Date
   createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
 
   payouts PayoutRequest[]
