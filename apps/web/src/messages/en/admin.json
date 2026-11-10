@@ -334,9 +334,15 @@
     "event": {
       "SUBMITTED": "File submitted",
       "APPROVED": "File approved",
-      "REJECTED": "File rejected"
+      "REJECTED": "File rejected",
+      "DOCUMENT_UPLOADED": "Document filed by the client",
+      "CORRECTION_REQUESTED": "Correction asked"
     },
-    "openFile": "Open {name}'s file"
+    "openFile": "Open {name}'s file",
+    "askCorrection": "Ask a correction",
+    "correctionTitle": "Ask a correction: {type}",
+    "correctionReason": "Reason (visible to the client)",
+    "correctionToast": "Correction asked: the client will file the document again."
   },
   "payouts": {
     "open": "Open",

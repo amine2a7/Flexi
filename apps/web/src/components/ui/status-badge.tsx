@@ -118,6 +118,8 @@ const ORDER_TOKENS: Record<string, string> = {
 const CONTEXT_OVERRIDES: Record<string, Record<string, string>> = {
   approval: { REJECTED: 'REFUSEE', APPROVED: 'APPROUVEE' },
   payout: { REJECTED: 'REJETEE', ON_HOLD: 'EN_LITIGE' },
+  // KYC documents (processus v2): à déposer, déposée, validée, à corriger.
+  kyc: { MISSING: 'EN_ATTENTE', SUBMITTED: 'ENVOYEE', VALIDATED: 'VALIDE', TO_CORRECT: 'REJETE' },
   // Account lifecycle (commun-statut-utilisateur.md §3.1).
   user: { ACTIVE: 'ACTIF', INVITED: 'INVITE', SUSPENDED: 'SUSPENDU', DEACTIVATED: 'DESACTIVE' },
   // Fraud alerts and disputes: severity and state with the colours of the charter.
@@ -138,7 +140,7 @@ const CONTEXT_OVERRIDES: Record<string, Record<string, string>> = {
 interface StatusBadgeProps {
   /** Status as sent by the API. */
   readonly status: string;
-  readonly context?: 'approval' | 'payout' | 'order' | 'user' | 'risk';
+  readonly context?: 'approval' | 'payout' | 'order' | 'user' | 'risk' | 'kyc';
   /** i18n key replacing the default label (e.g. merchant wording of A_REGLER, decision 2). */
   readonly labelKey?: string;
 }

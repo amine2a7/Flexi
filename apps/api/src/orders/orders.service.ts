@@ -221,15 +221,26 @@ export class OrdersService {
     const companyId = principal().companyId;
     if (companyId === null) throw problems.forbidden();
     const rate = await this.settings.commissionRate(tx, { companyId }, amount);
-    const { legalForm } = await tx.company.findUniqueOrThrow({
-      where: { id: companyId },
-      select: { legalForm: true },
-    });
+    const { legalForm } = await this.activeCompany(tx, companyId);
     const taxes = await this.settings.taxes(tx, legalForm);
     return { rate, taxes, fees: feesOf(amount, rate, taxes) };
   }
 
   /** Quote, frozen for the validity of the settings: an order created from it takes its amounts. */
+  /**
+   * A company orders only once its KYC file is validated (processus v2): before, a clear refusal
+   * (`409`, reason KYC_NOT_APPROVED) that the page explains.
+   */
+  private async activeCompany(tx: Tx, companyId: string) {
+    const company = await tx.company.findUniqueOrThrow({
+      where: { id: companyId },
+      select: { legalForm: true, status: true },
+    });
+    if (company.status !== 'APPROVED')
+      throw new ApiProblem(409, 'RESOURCE_STATE_CONFLICT', { reason: 'KYC_NOT_APPROVED' });
+    return company;
+  }
+
   async quote(lines: OrderLineInput[]) {
     return this.db.user(async (tx) => {
       const who = principal();
@@ -318,6 +329,7 @@ export class OrdersService {
   async create(tx: Tx, input: { quoteId: string } | { lines: OrderLineInput[] }) {
     const who = principal();
     if (who.companyId === null) throw problems.forbidden();
+    await this.activeCompany(tx, who.companyId);
     const platform = await this.settings.platform(tx);
     const frozen =
       'quoteId' in input

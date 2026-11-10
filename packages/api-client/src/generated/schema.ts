@@ -1821,6 +1821,78 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/account/kyc': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Mon dossier KYC (entreprise ou commerçant, Administrateur / Gérant) */
+    get: operations['getMyKycFile'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/account/kyc/documents': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Déposer (ou redéposer) une pièce du dossier KYC
+     * @description Multipart : `type` (KycDocumentType) et `document` (PDF, JPG ou PNG, 5 Mo max ; 413 / 415
+     *     sinon). Un nouveau dépôt remplace la pièce du même type. Refusé (409) une fois le dossier validé.
+     */
+    post: operations['uploadMyKycDocument'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/account/kyc/documents/{documentId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Télécharger une pièce de mon dossier */
+    get: operations['getMyKycDocument'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/kyc-files/{fileId}/corrections': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Demander une correction, avec un motif par pièce */
+    post: operations['requestKycCorrections'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/admin/kyc-files/{fileId}/reject': {
     parameters: {
       query?: never;
@@ -4194,11 +4266,52 @@ export interface components {
       /** Format: int32 */
       sizeBytes: number;
       uploadedAt: components['schemas']['Timestamp'];
+      status?: components['schemas']['KycDocumentStatus'];
+      correctionReason?: string;
+    };
+    /**
+     * KycDocumentStatus
+     * @enum {string}
+     */
+    KycDocumentStatus: 'SUBMITTED' | 'VALIDATED' | 'TO_CORRECT';
+    /**
+     * KycPiece
+     * @description Une pièce du dossier et son statut (processus v2) ; MISSING = à déposer.
+     */
+    KycPiece: {
+      type: components['schemas']['KycDocumentType'];
+      /** @enum {string} */
+      status: 'MISSING' | 'SUBMITTED' | 'VALIDATED' | 'TO_CORRECT';
+      documentId?: components['schemas']['Uuid'];
+      fileName?: string;
+      /** @enum {string} */
+      contentType?: 'image/jpeg' | 'image/png' | 'application/pdf';
+      /** Format: int32 */
+      sizeBytes?: number;
+      uploadedAt?: components['schemas']['Timestamp'];
+      correctionReason?: string;
+    };
+    /**
+     * MyKycFile
+     * @description Dossier KYC du client connecté (Compte › Mon dossier).
+     */
+    MyKycFile: {
+      id: components['schemas']['Uuid'];
+      status: components['schemas']['KycStatus'];
+      rejectionReason?: string;
+      documents: components['schemas']['KycPiece'][];
+    };
+    /** KycCorrections */
+    KycCorrections: {
+      corrections: {
+        documentId: components['schemas']['Uuid'];
+        reason: string;
+      }[];
     };
     /** KycEvent */
     KycEvent: {
       /** @enum {string} */
-      action: 'SUBMITTED' | 'APPROVED' | 'REJECTED';
+      action: 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'DOCUMENT_UPLOADED' | 'CORRECTION_REQUESTED';
       occurredAt: components['schemas']['Timestamp'];
       actorName: string;
       reason?: string;
@@ -4217,6 +4330,8 @@ export interface components {
     };
     /** KycFile */
     KycFile: {
+      /** @description Les quatre pièces avec leur statut (MISSING = à déposer). */
+      pieces?: components['schemas']['KycPiece'][];
       id: components['schemas']['Uuid'];
       accountType: components['schemas']['KycAccountType'];
       accountId: components['schemas']['Uuid'];
@@ -8425,6 +8540,134 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  getMyKycFile: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MyKycFile'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  uploadMyKycDocument: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'multipart/form-data': {
+          type: components['schemas']['KycDocumentType'];
+          /** Format: binary */
+          document: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MyKycFile'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      413: components['responses']['PayloadTooLarge'];
+      415: components['responses']['UnsupportedMediaType'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getMyKycDocument: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        documentId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Le fichier. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/octet-stream': string;
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  requestKycCorrections: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        fileId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['KycCorrections'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['KycFile'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   rejectKycFile: {
     parameters: {
       query?: never;
@@ -9745,9 +9988,18 @@ export const kycDocumentTypeValues: ReadonlyArray<
 export const kycDocumentContentTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['KycDocument']['contentType']
 > = ['image/jpeg', 'image/png', 'application/pdf'];
+export const kycDocumentStatusValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['KycDocumentStatus']
+> = ['SUBMITTED', 'VALIDATED', 'TO_CORRECT'];
+export const kycPieceStatusValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['KycPiece']['status']
+> = ['MISSING', 'SUBMITTED', 'VALIDATED', 'TO_CORRECT'];
+export const kycPieceContentTypeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['KycPiece']['contentType']
+> = ['image/jpeg', 'image/png', 'application/pdf'];
 export const kycEventActionValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['KycEvent']['action']
-> = ['SUBMITTED', 'APPROVED', 'REJECTED'];
+> = ['SUBMITTED', 'APPROVED', 'REJECTED', 'DOCUMENT_UPLOADED', 'CORRECTION_REQUESTED'];
 export const expiredCreditsDestinationValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['ExpiredCreditsDestination']
 > = ['PLATFORM_REVENUE', 'COMPANY_RETURN'];

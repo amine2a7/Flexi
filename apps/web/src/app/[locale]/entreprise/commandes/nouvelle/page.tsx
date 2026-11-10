@@ -6,7 +6,7 @@ import { useMemo, useState, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
 import { useRouter } from '@/i18n/navigation';
 import { getApi, newIdempotencyKey } from '@/lib/api/client';
-import { errorMessageKey } from '@/lib/api/problem';
+import { asProblem, errorMessageKey } from '@/lib/api/problem';
 import { formatMillimesWithCurrency, formatRateBps } from '@/lib/format/money';
 import { parseMillimes } from '@/lib/format/money-input';
 import { AmountBreakdown } from '@/components/ui/amount';
@@ -198,7 +198,12 @@ export default function NewOrderPage() {
         <Card>
           <CardTitle>{t('summary')}</CardTitle>
           {error !== undefined ? (
-            <Alert tone="danger">{tRoot(messageKey(errorMessageKey(error)))}</Alert>
+            <Alert tone="danger">
+              {(asProblem(error)?.details as { reason?: unknown } | undefined)?.reason ===
+              'KYC_NOT_APPROVED'
+                ? tRoot('account.kyc.notApproved')
+                : tRoot(messageKey(errorMessageKey(error)))}
+            </Alert>
           ) : null}
           {quote === undefined ? (
             <p className="text-body text-text-muted">{t('summaryEmpty')}</p>

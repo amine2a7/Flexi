@@ -17,6 +17,7 @@ const COMPANY_OWNER = [
   'orders.declareTransfer',
   'fundingAccount.read',
   'invoices.read',
+  'kyc.submit',
 ] as const;
 
 const MERCHANT_OWNER = [
@@ -30,6 +31,7 @@ const MERCHANT_OWNER = [
   'settlements.read',
   'documents.read',
   'shop.read',
+  'kyc.submit',
 ] as const;
 
 // Admin permissions never reuse a company or merchant name: a tenant route must stay unreachable

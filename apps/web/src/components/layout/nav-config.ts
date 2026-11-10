@@ -79,6 +79,7 @@ export const NAVIGATION: Partial<Record<Role, readonly NavEntry[]>> = {
     ]),
     group('account', UserRound, [
       { href: '/commercant/mon-commerce', labelKey: 'nav.merchant.shop', icon: Store },
+      { href: '/commercant/dossier', labelKey: 'nav.merchant.kyc', icon: FileSearch },
       { href: '/commercant/parametres', labelKey: 'nav.merchant.settings', icon: Settings },
       { href: '/commercant/support', labelKey: 'nav.merchant.support', icon: LifeBuoy },
     ]),
@@ -115,6 +116,7 @@ export const NAVIGATION: Partial<Record<Role, readonly NavEntry[]>> = {
       { href: '/entreprise/reporting', labelKey: 'nav.company.reporting', icon: ChartColumn },
     ]),
     group('account', UserRound, [
+      { href: '/entreprise/dossier', labelKey: 'nav.company.kyc', icon: FileSearch },
       { href: '/entreprise/parametres', labelKey: 'nav.company.settings', icon: Settings },
       { href: '/entreprise/support', labelKey: 'nav.company.support', icon: LifeBuoy },
     ]),

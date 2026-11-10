@@ -29,5 +29,40 @@
     "helpHint": "Each topic opens the help page at the right section.",
     "contact": "Write to us",
     "contactHint": "The FlexiPay team answers by e-mail or phone."
+  },
+  "kyc": {
+    "title": "My file",
+    "description": "File the documents FlexiPay asks for. Once your file is validated, your account is active.",
+    "approved": "File validated: your account is active.",
+    "toCorrect": "FlexiPay asks a correction: file the flagged documents again.",
+    "missing": "Complete your file: file the 4 documents (PDF or image, 5 MB each at most).",
+    "underReview": "File complete: FlexiPay is checking it.",
+    "upload": "Upload",
+    "replace": "Replace",
+    "uploaded": "{name} uploaded.",
+    "reason": "Correction asked: {reason}",
+    "fileType": "Format refused: PDF, JPG or PNG only.",
+    "fileTooLarge": "File too large: 5 MB at most.",
+    "banner": "Complete your file to activate your account.",
+    "bannerAction": "Open my file",
+    "status": {
+      "MISSING": "To file",
+      "SUBMITTED": "Filed",
+      "VALIDATED": "Validated",
+      "TO_CORRECT": "To correct"
+    },
+    "types": {
+      "REGISTRY_EXTRACT": "Trade register extract or licence",
+      "TAX_CERTIFICATE": "Tax identification card",
+      "MANAGER_ID": "Manager's ID card",
+      "BANK_DETAILS": "Bank details (RIB)"
+    },
+    "hints": {
+      "REGISTRY_EXTRACT": "Recent extract of the national business register.",
+      "TAX_CERTIFICATE": "Card with the tax number.",
+      "MANAGER_ID": "Both sides of the ID card.",
+      "BANK_DETAILS": "Bank details in the account holder's name."
+    },
+    "notApproved": "Your file is not validated yet: you can order once FlexiPay validates it (Account › My file)."
   }
 }

@@ -334,9 +334,15 @@
     "event": {
       "SUBMITTED": "Dossier déposé",
       "APPROVED": "Dossier validé",
-      "REJECTED": "Dossier refusé"
+      "REJECTED": "Dossier refusé",
+      "DOCUMENT_UPLOADED": "Pièce déposée par le client",
+      "CORRECTION_REQUESTED": "Correction demandée"
     },
-    "openFile": "Ouvrir le dossier de {name}"
+    "openFile": "Ouvrir le dossier de {name}",
+    "askCorrection": "Demander une correction",
+    "correctionTitle": "Demander une correction : {type}",
+    "correctionReason": "Motif (visible par le client)",
+    "correctionToast": "Correction demandée : le client va redéposer la pièce."
   },
   "payouts": {
     "open": "Ouvrir",

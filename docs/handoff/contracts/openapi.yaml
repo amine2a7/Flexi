@@ -454,6 +454,8 @@ tags:
     description: Espace Administrateur (spec 04)
   - name: employee
     description: Bénéficiaire (employé) — espace web /beneficiaire et application mobile, mêmes routes
+  - name: account
+    description: Compte du client connecté (entreprise ou commerçant) — dossier KYC (processus v2)
   - name: public
     description: Pages publiques (formulaire « Nous contacter »), sans connexion
 security:
@@ -4270,6 +4272,156 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/account/kyc:
+    get:
+      tags: [account]
+      operationId: getMyKycFile
+      summary: Mon dossier KYC (entreprise ou commerçant, Administrateur / Gérant)
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyKycFile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/account/kyc/documents:
+    post:
+      tags: [account]
+      operationId: uploadMyKycDocument
+      summary: Déposer (ou redéposer) une pièce du dossier KYC
+      description: |
+        Multipart : `type` (KycDocumentType) et `document` (PDF, JPG ou PNG, 5 Mo max ; 413 / 415
+        sinon). Un nouveau dépôt remplace la pièce du même type. Refusé (409) une fois le dossier validé.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [type, document]
+              properties:
+                type:
+                  $ref: '#/components/schemas/KycDocumentType'
+                document:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyKycFile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/account/kyc/documents/{documentId}:
+    get:
+      tags: [account]
+      operationId: getMyKycDocument
+      summary: Télécharger une pièce de mon dossier
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Le fichier.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/kyc-files/{fileId}/corrections:
+    post:
+      tags: [admin]
+      operationId: requestKycCorrections
+      summary: Demander une correction, avec un motif par pièce
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KycCorrections'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KycFile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -8999,6 +9151,85 @@ components:
           maximum: 5242880
         uploadedAt:
           $ref: '#/components/schemas/Timestamp'
+        status:
+          $ref: '#/components/schemas/KycDocumentStatus'
+        correctionReason:
+          type: string
+          maxLength: 500
+    KycDocumentStatus:
+      title: KycDocumentStatus
+      type: string
+      enum: [SUBMITTED, VALIDATED, TO_CORRECT]
+    KycPiece:
+      title: KycPiece
+      description: Une pièce du dossier et son statut (processus v2) ; MISSING = à déposer.
+      type: object
+      additionalProperties: false
+      required: [type, status]
+      properties:
+        type:
+          $ref: '#/components/schemas/KycDocumentType'
+        status:
+          type: string
+          enum: [MISSING, SUBMITTED, VALIDATED, TO_CORRECT]
+        documentId:
+          $ref: '#/components/schemas/Uuid'
+        fileName:
+          type: string
+          maxLength: 255
+        contentType:
+          type: string
+          enum: [image/jpeg, image/png, application/pdf]
+        sizeBytes:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 5242880
+        uploadedAt:
+          $ref: '#/components/schemas/Timestamp'
+        correctionReason:
+          type: string
+          maxLength: 500
+    MyKycFile:
+      title: MyKycFile
+      description: Dossier KYC du client connecté (Compte › Mon dossier).
+      type: object
+      additionalProperties: false
+      required: [id, status, documents]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        status:
+          $ref: '#/components/schemas/KycStatus'
+        rejectionReason:
+          type: string
+          maxLength: 500
+        documents:
+          type: array
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/KycPiece'
+    KycCorrections:
+      title: KycCorrections
+      type: object
+      additionalProperties: false
+      required: [corrections]
+      properties:
+        corrections:
+          type: array
+          minItems: 1
+          maxItems: 4
+          items:
+            type: object
+            additionalProperties: false
+            required: [documentId, reason]
+            properties:
+              documentId:
+                $ref: '#/components/schemas/Uuid'
+              reason:
+                type: string
+                minLength: 10
+                maxLength: 500
     KycEvent:
       title: KycEvent
       type: object
@@ -9007,7 +9238,7 @@ components:
       properties:
         action:
           type: string
-          enum: [SUBMITTED, APPROVED, REJECTED]
+          enum: [SUBMITTED, APPROVED, REJECTED, DOCUMENT_UPLOADED, CORRECTION_REQUESTED]
         occurredAt:
           $ref: '#/components/schemas/Timestamp'
         actorName:
@@ -9051,6 +9282,12 @@ components:
       additionalProperties: false
       required: [id, accountType, accountId, accountName, city, status, submittedAt, documentsCount, documents, history]
       properties:
+        pieces:
+          description: Les quatre pièces avec leur statut (MISSING = à déposer).
+          type: array
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/KycPiece'
         id:
           $ref: '#/components/schemas/Uuid'
         accountType:

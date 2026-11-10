@@ -396,6 +396,22 @@ export class AdminController {
   }
 
   @Can('kyc.decide')
+  @Post('kyc-files/:fileId/corrections')
+  @HttpCode(200)
+  requestKycCorrections(@Param('fileId') fileId: string, @Body() body: unknown) {
+    const input = parse(
+      z.strictObject({
+        corrections: z
+          .array(z.strictObject({ documentId: z.uuid(), reason }))
+          .min(1)
+          .max(4),
+      }),
+      body,
+    );
+    return this.admin.requestKycCorrections(pathId('fileId', fileId), input.corrections);
+  }
+
+  @Can('kyc.decide')
   @Post('kyc-files/:fileId/reject')
   @HttpCode(200)
   rejectKyc(@Param('fileId') fileId: string, @Body() body: unknown) {

@@ -11,7 +11,8 @@
     "shop": "بطاقتي",
     "statistics": "الإحصائيات",
     "settings": "الإعدادات",
-    "support": "الدعم"
+    "support": "الدعم",
+    "kyc": "ملفي"
   },
   "company": {
     "dashboard": "الرئيسية",
@@ -22,7 +23,8 @@
     "settings": "الإعدادات",
     "support": "الدعم",
     "reporting": "متابعة الاستهلاك",
-    "departments": "الأقسام"
+    "departments": "الأقسام",
+    "kyc": "ملفي"
   },
   "admin": {
     "dashboard": "نظرة عامة",

@@ -11,7 +11,8 @@
     "shop": "My shop",
     "statistics": "Statistics",
     "settings": "Settings",
-    "support": "Support"
+    "support": "Support",
+    "kyc": "My file"
   },
   "company": {
     "dashboard": "Home",
@@ -22,7 +23,8 @@
     "settings": "Settings",
     "support": "Support",
     "reporting": "Consumption tracking",
-    "departments": "Departments"
+    "departments": "Departments",
+    "kyc": "My file"
   },
   "admin": {
     "dashboard": "Overview",

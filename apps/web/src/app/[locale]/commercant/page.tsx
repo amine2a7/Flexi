@@ -15,6 +15,7 @@ import { CreditTypeBreakdown } from '@/components/ui/credit-type';
 import { buttonClasses } from '@/components/ui/button';
 import { Card, CardTitle, StatCard } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/layout-blocks';
+import { KycBanner } from '@/components/account/kyc-file';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useCan } from '@/lib/session/session-context';
@@ -29,6 +30,7 @@ export default function MerchantDashboardPage() {
 
   return (
     <>
+      <KycBanner href="/commercant/dossier" />
       <PageHeader
         title={t('title')}
         description={t('description', { days: settlementDays })}

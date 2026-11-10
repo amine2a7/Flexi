@@ -19,6 +19,7 @@ import { FileViewer } from '@/components/ui/file-viewer';
 import { Alert, DescriptionList, PageHeader } from '@/components/ui/layout-blocks';
 import { ConfirmDialog } from '@/components/ui/modal';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Timeline } from '@/components/ui/timeline';
 import { useToast } from '@/components/ui/toast';
 import { useCan } from '@/lib/session/session-context';
@@ -73,6 +74,8 @@ function KycView({
   const locale = useLocale();
   const toast = useToast();
   const [dialog, setDialog] = useState<'approve' | 'reject' | undefined>(undefined);
+  // Document whose correction is being asked (processus v2: a reason per document).
+  const [correcting, setCorrecting] = useState<Schemas['KycDocument'] | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<unknown>(undefined);
 
@@ -167,8 +170,36 @@ function KycView({
         <Card>
           <CardTitle>{t('documentsTitle')}</CardTitle>
           <div className="grid gap-6 md:grid-cols-2">
+            {(file.pieces ?? [])
+              .filter((piece) => piece.status === 'MISSING')
+              .map((piece) => (
+                <section
+                  key={piece.type}
+                  className="flex items-center justify-between gap-3 rounded-card-desktop border border-dashed border-border p-4"
+                >
+                  <h3 className="text-label font-title text-text">
+                    {t(`documentTypes.${piece.type}`)}
+                  </h3>
+                  <StatusBadge
+                    status="MISSING"
+                    context="kyc"
+                    labelKey="account.kyc.status.MISSING"
+                  />
+                </section>
+              ))}
             {file.documents.map((document) => (
-              <KycDocumentView key={document.id} fileId={file.id} document={document} />
+              <KycDocumentView
+                key={document.id}
+                fileId={file.id}
+                document={document}
+                {...(file.status === 'PENDING' && canDecide && document.status !== 'TO_CORRECT'
+                  ? {
+                      onCorrect: () => {
+                        setCorrecting(document);
+                      },
+                    }
+                  : {})}
+              />
             ))}
           </div>
         </Card>
@@ -197,6 +228,27 @@ function KycView({
         loading={saving}
         onConfirm={() => void approve()}
       />
+      {correcting !== undefined ? (
+        <ReasonDialog
+          title={t('correctionTitle', { type: t(`documentTypes.${correcting.type}`) })}
+          label={t('correctionReason')}
+          confirmLabel={t('askCorrection')}
+          onClose={() => {
+            setCorrecting(undefined);
+          }}
+          onSubmit={async (reason) => {
+            const problem = settle(
+              await getApi().POST('/v1/admin/kyc-files/{fileId}/corrections', {
+                params: { path: { fileId: file.id } },
+                body: { corrections: [{ documentId: correcting.id, reason }] },
+              }),
+              t('correctionToast'),
+            );
+            if (problem === undefined) setCorrecting(undefined);
+            return problem;
+          }}
+        />
+      ) : null}
       {dialog === 'reject' ? (
         <ReasonDialog
           title={t('rejectTitle', { name: file.accountName })}
@@ -223,9 +275,11 @@ function KycView({
 function KycDocumentView({
   fileId,
   document,
+  onCorrect,
 }: {
   fileId: string;
   document: Schemas['KycDocument'];
+  onCorrect?: () => void;
 }) {
   const t = useTranslations('admin.kyc');
   const load = useCallback(
@@ -239,7 +293,24 @@ function KycDocumentView({
   const title = t(`documentTypes.${document.type}`);
   return (
     <section className="flex flex-col gap-3 rounded-card-desktop border border-border p-4">
-      <h3 className="text-label font-title text-text">{title}</h3>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-label font-title text-text">{title}</h3>
+        {document.status === undefined ? null : (
+          <StatusBadge
+            status={document.status}
+            context="kyc"
+            labelKey={`account.kyc.status.${document.status}`}
+          />
+        )}
+      </div>
+      {document.correctionReason === undefined ? null : (
+        <Alert tone="warning">{document.correctionReason}</Alert>
+      )}
+      {onCorrect === undefined ? null : (
+        <Button size="sm" variant="secondary" onClick={onCorrect}>
+          {t('askCorrection')}
+        </Button>
+      )}
       <FileViewer
         load={load}
         fileName={document.fileName}

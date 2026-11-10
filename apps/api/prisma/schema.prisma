@@ -165,6 +165,15 @@ enum KycAction {
   SUBMITTED
   APPROVED
   REJECTED
+  DOCUMENT_UPLOADED
+  CORRECTION_REQUESTED
+}
+
+/// Status of a KYC document (processus v2); a type with no document is « à déposer ».
+enum KycDocumentStatus {
+  SUBMITTED
+  VALIDATED
+  TO_CORRECT
 }
 
 enum ApprovalType {
@@ -968,14 +977,18 @@ model KycFile {
 }
 
 model KycDocument {
-  id          String          @id @default(uuid(7)) @db.Uuid
-  fileId      String          @map("file_id") @db.Uuid
-  type        KycDocumentType
-  fileName    String          @map("file_name") @db.VarChar(255)
-  contentType String          @map("content_type") @db.VarChar(40)
-  sizeBytes   Int             @map("size_bytes")
-  storageKey  String          @map("storage_key")
-  uploadedAt  DateTime        @default(now()) @map("uploaded_at") @db.Timestamptz(3)
+  id               String            @id @default(uuid(7)) @db.Uuid
+  fileId           String            @map("file_id") @db.Uuid
+  type             KycDocumentType
+  fileName         String            @map("file_name") @db.VarChar(255)
+  contentType      String            @map("content_type") @db.VarChar(40)
+  sizeBytes        Int               @map("size_bytes")
+  storageKey       String            @map("storage_key")
+  uploadedAt       DateTime          @default(now()) @map("uploaded_at") @db.Timestamptz(3)
+  status           KycDocumentStatus @default(SUBMITTED)
+  correctionReason String?           @map("correction_reason") @db.VarChar(500)
+  /// A newer upload of the same type replaced it (kept for the history).
+  replacedAt       DateTime?         @map("replaced_at") @db.Timestamptz(3)
 
   file KycFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
 

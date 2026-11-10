@@ -29,5 +29,40 @@
     "helpHint": "Chaque rubrique ouvre la page d'aide à la bonne section.",
     "contact": "Nous écrire",
     "contactHint": "L'équipe FlexiPay vous répond par e-mail ou par téléphone."
+  },
+  "kyc": {
+    "title": "Mon dossier",
+    "description": "Déposez les pièces demandées par FlexiPay. Une fois votre dossier validé, votre compte est actif.",
+    "approved": "Dossier validé : votre compte est actif.",
+    "toCorrect": "FlexiPay demande une correction : redéposez les pièces signalées.",
+    "missing": "Complétez votre dossier : déposez les 4 pièces (PDF ou image, 5 Mo maximum chacune).",
+    "underReview": "Dossier complet : FlexiPay le vérifie.",
+    "upload": "Déposer",
+    "replace": "Remplacer",
+    "uploaded": "{name} déposé.",
+    "reason": "Correction demandée : {reason}",
+    "fileType": "Format refusé : PDF, JPG ou PNG uniquement.",
+    "fileTooLarge": "Fichier trop lourd : 5 Mo maximum.",
+    "banner": "Complétez votre dossier pour activer votre compte.",
+    "bannerAction": "Ouvrir mon dossier",
+    "status": {
+      "MISSING": "À déposer",
+      "SUBMITTED": "Déposée",
+      "VALIDATED": "Validée",
+      "TO_CORRECT": "À corriger"
+    },
+    "types": {
+      "REGISTRY_EXTRACT": "Registre du commerce (RNE) ou patente",
+      "TAX_CERTIFICATE": "Carte d'identification fiscale",
+      "MANAGER_ID": "CIN du gérant",
+      "BANK_DETAILS": "RIB"
+    },
+    "hints": {
+      "REGISTRY_EXTRACT": "Extrait récent du registre national des entreprises.",
+      "TAX_CERTIFICATE": "Carte portant le matricule fiscal.",
+      "MANAGER_ID": "Recto et verso de la carte d'identité.",
+      "BANK_DETAILS": "Relevé d'identité bancaire au nom du titulaire du compte."
+    },
+    "notApproved": "Votre dossier n'est pas encore validé : vous pourrez commander dès que FlexiPay l'aura validé (Compte › Mon dossier)."
   }
 }

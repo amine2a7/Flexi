@@ -15,6 +15,7 @@ import { CreditTypeBalanceCards } from '@/components/ui/credit-type';
 import { buttonClasses } from '@/components/ui/button';
 import { Card, CardTitle, StatCard } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/layout-blocks';
+import { KycBanner } from '@/components/account/kyc-file';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { useCanOpen } from '@/lib/session/session-context';
 
@@ -36,6 +37,7 @@ export default function CompanyDashboardPage() {
 
   return (
     <>
+      <KycBanner href="/entreprise/dossier" />
       <PageHeader
         title={t('title')}
         description={t('description')}

@@ -12,7 +12,10 @@ const ALLOWED_HEADERS =
 const EXPOSED_HEADERS =
   'X-Request-Id, Retry-After, RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset, Idempotent-Replayed';
 /** Routes receiving multipart/form-data (files), with their own size limit. */
-const MULTIPART_ROUTES = [/^\/v1\/company\/orders\/[^/]+\/transfer-declarations$/];
+const MULTIPART_ROUTES = [
+  /^\/v1\/company\/orders\/[^/]+\/transfer-declarations$/,
+  /^\/v1\/account\/kyc\/documents$/,
+];
 
 /** Writes a problem directly (middlewares that run before Nest). */
 export function sendProblem(res: Response, problem: ApiProblem): void {

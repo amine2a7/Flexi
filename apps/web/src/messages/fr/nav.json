@@ -11,7 +11,8 @@
     "shop": "Ma fiche",
     "statistics": "Statistiques",
     "settings": "Paramètres",
-    "support": "Support"
+    "support": "Support",
+    "kyc": "Mon dossier"
   },
   "company": {
     "dashboard": "Accueil",
@@ -22,7 +23,8 @@
     "settings": "Paramètres",
     "support": "Support",
     "reporting": "Suivi de consommation",
-    "departments": "Départements"
+    "departments": "Départements",
+    "kyc": "Mon dossier"
   },
   "admin": {
     "dashboard": "Vue d'ensemble",

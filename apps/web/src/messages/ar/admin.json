@@ -334,9 +334,15 @@
     "event": {
       "SUBMITTED": "إيداع الملف",
       "APPROVED": "المصادقة على الملف",
-      "REJECTED": "رفض الملف"
+      "REJECTED": "رفض الملف",
+      "DOCUMENT_UPLOADED": "وثيقة أودعها الحريف",
+      "CORRECTION_REQUESTED": "تم طلب تصحيح"
     },
-    "openFile": "فتح ملف {name}"
+    "openFile": "فتح ملف {name}",
+    "askCorrection": "طلب تصحيح",
+    "correctionTitle": "طلب تصحيح: {type}",
+    "correctionReason": "السبب (يراه الحريف)",
+    "correctionToast": "تم طلب التصحيح."
   },
   "payouts": {
     "open": "فتح",

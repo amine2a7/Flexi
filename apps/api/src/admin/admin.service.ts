@@ -2,6 +2,7 @@ import { PiiService } from '../common/pii.js';
 import { randomInt } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import { credentialsOf, InvitationService } from '../auth/invitation.service.js';
+import { documentsByType } from '../kyc/kyc.service.js';
 import { AuditService } from '../common/audit.service.js';
 import { FourEyesService } from '../common/four-eyes.service.js';
 import { DisputesService } from '../risk/disputes.service.js';
@@ -9,7 +10,7 @@ import { uuidv7 } from '../common/crypto.js';
 import { DbService, type Tx } from '../common/db.service.js';
 import { toMillimes } from '../common/money.js';
 import { Paginator, type Page } from '../common/pagination.js';
-import { problems, validationFailed } from '../common/problem.js';
+import { ApiProblem, problems, validationFailed } from '../common/problem.js';
 import { allows } from '../common/permissions.js';
 import { principal } from '../common/request-context.js';
 import { FILE_STORAGE, type FileStorage } from '../common/storage.js';
@@ -549,7 +550,9 @@ export class AdminService {
     const who = principal();
     const isCompany = 'companyId' in owner;
     const id = isCompany ? owner.companyId : owner.merchantId;
-    const manage = allows(who.role, who.subRole, [isCompany ? 'companies.manage' : 'merchants.manage']);
+    const manage = allows(who.role, who.subRole, [
+      isCompany ? 'companies.manage' : 'merchants.manage',
+    ]);
     const commercial = allows(who.role, who.subRole, ['commissions.read']);
     return this.db.user(async (tx) => {
       const found = isCompany
@@ -623,8 +626,7 @@ export class AdminService {
     const isCompany = 'companyId' in owner;
     const id = isCompany ? owner.companyId : owner.merchantId;
     await this.db.user(async (tx) => {
-      if (isCompany)
-        await tx.$queryRaw`SELECT id FROM companies WHERE id = ${id}::uuid FOR UPDATE`;
+      if (isCompany) await tx.$queryRaw`SELECT id FROM companies WHERE id = ${id}::uuid FOR UPDATE`;
       else await tx.$queryRaw`SELECT id FROM merchants WHERE id = ${id}::uuid FOR UPDATE`;
       const found = isCompany
         ? await tx.company.findUnique({ where: { id } })
@@ -665,7 +667,8 @@ export class AdminService {
               category: take('category', input.category, (found as Merchant).category),
             }),
       };
-      for (const [field, value] of Object.entries(changed)) if (value !== undefined) data[field] = value;
+      for (const [field, value] of Object.entries(changed))
+        if (value !== undefined) data[field] = value;
       if (fields.length === 0) return;
       if (isCompany) await tx.company.update({ where: { id }, data });
       else await tx.merchant.update({ where: { id }, data });
@@ -691,7 +694,11 @@ export class AdminService {
       if (batch === null) throw problems.notFound();
       if (batch.status !== 'SCHEDULED') throw problems.conflict();
       const pending = await tx.approval.findFirst({
-        where: { status: 'PENDING', type: 'BATCH_RELEASE', payload: { path: ['batchId'], equals: batchId } },
+        where: {
+          status: 'PENDING',
+          type: 'BATCH_RELEASE',
+          payload: { path: ['batchId'], equals: batchId },
+        },
       });
       if (pending !== null) throw problems.conflict();
       const approval = await tx.approval.create({
@@ -929,7 +936,8 @@ export class AdminService {
     const before: Record<string, unknown> = await this.platformSettings();
     const changed = Object.keys(settings).filter(
       (key) =>
-        JSON.stringify(before[key]) !== JSON.stringify(settings[key as keyof PlatformSettingsInput]),
+        JSON.stringify(before[key]) !==
+        JSON.stringify(settings[key as keyof PlatformSettingsInput]),
     );
     if (changed.length > 0)
       await this.audit.record(tx, 'settings.apply', changed.join(', ').slice(0, 200));
@@ -1069,7 +1077,7 @@ export class AdminService {
   private kycInclude = {
     merchant: { select: { name: true, city: true } },
     company: { select: { name: true, city: true } },
-    documents: { orderBy: { uploadedAt: 'asc' } },
+    documents: { where: { replacedAt: null }, orderBy: { uploadedAt: 'asc' } },
     events: { orderBy: { occurredAt: 'asc' } },
   } as const satisfies Prisma.KycFileInclude;
 
@@ -1097,7 +1105,13 @@ export class AdminService {
         contentType: document.contentType,
         sizeBytes: document.sizeBytes,
         uploadedAt: document.uploadedAt.toISOString(),
+        status: document.status,
+        ...(document.correctionReason === null
+          ? {}
+          : { correctionReason: document.correctionReason }),
       })),
+      // Each of the four documents with its status (MISSING = « à déposer »).
+      pieces: documentsByType(file.documents),
       ...(file.rejectionReason === null ? {} : { rejectionReason: file.rejectionReason }),
       history: file.events.map((event) => ({
         action: event.action,
@@ -1179,6 +1193,14 @@ export class AdminService {
       const file = await tx.kycFile.findUnique({ where: { id }, include: this.kycInclude });
       if (file === null) throw problems.notFound();
       if (file.status !== 'PENDING') throw problems.conflict();
+      // Validated only with the four documents there and none to correct (processus v2).
+      if (
+        decision === 'APPROVED' &&
+        documentsByType(file.documents).some(
+          (piece) => piece.status === 'MISSING' || piece.status === 'TO_CORRECT',
+        )
+      )
+        throw new ApiProblem(409, 'RESOURCE_STATE_CONFLICT', { reason: 'KYC_INCOMPLETE' });
       // The administrator who opened the file (created the account) never decides it.
       await this.fourEyes.ensureNotAuthor(file.createdBy, `dossier KYC ${id}`, {
         authorRequired: true,
@@ -1187,6 +1209,11 @@ export class AdminService {
         where: { id },
         data: { status: decision, rejectionReason: reason ?? null },
       });
+      if (decision === 'APPROVED')
+        await tx.kycDocument.updateMany({
+          where: { fileId: id, replacedAt: null },
+          data: { status: 'VALIDATED', correctionReason: null },
+        });
       await tx.kycEvent.create({
         data: {
           id: uuidv7(),
@@ -1203,6 +1230,52 @@ export class AdminService {
       await this.audit.record(
         tx,
         decision === 'APPROVED' ? 'kyc.approve' : 'kyc.reject',
+        file.merchant?.name ?? file.company?.name ?? id,
+      );
+      const updated = await tx.kycFile.findUniqueOrThrow({
+        where: { id },
+        include: this.kycInclude,
+      });
+      return this.kycDetail(updated);
+    });
+  }
+
+  /**
+   * « Demander une correction » (processus v2): a reason per document; the file stays to review,
+   * the client files those documents again from « Mon dossier ».
+   */
+  async requestKycCorrections(id: string, corrections: { documentId: string; reason: string }[]) {
+    const who = principal();
+    return this.db.user(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM kyc_files WHERE id = ${id}::uuid FOR UPDATE`;
+      const file = await tx.kycFile.findUnique({ where: { id }, include: this.kycInclude });
+      if (file === null) throw problems.notFound();
+      if (file.status !== 'PENDING') throw problems.conflict();
+      await this.fourEyes.ensureNotAuthor(file.createdBy, `dossier KYC ${id}`, {
+        authorRequired: true,
+      });
+      for (const correction of corrections) {
+        const moved = await tx.kycDocument.updateMany({
+          where: { id: correction.documentId, fileId: id, replacedAt: null },
+          data: { status: 'TO_CORRECT', correctionReason: correction.reason },
+        });
+        if (moved.count !== 1) throw problems.notFound();
+      }
+      await tx.kycEvent.create({
+        data: {
+          id: uuidv7(),
+          fileId: id,
+          action: 'CORRECTION_REQUESTED',
+          actorName: who.displayName,
+          reason: corrections
+            .map((item) => item.reason)
+            .join(' · ')
+            .slice(0, 500),
+        },
+      });
+      await this.audit.record(
+        tx,
+        'kyc.correction',
         file.merchant?.name ?? file.company?.name ?? id,
       );
       const updated = await tx.kycFile.findUniqueOrThrow({

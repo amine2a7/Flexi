@@ -64,6 +64,7 @@ const EXPECTED: Record<string, Sub[]> = {
   'AdminController.kycDocument': KYC,
   'AdminController.approveKyc': KYC,
   'AdminController.rejectKyc': KYC,
+  'AdminController.requestKycCorrections': KYC,
   'AdminController.messages': MESSAGES,
   'AdminController.message': MESSAGES,
   'AdminController.handle': MESSAGES,
