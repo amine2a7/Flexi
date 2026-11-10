@@ -23,7 +23,9 @@ test('the company declares its transfer at the first try', async ({ page }) => {
   const hint = await form.getByText(/Montant à virer/).textContent();
   await form.getByLabel('Référence du virement').fill('VIR-BIAT-778213');
   await form.getByLabel('Date du virement').fill(new Date().toISOString().slice(0, 10));
-  await form.getByLabel('Montant viré').fill(/Montant à virer : ([\d\s  ]+,\d{3})/.exec(hint ?? '')?.[1] ?? '');
+  // \s also matches the non-breaking spaces of the formatted amount.
+  const amount = /Montant à virer : ([\d\s]+,\d{3})/.exec(hint ?? '')?.[1] ?? '';
+  await form.getByLabel('Montant viré').fill(amount);
   await form
     .getByLabel('Capture du virement')
     .setInputFiles({ name: 'avis.png', mimeType: 'image/png', buffer: PNG });
