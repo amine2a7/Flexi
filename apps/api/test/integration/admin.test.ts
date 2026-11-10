@@ -107,6 +107,9 @@ describe('commission grids', () => {
     const created = await first.call('POST', '/v1/admin/companies', { body: company(GRID) });
     expect(created.status).toBe(201);
     expect(created.body).toMatchObject({ commissionGrid: { tiers: GRID }, legalForm: 'PM_MF' });
+    // The temporary password of the owner is shown once to the administrator (processus v2).
+    const credentials = created.body.credentials as { temporaryPassword?: unknown } | undefined;
+    expect(typeof credentials?.temporaryPassword).toBe('string');
     // The legal form is required (processus v2): it drives the withholding tax.
     const refused = await first.call('POST', '/v1/admin/companies', {
       body: { ...company(GRID), legalForm: undefined },

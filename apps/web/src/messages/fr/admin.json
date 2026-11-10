@@ -448,7 +448,7 @@
       "reactivate": "Réactiver",
       "deactivate": "Désactiver",
       "role": "Changer le rôle",
-      "resend": "Renvoyer l'invitation",
+      "resend": "Générer un nouveau mot de passe",
       "unlock": "Débloquer le PIN"
     },
     "toast": {
@@ -456,7 +456,7 @@
       "reactivate": "Compte réactivé.",
       "deactivate": "Compte désactivé.",
       "role": "Rôle modifié.",
-      "resend": "Invitation renvoyée.",
+      "resend": "Nouveau mot de passe généré ; il est aussi envoyé par e-mail.",
       "unlock": "PIN débloqué. L'employé en est informé.",
       "created": "Invitation envoyée à {email}."
     },
@@ -656,5 +656,15 @@
     "confirm": "Valider",
     "cancel": "Annuler",
     "done": "{reference} : paiement enregistré, virement payé."
+  },
+  "credentials": {
+    "title": "Identifiants à transmettre",
+    "email": "Identifiant (e-mail)",
+    "password": "Mot de passe temporaire",
+    "once": "Ce mot de passe n'est affiché qu'une fois et n'est jamais conservé en clair. Transmettez-le au client ; il devra le changer à la première connexion. Fenêtre fermée : générez-en un nouveau depuis la fiche de l'utilisateur.",
+    "copy": "Copier",
+    "copied": "Copié",
+    "done": "J'ai transmis les identifiants",
+    "copyText": "FlexiPay — identifiant : {email} — mot de passe temporaire : {password} (à changer à la première connexion)"
   }
 }

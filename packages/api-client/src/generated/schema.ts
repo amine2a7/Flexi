@@ -3952,6 +3952,17 @@ export interface components {
       paymentsMillimes: components['schemas']['AmountMillimes'];
     };
     /**
+     * TemporaryCredentials
+     * @description Identifiant et mot de passe temporaire, renvoyés UNE seule fois (création d'une entreprise
+     *     ou d'un commerçant, « Générer un nouveau mot de passe »), seulement à un administrateur qui
+     *     gère les comptes. Jamais stockés en clair ; une fenêtre fermée = une nouvelle génération.
+     */
+    TemporaryCredentials: {
+      /** Format: email */
+      email: string;
+      temporaryPassword: string;
+    };
+    /**
      * LegalForm
      * @description Forme juridique (PP CIN, PP MF, PM MF) ; fixe le taux de retenue à la source.
      * @enum {string}
@@ -3959,6 +3970,7 @@ export interface components {
     LegalForm: 'PP_CIN' | 'PP_MF' | 'PM_MF';
     /** MerchantAccount */
     MerchantAccount: {
+      credentials?: components['schemas']['TemporaryCredentials'];
       legalForm: components['schemas']['LegalForm'];
       id: components['schemas']['Uuid'];
       name: string;
@@ -4005,6 +4017,7 @@ export interface components {
     };
     /** CompanyAccount */
     CompanyAccount: {
+      credentials?: components['schemas']['TemporaryCredentials'];
       legalForm: components['schemas']['LegalForm'];
       id: components['schemas']['Uuid'];
       name: string;
@@ -4514,6 +4527,7 @@ export interface components {
     };
     /** AdminUserDetail */
     AdminUserDetail: components['schemas']['AdminUser'] & {
+      credentials?: components['schemas']['TemporaryCredentials'];
       mfaEnabled: boolean;
       /** @description PIN de paiement bloqué (employé seulement, sinon false). */
       pinLocked: boolean;

@@ -21,6 +21,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Timeline } from '@/components/ui/timeline';
 import { useToast } from '@/components/ui/toast';
 import { useCan } from '@/lib/session/session-context';
+import { CredentialsDialog, type Credentials } from './credentials-dialog';
 import {
   CommissionGridEditor,
   readGrid,
@@ -45,7 +46,9 @@ const CATEGORIES: Schemas['MerchantCategory'][] = [
 /** Text of a value as the administrator types it (locale decimal separator, no grouping). */
 const decimalText = (value: number, digits: number, locale: Locale) => {
   const unit = 10 ** digits;
-  const fraction = String(value % unit).padStart(digits, '0').replace(/0+$/, '');
+  const fraction = String(value % unit)
+    .padStart(digits, '0')
+    .replace(/0+$/, '');
   const whole = String(Math.trunc(value / unit));
   return fraction === '' ? whole : `${whole}${locale === 'en' ? '.' : ','}${fraction}`;
 };
@@ -76,7 +79,13 @@ export function rowsOf(grid: Schemas['CommissionGrid'] | null, locale: Locale): 
  * Record of a company or a merchant (decision of 2026-11-03): every information editable at any
  * time; the grid and the RIB through four-eyes requests; history of the changes and requests.
  */
-export function AccountRecordPanel({ owner, withHeader = false }: { owner: Owner; withHeader?: boolean }) {
+export function AccountRecordPanel({
+  owner,
+  withHeader = false,
+}: {
+  owner: Owner;
+  withHeader?: boolean;
+}) {
   const isCompany = 'companyId' in owner;
   const id = isCompany ? owner.companyId : owner.merchantId;
   const record = useApiQuery(
@@ -95,9 +104,77 @@ export function AccountRecordPanel({ owner, withHeader = false }: { owner: Owner
   return (
     <>
       {withHeader ? (
-        <PageHeader title={record.data.name} actions={<StatusBadge status={record.data.status} />} />
+        <PageHeader
+          title={record.data.name}
+          actions={
+            <div className="flex items-center gap-3">
+              <StatusBadge status={record.data.status} />
+              <NewPasswordButton
+                email={record.data.email}
+                role={isCompany ? 'COMPANY' : 'MERCHANT'}
+              />
+            </div>
+          }
+        />
       ) : null}
       <RecordView record={record.data} owner={owner} onChanged={record.reload} />
+    </>
+  );
+}
+
+/**
+ * « Générer un nouveau mot de passe » for the account that signs in with the record's e-mail
+ * (processus v2): the old one stops working, the new one is shown once with Copy.
+ */
+function NewPasswordButton({ email, role }: { email: string; role: 'COMPANY' | 'MERCHANT' }) {
+  const t = useTranslations('admin.users.actions');
+  const tRoot = useTranslations();
+  const canManage = useCan('users.manage');
+  const [credentials, setCredentials] = useState<Credentials | undefined>(undefined);
+  const [error, setError] = useState<unknown>(undefined);
+  const [busy, setBusy] = useState(false);
+  if (!canManage) return null;
+
+  async function generate() {
+    setBusy(true);
+    setError(undefined);
+    try {
+      const found = await getApi().GET('/v1/admin/users', {
+        params: { query: { q: email, role } },
+      });
+      const user = found.data?.data.find((row) => row.email.toLowerCase() === email.toLowerCase());
+      if (user === undefined) {
+        setError(found.error ?? 'notFound');
+        return;
+      }
+      const reset = await getApi().POST('/v1/admin/users/{userId}/reset-invitation', {
+        params: { path: { userId: user.id } },
+      });
+      if (reset.data === undefined) setError(reset.error);
+      else setCredentials(reset.data.credentials);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <Button size="sm" variant="secondary" loading={busy} onClick={() => void generate()}>
+        {t('resend')}
+      </Button>
+      {error !== undefined ? (
+        <span role="alert" className="text-caption text-danger-text">
+          {error === 'notFound'
+            ? tRoot('errors.notFound')
+            : tRoot(messageKey(errorMessageKey(error)))}
+        </span>
+      ) : null}
+      <CredentialsDialog
+        credentials={credentials}
+        onClose={() => {
+          setCredentials(undefined);
+        }}
+      />
     </>
   );
 }

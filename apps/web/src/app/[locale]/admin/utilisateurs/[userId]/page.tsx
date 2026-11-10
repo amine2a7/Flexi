@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { usePlatformTerms } from '@/lib/api/use-platform-terms';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
+import { CredentialsDialog, type Credentials } from '@/components/admin/credentials-dialog';
 import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
 import { useApiQuery } from '@/lib/api/use-api-query';
@@ -76,6 +77,8 @@ function UserView({ user, onChange }: { user: User; onChange: () => void }) {
   const [newRole, setNewRole] = useState<SubRole | ''>('');
   // Result of the last change, kept on the page (spec §6: persistent, never a toast).
   const [notice, setNotice] = useState<string | undefined>(undefined);
+  // The new temporary password, shown once (processus v2).
+  const [credentials, setCredentials] = useState<Credentials | undefined>(undefined);
 
   const self = user.id === me.id;
   const manage = !self && canManage;
@@ -139,7 +142,8 @@ function UserView({ user, onChange }: { user: User; onChange: () => void }) {
         : await getApi().POST('/v1/admin/users/{userId}/unlock-pin', path);
     if (result.error !== undefined) return result.error;
     setNotice(t(`toast.${kind}`));
-    onChange();
+    if ('credentials' in result.data) setCredentials(result.data.credentials);
+    else onChange();
     return undefined;
   }
 
@@ -346,6 +350,13 @@ function UserView({ user, onChange }: { user: User; onChange: () => void }) {
           }
         />
       ) : null}
+      <CredentialsDialog
+        credentials={credentials}
+        onClose={() => {
+          setCredentials(undefined);
+          onChange();
+        }}
+      />
     </>
   );
 }

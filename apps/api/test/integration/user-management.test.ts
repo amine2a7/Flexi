@@ -10,6 +10,7 @@ loadTestEnv();
 const { loadEnv } = await import('../../src/config/env.js');
 const { createApp } = await import('../../src/app.factory.js');
 const { DbService } = await import('../../src/common/db.service.js');
+const { verifySecret } = await import('../../src/auth/password.js');
 const { createCompany, createEmployee, createUser, seedSettings, signedIn } =
   await import('./fixtures.js');
 
@@ -196,6 +197,18 @@ describe('administrator: users', () => {
       body: REASON,
     });
     expect(suspend.status).toBe(403);
+    // Processus v2: an administrator who manages accounts sees the new password, once; the
+    // previous one stops working.
+    const superAdmin = await admin('SUPER_ADMIN');
+    const generated = await superAdmin.client.call(
+      'POST',
+      `/v1/admin/users/${user.id}/reset-invitation`,
+    );
+    const credentials = generated.body.credentials as { email: string; temporaryPassword: string };
+    expect(credentials.email).toBe(user.email);
+    const stored = await db.system((tx) => tx.user.findUniqueOrThrow({ where: { id: user.id } }));
+    expect(await verifySecret(stored.passwordHash, credentials.temporaryPassword)).toBe(true);
+    expect(stored.passwordHash).not.toBe(after.passwordHash);
   });
 });
 

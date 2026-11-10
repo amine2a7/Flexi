@@ -448,7 +448,7 @@
       "reactivate": "Reactivate",
       "deactivate": "Deactivate",
       "role": "Change the role",
-      "resend": "Resend the invitation",
+      "resend": "Generate a new password",
       "unlock": "Unlock the PIN"
     },
     "toast": {
@@ -456,7 +456,7 @@
       "reactivate": "Account reactivated.",
       "deactivate": "Account deactivated.",
       "role": "Role changed.",
-      "resend": "Invitation sent again.",
+      "resend": "New password generated; it is also sent by e-mail.",
       "unlock": "PIN unlocked. The employee is told.",
       "created": "Invitation sent to {email}."
     },
@@ -656,5 +656,15 @@
     "confirm": "Confirm",
     "cancel": "Cancel",
     "done": "{reference}: payment recorded, transfer paid."
+  },
+  "credentials": {
+    "title": "Credentials to hand over",
+    "email": "Login (e-mail)",
+    "password": "Temporary password",
+    "once": "This password is shown only once and never kept in clear. Hand it to the client; it must be changed at the first sign-in. Window closed: generate a new one from the user's record.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "done": "I handed the credentials over",
+    "copyText": "FlexiPay — login: {email} — temporary password: {password} (to change at the first sign-in)"
   }
 }

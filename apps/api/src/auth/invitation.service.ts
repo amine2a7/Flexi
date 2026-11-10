@@ -49,6 +49,17 @@ export interface PreparedInvitation {
 }
 
 /**
+ * E-mail and temporary password shown ONCE to the administrator who created the account or
+ * generated a new password (processus v2): never stored in clear, never logged; a closed window
+ * means a new generation.
+ */
+export function credentialsOf(prepared: PreparedInvitation | undefined) {
+  return prepared === undefined
+    ? undefined
+    : { email: prepared.invitee.email, temporaryPassword: prepared.temporaryPassword };
+}
+
+/**
  * Sign-in account created with its owner (employee, merchant, company) and its invitation
  * (decision of 2026-10-14). Three steps so that nothing is sent for an account that was not
  * created: `prepare` (Argon2id hashing, before the SQL transaction), `create` (in the

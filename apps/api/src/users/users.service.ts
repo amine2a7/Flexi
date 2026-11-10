@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { InvitationService, invitationExpiry } from '../auth/invitation.service.js';
+import { credentialsOf, InvitationService, invitationExpiry } from '../auth/invitation.service.js';
 import {
   changeRefusal,
   graceEnd,
@@ -13,6 +13,7 @@ import { toMillimes } from '../common/money.js';
 import { OutboxService } from '../common/outbox.service.js';
 import { Paginator, type Page } from '../common/pagination.js';
 import { ApiProblem, problems, validationFailed } from '../common/problem.js';
+import { permissionsOf } from '../common/permissions.js';
 import { principal } from '../common/request-context.js';
 import { LedgerService, accounts } from '../ledger/ledger.service.js';
 import type { Prisma, Role, SubRole } from '../generated/prisma/client.js';
@@ -241,7 +242,11 @@ export class UsersService {
     return user.role;
   }
 
-  /** New temporary password by e-mail (72 h), sessions closed, no secret in the answer. */
+  /**
+   * New temporary password (72 h), sessions closed, the old one refused. By e-mail always; shown
+   * once in the answer only to an administrator who manages accounts (processus v2, « Générer un
+   * nouveau mot de passe »), never to the support.
+   */
   async resendInvitation(id: string, withBalance: boolean) {
     const target = await this.db.user((tx) => tx.user.findUnique({ where: { id } }));
     if (target === null) throw problems.notFound();
@@ -274,7 +279,12 @@ export class UsersService {
       await this.audit.recordFor(tx, 'users.resendInvitation', id, target.displayName, null);
     });
     await this.invitations.deliver([prepared]);
-    return this.detail(id, withBalance);
+    const who = principal();
+    const shown = permissionsOf(who.role, who.subRole).includes('users.manage');
+    return {
+      ...(await this.detail(id, withBalance)),
+      ...(shown ? { credentials: credentialsOf(prepared) } : {}),
+    };
   }
 
   /** Unlocks the payment PIN of an employee; the employee is told by e-mail. */

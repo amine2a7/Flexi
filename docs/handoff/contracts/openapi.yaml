@@ -8540,6 +8540,24 @@ components:
         paymentsMillimes:
           description: Paiements confirmés chez les commerçants sur le mois.
           $ref: '#/components/schemas/AmountMillimes'
+    TemporaryCredentials:
+      title: TemporaryCredentials
+      description: |
+        Identifiant et mot de passe temporaire, renvoyés UNE seule fois (création d'une entreprise
+        ou d'un commerçant, « Générer un nouveau mot de passe »), seulement à un administrateur qui
+        gère les comptes. Jamais stockés en clair ; une fenêtre fermée = une nouvelle génération.
+      type: object
+      additionalProperties: false
+      required: [email, temporaryPassword]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        temporaryPassword:
+          type: string
+          minLength: 8
+          maxLength: 64
     LegalForm:
       title: LegalForm
       description: Forme juridique (PP CIN, PP MF, PM MF) ; fixe le taux de retenue à la source.
@@ -8551,6 +8569,8 @@ components:
       additionalProperties: false
       required: [id, name, category, acceptedCreditTypes, city, status, commissionGrid, createdAt, legalForm]
       properties:
+        credentials:
+          $ref: '#/components/schemas/TemporaryCredentials'
         legalForm:
           $ref: '#/components/schemas/LegalForm'
         id:
@@ -8655,6 +8675,8 @@ components:
       additionalProperties: false
       required: [id, name, city, status, employeesCount, commissionGrid, createdAt, legalForm]
       properties:
+        credentials:
+          $ref: '#/components/schemas/TemporaryCredentials'
         legalForm:
           $ref: '#/components/schemas/LegalForm'
         id:
@@ -9591,6 +9613,8 @@ components:
         - type: object
           required: [mfaEnabled, pinLocked, history]
           properties:
+            credentials:
+              $ref: '#/components/schemas/TemporaryCredentials'
             mfaEnabled:
               type: boolean
             pinLocked:

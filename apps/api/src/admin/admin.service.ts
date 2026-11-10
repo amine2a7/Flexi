@@ -1,7 +1,7 @@
 import { PiiService } from '../common/pii.js';
 import { randomInt } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import { InvitationService } from '../auth/invitation.service.js';
+import { credentialsOf, InvitationService } from '../auth/invitation.service.js';
 import { AuditService } from '../common/audit.service.js';
 import { FourEyesService } from '../common/four-eyes.service.js';
 import { DisputesService } from '../risk/disputes.service.js';
@@ -340,7 +340,7 @@ export class AdminService {
       return merchantAccount(merchant);
     });
     await this.invitations.deliver(invitations);
-    return body;
+    return { ...body, credentials: credentialsOf(invitations[0]) };
   }
 
   async setMerchantTypes(id: string, types: CreditType[]) {
@@ -447,7 +447,7 @@ export class AdminService {
       };
     });
     await this.invitations.deliver(invitations);
-    return body;
+    return { ...body, credentials: credentialsOf(invitations[0]) };
   }
 
   private async openKyc(
