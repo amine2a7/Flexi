@@ -120,6 +120,13 @@ enum PaymentChannel {
   MERCHANT_CODE
 }
 
+/// Legal form of a client (processus v2): drives the withholding tax rate.
+enum LegalForm {
+  PP_CIN
+  PP_MF
+  PM_MF
+}
+
 enum PayoutStatus {
   REQUESTED
   CHECKED
@@ -235,6 +242,7 @@ model Company {
   phone     String // encrypted (AES-256-GCM)
   email     String        @db.VarChar(254)
   status    AccountStatus @default(PENDING_KYC)
+  legalForm LegalForm     @default(PM_MF) @map("legal_form")
   createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
 
   users           User[]
@@ -322,6 +330,7 @@ model Merchant {
   email               String           @db.VarChar(254)
   status              AccountStatus    @default(PENDING_KYC)
   acceptedCreditTypes CreditType[]     @map("accepted_credit_types")
+  legalForm           LegalForm        @default(PM_MF) @map("legal_form")
   /// 6-digit code shown at the till and in the merchant QR (flexipay:merchant:<code>).
   paymentCode         String           @unique @map("payment_code") @db.Char(6)
   /// Bank account for payouts (TN + 22 digits). Masked everywhere except the admin payout control.
@@ -524,6 +533,13 @@ model PlatformSettings {
   /// VAT on the commission and stamp duty (decision of 2026-11-03), set by the super-admin.
   vatRateBps                        Int                       @default(1900) @map("vat_rate_bps")
   stampDutyMillimes                 BigInt                    @default(1000) @map("stamp_duty_millimes")
+  /// Withholding tax (processus v2): above the threshold, rate of the legal form on the commission.
+  withholdingThresholdMillimes      BigInt                    @default(1000000) @map("withholding_threshold_millimes")
+  withholdingPpCinBps               Int                       @default(300) @map("withholding_pp_cin_bps")
+  withholdingPpMfBps                Int                       @default(150) @map("withholding_pp_mf_bps")
+  withholdingPmMfBps                Int                       @default(100) @map("withholding_pm_mf_bps")
+  /// Transfer fee on every order and every merchant payout.
+  transferFeeMillimes               BigInt                    @default(4000) @map("transfer_fee_millimes")
   /// Where the remainder of expired lots goes (provisional, decision of 2026-10-14).
   expiredCreditsDestination         ExpiredCreditsDestination @default(PLATFORM_REVENUE) @map("expired_credits_destination")
   /// Grace period of a deactivated employee, in days (decision e3 of 2026-10-22).
@@ -615,6 +631,9 @@ model CreditOrder {
   vatRateBps               Int         @default(0) @map("vat_rate_bps")
   vatMillimes              BigInt      @default(0) @map("vat_millimes")
   stampDutyMillimes        BigInt      @default(0) @map("stamp_duty_millimes")
+  withholdingRateBps       Int         @default(0) @map("withholding_rate_bps")
+  withholdingMillimes      BigInt      @default(0) @map("withholding_millimes")
+  transferFeeMillimes      BigInt      @default(0) @map("transfer_fee_millimes")
   totalMillimes            BigInt      @map("total_millimes")
   /// Reference to write on the bank transfer.
   paymentReference         String      @map("payment_reference") @db.VarChar(32)
@@ -648,20 +667,23 @@ model CreditOrder {
 
 /// Quote of a credit order, frozen for the validity of the settings; an order takes its amounts.
 model OrderQuote {
-  id                String    @id @default(uuid(7)) @db.Uuid
-  companyId         String    @map("company_id") @db.Uuid
+  id                  String    @id @default(uuid(7)) @db.Uuid
+  companyId           String    @map("company_id") @db.Uuid
   /// [{ creditType, amountMillimes }] as quoted.
-  lines             Json
-  amountMillimes    BigInt    @map("amount_millimes")
-  feeRateBps        Int       @map("fee_rate_bps")
-  feesMillimes      BigInt    @map("fees_millimes")
-  vatRateBps        Int       @map("vat_rate_bps")
-  vatMillimes       BigInt    @map("vat_millimes")
-  stampDutyMillimes BigInt    @map("stamp_duty_millimes")
-  totalMillimes     BigInt    @map("total_millimes")
-  expiresAt         DateTime  @map("expires_at") @db.Timestamptz(3)
-  usedAt            DateTime? @map("used_at") @db.Timestamptz(3)
-  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  lines               Json
+  amountMillimes      BigInt    @map("amount_millimes")
+  feeRateBps          Int       @map("fee_rate_bps")
+  feesMillimes        BigInt    @map("fees_millimes")
+  vatRateBps          Int       @map("vat_rate_bps")
+  vatMillimes         BigInt    @map("vat_millimes")
+  stampDutyMillimes   BigInt    @map("stamp_duty_millimes")
+  withholdingRateBps  Int       @default(0) @map("withholding_rate_bps")
+  withholdingMillimes BigInt    @default(0) @map("withholding_millimes")
+  transferFeeMillimes BigInt    @default(0) @map("transfer_fee_millimes")
+  totalMillimes       BigInt    @map("total_millimes")
+  expiresAt           DateTime  @map("expires_at") @db.Timestamptz(3)
+  usedAt              DateTime? @map("used_at") @db.Timestamptz(3)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
 
   company Company @relation(fields: [companyId], references: [id])
 
@@ -697,16 +719,16 @@ model CreditOrderEvent {
 }
 
 model Invoice {
-  id            String        @id @default(uuid(7)) @db.Uuid
-  number        String        @unique @db.VarChar(32)
-  companyId     String        @map("company_id") @db.Uuid
-  orderId       String        @unique @map("order_id") @db.Uuid
-  totalMillimes BigInt        @map("total_millimes")
-  status        InvoiceStatus
-  issuedAt      DateTime      @default(now()) @map("issued_at") @db.Timestamptz(3)
+  id               String        @id @default(uuid(7)) @db.Uuid
+  number           String        @unique @db.VarChar(32)
+  companyId        String        @map("company_id") @db.Uuid
+  orderId          String        @unique @map("order_id") @db.Uuid
+  totalMillimes    BigInt        @map("total_millimes")
+  status           InvoiceStatus
+  issuedAt         DateTime      @default(now()) @map("issued_at") @db.Timestamptz(3)
   /// Credit note of an invoice cancelled with its order (request of 2026-11-05).
-  creditNoteNumber String?    @unique @map("credit_note_number") @db.VarChar(32)
-  cancelledAt   DateTime?     @map("cancelled_at") @db.Timestamptz(3)
+  creditNoteNumber String?       @unique @map("credit_note_number") @db.VarChar(32)
+  cancelledAt      DateTime?     @map("cancelled_at") @db.Timestamptz(3)
 
   company Company     @relation(fields: [companyId], references: [id])
   order   CreditOrder @relation(fields: [orderId], references: [id])
@@ -815,20 +837,23 @@ model CreditExpiry {
 // ------------------------------------------------------------------ payouts and settlements
 
 model PayoutQuote {
-  id                 String     @id @default(uuid(7)) @db.Uuid
-  merchantId         String     @map("merchant_id") @db.Uuid
-  creditType         CreditType @map("credit_type")
-  grossMillimes      BigInt     @map("gross_millimes")
-  commissionRateBps  Int        @map("commission_rate_bps")
-  commissionMillimes BigInt     @map("commission_millimes")
+  id                  String     @id @default(uuid(7)) @db.Uuid
+  merchantId          String     @map("merchant_id") @db.Uuid
+  creditType          CreditType @map("credit_type")
+  grossMillimes       BigInt     @map("gross_millimes")
+  commissionRateBps   Int        @map("commission_rate_bps")
+  commissionMillimes  BigInt     @map("commission_millimes")
   /// VAT and stamp duty of the simulation (decision of 2026-11-03).
-  vatRateBps         Int        @default(0) @map("vat_rate_bps")
-  vatMillimes        BigInt     @default(0) @map("vat_millimes")
-  stampDutyMillimes  BigInt     @default(0) @map("stamp_duty_millimes")
-  netMillimes        BigInt     @map("net_millimes")
-  expiresAt          DateTime   @map("expires_at") @db.Timestamptz(3)
-  usedAt             DateTime?  @map("used_at") @db.Timestamptz(3)
-  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  vatRateBps          Int        @default(0) @map("vat_rate_bps")
+  vatMillimes         BigInt     @default(0) @map("vat_millimes")
+  stampDutyMillimes   BigInt     @default(0) @map("stamp_duty_millimes")
+  withholdingRateBps  Int        @default(0) @map("withholding_rate_bps")
+  withholdingMillimes BigInt     @default(0) @map("withholding_millimes")
+  transferFeeMillimes BigInt     @default(0) @map("transfer_fee_millimes")
+  netMillimes         BigInt     @map("net_millimes")
+  expiresAt           DateTime   @map("expires_at") @db.Timestamptz(3)
+  usedAt              DateTime?  @map("used_at") @db.Timestamptz(3)
+  createdAt           DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
 
   merchant Merchant @relation(fields: [merchantId], references: [id])
 
@@ -836,32 +861,35 @@ model PayoutQuote {
 }
 
 model PayoutRequest {
-  id                 String       @id @default(uuid(7)) @db.Uuid
-  reference          String       @unique @db.VarChar(32)
-  merchantId         String       @map("merchant_id") @db.Uuid
-  creditType         CreditType   @map("credit_type")
-  status             PayoutStatus @default(REQUESTED)
-  grossMillimes      BigInt       @map("gross_millimes")
+  id                  String       @id @default(uuid(7)) @db.Uuid
+  reference           String       @unique @db.VarChar(32)
+  merchantId          String       @map("merchant_id") @db.Uuid
+  creditType          CreditType   @map("credit_type")
+  status              PayoutStatus @default(REQUESTED)
+  grossMillimes       BigInt       @map("gross_millimes")
   /// Rate frozen when the request is made (rule 5).
-  commissionRateBps  Int          @map("commission_rate_bps")
-  commissionMillimes BigInt       @map("commission_millimes")
+  commissionRateBps   Int          @map("commission_rate_bps")
+  commissionMillimes  BigInt       @map("commission_millimes")
   /// VAT and stamp duty frozen in the request (decision of 2026-11-03).
-  vatRateBps         Int          @default(0) @map("vat_rate_bps")
-  vatMillimes        BigInt       @default(0) @map("vat_millimes")
-  stampDutyMillimes  BigInt       @default(0) @map("stamp_duty_millimes")
-  netMillimes        BigInt       @map("net_millimes")
+  vatRateBps          Int          @default(0) @map("vat_rate_bps")
+  vatMillimes         BigInt       @default(0) @map("vat_millimes")
+  stampDutyMillimes   BigInt       @default(0) @map("stamp_duty_millimes")
+  withholdingRateBps  Int          @default(0) @map("withholding_rate_bps")
+  withholdingMillimes BigInt       @default(0) @map("withholding_millimes")
+  transferFeeMillimes BigInt       @default(0) @map("transfer_fee_millimes")
+  netMillimes         BigInt       @map("net_millimes")
   /// IBAN at the time of the request (the transfer goes there even if the shop changes it).
-  iban               String // encrypted (AES-256-GCM)
-  batchId            String?      @map("batch_id") @db.Uuid
-  transactionId      String?      @map("transaction_id") @db.Uuid
+  iban                String // encrypted (AES-256-GCM)
+  batchId             String?      @map("batch_id") @db.Uuid
+  transactionId       String?      @map("transaction_id") @db.Uuid
   /// Merchant debt (accepted dispute on a paid payment) deducted from this payout when executed.
-  deductedMillimes   BigInt       @default(0) @map("deducted_millimes")
+  deductedMillimes    BigInt       @default(0) @map("deducted_millimes")
   /// Payment recorded by Finance (bank transfer made outside the platform).
-  bankReference      String?      @map("bank_reference") @db.VarChar(40)
-  paidOn             DateTime?    @map("paid_on") @db.Date
-  paidAmountMillimes BigInt?      @map("paid_amount_millimes")
-  paymentNote        String?      @map("payment_note") @db.VarChar(500)
-  requestedAt        DateTime     @default(now()) @map("requested_at") @db.Timestamptz(3)
+  bankReference       String?      @map("bank_reference") @db.VarChar(40)
+  paidOn              DateTime?    @map("paid_on") @db.Date
+  paidAmountMillimes  BigInt?      @map("paid_amount_millimes")
+  paymentNote         String?      @map("payment_note") @db.VarChar(500)
+  requestedAt         DateTime     @default(now()) @map("requested_at") @db.Timestamptz(3)
 
   merchant Merchant         @relation(fields: [merchantId], references: [id])
   batch    SettlementBatch? @relation(fields: [batchId], references: [id])

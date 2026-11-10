@@ -53,6 +53,10 @@ export const accounts = {
   vatCollected: () => platform('VAT_COLLECTED', 'LIABILITY', true),
   /** Stamp duty collected on orders and payouts, owed to the State (decision of 2026-11-03). */
   stampDuty: () => platform('STAMP_DUTY', 'LIABILITY', true),
+  /** Withholding tax on the commission, owed to the State (processus v2, decision of 2026-11-10). */
+  withholdingTax: () => platform('WITHHOLDING_TAX', 'LIABILITY', true),
+  /** Transfer fee of each order and each merchant payout (processus v2). */
+  transferFees: () => platform('REVENUE_TRANSFER_FEES', 'REVENUE', true),
   expiredCredits: () => platform('REVENUE_EXPIRED', 'REVENUE', true),
   companyWallet: (companyId: string, type: CreditType) =>
     wallet('COMPANY', 'COMPANY_WALLET', companyId, type),

@@ -133,7 +133,18 @@ function PayoutView({
           millimes: payout.vatMillimes,
           sign: 'debit',
         },
+        ...(payout.withholdingMillimes > 0
+          ? [
+              {
+                label: tFees('withholding'),
+                note: formatRateBps(payout.withholdingRateBps, locale),
+                millimes: payout.withholdingMillimes,
+                sign: 'debit' as const,
+              },
+            ]
+          : []),
         { label: tFees('stamp'), millimes: payout.stampDutyMillimes, sign: 'debit' },
+        { label: tFees('transfer'), millimes: payout.transferFeeMillimes, sign: 'debit' },
       ]}
       total={{ label: t('net'), millimes: payout.netMillimes }}
     />

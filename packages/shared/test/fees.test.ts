@@ -23,7 +23,7 @@ describe('rateOf', () => {
 
 describe('orderBreakdown (company: total = amount + commission + VAT + stamp)', () => {
   it('order of 10 000 TND at 5 % -> total 10 596,000 TND', () => {
-    expect(orderBreakdown(10_000_000, [tier(500, null, null)], TAXES)).toEqual({
+    expect(orderBreakdown(10_000_000, [tier(500, null, null)], TAXES)).toMatchObject({
       amountMillimes: 10_000_000,
       rateBps: 500,
       commissionMillimes: 500_000,
@@ -60,7 +60,7 @@ describe('orderBreakdown (company: total = amount + commission + VAT + stamp)', 
 
 describe('payoutBreakdown (merchant: net = amount - commission - VAT - stamp)', () => {
   it('payout of 45 TND at 2 % -> net 42,929 TND', () => {
-    expect(payoutBreakdown(45_000, [tier(200, null, null)], TAXES)).toEqual({
+    expect(payoutBreakdown(45_000, [tier(200, null, null)], TAXES)).toMatchObject({
       amountMillimes: 45_000,
       rateBps: 200,
       commissionMillimes: 900,
@@ -80,5 +80,29 @@ describe('payoutBreakdown (merchant: net = amount - commission - VAT - stamp)', 
     expect(
       lines.netMillimes + lines.commissionMillimes + lines.vatMillimes + lines.stampDutyMillimes,
     ).toBe(1_234_567);
+  });
+});
+
+describe('fees of processus v2 (Règles de frais)', () => {
+  const v2 = (withholdingRateBps: number) => ({
+    vatRateBps: 1_900,
+    stampDutyMillimes: 1_000,
+    withholdingRateBps,
+    withholdingThresholdMillimes: 1_000_000,
+    transferFeeMillimes: 4_000,
+  });
+
+  it('example 1: PM MF order, grid 3 %, 16 000 TND -> 16 581,000', () => {
+    expect(
+      orderBreakdown(16_000_000, [{ rateBps: 300, minMillimes: null, maxMillimes: null }], v2(100))
+        .totalMillimes,
+    ).toBe(16_581_000);
+  });
+
+  it('example 2: PP CIN payout, grid 2 %, 1 250 TND -> net 1 214,500', () => {
+    expect(
+      payoutBreakdown(1_250_000, [{ rateBps: 200, minMillimes: null, maxMillimes: null }], v2(300))
+        .netMillimes,
+    ).toBe(1_214_500);
   });
 });

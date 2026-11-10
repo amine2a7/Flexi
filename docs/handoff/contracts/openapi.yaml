@@ -7052,7 +7052,7 @@ components:
       description: Simulation calculée par le serveur ; taux figé jusqu'à `expiresAt`.
       type: object
       additionalProperties: false
-      required: [quoteId, creditType, grossMillimes, commissionRateBps, commissionMillimes, vatRateBps, vatMillimes, stampDutyMillimes, netMillimes, availableMillimes, expiresAt]
+      required: [quoteId, creditType, grossMillimes, commissionRateBps, commissionMillimes, vatRateBps, vatMillimes, stampDutyMillimes, netMillimes, availableMillimes, expiresAt, withholdingRateBps, withholdingMillimes, transferFeeMillimes]
       properties:
         creditType:
           $ref: '#/components/schemas/CreditType'
@@ -7073,6 +7073,15 @@ components:
         stampDutyMillimes:
           description: Timbre fiscal, figé.
           $ref: '#/components/schemas/AmountMillimes'
+        withholdingRateBps:
+          description: Retenue à la source (taux de la forme juridique, au-delà du seuil ; 0 sinon).
+          $ref: '#/components/schemas/RateBps'
+        withholdingMillimes:
+          description: Retenue à la source sur la commission, ajoutée comme la TVA.
+          $ref: '#/components/schemas/AmountMillimes'
+        transferFeeMillimes:
+          description: Frais de virement.
+          $ref: '#/components/schemas/AmountMillimes'
         netMillimes:
           $ref: '#/components/schemas/AmountMillimes'
         availableMillimes:
@@ -7091,7 +7100,7 @@ components:
       title: PayoutRequest
       type: object
       additionalProperties: false
-      required: [id, creditType, reference, status, grossMillimes, commissionRateBps, commissionMillimes, vatRateBps, vatMillimes, stampDutyMillimes, netMillimes, requestedAt, maskedIban]
+      required: [id, creditType, reference, status, grossMillimes, commissionRateBps, commissionMillimes, vatRateBps, vatMillimes, stampDutyMillimes, netMillimes, requestedAt, maskedIban, withholdingRateBps, withholdingMillimes, transferFeeMillimes]
       properties:
         creditType:
           $ref: '#/components/schemas/CreditType'
@@ -7117,6 +7126,15 @@ components:
           $ref: '#/components/schemas/AmountMillimes'
         stampDutyMillimes:
           description: Timbre fiscal, figé.
+          $ref: '#/components/schemas/AmountMillimes'
+        withholdingRateBps:
+          description: Retenue à la source (taux de la forme juridique, au-delà du seuil ; 0 sinon).
+          $ref: '#/components/schemas/RateBps'
+        withholdingMillimes:
+          description: Retenue à la source sur la commission, ajoutée comme la TVA.
+          $ref: '#/components/schemas/AmountMillimes'
+        transferFeeMillimes:
+          description: Frais de virement.
           $ref: '#/components/schemas/AmountMillimes'
         deductedMillimes:
           description: Dette du commerçant (litige accepté sur un paiement déjà viré) déduite à l'exécution de ce virement.
@@ -7137,7 +7155,7 @@ components:
       description: Demande de virement avec les étapes franchies (du plus ancien au plus récent).
       type: object
       additionalProperties: false
-      required: [id, creditType, reference, status, grossMillimes, commissionRateBps, commissionMillimes, vatRateBps, vatMillimes, stampDutyMillimes, netMillimes, requestedAt, maskedIban, history]
+      required: [id, creditType, reference, status, grossMillimes, commissionRateBps, commissionMillimes, vatRateBps, vatMillimes, stampDutyMillimes, netMillimes, requestedAt, maskedIban, history, withholdingRateBps, withholdingMillimes, transferFeeMillimes]
       properties:
         creditType:
           $ref: '#/components/schemas/CreditType'
@@ -7163,6 +7181,15 @@ components:
           $ref: '#/components/schemas/AmountMillimes'
         stampDutyMillimes:
           description: Timbre fiscal, figé.
+          $ref: '#/components/schemas/AmountMillimes'
+        withholdingRateBps:
+          description: Retenue à la source (taux de la forme juridique, au-delà du seuil ; 0 sinon).
+          $ref: '#/components/schemas/RateBps'
+        withholdingMillimes:
+          description: Retenue à la source sur la commission, ajoutée comme la TVA.
+          $ref: '#/components/schemas/AmountMillimes'
+        transferFeeMillimes:
+          description: Frais de virement.
           $ref: '#/components/schemas/AmountMillimes'
         netMillimes:
           $ref: '#/components/schemas/AmountMillimes'
@@ -7929,7 +7956,7 @@ components:
       description: Récapitulatif calculé par le serveur.
       type: object
       additionalProperties: false
-      required: [quoteId, expiresAt, lines, amountMillimes, feeRateBps, feesMillimes, vatRateBps, vatMillimes, stampDutyMillimes, totalMillimes]
+      required: [quoteId, expiresAt, lines, amountMillimes, feeRateBps, feesMillimes, vatRateBps, vatMillimes, stampDutyMillimes, totalMillimes, withholdingRateBps, withholdingMillimes, transferFeeMillimes]
       properties:
         quoteId:
           description: Devis figé jusqu'à expiresAt ; la commande créée avec cet identifiant en reprend les montants.
@@ -7957,6 +7984,15 @@ components:
         stampDutyMillimes:
           description: Timbre fiscal, figé.
           $ref: '#/components/schemas/AmountMillimes'
+        withholdingRateBps:
+          description: Retenue à la source (taux de la forme juridique, au-delà du seuil ; 0 sinon).
+          $ref: '#/components/schemas/RateBps'
+        withholdingMillimes:
+          description: Retenue à la source sur la commission, ajoutée comme la TVA.
+          $ref: '#/components/schemas/AmountMillimes'
+        transferFeeMillimes:
+          description: Frais de virement.
+          $ref: '#/components/schemas/AmountMillimes'
         totalMillimes:
           $ref: '#/components/schemas/PositiveAmountMillimes'
     CreditOrderCreate:
@@ -7980,7 +8016,7 @@ components:
       title: CreditOrder
       type: object
       additionalProperties: false
-      required: [id, reference, status, lines, companyId, companyName, amountMillimes, feesMillimes, feeRateBps, vatRateBps, vatMillimes, stampDutyMillimes, totalMillimes, createdAt, quoteExpiresAt, quoteExpired, paymentReference]
+      required: [id, reference, status, lines, companyId, companyName, amountMillimes, feesMillimes, feeRateBps, vatRateBps, vatMillimes, stampDutyMillimes, totalMillimes, createdAt, quoteExpiresAt, quoteExpired, paymentReference, withholdingRateBps, withholdingMillimes, transferFeeMillimes]
       properties:
         quoteExpiresAt:
           description: Fin du devis (validité du paramétrage, figée à la création).
@@ -8025,6 +8061,15 @@ components:
         stampDutyMillimes:
           description: Timbre fiscal, figé.
           $ref: '#/components/schemas/AmountMillimes'
+        withholdingRateBps:
+          description: Retenue à la source (taux de la forme juridique, au-delà du seuil ; 0 sinon).
+          $ref: '#/components/schemas/RateBps'
+        withholdingMillimes:
+          description: Retenue à la source sur la commission, ajoutée comme la TVA.
+          $ref: '#/components/schemas/AmountMillimes'
+        transferFeeMillimes:
+          description: Frais de virement.
+          $ref: '#/components/schemas/AmountMillimes'
         totalMillimes:
           $ref: '#/components/schemas/PositiveAmountMillimes'
         createdAt:
@@ -8042,7 +8087,7 @@ components:
       description: Commande avec sa déclaration de virement, son dernier motif et son historique.
       type: object
       additionalProperties: false
-      required: [id, reference, status, lines, companyId, companyName, amountMillimes, feesMillimes, feeRateBps, vatRateBps, vatMillimes, stampDutyMillimes, totalMillimes, createdAt, quoteExpiresAt, quoteExpired, paymentReference, history, requiresSecondValidation]
+      required: [id, reference, status, lines, companyId, companyName, amountMillimes, feesMillimes, feeRateBps, vatRateBps, vatMillimes, stampDutyMillimes, totalMillimes, createdAt, quoteExpiresAt, quoteExpired, paymentReference, history, requiresSecondValidation, withholdingRateBps, withholdingMillimes, transferFeeMillimes]
       properties:
         quoteExpiresAt:
           $ref: '#/components/schemas/Timestamp'
@@ -8084,6 +8129,15 @@ components:
           $ref: '#/components/schemas/AmountMillimes'
         stampDutyMillimes:
           description: Timbre fiscal, figé.
+          $ref: '#/components/schemas/AmountMillimes'
+        withholdingRateBps:
+          description: Retenue à la source (taux de la forme juridique, au-delà du seuil ; 0 sinon).
+          $ref: '#/components/schemas/RateBps'
+        withholdingMillimes:
+          description: Retenue à la source sur la commission, ajoutée comme la TVA.
+          $ref: '#/components/schemas/AmountMillimes'
+        transferFeeMillimes:
+          description: Frais de virement.
           $ref: '#/components/schemas/AmountMillimes'
         totalMillimes:
           $ref: '#/components/schemas/PositiveAmountMillimes'
@@ -8486,12 +8540,19 @@ components:
         paymentsMillimes:
           description: Paiements confirmés chez les commerçants sur le mois.
           $ref: '#/components/schemas/AmountMillimes'
+    LegalForm:
+      title: LegalForm
+      description: Forme juridique (PP CIN, PP MF, PM MF) ; fixe le taux de retenue à la source.
+      type: string
+      enum: [PP_CIN, PP_MF, PM_MF]
     MerchantAccount:
       title: MerchantAccount
       type: object
       additionalProperties: false
-      required: [id, name, category, acceptedCreditTypes, city, status, commissionGrid, createdAt]
+      required: [id, name, category, acceptedCreditTypes, city, status, commissionGrid, createdAt, legalForm]
       properties:
+        legalForm:
+          $ref: '#/components/schemas/LegalForm'
         id:
           $ref: '#/components/schemas/Uuid'
         name:
@@ -8557,8 +8618,10 @@ components:
       title: MerchantCreate
       type: object
       additionalProperties: false
-      required: [name, category, acceptedCreditTypes, city, phone, email, commissionGrid]
+      required: [legalForm, name, category, acceptedCreditTypes, city, phone, email, commissionGrid]
       properties:
+        legalForm:
+          $ref: '#/components/schemas/LegalForm'
         acceptedCreditTypes:
           description: Types de crédit acceptés par le commerçant.
           type: array
@@ -8590,8 +8653,10 @@ components:
       title: CompanyAccount
       type: object
       additionalProperties: false
-      required: [id, name, city, status, employeesCount, commissionGrid, createdAt]
+      required: [id, name, city, status, employeesCount, commissionGrid, createdAt, legalForm]
       properties:
+        legalForm:
+          $ref: '#/components/schemas/LegalForm'
         id:
           $ref: '#/components/schemas/Uuid'
         name:
@@ -8637,8 +8702,10 @@ components:
       title: CompanyCreate
       type: object
       additionalProperties: false
-      required: [name, city, phone, email, commissionGrid]
+      required: [legalForm, name, city, phone, email, commissionGrid]
       properties:
+        legalForm:
+          $ref: '#/components/schemas/LegalForm'
         name:
           type: string
           minLength: 1
@@ -9015,7 +9082,7 @@ components:
       description: Demande de virement vue par l'administrateur (IBAN complet pour le contrôle).
       type: object
       additionalProperties: false
-      required: [id, creditType, reference, status, merchantId, merchantName, grossMillimes, commissionRateBps, commissionMillimes, vatRateBps, vatMillimes, stampDutyMillimes, netMillimes, requestedAt, iban]
+      required: [id, creditType, reference, status, merchantId, merchantName, grossMillimes, commissionRateBps, commissionMillimes, vatRateBps, vatMillimes, stampDutyMillimes, netMillimes, requestedAt, iban, withholdingRateBps, withholdingMillimes, transferFeeMillimes]
       properties:
         creditType:
           $ref: '#/components/schemas/CreditType'
@@ -9047,6 +9114,15 @@ components:
           $ref: '#/components/schemas/AmountMillimes'
         stampDutyMillimes:
           description: Timbre fiscal, figé.
+          $ref: '#/components/schemas/AmountMillimes'
+        withholdingRateBps:
+          description: Retenue à la source (taux de la forme juridique, au-delà du seuil ; 0 sinon).
+          $ref: '#/components/schemas/RateBps'
+        withholdingMillimes:
+          description: Retenue à la source sur la commission, ajoutée comme la TVA.
+          $ref: '#/components/schemas/AmountMillimes'
+        transferFeeMillimes:
+          description: Frais de virement.
           $ref: '#/components/schemas/AmountMillimes'
         netMillimes:
           $ref: '#/components/schemas/AmountMillimes'
@@ -9067,7 +9143,7 @@ components:
       title: AdminPayoutRequestDetail
       type: object
       additionalProperties: false
-      required: [id, creditType, reference, status, merchantId, merchantName, grossMillimes, commissionRateBps, commissionMillimes, vatRateBps, vatMillimes, stampDutyMillimes, netMillimes, requestedAt, iban, history]
+      required: [id, creditType, reference, status, merchantId, merchantName, grossMillimes, commissionRateBps, commissionMillimes, vatRateBps, vatMillimes, stampDutyMillimes, netMillimes, requestedAt, iban, history, withholdingRateBps, withholdingMillimes, transferFeeMillimes]
       properties:
         creditType:
           $ref: '#/components/schemas/CreditType'
@@ -9099,6 +9175,15 @@ components:
           $ref: '#/components/schemas/AmountMillimes'
         stampDutyMillimes:
           description: Timbre fiscal, figé.
+          $ref: '#/components/schemas/AmountMillimes'
+        withholdingRateBps:
+          description: Retenue à la source (taux de la forme juridique, au-delà du seuil ; 0 sinon).
+          $ref: '#/components/schemas/RateBps'
+        withholdingMillimes:
+          description: Retenue à la source sur la commission, ajoutée comme la TVA.
+          $ref: '#/components/schemas/AmountMillimes'
+        transferFeeMillimes:
+          description: Frais de virement.
           $ref: '#/components/schemas/AmountMillimes'
         netMillimes:
           $ref: '#/components/schemas/AmountMillimes'
@@ -9233,6 +9318,23 @@ components:
         dur dans le code. Toute modification est une demande soumise à double validation.
       required: [payoutMinimumMillimes, creditValidityMonths, maxFamilyMembers, orderFeeRateBps, vatRateBps, stampDutyMillimes, expiredCreditsDestination, creditTypes, fundingAccount, secondValidationThresholdMillimes, quoteValidityDays, invitationValidityDays, otpValidityMinutes, pinLockMinutes, paymentCancelHours, settlementDelayDays]
       properties:
+        withholding:
+          description: Retenue à la source (processus v2) — au-delà du seuil, taux de la forme juridique sur la commission.
+          type: object
+          additionalProperties: false
+          required: [thresholdMillimes, ppCinBps, ppMfBps, pmMfBps]
+          properties:
+            thresholdMillimes:
+              $ref: '#/components/schemas/AmountMillimes'
+            ppCinBps:
+              $ref: '#/components/schemas/RateBps'
+            ppMfBps:
+              $ref: '#/components/schemas/RateBps'
+            pmMfBps:
+              $ref: '#/components/schemas/RateBps'
+        transferFeeMillimes:
+          description: Frais de virement de chaque commande et de chaque virement commerçant.
+          $ref: '#/components/schemas/AmountMillimes'
         fundingAccount:
           $ref: '#/components/schemas/FundingBankAccount'
         secondValidationThresholdMillimes:

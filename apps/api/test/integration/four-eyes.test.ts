@@ -45,6 +45,7 @@ describe('four eyes', () => {
         name: `Café ${randomUUID().slice(0, 6)}`,
         category: 'CAFE',
         acceptedCreditTypes: ['RESTAURATION'],
+        legalForm: 'PM_MF',
         commissionGrid: [{ rateBps: 200, minMillimes: null, maxMillimes: null }],
         city: 'Tunis',
         phone: '+21671222333',

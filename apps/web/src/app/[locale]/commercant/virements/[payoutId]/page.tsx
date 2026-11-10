@@ -94,9 +94,23 @@ export default function PayoutDetailPage() {
                       millimes: payout.data.vatMillimes,
                       sign: 'debit',
                     },
+                    ...(payout.data.withholdingMillimes > 0
+                      ? [
+                          {
+                            label: tFees('withholding'),
+                            millimes: payout.data.withholdingMillimes,
+                            sign: 'debit' as const,
+                          },
+                        ]
+                      : []),
                     {
                       label: tFees('stamp'),
                       millimes: payout.data.stampDutyMillimes,
+                      sign: 'debit',
+                    },
+                    {
+                      label: tFees('transfer'),
+                      millimes: payout.data.transferFeeMillimes,
                       sign: 'debit',
                     },
                   ]}

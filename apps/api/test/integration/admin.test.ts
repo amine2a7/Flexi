@@ -51,6 +51,7 @@ describe('accounts and KYC', () => {
         city: 'Sousse',
         phone: '+21673000000',
         email: 'pain@test.tn',
+        legalForm: 'PM_MF',
         commissionGrid: GRID,
         acceptedCreditTypes: ['RESTAURATION'],
       },
@@ -97,6 +98,7 @@ describe('commission grids', () => {
     city: 'Tunis',
     phone: '+21671000001',
     email: `rh-${String(Math.random()).slice(2, 10)}@societe.tn`,
+    legalForm: 'PM_MF',
     commissionGrid: grid,
   });
 
@@ -104,7 +106,13 @@ describe('commission grids', () => {
     const { first } = await admins();
     const created = await first.call('POST', '/v1/admin/companies', { body: company(GRID) });
     expect(created.status).toBe(201);
-    expect(created.body).toMatchObject({ commissionGrid: { tiers: GRID } });
+    expect(created.body).toMatchObject({ commissionGrid: { tiers: GRID }, legalForm: 'PM_MF' });
+    // The legal form is required (processus v2): it drives the withholding tax.
+    const refused = await first.call('POST', '/v1/admin/companies', {
+      body: { ...company(GRID), legalForm: undefined },
+    });
+    expect(refused.status).toBe(400);
+    expect(refused.body.details).toMatchObject({ fields: [{ pointer: '/legalForm' }] });
   });
 
   it.each([
@@ -180,6 +188,7 @@ describe('grid rules of 2026-11-04', () => {
         city: 'Sfax',
         phone: '+21674000000',
         email: `epicerie-${String(Math.random()).slice(2, 10)}@test.tn`,
+        legalForm: 'PM_MF',
         commissionGrid: GRID,
         acceptedCreditTypes: ['RESTAURATION'],
       },
@@ -212,6 +221,7 @@ describe('grid rules of 2026-11-04', () => {
         city: 'Tunis',
         phone: '+21671000002',
         email: `kiosque-${String(Math.random()).slice(2, 10)}@test.tn`,
+        legalForm: 'PM_MF',
         commissionGrid: GRID,
         acceptedCreditTypes: ['RESTAURATION'],
       },
@@ -325,6 +335,7 @@ describe('records editable at any time (decision of 2026-11-03)', () => {
         city: 'Tunis',
         phone: '+21671000003',
         email: `fiche-${String(Math.random()).slice(2, 10)}@test.tn`,
+        legalForm: 'PM_MF',
         commissionGrid: GRID,
         acceptedCreditTypes: ['RESTAURATION'],
       },

@@ -279,7 +279,13 @@
     "historyDate": "Date",
     "historyBy": "Demandé par",
     "historyReason": "Motif",
-    "historyStatus": "Décision"
+    "historyStatus": "Décision",
+    "transferFee": "Frais de virement (TND)",
+    "withholdingThreshold": "Seuil de la retenue à la source (TND)",
+    "withholdingThresholdHint": "Au-delà de ce montant, la retenue s'applique.",
+    "withholdingPpCin": "Retenue PP CIN (% de la commission)",
+    "withholdingPpMf": "Retenue PP MF (% de la commission)",
+    "withholdingPmMf": "Retenue PM MF (% de la commission)"
   },
   "kyc": {
     "open": "Ouvrir",
@@ -591,7 +597,9 @@
       "noBound": "Indiquez au moins « De » ou « À » : la ligne sans bornes est le taux par défaut.",
       "rate": "Saisissez un taux entre 0 et 100 %, 2 décimales au plus.",
       "amount": "Saisissez un montant en TND, 3 décimales au plus."
-    }
+    },
+    "lineWithholding": "Retenue à la source",
+    "lineTransfer": "Frais de virement"
   },
   "record": {
     "contact": "Informations",

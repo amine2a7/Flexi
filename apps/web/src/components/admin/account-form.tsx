@@ -33,8 +33,12 @@ const CATEGORIES: Schemas['MerchantCategory'][] = [
   'GIFT_SHOP',
 ];
 
+const LEGAL_FORMS: Schemas['LegalForm'][] = ['PP_CIN', 'PP_MF', 'PM_MF'];
+
 interface Draft {
   name: string;
+  /** Required (processus v2): drives the withholding tax rate. */
+  legalForm: string;
   category: string;
   city: string;
   phone: string;
@@ -45,6 +49,7 @@ interface Draft {
 
 const EMPTY: Draft = {
   name: '',
+  legalForm: '',
   category: '',
   city: '',
   phone: '+216',
@@ -72,6 +77,7 @@ export function AccountForm({
     tRoot(messageKey(`${ns}.${key}`), values);
   const tWindow = useTranslations('admin.commissionWindow');
   const tCategory = useTranslations('category');
+  const tForm = useTranslations('ui.legalForm');
   const toast = useToast();
   const locale = useLocale();
   const [step, setStep] = useState<1 | 2>(1);
@@ -103,6 +109,7 @@ export function AccountForm({
     const required = t('form.required');
     const missing: Partial<Record<keyof Draft, string>> = {
       ...(draft.name.trim() === '' ? { name: required } : {}),
+      ...(draft.legalForm === '' ? { legalForm: required } : {}),
       ...(draft.city.trim() === '' ? { city: required } : {}),
       ...(draft.email.trim() === '' ? { email: required } : {}),
       ...(draft.phone.replaceAll(' ', '').length < 12 ? { phone: required } : {}),
@@ -123,6 +130,7 @@ export function AccountForm({
     try {
       const common = {
         name: draft.name,
+        legalForm: draft.legalForm as Schemas['LegalForm'],
         city: draft.city,
         phone: draft.phone.replaceAll(' ', ''),
         email: draft.email.trim(),
@@ -215,6 +223,17 @@ export function AccountForm({
               }}
               autoComplete="organization"
             />
+            <SelectField
+              label={tForm('label')}
+              hint={tForm('hint')}
+              placeholder={tForm('placeholder')}
+              error={fieldErrors.legalForm}
+              options={LEGAL_FORMS.map((value) => ({ value, label: tForm(value) }))}
+              value={draft.legalForm}
+              onChange={(event) => {
+                set('legalForm')(event.target.value);
+              }}
+            />
             {kind === 'merchant' ? (
               <SelectField
                 label={t('category')}
@@ -277,6 +296,9 @@ export function AccountForm({
               setGridErrors(new Map());
             }}
             errors={gridErrors}
+            {...(draft.legalForm === ''
+              ? {}
+              : { legalForm: draft.legalForm as Schemas['LegalForm'] })}
           />
         )}
         <div className="flex justify-end gap-3">

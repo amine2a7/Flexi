@@ -250,6 +250,7 @@ describe('admin sub-roles (Super-admin, Opérations COMPLIANCE, Finance, Support
     city: 'Tunis',
     phone: '+21671000000',
     email: 'x@y.tn',
+    legalForm: 'PM_MF',
     commissionGrid: [{ rateBps: 150, minMillimes: null, maxMillimes: null }],
   };
   const gridBody = {

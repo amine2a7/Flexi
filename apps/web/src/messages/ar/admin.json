@@ -279,7 +279,13 @@
     "historyDate": "التاريخ",
     "historyBy": "بطلب من",
     "historyReason": "السبب",
-    "historyStatus": "القرار"
+    "historyStatus": "القرار",
+    "transferFee": "مصاريف التحويل (د.ت)",
+    "withholdingThreshold": "سقف الخصم من المورد (د.ت)",
+    "withholdingThresholdHint": "فوق هذا المبلغ يطبق الخصم.",
+    "withholdingPpCin": "الخصم PP CIN (% من العمولة)",
+    "withholdingPpMf": "الخصم PP MF (% من العمولة)",
+    "withholdingPmMf": "الخصم PM MF (% من العمولة)"
   },
   "kyc": {
     "open": "فتح",
@@ -591,7 +597,9 @@
       "noBound": "أدخل «من» أو «إلى» على الأقل: السطر دون حدود هو النسبة الافتراضية.",
       "rate": "أدخل نسبة بين 0 و100 %، برقمين عشريين على الأكثر.",
       "amount": "أدخل مبلغًا بالدينار، بثلاثة أرقام عشرية على الأكثر."
-    }
+    },
+    "lineWithholding": "الخصم من المورد",
+    "lineTransfer": "مصاريف التحويل"
   },
   "record": {
     "contact": "المعلومات",

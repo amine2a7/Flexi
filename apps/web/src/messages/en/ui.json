@@ -67,6 +67,16 @@
   },
   "fees": {
     "vat": "VAT on the commission",
-    "stamp": "Stamp duty"
+    "stamp": "Stamp duty",
+    "withholding": "Withholding tax",
+    "transfer": "Transfer fee"
+  },
+  "legalForm": {
+    "label": "Legal form",
+    "placeholder": "Choose the legal form",
+    "hint": "Sets the withholding tax rate.",
+    "PP_CIN": "PP CIN — individual (ID card)",
+    "PP_MF": "PP MF — individual with tax number",
+    "PM_MF": "PM MF — company with tax number"
   }
 }

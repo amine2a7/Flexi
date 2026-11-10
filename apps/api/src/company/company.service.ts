@@ -672,7 +672,16 @@ export class CompanyService {
         { text: 'Montant des crédits', right: tnd(order.amountMillimes), bold: true, gap: 8 },
         { text: `Commission FlexiPay (${percent(order.feeRateBps)})`, right: tnd(order.feesMillimes) },
         { text: `TVA sur la commission (${percent(order.vatRateBps)})`, right: tnd(order.vatMillimes) },
+        ...(order.withholdingMillimes > 0n
+          ? [
+              {
+                text: `Retenue à la source (${percent(order.withholdingRateBps)} de la commission)`,
+                right: tnd(order.withholdingMillimes),
+              },
+            ]
+          : []),
         { text: 'Timbre fiscal', right: tnd(order.stampDutyMillimes) },
+        { text: 'Frais de virement', right: tnd(order.transferFeeMillimes) },
         { text: 'Total à payer', right: tnd(order.totalMillimes), bold: true, size: 12, gap: 10 },
         { text: `Statut : ${invoice.status === 'PAID' ? 'payée' : 'à payer'}`, gap: 16 },
         {

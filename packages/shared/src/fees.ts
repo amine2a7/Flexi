@@ -9,6 +9,10 @@ import { BPS_PER_UNIT } from './rate.js';
 export interface Taxes {
   readonly vatRateBps: number;
   readonly stampDutyMillimes: number;
+  /** Processus v2: withholding rate of the legal form, applied above the threshold. */
+  readonly withholdingRateBps?: number;
+  readonly withholdingThresholdMillimes?: number;
+  readonly transferFeeMillimes?: number;
 }
 
 interface Lines {
@@ -17,7 +21,10 @@ interface Lines {
   commissionMillimes: number;
   vatRateBps: number;
   vatMillimes: number;
+  withholdingRateBps: number;
+  withholdingMillimes: number;
   stampDutyMillimes: number;
+  transferFeeMillimes: number;
 }
 
 /** `amount × bps / 10 000`, half up, exact (BigInt) on any safe amount. */
@@ -29,17 +36,34 @@ export function rateOf(amountMillimes: number, rateBps: number): number {
 function lines(amountMillimes: number, tiers: readonly CommissionTier[], taxes: Taxes): Lines {
   const rateBps = tierFor(tiers, amountMillimes).rateBps;
   const commissionMillimes = rateOf(amountMillimes, rateBps);
+  const withholdingRateBps =
+    amountMillimes > (taxes.withholdingThresholdMillimes ?? Number.MAX_SAFE_INTEGER)
+      ? (taxes.withholdingRateBps ?? 0)
+      : 0;
   return {
     amountMillimes,
     rateBps,
     commissionMillimes,
     vatRateBps: taxes.vatRateBps,
     vatMillimes: rateOf(commissionMillimes, taxes.vatRateBps),
+    withholdingRateBps,
+    withholdingMillimes: rateOf(commissionMillimes, withholdingRateBps),
     stampDutyMillimes: taxes.stampDutyMillimes,
+    transferFeeMillimes: taxes.transferFeeMillimes ?? 0,
   };
 }
 
-/** Company order: total = amount + commission + VAT + stamp duty. */
+function feesOf(found: Lines): number {
+  return (
+    found.commissionMillimes +
+    found.vatMillimes +
+    found.withholdingMillimes +
+    found.stampDutyMillimes +
+    found.transferFeeMillimes
+  );
+}
+
+/** Company order: total = amount + commission + VAT + withholding + stamp duty + transfer fee. */
 export function orderBreakdown(
   amountMillimes: number,
   tiers: readonly CommissionTier[],
@@ -48,12 +72,11 @@ export function orderBreakdown(
   const found = lines(amountMillimes, tiers, taxes);
   return {
     ...found,
-    totalMillimes:
-      amountMillimes + found.commissionMillimes + found.vatMillimes + found.stampDutyMillimes,
+    totalMillimes: amountMillimes + feesOf(found),
   };
 }
 
-/** Merchant payout: net = amount − commission − VAT − stamp duty. */
+/** Merchant payout: net = amount − every fee. */
 export function payoutBreakdown(
   amountMillimes: number,
   tiers: readonly CommissionTier[],
@@ -62,7 +85,6 @@ export function payoutBreakdown(
   const found = lines(amountMillimes, tiers, taxes);
   return {
     ...found,
-    netMillimes:
-      amountMillimes - found.commissionMillimes - found.vatMillimes - found.stampDutyMillimes,
+    netMillimes: amountMillimes - feesOf(found),
   };
 }

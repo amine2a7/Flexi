@@ -309,7 +309,7 @@ describe('payout and settlement', () => {
       vatRateBps: 1_900,
       vatMillimes: 171,
       stampDutyMillimes: 1_000,
-      netMillimes: 42_929,
+      netMillimes: 38_929,
       availableMillimes: 45_000,
     });
     const requested = await shop.call('POST', '/v1/merchant/payouts', {
@@ -322,12 +322,13 @@ describe('payout and settlement', () => {
       commissionRateBps: 200,
       vatMillimes: 171,
       stampDutyMillimes: 1_000,
-      netMillimes: 42_929,
+      netMillimes: 38_929,
     });
     expect(await ledgerLines(db, String(requested.body.reference))).toEqual([
       { code: 'MERCHANT_WALLET', direction: 'D', amount: 45_000 },
-      { code: 'PAYOUT_PAYABLE', direction: 'C', amount: 42_929 },
+      { code: 'PAYOUT_PAYABLE', direction: 'C', amount: 38_929 },
       { code: 'REVENUE_MERCHANT_COMMISSION', direction: 'C', amount: 900 },
+      { code: 'REVENUE_TRANSFER_FEES', direction: 'C', amount: 4_000 },
       { code: 'STAMP_DUTY', direction: 'C', amount: 1_000 },
       { code: 'VAT_COLLECTED', direction: 'C', amount: 171 },
     ]);
@@ -345,7 +346,9 @@ describe('payout and settlement', () => {
       'Commission FlexiPay \\(2 %\\)',
       '-0,171 TND',
       '-1,000 TND',
-      '42,929 TND',
+      'Frais de virement',
+      '-4,000 TND',
+      '38,929 TND',
     ])
       expect(text).toContain(expected);
     expect((await shop.call('GET', '/v1/merchant/receivables')).body.totalMillimes).toBe(0);
@@ -388,7 +391,7 @@ describe('payout and settlement', () => {
       (
         settlements.body.data as { status: string; paymentsCount: number; netMillimes: number }[]
       )[0],
-    ).toMatchObject({ status: 'PAID', paymentsCount: 1, netMillimes: 42_929 });
+    ).toMatchObject({ status: 'PAID', paymentsCount: 1, netMillimes: 38_929 });
     const books = await db.system((tx) => ledger.reconcile(tx));
     expect(books.ok).toBe(true);
   });
@@ -419,13 +422,13 @@ describe('payout and settlement', () => {
       commissionRateBps: 250,
       commissionMillimes: 1_125,
       vatMillimes: 214,
-      netMillimes: 42_661,
+      netMillimes: 38_661,
     });
     const requested = await shop.call('POST', '/v1/merchant/payouts', {
       body: { quoteId: quote.body.quoteId },
       headers: key(),
     });
-    expect(requested.body).toMatchObject({ commissionRateBps: 250, netMillimes: 42_661 });
+    expect(requested.body).toMatchObject({ commissionRateBps: 250, netMillimes: 38_661 });
     // Every shop has a grid (decision of 2026-11-04): the dashboard shows its default rate.
     const plain = await merchantClient((await createMerchant()).id);
     expect((await plain.call('GET', '/v1/merchant/dashboard')).body.commissionRateBps).toBe(200);
@@ -702,6 +705,56 @@ describe('cancellation of a confirmed payment by the shop', () => {
         60_000n,
       );
     });
+  });
+});
+
+// TEST-FIRST (processus v2, Règles de frais, example 2): a PP CIN shop, grid 2 %, asks 1 250 TND.
+describe('fees of a merchant payout (processus v2)', () => {
+  beforeAll(freshApp);
+
+  it('PP CIN, grid 2 %, 1 250,000 -> net 1 214,500; one ledger line per fee', async () => {
+    const merchant = await createMerchant(['RESTAURATION'], 200);
+    await db.system(async (tx) => {
+      await tx.merchant.update({ where: { id: merchant.id }, data: { legalForm: 'PP_CIN' } });
+      await ledger.post(tx, {
+        type: 'ALLOCATION',
+        reference: 'TEST-SALES',
+        entries: [
+          { account: accounts.bankEscrow(), direction: 'D', amount: 1_250_000n },
+          {
+            account: accounts.merchantWallet(merchant.id, 'RESTAURATION'),
+            direction: 'C',
+            amount: 1_250_000n,
+          },
+        ],
+      });
+    });
+    const shop = await merchantClient(merchant.id);
+    const quote = await shop.call('POST', '/v1/merchant/payout-quotes', {
+      body: { creditType: 'RESTAURATION', grossMillimes: 1_250_000 },
+    });
+    expect(quote.body).toMatchObject({
+      commissionMillimes: 25_000,
+      vatMillimes: 4_750,
+      withholdingRateBps: 300,
+      withholdingMillimes: 750,
+      stampDutyMillimes: 1_000,
+      transferFeeMillimes: 4_000,
+      netMillimes: 1_214_500,
+    });
+    const requested = await shop.call('POST', '/v1/merchant/payouts', {
+      body: { quoteId: quote.body.quoteId },
+      headers: key(),
+    });
+    expect(requested.body).toMatchObject({ netMillimes: 1_214_500, withholdingMillimes: 750 });
+    const entries = await ledgerLines(db, String(requested.body.reference));
+    expect(entries).toEqual(
+      expect.arrayContaining([
+        { code: 'PAYOUT_PAYABLE', direction: 'C', amount: 1_214_500 },
+        { code: 'WITHHOLDING_TAX', direction: 'C', amount: 750 },
+        { code: 'REVENUE_TRANSFER_FEES', direction: 'C', amount: 4_000 },
+      ]),
+    );
   });
 });
 

@@ -3210,6 +3210,12 @@ export interface components {
       vatMillimes: components['schemas']['AmountMillimes'];
       /** @description Timbre fiscal, figé. */
       stampDutyMillimes: components['schemas']['AmountMillimes'];
+      /** @description Retenue à la source (taux de la forme juridique, au-delà du seuil ; 0 sinon). */
+      withholdingRateBps: components['schemas']['RateBps'];
+      /** @description Retenue à la source sur la commission, ajoutée comme la TVA. */
+      withholdingMillimes: components['schemas']['AmountMillimes'];
+      /** @description Frais de virement. */
+      transferFeeMillimes: components['schemas']['AmountMillimes'];
       netMillimes: components['schemas']['AmountMillimes'];
       availableMillimes: components['schemas']['AmountMillimes'];
       expiresAt: components['schemas']['Timestamp'];
@@ -3233,6 +3239,12 @@ export interface components {
       vatMillimes: components['schemas']['AmountMillimes'];
       /** @description Timbre fiscal, figé. */
       stampDutyMillimes: components['schemas']['AmountMillimes'];
+      /** @description Retenue à la source (taux de la forme juridique, au-delà du seuil ; 0 sinon). */
+      withholdingRateBps: components['schemas']['RateBps'];
+      /** @description Retenue à la source sur la commission, ajoutée comme la TVA. */
+      withholdingMillimes: components['schemas']['AmountMillimes'];
+      /** @description Frais de virement. */
+      transferFeeMillimes: components['schemas']['AmountMillimes'];
       /** @description Dette du commerçant (litige accepté sur un paiement déjà viré) déduite à l'exécution de ce virement. */
       deductedMillimes?: components['schemas']['AmountMillimes'];
       netMillimes: components['schemas']['AmountMillimes'];
@@ -3259,6 +3271,12 @@ export interface components {
       vatMillimes: components['schemas']['AmountMillimes'];
       /** @description Timbre fiscal, figé. */
       stampDutyMillimes: components['schemas']['AmountMillimes'];
+      /** @description Retenue à la source (taux de la forme juridique, au-delà du seuil ; 0 sinon). */
+      withholdingRateBps: components['schemas']['RateBps'];
+      /** @description Retenue à la source sur la commission, ajoutée comme la TVA. */
+      withholdingMillimes: components['schemas']['AmountMillimes'];
+      /** @description Frais de virement. */
+      transferFeeMillimes: components['schemas']['AmountMillimes'];
       netMillimes: components['schemas']['AmountMillimes'];
       requestedAt: components['schemas']['Timestamp'];
       payment?: components['schemas']['PayoutPayment'];
@@ -3641,6 +3659,12 @@ export interface components {
       vatMillimes: components['schemas']['AmountMillimes'];
       /** @description Timbre fiscal, figé. */
       stampDutyMillimes: components['schemas']['AmountMillimes'];
+      /** @description Retenue à la source (taux de la forme juridique, au-delà du seuil ; 0 sinon). */
+      withholdingRateBps: components['schemas']['RateBps'];
+      /** @description Retenue à la source sur la commission, ajoutée comme la TVA. */
+      withholdingMillimes: components['schemas']['AmountMillimes'];
+      /** @description Frais de virement. */
+      transferFeeMillimes: components['schemas']['AmountMillimes'];
       totalMillimes: components['schemas']['PositiveAmountMillimes'];
     };
     /**
@@ -3675,6 +3699,12 @@ export interface components {
       vatMillimes: components['schemas']['AmountMillimes'];
       /** @description Timbre fiscal, figé. */
       stampDutyMillimes: components['schemas']['AmountMillimes'];
+      /** @description Retenue à la source (taux de la forme juridique, au-delà du seuil ; 0 sinon). */
+      withholdingRateBps: components['schemas']['RateBps'];
+      /** @description Retenue à la source sur la commission, ajoutée comme la TVA. */
+      withholdingMillimes: components['schemas']['AmountMillimes'];
+      /** @description Frais de virement. */
+      transferFeeMillimes: components['schemas']['AmountMillimes'];
       totalMillimes: components['schemas']['PositiveAmountMillimes'];
       createdAt: components['schemas']['Timestamp'];
       /** @description Référence à indiquer sur le virement. */
@@ -3706,6 +3736,12 @@ export interface components {
       vatMillimes: components['schemas']['AmountMillimes'];
       /** @description Timbre fiscal, figé. */
       stampDutyMillimes: components['schemas']['AmountMillimes'];
+      /** @description Retenue à la source (taux de la forme juridique, au-delà du seuil ; 0 sinon). */
+      withholdingRateBps: components['schemas']['RateBps'];
+      /** @description Retenue à la source sur la commission, ajoutée comme la TVA. */
+      withholdingMillimes: components['schemas']['AmountMillimes'];
+      /** @description Frais de virement. */
+      transferFeeMillimes: components['schemas']['AmountMillimes'];
       totalMillimes: components['schemas']['PositiveAmountMillimes'];
       createdAt: components['schemas']['Timestamp'];
       /** @description Référence à indiquer sur le virement. */
@@ -3915,8 +3951,15 @@ export interface components {
       /** @description Paiements confirmés chez les commerçants sur le mois. */
       paymentsMillimes: components['schemas']['AmountMillimes'];
     };
+    /**
+     * LegalForm
+     * @description Forme juridique (PP CIN, PP MF, PM MF) ; fixe le taux de retenue à la source.
+     * @enum {string}
+     */
+    LegalForm: 'PP_CIN' | 'PP_MF' | 'PM_MF';
     /** MerchantAccount */
     MerchantAccount: {
+      legalForm: components['schemas']['LegalForm'];
       id: components['schemas']['Uuid'];
       name: string;
       category: components['schemas']['MerchantCategory'];
@@ -3948,6 +3991,7 @@ export interface components {
     };
     /** MerchantCreate */
     MerchantCreate: {
+      legalForm: components['schemas']['LegalForm'];
       /** @description Types de crédit acceptés par le commerçant. */
       acceptedCreditTypes: components['schemas']['CreditType'][];
       name: string;
@@ -3961,6 +4005,7 @@ export interface components {
     };
     /** CompanyAccount */
     CompanyAccount: {
+      legalForm: components['schemas']['LegalForm'];
       id: components['schemas']['Uuid'];
       name: string;
       city: string;
@@ -3985,6 +4030,7 @@ export interface components {
     };
     /** CompanyCreate */
     CompanyCreate: {
+      legalForm: components['schemas']['LegalForm'];
       name: string;
       city: string;
       phone: components['schemas']['PhoneNumber'];
@@ -4196,6 +4242,12 @@ export interface components {
       vatMillimes: components['schemas']['AmountMillimes'];
       /** @description Timbre fiscal, figé. */
       stampDutyMillimes: components['schemas']['AmountMillimes'];
+      /** @description Retenue à la source (taux de la forme juridique, au-delà du seuil ; 0 sinon). */
+      withholdingRateBps: components['schemas']['RateBps'];
+      /** @description Retenue à la source sur la commission, ajoutée comme la TVA. */
+      withholdingMillimes: components['schemas']['AmountMillimes'];
+      /** @description Frais de virement. */
+      transferFeeMillimes: components['schemas']['AmountMillimes'];
       netMillimes: components['schemas']['AmountMillimes'];
       requestedAt: components['schemas']['Timestamp'];
       payment?: components['schemas']['PayoutPayment'];
@@ -4221,6 +4273,12 @@ export interface components {
       vatMillimes: components['schemas']['AmountMillimes'];
       /** @description Timbre fiscal, figé. */
       stampDutyMillimes: components['schemas']['AmountMillimes'];
+      /** @description Retenue à la source (taux de la forme juridique, au-delà du seuil ; 0 sinon). */
+      withholdingRateBps: components['schemas']['RateBps'];
+      /** @description Retenue à la source sur la commission, ajoutée comme la TVA. */
+      withholdingMillimes: components['schemas']['AmountMillimes'];
+      /** @description Frais de virement. */
+      transferFeeMillimes: components['schemas']['AmountMillimes'];
       netMillimes: components['schemas']['AmountMillimes'];
       requestedAt: components['schemas']['Timestamp'];
       payment?: components['schemas']['PayoutPayment'];
@@ -4283,6 +4341,15 @@ export interface components {
      *     dur dans le code. Toute modification est une demande soumise à double validation.
      */
     PlatformSettings: {
+      /** @description Retenue à la source (processus v2) — au-delà du seuil, taux de la forme juridique sur la commission. */
+      withholding?: {
+        thresholdMillimes: components['schemas']['AmountMillimes'];
+        ppCinBps: components['schemas']['RateBps'];
+        ppMfBps: components['schemas']['RateBps'];
+        pmMfBps: components['schemas']['RateBps'];
+      };
+      /** @description Frais de virement de chaque commande et de chaque virement commerçant. */
+      transferFeeMillimes?: components['schemas']['AmountMillimes'];
       fundingAccount: components['schemas']['FundingBankAccount'];
       /** @description Au-delà de ce montant, une commande exige deux administrateurs (figé dans chaque commande). */
       secondValidationThresholdMillimes: components['schemas']['PositiveAmountMillimes'];
@@ -9639,6 +9706,9 @@ export const allocationImportRowIssuesValues: ReadonlyArray<
 export const invoiceStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['InvoiceStatus']
 > = ['PAID', 'UNPAID', 'CANCELLED'];
+export const legalFormValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['LegalForm']
+> = ['PP_CIN', 'PP_MF', 'PM_MF'];
 export const approvalTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['ApprovalType']
 > = [

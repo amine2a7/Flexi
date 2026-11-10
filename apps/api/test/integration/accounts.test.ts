@@ -145,6 +145,7 @@ describe('sign-in accounts created with their owner', () => {
         name: `Café ${randomUUID().slice(0, 6)}`,
         category: 'CAFE',
         acceptedCreditTypes: ['RESTAURATION'],
+        legalForm: 'PM_MF',
         commissionGrid: [{ rateBps: 200, minMillimes: null, maxMillimes: null }],
         city: 'Tunis',
         phone: '+21671222333',
@@ -170,6 +171,7 @@ describe('sign-in accounts created with their owner', () => {
         city: 'Sfax',
         phone: '+21674111222',
         email: companyEmail,
+        legalForm: 'PM_MF',
         commissionGrid: [{ rateBps: 150, minMillimes: null, maxMillimes: null }],
       },
     });

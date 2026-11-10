@@ -279,7 +279,13 @@
     "historyDate": "Date",
     "historyBy": "Requested by",
     "historyReason": "Reason",
-    "historyStatus": "Decision"
+    "historyStatus": "Decision",
+    "transferFee": "Transfer fee (TND)",
+    "withholdingThreshold": "Withholding tax threshold (TND)",
+    "withholdingThresholdHint": "Above this amount, the withholding applies.",
+    "withholdingPpCin": "Withholding PP CIN (% of the commission)",
+    "withholdingPpMf": "Withholding PP MF (% of the commission)",
+    "withholdingPmMf": "Withholding PM MF (% of the commission)"
   },
   "kyc": {
     "open": "Open",
@@ -591,7 +597,9 @@
       "noBound": "Enter at least « From » or « To »: the line without bounds is the default rate.",
       "rate": "Enter a rate between 0 and 100 %, 2 decimals at most.",
       "amount": "Enter an amount in TND, 3 decimals at most."
-    }
+    },
+    "lineWithholding": "Withholding tax",
+    "lineTransfer": "Transfer fee"
   },
   "record": {
     "contact": "Information",

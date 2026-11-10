@@ -155,6 +155,17 @@ function CurrentSettings({ settings }: { settings: Settings }) {
             { label: t('vat'), value: <Rate bps={settings.vatRateBps} /> },
             { label: t('stamp'), value: <Amount millimes={settings.stampDutyMillimes} /> },
             {
+              label: t('transferFee'),
+              value: <Amount millimes={settings.transferFeeMillimes ?? 0} />,
+            },
+            {
+              label: t('withholdingThreshold'),
+              value: <Amount millimes={settings.withholding?.thresholdMillimes ?? 0} />,
+            },
+            { label: t('withholdingPpCin'), value: <Rate bps={settings.withholding?.ppCinBps ?? 0} /> },
+            { label: t('withholdingPpMf'), value: <Rate bps={settings.withholding?.ppMfBps ?? 0} /> },
+            { label: t('withholdingPmMf'), value: <Rate bps={settings.withholding?.pmMfBps ?? 0} /> },
+            {
               label: t('payoutMinimum'),
               value: <Amount millimes={settings.payoutMinimumMillimes} />,
             },
@@ -287,6 +298,11 @@ type DraftKey =
   | 'orderFee'
   | 'vat'
   | 'stamp'
+  | 'transferFee'
+  | 'withholdingThreshold'
+  | 'withholdingPpCin'
+  | 'withholdingPpMf'
+  | 'withholdingPmMf'
   | 'threshold'
   | 'bankName'
   | 'holder'
@@ -320,6 +336,11 @@ function ChangeSettings({
     orderFee: bpsToText(current.orderFeeRateBps, locale),
     vat: bpsToText(current.vatRateBps, locale),
     stamp: formatMillimes(current.stampDutyMillimes, locale),
+    transferFee: formatMillimes(current.transferFeeMillimes ?? 0, locale),
+    withholdingThreshold: formatMillimes(current.withholding?.thresholdMillimes ?? 0, locale),
+    withholdingPpCin: bpsToText(current.withholding?.ppCinBps ?? 0, locale),
+    withholdingPpMf: bpsToText(current.withholding?.ppMfBps ?? 0, locale),
+    withholdingPmMf: bpsToText(current.withholding?.pmMfBps ?? 0, locale),
     threshold: formatMillimes(current.secondValidationThresholdMillimes, locale),
     bankName: current.fundingAccount.bankName,
     holder: current.fundingAccount.holder,
@@ -378,6 +399,11 @@ function ChangeSettings({
       orderFee: parseBps(draft.orderFee, locale),
       vat: vat !== undefined && vat <= 10_000 ? vat : undefined,
       stamp: parseMillimes(draft.stamp, locale),
+      transferFee: parseMillimes(draft.transferFee, locale),
+      withholdingThreshold: parseMillimes(draft.withholdingThreshold, locale),
+      withholdingPpCin: parseBps(draft.withholdingPpCin, locale),
+      withholdingPpMf: parseBps(draft.withholdingPpMf, locale),
+      withholdingPmMf: parseBps(draft.withholdingPmMf, locale),
       threshold: threshold !== undefined && threshold > 0 ? threshold : undefined,
       bankName: draft.bankName.trim() === '' ? undefined : draft.bankName.trim(),
       holder: draft.holder.trim() === '' ? undefined : draft.holder.trim(),
@@ -448,6 +474,11 @@ function ChangeSettings({
       quote,
       cancel,
       settlement,
+      transferFee,
+      withholdingThreshold,
+      withholdingPpCin,
+      withholdingPpMf,
+      withholdingPmMf,
     } = parsed;
     if (
       Object.keys(errors).length > 0 ||
@@ -469,7 +500,12 @@ function ChangeSettings({
       invitation === undefined ||
       quote === undefined ||
       cancel === undefined ||
-      settlement === undefined
+      settlement === undefined ||
+      transferFee === undefined ||
+      withholdingThreshold === undefined ||
+      withholdingPpCin === undefined ||
+      withholdingPpMf === undefined ||
+      withholdingPmMf === undefined
     ) {
       return;
     }
@@ -485,6 +521,13 @@ function ChangeSettings({
             orderFeeRateBps: orderFee,
             vatRateBps: parsed.vat,
             stampDutyMillimes: stamp,
+            withholding: {
+              thresholdMillimes: withholdingThreshold,
+              ppCinBps: withholdingPpCin,
+              ppMfBps: withholdingPpMf,
+              pmMfBps: withholdingPmMf,
+            },
+            transferFeeMillimes: transferFee,
             expiredCreditsDestination: destination,
             fundingAccount: { bankName, holder, rib, iban },
             secondValidationThresholdMillimes: parsed.threshold,
@@ -534,6 +577,13 @@ function ChangeSettings({
             {field('orderFee', t('orderFeeLabel'))}
             {field('vat', t('vat'), { hint: t('vatHint') })}
             {field('stamp', t('stamp'), { hint: t('stampHint') })}
+            {field('transferFee', t('transferFee'))}
+            {field('withholdingThreshold', t('withholdingThreshold'), {
+              hint: t('withholdingThresholdHint'),
+            })}
+            {field('withholdingPpCin', t('withholdingPpCin'))}
+            {field('withholdingPpMf', t('withholdingPpMf'))}
+            {field('withholdingPmMf', t('withholdingPmMf'))}
             {field('payoutMinimum', t('payoutMinimumLabel'))}
             {field('threshold', t('secondThresholdLabel'))}
             <SelectField

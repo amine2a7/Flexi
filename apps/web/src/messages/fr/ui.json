@@ -67,6 +67,16 @@
   },
   "fees": {
     "vat": "TVA sur la commission",
-    "stamp": "Timbre fiscal"
+    "stamp": "Timbre fiscal",
+    "withholding": "Retenue à la source",
+    "transfer": "Frais de virement"
+  },
+  "legalForm": {
+    "label": "Forme juridique",
+    "placeholder": "Choisir la forme juridique",
+    "hint": "Fixe le taux de retenue à la source.",
+    "PP_CIN": "PP CIN — personne physique (CIN)",
+    "PP_MF": "PP MF — personne physique avec matricule fiscal",
+    "PM_MF": "PM MF — société avec matricule fiscal"
   }
 }

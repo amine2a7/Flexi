@@ -4,7 +4,7 @@ import { FourEyesService } from '../common/four-eyes.service.js';
 import { randomDigits, uuidv7 } from '../common/crypto.js';
 import { DbService, type Tx } from '../common/db.service.js';
 import { FILE_STORAGE, type FileStorage } from '../common/storage.js';
-import { feesOf, toMillimes } from '../common/money.js';
+import { feesOf, feesTotal, toMillimes } from '../common/money.js';
 import type { Page, PageRequest } from '../common/pagination.js';
 import { Paginator } from '../common/pagination.js';
 import { ApiProblem, problems, validationFailed } from '../common/problem.js';
@@ -81,7 +81,10 @@ export function orderSummary(order: OrderRow) {
     feesMillimes: toMillimes(order.feesMillimes),
     vatRateBps: order.vatRateBps,
     vatMillimes: toMillimes(order.vatMillimes),
+    withholdingRateBps: order.withholdingRateBps,
+    withholdingMillimes: toMillimes(order.withholdingMillimes),
     stampDutyMillimes: toMillimes(order.stampDutyMillimes),
+    transferFeeMillimes: toMillimes(order.transferFeeMillimes),
     totalMillimes: toMillimes(order.totalMillimes),
     createdAt: order.createdAt.toISOString(),
     quoteExpiresAt: order.quoteExpiresAt.toISOString(),
@@ -218,7 +221,11 @@ export class OrdersService {
     const companyId = principal().companyId;
     if (companyId === null) throw problems.forbidden();
     const rate = await this.settings.commissionRate(tx, { companyId }, amount);
-    const taxes = await this.settings.taxes(tx);
+    const { legalForm } = await tx.company.findUniqueOrThrow({
+      where: { id: companyId },
+      select: { legalForm: true },
+    });
+    const taxes = await this.settings.taxes(tx, legalForm);
     return { rate, taxes, fees: feesOf(amount, rate, taxes) };
   }
 
@@ -243,8 +250,11 @@ export class OrdersService {
           feesMillimes: fees.commission,
           vatRateBps: taxes.vatRateBps,
           vatMillimes: fees.vat,
+          withholdingRateBps: fees.withholdingRateBps,
+          withholdingMillimes: fees.withholding,
           stampDutyMillimes: fees.stamp,
-          totalMillimes: amount + fees.commission + fees.vat + fees.stamp,
+          transferFeeMillimes: fees.transfer,
+          totalMillimes: amount + feesTotal(fees),
           expiresAt: new Date(Date.now() + platform.quoteValidityDays * 86_400_000),
         },
       });
@@ -263,7 +273,10 @@ export class OrdersService {
         feesMillimes: toMillimes(fees.commission),
         vatRateBps: taxes.vatRateBps,
         vatMillimes: toMillimes(fees.vat),
+        withholdingRateBps: fees.withholdingRateBps,
+        withholdingMillimes: toMillimes(fees.withholding),
         stampDutyMillimes: toMillimes(fees.stamp),
+        transferFeeMillimes: toMillimes(fees.transfer),
         totalMillimes: toMillimes(quote.totalMillimes),
       };
     });
@@ -287,7 +300,14 @@ export class OrdersService {
       amount: quote.amountMillimes,
       rate: quote.feeRateBps,
       vatRateBps: quote.vatRateBps,
-      fees: { commission: quote.feesMillimes, vat: quote.vatMillimes, stamp: quote.stampDutyMillimes },
+      fees: {
+        commission: quote.feesMillimes,
+        vat: quote.vatMillimes,
+        withholding: quote.withholdingMillimes,
+        withholdingRateBps: quote.withholdingRateBps,
+        stamp: quote.stampDutyMillimes,
+        transfer: quote.transferFeeMillimes,
+      },
       expiresAt: quote.expiresAt,
     };
   }
@@ -319,8 +339,11 @@ export class OrdersService {
         feesMillimes: fees.commission,
         vatRateBps: frozen.vatRateBps,
         vatMillimes: fees.vat,
+        withholdingRateBps: fees.withholdingRateBps,
+        withholdingMillimes: fees.withholding,
         stampDutyMillimes: fees.stamp,
-        totalMillimes: amount + fees.commission + fees.vat + fees.stamp,
+        transferFeeMillimes: fees.transfer,
+        totalMillimes: amount + feesTotal(fees),
         paymentReference: `FXP-${randomDigits(8)}`,
         quoteExpiresAt: frozen.expiresAt,
         secondValidationRequired: amount > platform.secondValidationThresholdMillimes,
@@ -656,11 +679,13 @@ export class OrdersService {
           direction: 'C' as const,
           amount: line.amountMillimes,
         })),
-        // Commission, VAT and stamp duty each on its own account (decision of 2026-11-03).
+        // One ledger line per fee (decisions of 2026-11-03 and 2026-11-10).
         ...[
           { account: accounts.companyFees(), amount: order.feesMillimes },
           { account: accounts.vatCollected(), amount: order.vatMillimes },
+          { account: accounts.withholdingTax(), amount: order.withholdingMillimes },
           { account: accounts.stampDuty(), amount: order.stampDutyMillimes },
+          { account: accounts.transferFees(), amount: order.transferFeeMillimes },
         ]
           .filter((line) => line.amount > 0n)
           .map((line) => ({ ...line, direction: 'C' as const })),

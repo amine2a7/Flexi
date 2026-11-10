@@ -3,12 +3,13 @@ import { AuditService } from '../common/audit.service.js';
 import { uuidv7 } from '../common/crypto.js';
 import { asService, DbService, type Tx } from '../common/db.service.js';
 import { ApiProblem } from '../common/problem.js';
-import { toMillimes } from '../common/money.js';
+import { toMillimes, type Taxes } from '../common/money.js';
 import { addDays, businessDay, dateOnly } from '../common/tunis.js';
 import { gridRate, type GridOwner } from './commission-grids.js';
 import type {
   CreditType,
   CreditTypeSetting,
+  LegalForm,
   PlatformSettings,
 } from '../generated/prisma/client.js';
 
@@ -52,9 +53,21 @@ export class SettingsService {
   }
 
   /** VAT rate and stamp duty of the settings (super-admin), frozen in each order and payout. */
-  async taxes(tx: Tx): Promise<{ vatRateBps: number; stampDutyMillimes: bigint }> {
+  /** Taxes and fees of the settings, with the withholding rate of the client's legal form. */
+  async taxes(tx: Tx, legalForm: LegalForm): Promise<Taxes> {
     const row = await this.platform(tx);
-    return { vatRateBps: row.vatRateBps, stampDutyMillimes: row.stampDutyMillimes };
+    return {
+      vatRateBps: row.vatRateBps,
+      stampDutyMillimes: row.stampDutyMillimes,
+      withholdingRateBps:
+        legalForm === 'PP_CIN'
+          ? row.withholdingPpCinBps
+          : legalForm === 'PP_MF'
+            ? row.withholdingPpMfBps
+            : row.withholdingPmMfBps,
+      withholdingThresholdMillimes: row.withholdingThresholdMillimes,
+      transferFeeMillimes: row.transferFeeMillimes,
+    };
   }
 
   /** Public terms of the platform (texts of the pages): values of the settings only. */

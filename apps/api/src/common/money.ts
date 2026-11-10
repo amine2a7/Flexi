@@ -19,21 +19,49 @@ export function fromMillimes(value: number): bigint {
  * Commission of `gross` at `rateBps` basis points, rounded half up to the millime, in integers
  * only (spec 03): 45 000 at 200 bps -> 900. Same rule everywhere (quote, request, display).
  */
+/** Taxes and fees of the settings, the withholding rate being the one of the client's legal form. */
+export interface Taxes {
+  vatRateBps: number;
+  stampDutyMillimes: bigint;
+  withholdingRateBps: number;
+  withholdingThresholdMillimes: bigint;
+  transferFeeMillimes: bigint;
+}
+
 /**
- * Commission at a rate, VAT on the ROUNDED commission, stamp duty (decisions of 2026-11-03):
- * all in millimes, half up. Same rule as `orderBreakdown` / `payoutBreakdown` of the shared package.
+ * Fees of an order or a payout (processus v2, Règles de frais): commission at the grid rate, VAT on
+ * the ROUNDED commission, withholding tax on the commission when the amount is above the threshold
+ * (rate of the legal form, added like the VAT), stamp duty and transfer fee. All in millimes, half
+ * up. Same rule as `orderBreakdown` / `payoutBreakdown` of the shared package.
  */
 export function feesOf(
   amount: bigint,
   rateBps: number,
-  taxes: { vatRateBps: number; stampDutyMillimes: bigint },
-): { commission: bigint; vat: bigint; stamp: bigint } {
+  taxes: Taxes,
+): {
+  commission: bigint;
+  vat: bigint;
+  withholding: bigint;
+  withholdingRateBps: number;
+  stamp: bigint;
+  transfer: bigint;
+} {
   const commission = commissionOf(amount, rateBps);
+  const withholdingRateBps =
+    amount > taxes.withholdingThresholdMillimes ? taxes.withholdingRateBps : 0;
   return {
     commission,
     vat: commissionOf(commission, taxes.vatRateBps),
+    withholding: commissionOf(commission, withholdingRateBps),
+    withholdingRateBps,
     stamp: taxes.stampDutyMillimes,
+    transfer: taxes.transferFeeMillimes,
   };
+}
+
+/** Sum of the fees added to an order or taken from a payout. */
+export function feesTotal(fees: ReturnType<typeof feesOf>): bigint {
+  return fees.commission + fees.vat + fees.withholding + fees.stamp + fees.transfer;
 }
 
 export function commissionOf(gross: bigint, rateBps: number): bigint {

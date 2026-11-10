@@ -44,6 +44,8 @@ const category = z.enum([
   'GIFT_SHOP',
 ]);
 const types = z.array(creditType).min(1).max(4);
+/** Legal form, required when a client is created (processus v2): drives the withholding rate. */
+const legalForm = z.enum(['PP_CIN', 'PP_MF', 'PM_MF']);
 const listQuery = z.object({ status: accountStatus.optional(), q: z.string().max(100).optional() });
 const name = z.string().trim().min(1).max(200);
 const city = z.string().trim().min(1).max(80);
@@ -55,6 +57,16 @@ const settingsBody = z.strictObject({
     orderFeeRateBps: rateBps,
     vatRateBps: rateBps,
     stampDutyMillimes: millimes,
+    // Processus v2: withholding tax per legal form above a threshold, transfer fee.
+    withholding: z
+      .strictObject({
+        thresholdMillimes: millimes,
+        ppCinBps: rateBps,
+        ppMfBps: rateBps,
+        pmMfBps: rateBps,
+      })
+      .optional(),
+    transferFeeMillimes: millimes.optional(),
     expiredCreditsDestination: z.enum(['PLATFORM_REVENUE', 'COMPANY_RETURN']),
     // A Tunisian IBAN is TN59 followed by the RIB: both must name the same account (S-PA-01).
     fundingAccount: z
@@ -122,6 +134,7 @@ export class AdminController {
       parse(
         z.strictObject({
           name,
+          legalForm,
           category,
           city,
           phone: phoneNumber,
@@ -225,6 +238,7 @@ export class AdminController {
       parse(
         z.strictObject({
           name,
+          legalForm,
           city,
           phone: phoneNumber,
           email,

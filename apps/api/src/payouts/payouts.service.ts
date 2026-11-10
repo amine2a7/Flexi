@@ -4,7 +4,7 @@ import { AuditService } from '../common/audit.service.js';
 import { FourEyesService } from '../common/four-eyes.service.js';
 import { uuidv7 } from '../common/crypto.js';
 import { DbService, type Tx } from '../common/db.service.js';
-import { feesOf, fromMillimes, toMillimes } from '../common/money.js';
+import { feesOf, feesTotal, fromMillimes, toMillimes } from '../common/money.js';
 import { currentGridInclude, defaultRate, gridBody } from '../platform/commission-grids.js';
 import { Paginator, type Page } from '../common/pagination.js';
 import { ApiProblem, problems, validationFailed } from '../common/problem.js';
@@ -55,7 +55,10 @@ function payoutBody(payout: PayoutRequest) {
     commissionMillimes: toMillimes(payout.commissionMillimes),
     vatRateBps: payout.vatRateBps,
     vatMillimes: toMillimes(payout.vatMillimes),
+    withholdingRateBps: payout.withholdingRateBps,
+    withholdingMillimes: toMillimes(payout.withholdingMillimes),
     stampDutyMillimes: toMillimes(payout.stampDutyMillimes),
+    transferFeeMillimes: toMillimes(payout.transferFeeMillimes),
     netMillimes: toMillimes(payout.netMillimes),
     deductedMillimes: toMillimes(payout.deductedMillimes),
     requestedAt: payout.requestedAt.toISOString(),
@@ -272,10 +275,19 @@ export class PayoutsService {
         { text: 'Montant du virement', right: tnd(payout.grossMillimes) },
         { text: `Commission FlexiPay (${percent(payout.commissionRateBps)})`, right: tnd(-payout.commissionMillimes) },
         { text: `TVA sur la commission (${percent(payout.vatRateBps)})`, right: tnd(-payout.vatMillimes) },
+        ...(payout.withholdingMillimes > 0n
+          ? [
+              {
+                text: `Retenue à la source (${percent(payout.withholdingRateBps)} de la commission)`,
+                right: tnd(-payout.withholdingMillimes),
+              },
+            ]
+          : []),
         { text: 'Timbre fiscal', right: tnd(-payout.stampDutyMillimes) },
+        { text: 'Frais de virement', right: tnd(-payout.transferFeeMillimes) },
         { text: 'Net viré', right: tnd(payout.netMillimes), bold: true, size: 12, gap: 10 },
         {
-          text: `Total facturé (commission + TVA + timbre) : ${tnd(payout.commissionMillimes + payout.vatMillimes + payout.stampDutyMillimes)}`,
+          text: `Total facturé (commission, TVA, retenue, timbre, virement) : ${tnd(payout.grossMillimes - payout.netMillimes)}`,
           gap: 16,
         },
         {
@@ -312,10 +324,10 @@ export class PayoutsService {
           missingMillimes: toMillimes(gross - available),
         });
       const rate = await this.settings.commissionRate(tx, { merchantId }, gross);
-      const taxes = await this.settings.taxes(tx);
+      const taxes = await this.settings.taxes(tx, await this.legalForm(tx, merchantId));
       const fees = feesOf(gross, rate, taxes);
-      const net = gross - fees.commission - fees.vat - fees.stamp;
-      // The stamp duty and the VAT must leave a positive amount to transfer.
+      const net = gross - feesTotal(fees);
+      // The fees must leave a positive amount to transfer.
       if (net <= 0n)
         throw validationFailed([
           {
@@ -335,7 +347,10 @@ export class PayoutsService {
           commissionMillimes: fees.commission,
           vatRateBps: taxes.vatRateBps,
           vatMillimes: fees.vat,
+          withholdingRateBps: fees.withholdingRateBps,
+          withholdingMillimes: fees.withholding,
           stampDutyMillimes: fees.stamp,
+          transferFeeMillimes: fees.transfer,
           netMillimes: net,
           expiresAt: new Date(Date.now() + QUOTE_TTL_MS),
         },
@@ -348,7 +363,10 @@ export class PayoutsService {
         commissionMillimes: toMillimes(fees.commission),
         vatRateBps: taxes.vatRateBps,
         vatMillimes: toMillimes(fees.vat),
+        withholdingRateBps: fees.withholdingRateBps,
+        withholdingMillimes: toMillimes(fees.withholding),
         stampDutyMillimes: toMillimes(fees.stamp),
+        transferFeeMillimes: toMillimes(fees.transfer),
         netMillimes: toMillimes(net),
         availableMillimes: toMillimes(available),
         expiresAt: quote.expiresAt.toISOString(),
@@ -374,12 +392,15 @@ export class PayoutsService {
     if (taken.count !== 1) throw problems.conflict();
     const rate = await this.settings.commissionRate(tx, { merchantId }, quote.grossMillimes);
     // The rates of the simulation are frozen in the request; a change meanwhile refuses it.
-    const taxes = await this.settings.taxes(tx);
+    const taxes = await this.settings.taxes(tx, await this.legalForm(tx, merchantId));
+    const fees = feesOf(quote.grossMillimes, rate, taxes);
     if (
       quote.expiresAt.getTime() < Date.now() ||
       quote.commissionRateBps !== rate ||
       quote.vatRateBps !== taxes.vatRateBps ||
-      quote.stampDutyMillimes !== taxes.stampDutyMillimes
+      quote.withholdingRateBps !== fees.withholdingRateBps ||
+      quote.stampDutyMillimes !== taxes.stampDutyMillimes ||
+      quote.transferFeeMillimes !== taxes.transferFeeMillimes
     )
       throw problems.conflict();
     const found = await tx.merchant.findUniqueOrThrow({ where: { id: merchantId } });
@@ -399,11 +420,13 @@ export class PayoutsService {
           amount: quote.grossMillimes,
         },
         { account: accounts.payoutPayable(), direction: 'C' as const, amount: quote.netMillimes },
-        // Commission, VAT and stamp duty each on its own account (decision of 2026-11-03).
+        // One ledger line per fee (decisions of 2026-11-03 and 2026-11-10).
         ...[
           { account: accounts.merchantCommission(), amount: quote.commissionMillimes },
           { account: accounts.vatCollected(), amount: quote.vatMillimes },
+          { account: accounts.withholdingTax(), amount: quote.withholdingMillimes },
           { account: accounts.stampDuty(), amount: quote.stampDutyMillimes },
+          { account: accounts.transferFees(), amount: quote.transferFeeMillimes },
         ]
           .filter((line) => line.amount > 0n)
           .map((line) => ({ ...line, direction: 'C' as const })),
@@ -438,6 +461,9 @@ export class PayoutsService {
         vatRateBps: quote.vatRateBps,
         vatMillimes: quote.vatMillimes,
         stampDutyMillimes: quote.stampDutyMillimes,
+        withholdingRateBps: quote.withholdingRateBps,
+        withholdingMillimes: quote.withholdingMillimes,
+        transferFeeMillimes: quote.transferFeeMillimes,
         netMillimes: quote.netMillimes,
         iban: merchant.iban,
         transactionId,
@@ -643,6 +669,14 @@ export class PayoutsService {
   }
 
   /** Controlled (CHECKED): the request joins the next scheduled settlement batch (J+2). */
+  private async legalForm(tx: Tx, merchantId: string) {
+    const merchant = await tx.merchant.findUniqueOrThrow({
+      where: { id: merchantId },
+      select: { legalForm: true },
+    });
+    return merchant.legalForm;
+  }
+
   /** Locks the payout request (ledger-auditor C2): approve and reject never both apply. */
   private async lockPayout(tx: Tx, id: string): Promise<void> {
     await tx.$queryRaw`SELECT id FROM payout_requests WHERE id = ${id}::uuid FOR UPDATE`;
@@ -689,7 +723,9 @@ export class PayoutsService {
         accounts.payoutPayable(),
         accounts.merchantCommission(),
         accounts.vatCollected(),
+        accounts.withholdingTax(),
         accounts.stampDuty(),
+        accounts.transferFees(),
       ]);
       await this.lockPayout(tx, id);
       const payout = await this.loadAdmin(tx, id);
@@ -1023,7 +1059,9 @@ export class PayoutsService {
         accounts.bankPayment(),
         accounts.merchantCommission(),
         accounts.vatCollected(),
+        accounts.withholdingTax(),
         accounts.stampDuty(),
+        accounts.transferFees(),
         ...sent.flatMap((payout) => [
           accounts.merchantDebt(payout.merchantId),
           accounts.merchantWallet(payout.merchantId, payout.creditType),

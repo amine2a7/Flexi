@@ -6,6 +6,7 @@ import {
   orderBreakdown,
   payoutBreakdown,
   type CommissionTier,
+  type Taxes,
 } from '@flexipay/shared';
 import { Plus, Trash2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -84,11 +85,14 @@ export function CommissionGridEditor({
   rows,
   onChange,
   errors,
+  legalForm,
 }: {
   kind: 'company' | 'merchant';
   rows: readonly GridRow[];
   onChange: (rows: GridRow[]) => void;
   errors: ReadonlyMap<number, GridErrorCode | 'rate' | 'from' | 'to'>;
+  /** Legal form chosen at creation: the preview applies its withholding rate (processus v2). */
+  legalForm?: Schemas['LegalForm'];
 }) {
   const t = useTranslations('admin.commissionWindow');
   const locale = useLocale();
@@ -207,20 +211,28 @@ export function CommissionGridEditor({
           </Button>
         </div>
       </section>
-      <GridPreview kind={kind} rows={rows} />
+      <GridPreview kind={kind} rows={rows} legalForm={legalForm} />
     </div>
   );
 }
 
 /** Indicative example of the computation (shared rule); the official amount comes from the API. */
-function GridPreview({ kind, rows }: { kind: 'company' | 'merchant'; rows: readonly GridRow[] }) {
+function GridPreview({
+  kind,
+  rows,
+  legalForm,
+}: {
+  kind: 'company' | 'merchant';
+  rows: readonly GridRow[];
+  legalForm: Schemas['LegalForm'] | undefined;
+}) {
   const t = useTranslations('admin.commissionWindow');
   const locale = useLocale();
   const [amountText, setAmountText] = useState('');
   const settings = useApiQuery(() => getApi().GET('/v1/admin/settings'), []);
-  // The preview uses the VAT and stamp duty of the settings only: never a value of its own.
-  const taxes: Pick<Schemas['PlatformSettings'], 'vatRateBps' | 'stampDutyMillimes'> | undefined =
-    settings.status === 'success' ? settings.data : undefined;
+  // The preview uses the taxes and fees of the settings only: never a value of its own.
+  const taxes: Taxes | undefined =
+    settings.status === 'success' ? taxesOf(settings.data, legalForm) : undefined;
   const { tiers } = readGrid(rows, locale);
   const amount = parseMillimes(amountText, locale);
   const shown = tiers !== undefined && taxes !== undefined && amount !== undefined && amount > 0;
@@ -244,6 +256,23 @@ function GridPreview({ kind, rows }: { kind: 'company' | 'merchant'; rows: reado
   );
 }
 
+/** Taxes of the settings for a legal form (none chosen yet: no withholding in the preview). */
+function taxesOf(settings: Schemas['PlatformSettings'], legalForm: Schemas['LegalForm'] | undefined): Taxes {
+  const withholding = settings.withholding;
+  const rates = {
+    PP_CIN: withholding?.ppCinBps,
+    PP_MF: withholding?.ppMfBps,
+    PM_MF: withholding?.pmMfBps,
+  };
+  return {
+    vatRateBps: settings.vatRateBps,
+    stampDutyMillimes: settings.stampDutyMillimes,
+    withholdingRateBps: legalForm === undefined ? 0 : (rates[legalForm] ?? 0),
+    ...(withholding === undefined ? {} : { withholdingThresholdMillimes: withholding.thresholdMillimes }),
+    transferFeeMillimes: settings.transferFeeMillimes ?? 0,
+  };
+}
+
 function PreviewLines({
   kind,
   amount,
@@ -253,7 +282,7 @@ function PreviewLines({
   kind: 'company' | 'merchant';
   amount: number;
   tiers: CommissionTier[];
-  taxes: { vatRateBps: number; stampDutyMillimes: number };
+  taxes: Taxes;
 }) {
   const t = useTranslations('admin.commissionWindow');
   const locale = useLocale();
@@ -276,9 +305,24 @@ function PreviewLines({
       millimes: lines.vatMillimes,
       ...(kind === 'merchant' ? { sign: 'debit' as const } : {}),
     },
+    ...(lines.withholdingMillimes > 0
+      ? [
+          {
+            label: t('lineWithholding'),
+            note: rate(lines.withholdingRateBps),
+            millimes: lines.withholdingMillimes,
+            ...(kind === 'merchant' ? { sign: 'debit' as const } : {}),
+          },
+        ]
+      : []),
     {
       label: t('lineStamp'),
       millimes: lines.stampDutyMillimes,
+      ...(kind === 'merchant' ? { sign: 'debit' as const } : {}),
+    },
+    {
+      label: t('lineTransfer'),
+      millimes: lines.transferFeeMillimes,
       ...(kind === 'merchant' ? { sign: 'debit' as const } : {}),
     },
   ];

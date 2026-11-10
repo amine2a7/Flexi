@@ -124,9 +124,22 @@ export default function NewOrderPage() {
             note: formatRateBps(quote.vatRateBps, locale),
             millimes: quote.vatMillimes,
           },
+          ...(quote.withholdingMillimes > 0
+            ? [
+                {
+                  label: tFees('withholding'),
+                  note: formatRateBps(quote.withholdingRateBps, locale),
+                  millimes: quote.withholdingMillimes,
+                },
+              ]
+            : []),
           {
             label: tFees('stamp'),
             millimes: quote.stampDutyMillimes,
+          },
+          {
+            label: tFees('transfer'),
+            millimes: quote.transferFeeMillimes,
           },
         ];
   return (

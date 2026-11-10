@@ -29,6 +29,7 @@ import type {
   KycAccountType,
   KycStatus,
   Merchant,
+  LegalForm,
   MerchantCategory,
   PaymentStatus,
   Prisma,
@@ -84,6 +85,7 @@ function merchantAccount(merchant: MerchantRow) {
     acceptedCreditTypes: CREDIT_TYPES.filter((type) => merchant.acceptedCreditTypes.includes(type)),
     city: merchant.city,
     status: merchant.status,
+    legalForm: merchant.legalForm,
     commissionGrid: visibleGrid(merchant.commissionGrids),
     createdAt: merchant.createdAt.toISOString(),
   };
@@ -122,6 +124,8 @@ export interface PlatformSettingsInput {
   orderFeeRateBps: number;
   vatRateBps: number;
   stampDutyMillimes: number;
+  withholding?: { thresholdMillimes: number; ppCinBps: number; ppMfBps: number; pmMfBps: number };
+  transferFeeMillimes?: number;
   expiredCreditsDestination: 'PLATFORM_REVENUE' | 'COMPANY_RETURN';
   fundingAccount: { bankName: string; holder: string; rib: string; iban: string };
   secondValidationThresholdMillimes: number;
@@ -280,6 +284,7 @@ export class AdminService {
   /** New merchant: PENDING_KYC (inactive until its KYC file is approved), unique payment code. */
   async createMerchant(input: {
     name: string;
+    legalForm: LegalForm;
     category: MerchantCategory;
     city: string;
     phone: string;
@@ -315,6 +320,7 @@ export class AdminService {
           phone: this.pii.seal(input.phone),
           email: input.email.toLowerCase(),
           acceptedCreditTypes: [...new Set(input.acceptedCreditTypes)],
+          legalForm: input.legalForm,
           paymentCode,
           status: 'PENDING_KYC',
           createdBy: principal().userId,
@@ -377,6 +383,7 @@ export class AdminService {
           name: row.name,
           city: row.city,
           status: row.status,
+          legalForm: row.legalForm,
           employeesCount: row._count.employees,
           commissionGrid: visibleGrid(row.commissionGrids),
           createdAt: row.createdAt.toISOString(),
@@ -389,6 +396,7 @@ export class AdminService {
 
   async createCompany(input: {
     name: string;
+    legalForm: LegalForm;
     city: string;
     phone: string;
     email: string;
@@ -417,6 +425,7 @@ export class AdminService {
           phone: this.pii.seal(input.phone),
           email: input.email.toLowerCase(),
           status: 'PENDING_KYC',
+          legalForm: input.legalForm,
         },
       });
       await this.invitations.create(tx, invitations);
@@ -431,6 +440,7 @@ export class AdminService {
         name: company.name,
         city: company.city,
         status: company.status,
+        legalForm: company.legalForm,
         employeesCount: 0,
         commissionGrid: await currentGrid(tx, { companyId: id }),
         createdAt: company.createdAt.toISOString(),
@@ -859,6 +869,13 @@ export class AdminService {
         orderFeeRateBps: platform.orderFeeRateBps,
         vatRateBps: platform.vatRateBps,
         stampDutyMillimes: toMillimes(platform.stampDutyMillimes),
+        withholding: {
+          thresholdMillimes: toMillimes(platform.withholdingThresholdMillimes),
+          ppCinBps: platform.withholdingPpCinBps,
+          ppMfBps: platform.withholdingPpMfBps,
+          pmMfBps: platform.withholdingPmMfBps,
+        },
+        transferFeeMillimes: toMillimes(platform.transferFeeMillimes),
         expiredCreditsDestination: platform.expiredCreditsDestination,
         fundingAccount: {
           bankName: platform.fundingBankName,
@@ -925,6 +942,17 @@ export class AdminService {
         orderFeeRateBps: settings.orderFeeRateBps,
         vatRateBps: settings.vatRateBps,
         stampDutyMillimes: BigInt(settings.stampDutyMillimes),
+        ...(settings.withholding === undefined
+          ? {}
+          : {
+              withholdingThresholdMillimes: BigInt(settings.withholding.thresholdMillimes),
+              withholdingPpCinBps: settings.withholding.ppCinBps,
+              withholdingPpMfBps: settings.withholding.ppMfBps,
+              withholdingPmMfBps: settings.withholding.pmMfBps,
+            }),
+        ...(settings.transferFeeMillimes === undefined
+          ? {}
+          : { transferFeeMillimes: BigInt(settings.transferFeeMillimes) }),
         expiredCreditsDestination: settings.expiredCreditsDestination,
         fundingBankName: settings.fundingAccount.bankName,
         fundingHolder: settings.fundingAccount.holder,
