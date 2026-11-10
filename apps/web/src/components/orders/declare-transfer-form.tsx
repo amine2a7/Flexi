@@ -17,7 +17,9 @@ import type { Order } from './order-parts';
 
 const MAX_PROOF_BYTES = 5 * 1024 * 1024;
 const PROOF_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
-type Field = 'transferReference' | 'transferDate' | 'amountMillimes' | 'proof';
+const FIELDS = ['transferReference', 'transferDate', 'amountMillimes', 'proof'] as const;
+type Field = (typeof FIELDS)[number];
+const isField = (name: string): name is Field => (FIELDS as readonly string[]).includes(name);
 
 /** Today in the user's calendar (`YYYY-MM-DD`), upper bound of the transfer date. */
 function today(): string {
@@ -42,6 +44,7 @@ export function DeclareTransferForm({
   const [amountText, setAmountText] = useState('');
   const [file, setFile] = useState<File | undefined>(undefined);
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
+  // An API problem, or the text of a refusal the form explains itself.
   const [error, setError] = useState<unknown>(undefined);
   const [saving, setSaving] = useState(false);
   // One key per intention: any change of the declaration starts a new one.
@@ -49,6 +52,17 @@ export function DeclareTransferForm({
   const changed = () => {
     setIntentKey(newIdempotencyKey());
   };
+
+  /** Message of a server field error, by field and code (contract §4 codes). */
+  function fieldMessage(field: Field, code: string): string {
+    if (code === 'REQUIRED') return t('required');
+    if (code === 'TOO_LONG') return t('tooLong');
+    if (code === 'IN_FUTURE') return t('dateInFuture');
+    if (field === 'transferDate') return t('dateInvalid');
+    if (field === 'proof') return t('fileType');
+    if (field === 'amountMillimes') return t('amountInvalid');
+    return t('invalid');
+  }
 
   function validate(): Partial<Record<Field, string>> {
     const found: Partial<Record<Field, string>> = {};
@@ -99,20 +113,17 @@ export function DeclareTransferForm({
       if (parsed?.code === 'PAYLOAD_TOO_LARGE') setErrors({ proof: t('fileTooLarge') });
       else if (parsed?.code === 'UNSUPPORTED_MEDIA_TYPE') setErrors({ proof: t('fileType') });
       else if (fields.length > 0) {
-        setErrors(
-          Object.fromEntries(
-            fields.map((item) => [
-              item.pointer.slice(1),
-              item.code === 'REQUIRED'
-                ? t('required')
-                : item.code === 'IN_FUTURE'
-                  ? t('dateInFuture')
-                  : item.code === 'TOO_LONG'
-                    ? t('tooLong')
-                    : t('amountInvalid'),
-            ]),
-          ),
-        );
+        // The exact server error under its own field; a field the form does not show (or the
+        // whole body) is explained above the form, never swallowed (bug 5).
+        const shown: Partial<Record<Field, string>> = {};
+        const others: string[] = [];
+        for (const item of fields) {
+          const field = item.pointer.slice(1);
+          if (isField(field)) shown[field] = fieldMessage(field, item.code);
+          else others.push(field === '' ? t('body') : field);
+        }
+        setErrors(shown);
+        if (others.length > 0) setError(t('rejected', { fields: others.join(', ') }));
       } else setError(problem);
     } finally {
       setSaving(false);
@@ -127,7 +138,9 @@ export function DeclareTransferForm({
       <p className="mb-4 text-body text-text-muted">{t('description')}</p>
       <form onSubmit={(event) => void onSubmit(event)} className="flex flex-col gap-4" noValidate>
         {error !== undefined ? (
-          <Alert tone="danger">{tRoot(messageKey(errorMessageKey(error)))}</Alert>
+          <Alert tone="danger">
+            {typeof error === 'string' ? error : tRoot(messageKey(errorMessageKey(error)))}
+          </Alert>
         ) : null}
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField

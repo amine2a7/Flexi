@@ -91,7 +91,10 @@
     "dateInvalid": "Invalid date.",
     "amountInvalid": "Invalid amount: digits and a decimal separator, 3 decimals at most.",
     "fileType": "Format not accepted: JPG, PNG or PDF only.",
-    "fileTooLarge": "File too large: 5 MB maximum."
+    "fileTooLarge": "File too large: 5 MB maximum.",
+    "body": "the form",
+    "rejected": "Declaration refused: {fields}. Reload the page and try again.",
+    "invalid": "Value refused."
   },
   "company": {
     "title": "My orders",

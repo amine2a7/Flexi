@@ -91,7 +91,10 @@
     "dateInvalid": "Date invalide.",
     "amountInvalid": "Montant invalide : chiffres et séparateur décimal, 3 décimales au plus.",
     "fileType": "Format refusé : JPG, PNG ou PDF uniquement.",
-    "fileTooLarge": "Fichier trop lourd : 5 Mo maximum."
+    "fileTooLarge": "Fichier trop lourd : 5 Mo maximum.",
+    "body": "le formulaire",
+    "rejected": "Déclaration refusée : {fields}. Rechargez la page et réessayez.",
+    "invalid": "Valeur refusée."
   },
   "company": {
     "title": "Mes commandes",
