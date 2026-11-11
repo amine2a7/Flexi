@@ -142,7 +142,8 @@
       "DISPUTE_REFUND": "استرداد نزاع",
       "COMMISSION_GRID_CHANGE": "تغيير الجدول",
       "IBAN_CHANGE": "تغيير الحساب البنكي",
-      "BATCH_RELEASE": "تحرير دفعة"
+      "BATCH_RELEASE": "تحرير دفعة",
+      "LEGAL_FORM_CHANGE": "تغيير الشكل القانوني"
     },
     "approveTitle": "المصادقة على هذا الطلب؟",
     "approveMessage": "سيُطبَّق التغيير فورًا ويُسجَّل.",
@@ -647,8 +648,12 @@
       "phone": "الهاتف",
       "email": "البريد الإلكتروني",
       "iban": "الحساب البنكي",
-      "commissionGrid": "جدول العمولة"
-    }
+      "commissionGrid": "جدول العمولة",
+      "legalForm": "الشكل القانوني"
+    },
+    "changeLegalForm": "تغيير",
+    "legalFormNext": "يخضع التغيير لمصادقة مزدوجة ولا يُطبَّق إلا على العمليات القادمة.",
+    "legalFormTitle": "تغيير الشكل القانوني"
   },
   "payment": {
     "record": "تسجيل الدفع",

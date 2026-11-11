@@ -142,7 +142,8 @@
       "DISPUTE_REFUND": "Dispute refund",
       "COMMISSION_GRID_CHANGE": "Grid change",
       "IBAN_CHANGE": "Bank account change",
-      "BATCH_RELEASE": "Batch release"
+      "BATCH_RELEASE": "Batch release",
+      "LEGAL_FORM_CHANGE": "Legal form change"
     },
     "approveTitle": "Approve this request?",
     "approveMessage": "The change will apply immediately and be logged.",
@@ -647,8 +648,12 @@
       "phone": "Phone",
       "email": "Email",
       "iban": "Bank account",
-      "commissionGrid": "Commission grid"
-    }
+      "commissionGrid": "Commission grid",
+      "legalForm": "Legal form"
+    },
+    "changeLegalForm": "Change",
+    "legalFormNext": "A change goes through four-eyes approval and applies to the next operations only.",
+    "legalFormTitle": "Change the legal form"
   },
   "payment": {
     "record": "Record the payment",

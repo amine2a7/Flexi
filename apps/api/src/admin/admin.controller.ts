@@ -203,6 +203,31 @@ export class AdminController {
     return this.admin.updateAccount({ merchantId: pathId('merchantId', merchantId) }, fields, why);
   }
 
+  /** Legal form in four eyes (processus v2): applied by another administrator. */
+  @Can('merchants.manage')
+  @Post('merchants/:merchantId/legal-form-change-requests')
+  @HttpCode(201)
+  merchantLegalFormRequest(@Param('merchantId') merchantId: string, @Body() body: unknown) {
+    const input = parse(z.strictObject({ legalForm, reason }), body);
+    return this.admin.requestLegalFormChange(
+      { merchantId: pathId('merchantId', merchantId) },
+      input.legalForm,
+      input.reason,
+    );
+  }
+
+  @Can('companies.manage')
+  @Post('companies/:companyId/legal-form-change-requests')
+  @HttpCode(201)
+  companyLegalFormRequest(@Param('companyId') companyId: string, @Body() body: unknown) {
+    const input = parse(z.strictObject({ legalForm, reason }), body);
+    return this.admin.requestLegalFormChange(
+      { companyId: pathId('companyId', companyId) },
+      input.legalForm,
+      input.reason,
+    );
+  }
+
   @Can('merchants.manage')
   @Post('merchants/:merchantId/iban-change-requests')
   @HttpCode(201)

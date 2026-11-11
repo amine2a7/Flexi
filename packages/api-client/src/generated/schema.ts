@@ -1742,6 +1742,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/admin/merchants/{merchantId}/legal-form-change-requests': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Demander le changement de forme juridique (double validation ; s'applique aux prochaines opérations) */
+    post: operations['requestMerchantLegalFormChange'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/companies/{companyId}/legal-form-change-requests': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Demander le changement de forme juridique (double validation ; s'applique aux prochaines opérations) */
+    post: operations['requestCompanyLegalFormChange'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/admin/merchants/{merchantId}/iban-change-requests': {
     parameters: {
       query?: never;
@@ -3740,6 +3774,7 @@ export interface components {
       name: string;
       city: string;
       status: components['schemas']['AccountStatus'];
+      legalForm: components['schemas']['LegalForm'];
       email: string;
       /** @description Téléphone, seulement pour les administrateurs qui peuvent le modifier (sinon `null`). */
       phone: components['schemas']['PhoneNumber'] | null;
@@ -4506,6 +4541,11 @@ export interface components {
     FamilyAccountsSetting: {
       enabled: boolean;
     };
+    /** LegalFormChangeRequest */
+    LegalFormChangeRequest: {
+      legalForm: components['schemas']['LegalForm'];
+      reason: string;
+    };
     /** AllocationResult */
     AllocationResult: {
       /** @description Soldes par type de l'entreprise après l'attribution. */
@@ -4679,7 +4719,8 @@ export interface components {
       | 'DISPUTE_REFUND'
       | 'COMMISSION_GRID_CHANGE'
       | 'IBAN_CHANGE'
-      | 'BATCH_RELEASE';
+      | 'BATCH_RELEASE'
+      | 'LEGAL_FORM_CHANGE';
     /** Approval */
     Approval: {
       id: components['schemas']['Uuid'];
@@ -4689,6 +4730,11 @@ export interface components {
       subject: string;
       oldRateBps?: components['schemas']['RateBps'];
       newRateBps?: components['schemas']['RateBps'];
+      /** @description Changement de forme juridique (processus v2) — forme actuelle et proposée. */
+      legalFormChange?: {
+        previous: components['schemas']['LegalForm'];
+        proposed: components['schemas']['LegalForm'];
+      };
       /** @description Nouveau RIB masqué (IBAN_CHANGE). */
       maskedIban?: string;
       /** @description Grille en vigueur (`null` sans grille) et grille proposée (COMMISSION_GRID_CHANGE). */
@@ -9043,6 +9089,76 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  requestMerchantLegalFormChange: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        merchantId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LegalFormChangeRequest'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Approval'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  requestCompanyLegalFormChange: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        companyId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LegalFormChangeRequest'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Approval'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   requestIbanChange: {
     parameters: {
       query?: never;
@@ -11105,6 +11221,7 @@ export const approvalTypeValues: ReadonlyArray<
   'COMMISSION_GRID_CHANGE',
   'IBAN_CHANGE',
   'BATCH_RELEASE',
+  'LEGAL_FORM_CHANGE',
 ];
 export const kycStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['KycStatus']

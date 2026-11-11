@@ -183,6 +183,7 @@ enum ApprovalType {
   DISPUTE_REFUND
   IBAN_CHANGE
   BATCH_RELEASE
+  LEGAL_FORM_CHANGE
 }
 
 enum FraudAlertKind {

@@ -4177,6 +4177,92 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/admin/merchants/{merchantId}/legal-form-change-requests:
+    post:
+      tags: [admin]
+      operationId: requestMerchantLegalFormChange
+      summary: Demander le changement de forme juridique (double validation ; s'applique aux prochaines opérations)
+      parameters:
+        - name: merchantId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegalFormChangeRequest'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Approval'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/companies/{companyId}/legal-form-change-requests:
+    post:
+      tags: [admin]
+      operationId: requestCompanyLegalFormChange
+      summary: Demander le changement de forme juridique (double validation ; s'applique aux prochaines opérations)
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegalFormChangeRequest'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Approval'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/admin/merchants/{merchantId}/iban-change-requests:
     post:
       tags: [admin]
@@ -8203,7 +8289,7 @@ components:
       description: Fiche d'une entreprise ou d'un commerçant (décision du 2026-11-03).
       type: object
       additionalProperties: false
-      required: [id, kind, name, city, status, email, phone, commissionGrid, gridVersions, history, requests, createdAt]
+      required: [id, kind, name, city, status, legalForm, email, phone, commissionGrid, gridVersions, history, requests, createdAt]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -8219,6 +8305,8 @@ components:
           maxLength: 80
         status:
           $ref: '#/components/schemas/AccountStatus'
+        legalForm:
+          $ref: '#/components/schemas/LegalForm'
         email:
           type: string
           maxLength: 254
@@ -9878,6 +9966,18 @@ components:
       properties:
         enabled:
           type: boolean
+    LegalFormChangeRequest:
+      title: LegalFormChangeRequest
+      type: object
+      additionalProperties: false
+      required: [legalForm, reason]
+      properties:
+        legalForm:
+          $ref: '#/components/schemas/LegalForm'
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
     AllocationResult:
       title: AllocationResult
       type: object
@@ -10213,7 +10313,7 @@ components:
       title: ApprovalType
       description: Opération sensible soumise à double validation (règle 12).
       type: string
-      enum: [COMMISSION_RATE_CHANGE, SETTINGS_CHANGE, DISPUTE_REFUND, COMMISSION_GRID_CHANGE, IBAN_CHANGE, BATCH_RELEASE]
+      enum: [COMMISSION_RATE_CHANGE, SETTINGS_CHANGE, DISPUTE_REFUND, COMMISSION_GRID_CHANGE, IBAN_CHANGE, BATCH_RELEASE, LEGAL_FORM_CHANGE]
     Approval:
       title: Approval
       type: object
@@ -10235,6 +10335,16 @@ components:
           $ref: '#/components/schemas/RateBps'
         newRateBps:
           $ref: '#/components/schemas/RateBps'
+        legalFormChange:
+          description: Changement de forme juridique (processus v2) — forme actuelle et proposée.
+          type: object
+          additionalProperties: false
+          required: [previous, proposed]
+          properties:
+            previous:
+              $ref: '#/components/schemas/LegalForm'
+            proposed:
+              $ref: '#/components/schemas/LegalForm'
         maskedIban:
           description: Nouveau RIB masqué (IBAN_CHANGE).
           type: string

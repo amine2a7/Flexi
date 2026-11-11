@@ -1,7 +1,7 @@
 'use client';
 
 import type { Schemas } from '@flexipay/api-client';
-import { Landmark, Pencil, Percent } from 'lucide-react';
+import { Landmark, Pencil, Percent, Scale } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type ReactNode, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
@@ -202,7 +202,8 @@ function RecordView({
   const isCompany = 'companyId' in owner;
   const canEdit = useCan(isCompany ? 'companies.manage' : 'merchants.manage');
   const canGrid = useCan('commissions.request');
-  const [open, setOpen] = useState<'info' | 'grid' | 'iban' | undefined>(undefined);
+  const tForm = useTranslations('ui.legalForm');
+  const [open, setOpen] = useState<'info' | 'grid' | 'iban' | 'legalForm' | undefined>(undefined);
   const close = () => {
     setOpen(undefined);
   };
@@ -250,6 +251,25 @@ function RecordView({
           />
         </Card>
         <div className="flex flex-col gap-6">
+          <Card>
+            <div className="flex items-start justify-between gap-3">
+              <CardTitle>{tForm('label')}</CardTitle>
+              {canEdit ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={<Scale aria-hidden="true" className="size-icon-sm" />}
+                  onClick={() => {
+                    setOpen('legalForm');
+                  }}
+                >
+                  {t('changeLegalForm')}
+                </Button>
+              ) : null}
+            </div>
+            <p className="text-body text-text">{tForm(record.legalForm)}</p>
+            <p className="mt-2 text-caption text-text-muted">{t('legalFormNext')}</p>
+          </Card>
           <Card>
             <div className="flex items-start justify-between gap-3">
               <CardTitle>{t('commission')}</CardTitle>
@@ -324,6 +344,9 @@ function RecordView({
       ) : null}
       {open === 'grid' ? (
         <ChangeGrid record={record} owner={owner} onClose={close} onDone={done} />
+      ) : null}
+      {open === 'legalForm' ? (
+        <ChangeLegalForm record={record} owner={owner} onClose={close} onDone={done} />
       ) : null}
       {open === 'iban' && !isCompany ? (
         <ChangeIban merchantId={owner.merchantId} onClose={close} onDone={done} />
@@ -670,6 +693,106 @@ function ChangeIban({
         />
         <div className="flex justify-end">
           <Button type="submit" loading={saving}>
+            {t('sendForApproval')}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+/** Legal form in four eyes (processus v2): another administrator applies it. */
+function ChangeLegalForm({
+  record,
+  owner,
+  onClose,
+  onDone,
+}: {
+  record: AccountRecord;
+  owner: Owner;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const t = useTranslations('admin.record');
+  const tForm = useTranslations('ui.legalForm');
+  const tRoot = useTranslations();
+  const toast = useToast();
+  const [legalForm, setLegalForm] = useState<Schemas['LegalForm']>(record.legalForm);
+  const [reason, setReason] = useState('');
+  const [error, setError] = useState<unknown>(undefined);
+  const [saving, setSaving] = useState(false);
+
+  async function onSubmit(event: SyntheticEvent) {
+    event.preventDefault();
+    if (reason.trim() === '' || legalForm === record.legalForm) return;
+    setSaving(true);
+    setError(undefined);
+    try {
+      const body = { legalForm, reason: reason.trim() };
+      const { data, error: problem } =
+        'companyId' in owner
+          ? await getApi().POST('/v1/admin/companies/{companyId}/legal-form-change-requests', {
+              params: { path: { companyId: owner.companyId } },
+              body,
+            })
+          : await getApi().POST('/v1/admin/merchants/{merchantId}/legal-form-change-requests', {
+              params: { path: { merchantId: owner.merchantId } },
+              body,
+            });
+      if (data !== undefined) {
+        toast.notify('success', t('requested'));
+        onDone();
+        return;
+      }
+      setError(problem);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal
+      open
+      onOpenChange={(value) => {
+        if (!value && !saving) onClose();
+      }}
+      title={t('legalFormTitle')}
+      description={t('fourEyes')}
+    >
+      <form onSubmit={(event) => void onSubmit(event)} className="flex flex-col gap-4" noValidate>
+        {error !== undefined ? (
+          <Alert tone="danger">
+            {asProblem(error)?.code === 'RESOURCE_STATE_CONFLICT'
+              ? t('alreadyPending')
+              : tRoot(messageKey(errorMessageKey(error)))}
+          </Alert>
+        ) : null}
+        <SelectField
+          label={tForm('label')}
+          hint={t('legalFormNext')}
+          options={(['PP_CIN', 'PP_MF', 'PM_MF'] as const).map((value) => ({
+            value,
+            label: tForm(value),
+          }))}
+          value={legalForm}
+          onChange={(event) => {
+            setLegalForm(event.target.value as Schemas['LegalForm']);
+          }}
+        />
+        <TextField
+          label={t('reason')}
+          maxLength={500}
+          value={reason}
+          onChange={(event) => {
+            setReason(event.target.value);
+          }}
+        />
+        <div className="flex justify-end">
+          <Button
+            type="submit"
+            loading={saving}
+            disabled={reason.trim() === '' || legalForm === record.legalForm}
+          >
             {t('sendForApproval')}
           </Button>
         </div>

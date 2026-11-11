@@ -55,6 +55,12 @@ interface IbanChangePayload {
   iban: string;
 }
 
+interface LegalFormChangePayload {
+  owner: GridOwner;
+  previous: LegalForm;
+  legalForm: LegalForm;
+}
+
 /** Editable fields of a record (decision of 2026-11-03); the grid and the RIB go through four eyes. */
 export interface AccountUpdate {
   name?: string | undefined;
@@ -100,6 +106,14 @@ function approvalBody(approval: Approval, userId: string, pii?: PiiService) {
     subject: approval.subject,
     ...(approval.oldRateBps === null ? {} : { oldRateBps: approval.oldRateBps }),
     ...(approval.newRateBps === null ? {} : { newRateBps: approval.newRateBps }),
+    ...(approval.type === 'LEGAL_FORM_CHANGE'
+      ? {
+          legalFormChange: {
+            previous: (approval.payload as unknown as LegalFormChangePayload).previous,
+            proposed: (approval.payload as unknown as LegalFormChangePayload).legalForm,
+          },
+        }
+      : {}),
     ...(approval.type === 'IBAN_CHANGE' && pii !== undefined
       ? { maskedIban: pii.maskedIban((approval.payload as unknown as IbanChangePayload).iban) }
       : {}),
@@ -582,7 +596,7 @@ export class AdminService {
       const requests = await tx.approval.findMany({
         where: {
           status: 'PENDING',
-          type: { in: ['COMMISSION_GRID_CHANGE', 'IBAN_CHANGE'] },
+          type: { in: ['COMMISSION_GRID_CHANGE', 'IBAN_CHANGE', 'LEGAL_FORM_CHANGE'] },
           payload: { path: ['owner', key], equals: id },
         },
         orderBy: { createdAt: 'desc' },
@@ -594,6 +608,7 @@ export class AdminService {
         name: found.name,
         city: found.city,
         status: found.status,
+        legalForm: found.legalForm,
         email: found.email,
         // The phone is personal data: shown to the administrators who may change it only.
         phone: manage ? this.pii.open(found.phone) : null,
@@ -717,6 +732,48 @@ export class AdminService {
     });
   }
 
+  /**
+   * Legal form (processus v2): a request applied when ANOTHER administrator approves it; then the
+   * next quotes, orders and payouts use the rates of the new form (frozen ones keep theirs).
+   */
+  async requestLegalFormChange(owner: GridOwner, legalForm: LegalForm, reason: string) {
+    const who = principal();
+    const isCompany = 'companyId' in owner;
+    const id = isCompany ? owner.companyId : owner.merchantId;
+    return this.db.user(async (tx) => {
+      if (isCompany) await tx.$queryRaw`SELECT id FROM companies WHERE id = ${id}::uuid FOR UPDATE`;
+      else await tx.$queryRaw`SELECT id FROM merchants WHERE id = ${id}::uuid FOR UPDATE`;
+      const found = isCompany
+        ? await tx.company.findUnique({ where: { id } })
+        : await tx.merchant.findUnique({ where: { id } });
+      if (found === null) throw problems.notFound();
+      if (found.legalForm === legalForm) throw problems.conflict();
+      const key = isCompany ? 'companyId' : 'merchantId';
+      const pending = await tx.approval.findFirst({
+        where: {
+          status: 'PENDING',
+          type: 'LEGAL_FORM_CHANGE',
+          payload: { path: ['owner', key], equals: id },
+        },
+      });
+      if (pending !== null) throw problems.conflict();
+      const payload: LegalFormChangePayload = { owner, previous: found.legalForm, legalForm };
+      const approval = await tx.approval.create({
+        data: {
+          id: uuidv7(),
+          type: 'LEGAL_FORM_CHANGE',
+          subject: found.name,
+          payload: payload as unknown as Prisma.InputJsonValue,
+          reason,
+          initiatorId: who.userId,
+          initiatorName: who.displayName,
+        },
+      });
+      await this.audit.record(tx, 'accounts.legalFormRequest', found.name);
+      return approvalBody(approval, who.userId, this.pii);
+    });
+  }
+
   /** A RIB change is a request applied when ANOTHER administrator approves it (four eyes). */
   async requestIbanChange(merchantId: string, iban: string, reason: string) {
     const who = principal();
@@ -824,6 +881,20 @@ export class AdminService {
           data: { iban: payload.iban },
         });
         await this.recordChange(tx, payload.owner, ['iban'], approval.reason);
+      } else if (approval.type === 'LEGAL_FORM_CHANGE') {
+        // Applies to the next operations only: quotes, orders and payouts froze their rates.
+        const payload = approval.payload as unknown as LegalFormChangePayload;
+        if ('companyId' in payload.owner)
+          await tx.company.update({
+            where: { id: payload.owner.companyId },
+            data: { legalForm: payload.legalForm },
+          });
+        else
+          await tx.merchant.update({
+            where: { id: payload.owner.merchantId },
+            data: { legalForm: payload.legalForm },
+          });
+        await this.recordChange(tx, payload.owner, ['legalForm'], approval.reason);
       } else if (approval.type === 'DISPUTE_REFUND') {
         // Second validation of an accepted dispute: refund of the employee (N2).
         await this.disputes.refund(tx, (approval.payload as { disputeId: string }).disputeId);

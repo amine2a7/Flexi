@@ -49,13 +49,19 @@ export default function ApprovalsPage() {
   );
   const rows = tab === 'pending' ? list.rows : list.rows?.filter((row) => row.status !== 'PENDING');
 
+  const tForm = useTranslations('ui.legalForm');
   const detail = (row: Approval) =>
     row.oldRateBps !== undefined && row.newRateBps !== undefined
       ? t('rateChange', {
           from: formatRateBps(row.oldRateBps, locale),
           to: formatRateBps(row.newRateBps, locale),
         })
-      : (row.reason ?? '');
+      : row.legalFormChange !== undefined
+        ? t('rateChange', {
+            from: tForm(row.legalFormChange.previous),
+            to: `${tForm(row.legalFormChange.proposed)}${row.reason === undefined ? '' : ` · ${row.reason}`}`,
+          })
+        : (row.reason ?? '');
 
   const columns: Column<Approval>[] = [
     { key: 'type', header: t('type'), cell: (row) => t(`types.${row.type}`) },

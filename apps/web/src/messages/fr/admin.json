@@ -142,7 +142,8 @@
       "DISPUTE_REFUND": "Remboursement d'un litige",
       "COMMISSION_GRID_CHANGE": "Changement de grille",
       "IBAN_CHANGE": "Changement de RIB",
-      "BATCH_RELEASE": "Libération d’un lot"
+      "BATCH_RELEASE": "Libération d’un lot",
+      "LEGAL_FORM_CHANGE": "Changement de forme juridique"
     },
     "approveTitle": "Valider cette demande ?",
     "approveMessage": "La modification s'appliquera immédiatement et sera journalisée.",
@@ -647,8 +648,12 @@
       "phone": "Téléphone",
       "email": "E-mail",
       "iban": "RIB",
-      "commissionGrid": "Grille de commission"
-    }
+      "commissionGrid": "Grille de commission",
+      "legalForm": "Forme juridique"
+    },
+    "changeLegalForm": "Changer",
+    "legalFormNext": "Un changement passe en double validation et ne s’applique qu’aux prochaines opérations.",
+    "legalFormTitle": "Changer la forme juridique"
   },
   "payment": {
     "record": "Enregistrer le paiement",
