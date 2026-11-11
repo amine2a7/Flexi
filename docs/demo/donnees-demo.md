@@ -26,6 +26,17 @@ Le seed part d'une base vide et crée **un exemple par situation**. Chaque monta
 
 Gérants des autres commerces, utilisés pour les virements : `zarzis@`, `agil@` et `kitab@` (tous en `@flexipay.test`).
 
+### Scénario tracé (processus v2)
+
+| Personne | Compte | Rôle |
+| --- | --- | --- |
+| Sarra F. | `sarra@flexipay.tn` | Finance (première validation, paiement des virements) |
+| Nour F. | `nour@flexipay.tn` | Finance (seconde validation) |
+| Karim L. | `karim@lejasmin.tn` | Gérant du Restaurant Le Jasmin (PP CIN, grille 2 %, Restauration) |
+| 10 employés de Production | `prénom.nom@carthage.tn` (ex. `yasmine.bensalem@carthage.tn`) | Bénéficiaires, poste Ouvrier / Ouvrière |
+
+Le Jasmin a 1 250,000 TND de ventes datées d'il y a 3 jours (10 repas de 125 TND) : Karim peut demander son virement (net annoncé 1 214,500 TND). Même mot de passe et même code MFA que les autres comptes de démo.
+
 ## Cas → où le trouver → compte
 
 | Cas                                                                                          | Où le trouver                                                                                                                                                             | Compte                                                                   |

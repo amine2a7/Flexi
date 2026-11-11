@@ -191,6 +191,12 @@ const ids = await prisma.$transaction(async (tx) => {
   });
   // No grid (« Grille à vérifier »): its first payment is refused and raises the alert.
   const sidiBou = await shop('Café Sidi Bou Saïd', 'Sidi Bou Saïd', 'CAFE', 'RESTAURATION');
+  // Processus v2, scenario: Karim's restaurant, PP CIN, grid 2 %, accepts Restauration.
+  const jasmin = await shop('Restaurant Le Jasmin', 'Tunis', 'RESTAURANT', 'RESTAURATION', {
+    rateBps: 200,
+    iban: 'TN5910006035183598470014',
+  });
+  await tx.merchant.update({ where: { id: jasmin.id }, data: { legalForm: 'PP_CIN' } });
 
   const departments = await Promise.all(
     ['Direction', 'Ressources humaines', 'Logistique'].map((name) =>
@@ -218,6 +224,38 @@ const ids = await prisma.$transaction(async (tx) => {
       },
     });
   const yasmine = await employee('EMP-1001', 'Yasmine', 'Jaziri', 'ACTIVE', 0);
+  const production = await tx.department.create({
+    data: { companyId: carthage.id, name: 'Production' },
+  });
+  const workers = await Promise.all(
+    [
+      ['Yasmine', 'Ben Salem', 'Ouvrière'],
+      ['Anis', 'Khelifi', 'Ouvrier'],
+      ['Rim', 'Hammami', 'Ouvrière'],
+      ['Walid', 'Chaabane', 'Ouvrier'],
+      ['Ines', 'Ferchichi', 'Ouvrière'],
+      ['Sofiane', 'Mejri', 'Chef d’équipe'],
+      ['Amira', 'Dridi', 'Ouvrière'],
+      ['Bilel', 'Jlassi', 'Ouvrier'],
+      ['Hana', 'Sassi', 'Ouvrière'],
+      ['Omar', 'Belhadj', 'Ouvrier'],
+    ].map(([firstName = '', lastName = '', position = ''], index) =>
+      tx.employee.create({
+        data: {
+          companyId: carthage.id,
+          employeeNumber: `PRD-${String(201 + index)}`,
+          firstName,
+          lastName,
+          email: `${firstName.toLowerCase()}.${lastName.toLowerCase().replace(/ /g, '')}@carthage.tn`,
+          phone: seal(index === 0 ? '+21622123456' : `+2162${String(2_100_000 + index)}`),
+          status: 'ACTIVE',
+          departmentId: production.id,
+          position,
+          pinHash,
+        },
+      }),
+    ),
+  );
   const mehdi = await employee('EMP-1002', 'Mehdi', 'Trabelsi', 'INVITED', 1);
   const sana = await employee('EMP-1003', 'Sana', 'Ben Ali', 'INVITED', 1);
   const hichem = await employee('EMP-1004', 'Hichem', 'Gharbi', 'SUSPENDED', 2);
@@ -249,6 +287,20 @@ const ids = await prisma.$transaction(async (tx) => {
   await user('operations@flexipay.test', 'Sonia B.', 'ADMIN', 'COMPLIANCE', {});
   const financeUser = await user('admin2@flexipay.test', 'Hela R.', 'ADMIN', 'FINANCE', {});
   await user('support@flexipay.test', 'Karim T.', 'ADMIN', 'SUPPORT', {});
+  // Processus v2, scenario: two Finance administrators (validation 1/2 then 2/2) and Karim.
+  await user('sarra@flexipay.tn', 'Sarra F.', 'ADMIN', 'FINANCE', {});
+  await user('nour@flexipay.tn', 'Nour F.', 'ADMIN', 'FINANCE', {});
+  await user('karim@lejasmin.tn', 'Karim L.', 'MERCHANT', 'OWNER', { merchantId: jasmin.id });
+  for (const worker of workers)
+    await user(
+      worker.email,
+      `${worker.firstName} ${worker.lastName.charAt(0)}.`,
+      'EMPLOYEE',
+      null,
+      {
+        employeeId: worker.id,
+      },
+    );
   await user('entreprise@flexipay.test', 'Leïla M.', 'COMPANY', 'OWNER', {
     companyId: carthage.id,
   });
@@ -334,7 +386,20 @@ const ids = await prisma.$transaction(async (tx) => {
       },
     });
   }
-  return { carthage, sousse, darElJeld, zarzis, agil, kitab, sidiBou, yasmine, sfax, masmoudi };
+  return {
+    carthage,
+    sousse,
+    darElJeld,
+    zarzis,
+    agil,
+    kitab,
+    sidiBou,
+    yasmine,
+    sfax,
+    masmoudi,
+    jasmin,
+    workers,
+  };
 });
 
 // ------------------------------------------------------------------ 2. money, through the API
@@ -497,6 +562,42 @@ await beneficiary.call('POST', `/v1/employee/payment-requests/${String(request.i
 });
 await beneficiary.call('POST', `/v1/employee/payment-requests/${String(request.id)}/refuse`);
 references.refusedPayment = String(initiated.reference);
+
+// Processus v2, scenario: Karim's sales. A Restauration order (validated), 125 TND to each of
+// the 10 Production workers (allocation through the API), one meal each at Le Jasmin: 1 250 TND.
+const productionOrder = await order([['RESTAURATION', 1_500]]);
+await confirm(productionOrder);
+await declare(productionOrder);
+await validate(productionOrder, admin);
+await company.call('POST', '/v1/company/allocations', {
+  key: true,
+  body: {
+    allocations: ids.workers.map((worker) => ({
+      employeeId: worker.id,
+      creditType: 'RESTAURATION',
+      amountMillimes: TND(125),
+    })),
+  },
+});
+for (const worker of ids.workers) {
+  const client = await signIn(worker.email);
+  await client.call('POST', '/v1/employee/payments', {
+    key: true,
+    body: {
+      merchantCode: ids.jasmin.paymentCode,
+      creditType: 'RESTAURATION',
+      amountMillimes: TND(125),
+      pin: PIN,
+    },
+  });
+}
+// Dates only (never an amount): the sales are three days old, past the D-2 of the payout.
+await prisma.$executeRaw`UPDATE payments
+     SET confirmed_at = confirmed_at - interval '3 days',
+         settlement_date = settlement_date - 3,
+         created_at = created_at - interval '3 days'
+   WHERE merchant_id = ${ids.jasmin.id}::uuid`;
+references.jasminSales = '1 250,000 TND (10 repas de 125 TND, il y a 3 jours)';
 
 // Payouts. Order matters: each release closes its batch, the next approval opens a new one.
 async function requestPayout(shop: WebClient, creditType: CreditType, dinars: number) {
