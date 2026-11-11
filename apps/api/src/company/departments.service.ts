@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AuditService } from '../common/audit.service.js';
 import { uuidv7 } from '../common/crypto.js';
-import { DbService } from '../common/db.service.js';
-import { problems } from '../common/problem.js';
+import { DbService, type Tx } from '../common/db.service.js';
+import { ApiProblem, problems } from '../common/problem.js';
 import { principal } from '../common/request-context.js';
 
 /**
@@ -34,6 +34,7 @@ export class DepartmentsService {
           id: row.id,
           name: row.name,
           employeeCount: row._count.employees,
+          archived: row.archivedAt !== null,
         })),
       };
     });
@@ -48,27 +49,123 @@ export class DepartmentsService {
       if (taken !== null) throw problems.conflict();
       const created = await tx.department.create({ data: { id: uuidv7(), companyId, name } });
       await this.audit.record(tx, 'departments.create', name);
-      return { id: created.id, name: created.name, employeeCount: 0 };
+      return { id: created.id, name: created.name, employeeCount: 0, archived: false };
     });
+  }
+
+  async rename(id: string, name: string) {
+    this.companyId();
+    return this.db.user(async (tx) => {
+      const department = await tx.department.findUnique({
+        where: { id },
+        include: { _count: { select: { employees: true } } },
+      });
+      if (department === null) throw problems.notFound();
+      const taken = await tx.department.findFirst({
+        where: { name: { equals: name, mode: 'insensitive' }, NOT: { id } },
+      });
+      if (taken !== null) throw problems.conflict();
+      await tx.department.update({ where: { id }, data: { name } });
+      await this.audit.record(tx, 'departments.rename', name);
+      return {
+        id,
+        name,
+        employeeCount: department._count.employees,
+        archived: department.archivedAt !== null,
+      };
+    });
+  }
+
+  /** Archived only when empty: otherwise a clear refusal (409, reason DEPARTMENT_NOT_EMPTY). */
+  async archive(id: string) {
+    this.companyId();
+    return this.db.user(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM departments WHERE id = ${id}::uuid FOR UPDATE`;
+      const department = await tx.department.findUnique({
+        where: { id },
+        include: { _count: { select: { employees: true } } },
+      });
+      if (department === null) throw problems.notFound();
+      if (department._count.employees > 0)
+        throw new ApiProblem(409, 'RESOURCE_STATE_CONFLICT', {
+          reason: 'DEPARTMENT_NOT_EMPTY',
+          employeeCount: department._count.employees,
+        });
+      await tx.department.update({ where: { id }, data: { archivedAt: new Date() } });
+      await this.audit.record(tx, 'departments.archive', department.name);
+      return { id, name: department.name, employeeCount: 0, archived: true };
+    });
+  }
+
+  /** A department of the company, open to new employees (never an archived one). */
+  async checkDepartment(tx: Tx, departmentId: string | null): Promise<void> {
+    if (departmentId === null) return;
+    const department = await tx.department.findUnique({ where: { id: departmentId } });
+    if (department === null) throw problems.notFound();
+    if (department.archivedAt !== null) throw problems.conflict();
   }
 
   /** Attaches an employee to a department of the company, or detaches it (`null`). */
   async assign(employeeId: string, departmentId: string | null) {
+    const done = await this.assignMany([employeeId], { departmentId });
+    return { employeeId, departmentId: done.departmentId ?? null };
+  }
+
+  /**
+   * Department and/or position of one or several employees of the company (processus v2: the
+   * record's « Modifier », and « Changer de département / de poste » on the selected rows).
+   */
+  async assignMany(
+    employeeIds: readonly string[],
+    change: { departmentId?: string | null; position?: string | null },
+  ) {
     this.companyId();
     return this.db.user(async (tx) => {
-      const employee = await tx.employee.findUnique({ where: { id: employeeId } });
-      if (employee === null) throw problems.notFound();
-      if (departmentId !== null) {
-        const department = await tx.department.findUnique({ where: { id: departmentId } });
-        if (department === null) throw problems.notFound();
-      }
-      await tx.employee.update({ where: { id: employeeId }, data: { departmentId } });
+      const found = await tx.employee.findMany({
+        where: { id: { in: [...employeeIds] } },
+        select: { id: true },
+      });
+      // RLS: an employee of another company is not found (404, never a partial change).
+      if (found.length !== new Set(employeeIds).size) throw problems.notFound();
+      if (change.departmentId !== undefined) await this.checkDepartment(tx, change.departmentId);
+      const position =
+        change.position === undefined
+          ? undefined
+          : change.position === null || change.position.trim() === ''
+            ? null
+            : change.position.trim();
+      await tx.employee.updateMany({
+        where: { id: { in: [...employeeIds] } },
+        data: {
+          ...(change.departmentId === undefined ? {} : { departmentId: change.departmentId }),
+          ...(position === undefined ? {} : { position }),
+        },
+      });
       await this.audit.record(
         tx,
-        'departments.assign',
-        `${employee.firstName} ${employee.lastName.slice(0, 1)}.`,
+        'employees.assign',
+        `${String(employeeIds.length)} employé(s)`,
       );
-      return { employeeId, departmentId };
+      return {
+        employeeIds: [...employeeIds],
+        ...(change.departmentId === undefined ? {} : { departmentId: change.departmentId }),
+        ...(position === undefined ? {} : { position }),
+      };
+    });
+  }
+
+  /** Positions already used in the company, suggested while typing (processus v2). */
+  async positions() {
+    this.companyId();
+    return this.db.user(async (tx) => {
+      const rows = await tx.employee.findMany({
+        where: { position: { not: null } },
+        distinct: ['position'],
+        select: { position: true },
+        orderBy: { position: 'asc' },
+        take: 200,
+      });
+      return { data: rows.flatMap((row) => (row.position === null ? [] : [row.position])) };
     });
   }
 }

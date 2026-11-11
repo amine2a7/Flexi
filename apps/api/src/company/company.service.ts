@@ -153,6 +153,7 @@ export class CompanyService {
       monthAllocatedMillimes: toMillimes(allocated),
       ...(invitationExpired ? { invitationExpired: true } : {}),
       ...(employee.departmentId === null ? {} : { departmentId: employee.departmentId }),
+      ...(employee.position === null ? {} : { position: employee.position }),
       ...(employee.graceUntil === null ? {} : { graceUntil: employee.graceUntil.toISOString() }),
     };
   }
@@ -222,13 +223,17 @@ export class CompanyService {
 
   async employees(
     query: Record<string, unknown>,
-    filters: { status?: EmployeeStatus; q?: string },
+    filters: { status?: EmployeeStatus; q?: string; departmentId?: string; position?: string },
   ): Promise<Page<ReturnType<CompanyService['employeeBody']>>> {
     const request = this.paginator.request(query, filters);
     return this.db.user(async (tx) => {
       const needle = filters.q?.trim();
       const where = {
         ...(filters.status === undefined ? {} : { status: filters.status }),
+        ...(filters.departmentId === undefined ? {} : { departmentId: filters.departmentId }),
+        ...(filters.position === undefined
+          ? {}
+          : { position: { equals: filters.position, mode: 'insensitive' as const } }),
         ...(needle === undefined || needle === ''
           ? {}
           : {
@@ -289,6 +294,8 @@ export class CompanyService {
     lastName: string;
     email: string;
     phone: string;
+    departmentId?: string | null;
+    position?: string | null;
   }) {
     const companyId = this.companyId();
     const errors: { in: 'body'; pointer: string; code: 'REQUIRED' | 'INVALID_FORMAT' }[] = [];
@@ -321,10 +328,20 @@ export class CompanyService {
         where: { OR: [{ employeeNumber: input.employeeNumber.trim() }, { email }] },
       });
       if (exists !== null) throw problems.conflict();
+      // Department of the company (never an archived one) and free-text position (processus v2).
+      const departmentId = input.departmentId ?? null;
+      if (departmentId !== null) {
+        const department = await tx.department.findUnique({ where: { id: departmentId } });
+        if (department === null) throw problems.notFound();
+        if (department.archivedAt !== null) throw problems.conflict();
+      }
+      const position = (input.position ?? '').trim();
       const employee = await tx.employee.create({
         data: {
           id,
           companyId,
+          departmentId,
+          position: position === '' ? null : position,
           employeeNumber: input.employeeNumber.trim(),
           firstName,
           lastName,

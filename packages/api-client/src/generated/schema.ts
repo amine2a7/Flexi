@@ -968,6 +968,74 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/company/departments/{departmentId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Renommer un département */
+    patch: operations['renameDepartment'];
+    trace?: never;
+  };
+  '/v1/company/departments/{departmentId}/archive': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Archiver un département (refusé, 409 DEPARTMENT_NOT_EMPTY, s'il a des employés) */
+    post: operations['archiveDepartment'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/company/employees/assignments': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Changer le département et/ou le poste d'un ou plusieurs employés */
+    post: operations['assignEmployees'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/company/positions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Postes déjà utilisés dans l'entreprise (suggestions de saisie) */
+    get: operations['listPositions'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/company/employees/{employeeId}/department': {
     parameters: {
       query?: never;
@@ -3597,8 +3665,29 @@ export interface components {
      * @enum {string}
      */
     EmployeeStatus: 'INVITED' | 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED';
+    /**
+     * EmployeeAssignment
+     * @description Département et/ou poste d'un ou plusieurs employés (au moins l'un des deux ; null détache).
+     */
+    EmployeeAssignment: {
+      employeeIds: components['schemas']['Uuid'][];
+      departmentId?: components['schemas']['Uuid'] | null;
+      position?: string | null;
+    };
+    /** EmployeeAssignmentResult */
+    EmployeeAssignmentResult: {
+      employeeIds: components['schemas']['Uuid'][];
+      departmentId?: components['schemas']['Uuid'] | null;
+      position?: string | null;
+    };
+    /** PositionList */
+    PositionList: {
+      data: string[];
+    };
     /** Department */
     Department: {
+      /** @description Archivé (plus proposé, conservé pour l'historique). */
+      archived: boolean;
       id: components['schemas']['Uuid'];
       name: string;
       /** Format: int32 */
@@ -3623,6 +3712,8 @@ export interface components {
     };
     /** Employee */
     Employee: {
+      /** @description Poste (texte libre, ex. Ouvrier). */
+      position?: string;
       /** @description Département de l'employé (absent sans département). */
       departmentId?: components['schemas']['Uuid'];
       /** @description Invité dont le mot de passe temporaire a expiré avant la première connexion (absent sinon). */
@@ -3654,6 +3745,9 @@ export interface components {
     };
     /** EmployeeCreate */
     EmployeeCreate: {
+      /** @description Poste (texte libre, ex. Ouvrier). */
+      position?: string;
+      departmentId?: components['schemas']['Uuid'] | null;
       employeeNumber: string;
       firstName: string;
       lastName: string;
@@ -6875,6 +6969,136 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  renameDepartment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        departmentId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': {
+          name: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Department'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  archiveDepartment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        departmentId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Department'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  assignEmployees: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EmployeeAssignment'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EmployeeAssignmentResult'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  listPositions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PositionList'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   assignEmployeeDepartment: {
     parameters: {
       query?: never;
@@ -6927,6 +7151,10 @@ export interface operations {
         createdTo?: components['parameters']['CreatedTo'];
         /** @description Filtre par statut. */
         status?: components['schemas']['EmployeeStatus'];
+        /** @description Filtre par département. */
+        departmentId?: components['schemas']['Uuid'];
+        /** @description Filtre par poste (texte libre, insensible à la casse). */
+        position?: string;
         /** @description Recherche par nom, référence ou ville (insensible à la casse). Jamais journalisée. */
         q?: string;
       };

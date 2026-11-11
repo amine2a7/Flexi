@@ -268,10 +268,12 @@ model Company {
 
 /// Department of a company (cahier ENT-04): groups its employees.
 model Department {
-  id        String   @id @default(uuid(7)) @db.Uuid
-  companyId String   @map("company_id") @db.Uuid
-  name      String   @db.VarChar(80)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  id         String    @id @default(uuid(7)) @db.Uuid
+  companyId  String    @map("company_id") @db.Uuid
+  name       String    @db.VarChar(80)
+  /// Archived: hidden from the choices, kept for the history (never with employees).
+  archivedAt DateTime? @map("archived_at") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
 
   company   Company    @relation(fields: [companyId], references: [id])
   employees Employee[]
@@ -391,6 +393,8 @@ model Employee {
   pinRequiresReauth Boolean        @default(false) @map("pin_requires_reauth")
   /// End of the grace period of a deactivated employee (only spending its balance until then).
   graceUntil        DateTime?      @map("grace_until") @db.Timestamptz(3)
+  /// Free text (processus v2), e.g. « Ouvrier »; the positions in use are suggested.
+  position          String?        @db.VarChar(80)
   departmentId      String?        @map("department_id") @db.Uuid
   createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
 

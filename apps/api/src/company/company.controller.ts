@@ -5,6 +5,7 @@ import {
   HttpCode,
   Inject,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -43,13 +44,19 @@ const ordersQuery = z.object({ status: orderStatus.optional(), creditType: credi
 const employeesQuery = z.object({
   status: z.enum(['INVITED', 'ACTIVE', 'SUSPENDED', 'DEACTIVATED']).optional(),
   q: z.string().max(100).optional(),
+  departmentId: z.uuid().optional(),
+  position: z.string().trim().min(1).max(80).optional(),
 });
+/** Free-text position (processus v2), e.g. « Ouvrier »; empty or null detaches it. */
+const position = z.string().trim().max(80).nullable();
 const employeeBody = z.strictObject({
   employeeNumber: z.string().max(20),
   firstName: z.string().max(60),
   lastName: z.string().max(60),
   email: z.union([email, z.string().max(254)]),
   phone: z.union([phoneNumber, z.string().max(16)]),
+  departmentId: z.uuid().nullable().optional(),
+  position: position.optional(),
 });
 const allocationBody = z.strictObject({
   allocations: z
@@ -81,7 +88,16 @@ export class CompanyController {
   employees(@Query() query: Record<string, unknown>) {
     return this.company.employees(
       query,
-      parse(employeesQuery, { status: query.status, q: query.q }, 'query'),
+      parse(
+        employeesQuery,
+        {
+          status: query.status,
+          q: query.q,
+          departmentId: query.departmentId,
+          position: query.position,
+        },
+        'query',
+      ),
     );
   }
 
@@ -98,6 +114,52 @@ export class CompanyController {
     return this.departments.create(
       parse(z.strictObject({ name: z.string().trim().min(1).max(80) }), body).name,
     );
+  }
+
+  @Can('employees.read')
+  @Get('positions')
+  positions() {
+    return this.departments.positions();
+  }
+
+  @Can('employees.manage')
+  @Patch('departments/:departmentId')
+  renameDepartment(@Param('departmentId') departmentId: string, @Body() body: unknown) {
+    return this.departments.rename(
+      pathId('departmentId', departmentId),
+      parse(z.strictObject({ name: z.string().trim().min(1).max(80) }), body).name,
+    );
+  }
+
+  @Can('employees.manage')
+  @Post('departments/:departmentId/archive')
+  @HttpCode(200)
+  archiveDepartment(@Param('departmentId') departmentId: string) {
+    return this.departments.archive(pathId('departmentId', departmentId));
+  }
+
+  /** Department and/or position of one or several employees (record « Modifier », bulk change). */
+  @Can('employees.manage')
+  @Post('employees/assignments')
+  @HttpCode(200)
+  assignEmployees(@Body() body: unknown) {
+    const input = parse(
+      z
+        .strictObject({
+          employeeIds: z.array(z.uuid()).min(1).max(500),
+          departmentId: z.uuid().nullable().optional(),
+          position: position.optional(),
+        })
+        .refine((value) => value.departmentId !== undefined || value.position !== undefined, {
+          path: ['departmentId'],
+          params: { fieldCode: 'REQUIRED' },
+        }),
+      body,
+    );
+    return this.departments.assignMany(input.employeeIds, {
+      ...(input.departmentId === undefined ? {} : { departmentId: input.departmentId }),
+      ...(input.position === undefined ? {} : { position: input.position }),
+    });
   }
 
   @Can('employees.manage')

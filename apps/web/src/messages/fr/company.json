@@ -82,7 +82,9 @@
       "firstName": "Prénom",
       "lastName": "Nom",
       "email": "E-mail",
-      "phone": "Téléphone"
+      "phone": "Téléphone",
+      "department": "Département",
+      "position": "Poste"
     },
     "emptyTitle": "Aucun employé",
     "emptyMessage": "Ajoutez vos employés un par un ou importez un fichier CSV.",
@@ -106,7 +108,24 @@
         "deactivate": "Employé désactivé."
       }
     },
-    "invitationExpired": "Invitation expirée"
+    "invitationExpired": "Invitation expirée",
+    "select": "Sélection",
+    "selectOne": "Sélectionner {name}",
+    "allDepartments": "Tous les départements",
+    "allPositions": "Tous les postes",
+    "archivedDepartment": "{name} (archivé)",
+    "selectedCount": "Employés sélectionnés : {count}",
+    "bulkChange": "Changer de département ou de poste",
+    "clearSelection": "Tout désélectionner",
+    "edit": "Modifier",
+    "editTitle": "Modifier {name}",
+    "bulkTitle": "Changer {count} employés",
+    "changeDepartment": "Changer de département",
+    "changePosition": "Changer de poste",
+    "noDepartment": "Aucun département",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "assigned": "Employés mis à jour : {count}."
   },
   "import": {
     "title": "Importer des employés",

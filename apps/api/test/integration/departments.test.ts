@@ -54,7 +54,9 @@ describe('departments of a company', () => {
     });
     expect(assigned.body).toEqual({ employeeId: employee.id, departmentId: id });
     const list = await client.call('GET', '/v1/company/departments');
-    expect(list.body.data).toEqual([{ id, name: 'Ressources humaines', employeeCount: 1 }]);
+    expect(list.body.data).toEqual([
+      { id, name: 'Ressources humaines', employeeCount: 1, archived: false },
+    ]);
     const employees = await client.call('GET', '/v1/company/employees');
     expect((employees.body.data as { departmentId?: string }[])[0]?.departmentId).toBe(id);
   });
@@ -80,5 +82,73 @@ describe('departments of a company', () => {
         })
       ).status,
     ).toBe(404);
+  });
+
+  // TEST-FIRST (processus v2, bug 3): department (list) and position (free text), bulk change,
+  // filters, positions suggested, archive refused while the department has employees.
+  it('adds with department and position, moves 5 at once, filters, archives only when empty', async () => {
+    const { company, client } = await owner();
+    const make = async (name: string) =>
+      String((await client.call('POST', '/v1/company/departments', { body: { name } })).body.id);
+    const production = await make('Production');
+    const commercial = await make('Commercial');
+    const logistics = await make('Logistique');
+    const added = await client.call('POST', '/v1/company/employees', {
+      body: {
+        employeeNumber: `M-${String(Date.now()).slice(-6)}`,
+        firstName: 'Yasmine',
+        lastName: 'Ben Ali',
+        email: `yasmine-${String(Date.now())}@carthage.tn`,
+        phone: '+21622123456',
+        departmentId: production,
+        position: ' Ouvrière ',
+      },
+    });
+    expect(added.status).toBe(201);
+    expect(added.body).toMatchObject({ departmentId: production, position: 'Ouvrière' });
+    const others = await Promise.all([1, 2, 3, 4].map(() => createEmployee(db, company.id)));
+    const five = [String(added.body.id), ...others.map((employee) => employee.id)];
+    const moved = await client.call('POST', '/v1/company/employees/assignments', {
+      body: { employeeIds: five, departmentId: commercial, position: 'Cadre' },
+    });
+    expect(moved.status).toBe(200);
+    const inCommercial = await client.call(
+      'GET',
+      `/v1/company/employees?departmentId=${commercial}&withCount=true`,
+    );
+    expect(inCommercial.body.data).toHaveLength(5);
+    const cadres = await client.call('GET', '/v1/company/employees?position=cadre');
+    expect(
+      (cadres.body.data as { position?: string }[]).every((row) => row.position === 'Cadre'),
+    ).toBe(true);
+    expect((await client.call('GET', '/v1/company/positions')).body.data).toContain('Cadre');
+    // Nothing given: refused.
+    expect(
+      (
+        await client.call('POST', '/v1/company/employees/assignments', {
+          body: { employeeIds: five },
+        })
+      ).status,
+    ).toBe(400);
+    const refused = await client.call('POST', `/v1/company/departments/${commercial}/archive`);
+    expect(refused.status).toBe(409);
+    expect(refused.body.details).toMatchObject({
+      reason: 'DEPARTMENT_NOT_EMPTY',
+      employeeCount: 5,
+    });
+    const renamed = await client.call('PATCH', `/v1/company/departments/${logistics}`, {
+      body: { name: 'Logistique & stocks' },
+    });
+    expect(renamed.body).toMatchObject({ name: 'Logistique & stocks' });
+    const archived = await client.call('POST', `/v1/company/departments/${logistics}/archive`);
+    expect(archived.body).toMatchObject({ archived: true });
+    // An archived department takes no employee.
+    expect(
+      (
+        await client.call('POST', '/v1/company/employees/assignments', {
+          body: { employeeIds: [five[0]], departmentId: logistics },
+        })
+      ).status,
+    ).toBe(409);
   });
 });

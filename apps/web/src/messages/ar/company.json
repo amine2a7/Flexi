@@ -82,7 +82,9 @@
       "firstName": "الاسم",
       "lastName": "اللقب",
       "email": "البريد الإلكتروني",
-      "phone": "الهاتف"
+      "phone": "الهاتف",
+      "department": "القسم",
+      "position": "الخطة"
     },
     "emptyTitle": "لا يوجد موظفون",
     "emptyMessage": "أضف موظفيك واحدًا تلو الآخر أو استورد ملف CSV.",
@@ -106,7 +108,24 @@
         "deactivate": "تم إلغاء تفعيل الموظف."
       }
     },
-    "invitationExpired": "انتهت صلاحية الدعوة"
+    "invitationExpired": "انتهت صلاحية الدعوة",
+    "select": "تحديد",
+    "selectOne": "تحديد {name}",
+    "allDepartments": "كل الأقسام",
+    "allPositions": "كل الخطط",
+    "archivedDepartment": "{name} (مؤرشف)",
+    "selectedCount": "الموظفون المحددون: {count}",
+    "bulkChange": "تغيير القسم أو الخطة",
+    "clearSelection": "إلغاء التحديد",
+    "edit": "تعديل",
+    "editTitle": "تعديل {name}",
+    "bulkTitle": "تغيير {count} موظفين",
+    "changeDepartment": "تغيير القسم",
+    "changePosition": "تغيير الخطة",
+    "noDepartment": "بدون قسم",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "assigned": "تم تحديث الموظفين: {count}."
   },
   "import": {
     "title": "استيراد الموظفين",

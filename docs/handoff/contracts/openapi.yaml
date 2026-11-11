@@ -2328,6 +2328,161 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/company/departments/{departmentId}:
+    patch:
+      tags: [company]
+      operationId: renameDepartment
+      summary: Renommer un département
+      parameters:
+        - name: departmentId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/departments/{departmentId}/archive:
+    post:
+      tags: [company]
+      operationId: archiveDepartment
+      summary: Archiver un département (refusé, 409 DEPARTMENT_NOT_EMPTY, s'il a des employés)
+      parameters:
+        - name: departmentId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/employees/assignments:
+    post:
+      tags: [company]
+      operationId: assignEmployees
+      summary: Changer le département et/ou le poste d'un ou plusieurs employés
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeAssignment'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeAssignmentResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/positions:
+    get:
+      tags: [company]
+      operationId: listPositions
+      summary: Postes déjà utilisés dans l'entreprise (suggestions de saisie)
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PositionList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/company/employees/{employeeId}/department:
     put:
       tags: [company]
@@ -2386,6 +2541,20 @@ paths:
           description: Filtre par statut.
           schema:
             $ref: '#/components/schemas/EmployeeStatus'
+        - name: departmentId
+          in: query
+          required: false
+          description: Filtre par département.
+          schema:
+            $ref: '#/components/schemas/Uuid'
+        - name: position
+          in: query
+          required: false
+          description: Filtre par poste (texte libre, insensible à la casse).
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 80
         - name: q
           in: query
           required: false
@@ -7844,12 +8013,67 @@ components:
         de grâce jusqu'à `graceUntil`).
       type: string
       enum: [INVITED, ACTIVE, SUSPENDED, DEACTIVATED]
+    EmployeeAssignment:
+      title: EmployeeAssignment
+      description: Département et/ou poste d'un ou plusieurs employés (au moins l'un des deux ; null détache).
+      type: object
+      additionalProperties: false
+      required: [employeeIds]
+      properties:
+        employeeIds:
+          type: array
+          minItems: 1
+          maxItems: 500
+          items:
+            $ref: '#/components/schemas/Uuid'
+        departmentId:
+          oneOf:
+            - $ref: '#/components/schemas/Uuid'
+            - type: 'null'
+        position:
+          oneOf:
+            - type: string
+              maxLength: 80
+            - type: 'null'
+    EmployeeAssignmentResult:
+      title: EmployeeAssignmentResult
+      type: object
+      additionalProperties: false
+      required: [employeeIds]
+      properties:
+        employeeIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Uuid'
+        departmentId:
+          oneOf:
+            - $ref: '#/components/schemas/Uuid'
+            - type: 'null'
+        position:
+          oneOf:
+            - type: string
+            - type: 'null'
+    PositionList:
+      title: PositionList
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          maxItems: 200
+          items:
+            type: string
+            maxLength: 80
     Department:
       title: Department
       type: object
       additionalProperties: false
-      required: [id, name, employeeCount]
+      required: [id, name, employeeCount, archived]
       properties:
+        archived:
+          description: Archivé (plus proposé, conservé pour l'historique).
+          type: boolean
         id:
           $ref: '#/components/schemas/Uuid'
         name:
@@ -7909,6 +8133,10 @@ components:
       additionalProperties: false
       required: [id, employeeNumber, firstName, lastName, email, phone, status, monthAllocatedMillimes]
       properties:
+        position:
+          description: Poste (texte libre, ex. Ouvrier).
+          type: string
+          maxLength: 80
         departmentId:
           description: Département de l'employé (absent sans département).
           $ref: '#/components/schemas/Uuid'
@@ -7968,6 +8196,14 @@ components:
       additionalProperties: false
       required: [employeeNumber, firstName, lastName, email, phone]
       properties:
+        position:
+          description: Poste (texte libre, ex. Ouvrier).
+          type: string
+          maxLength: 80
+        departmentId:
+          oneOf:
+            - $ref: '#/components/schemas/Uuid'
+            - type: 'null'
         employeeNumber:
           type: string
           minLength: 1

@@ -82,7 +82,9 @@
       "firstName": "First name",
       "lastName": "Last name",
       "email": "E-mail",
-      "phone": "Phone"
+      "phone": "Phone",
+      "department": "Department",
+      "position": "Position"
     },
     "emptyTitle": "No employees",
     "emptyMessage": "Add your employees one by one or import a CSV file.",
@@ -106,7 +108,24 @@
         "deactivate": "Employee deactivated."
       }
     },
-    "invitationExpired": "Invitation expired"
+    "invitationExpired": "Invitation expired",
+    "select": "Selection",
+    "selectOne": "Select {name}",
+    "allDepartments": "All departments",
+    "allPositions": "All positions",
+    "archivedDepartment": "{name} (archived)",
+    "selectedCount": "Employees selected: {count}",
+    "bulkChange": "Change department or position",
+    "clearSelection": "Clear the selection",
+    "edit": "Edit",
+    "editTitle": "Edit {name}",
+    "bulkTitle": "Change {count} employees",
+    "changeDepartment": "Change department",
+    "changePosition": "Change position",
+    "noDepartment": "No department",
+    "save": "Save",
+    "cancel": "Cancel",
+    "assigned": "Employees updated: {count}."
   },
   "import": {
     "title": "Import employees",

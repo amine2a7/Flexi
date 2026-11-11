@@ -10,11 +10,12 @@ import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
 import { asProblem, errorMessageKey, fieldErrors as readFieldErrors } from '@/lib/api/problem';
 import { usePagedList } from '@/lib/api/use-paged-list';
+import { useApiQuery } from '@/lib/api/use-api-query';
 import { Amount } from '@/components/ui/amount';
 import { Button, buttonClasses } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { DataTable, type Column } from '@/components/ui/data-table';
-import { TextField } from '@/components/ui/field';
+import { SelectField, TextField } from '@/components/ui/field';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { Modal } from '@/components/ui/modal';
@@ -34,6 +35,52 @@ function transitions(status: Schemas['EmployeeStatus']): Lifecycle[] {
   return status === 'SUSPENDED' ? ['reactivate', 'deactivate'] : ['suspend', 'deactivate'];
 }
 const FIELDS = ['employeeNumber', 'firstName', 'lastName', 'email', 'phone'] as const;
+type Department = Schemas['Department'];
+
+/** Departments and positions in use, for the filters and the forms (processus v2). */
+function useOrganisation(refresh: number) {
+  const departments = useApiQuery(() => getApi().GET('/v1/company/departments'), [refresh]);
+  const positions = useApiQuery(() => getApi().GET('/v1/company/positions'), [refresh]);
+  return {
+    all: departments.status === 'success' ? departments.data.data : ([] as Department[]),
+    positions: positions.status === 'success' ? positions.data.data : ([] as string[]),
+  };
+}
+
+/** Free-text position with the positions already used suggested while typing (processus v2). */
+function PositionField({
+  label,
+  value,
+  onChange,
+  positions,
+  id,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  positions: readonly string[];
+  id: string;
+}) {
+  return (
+    <>
+      <TextField
+        label={label}
+        value={value}
+        maxLength={80}
+        list={id}
+        autoComplete="off"
+        onChange={(event) => {
+          onChange(event.target.value);
+        }}
+      />
+      <datalist id={id}>
+        {positions.map((position) => (
+          <option key={position} value={position} />
+        ))}
+      </datalist>
+    </>
+  );
+}
 const EMPTY: Draft = { employeeNumber: '', firstName: '', lastName: '', email: '', phone: '+216' };
 
 export default function EmployeesPage() {
@@ -44,6 +91,10 @@ export default function EmployeesPage() {
   const canAllocate = useCanOpen('/entreprise/attribution');
   const canImport = useCanOpen('/entreprise/employes/import');
   const [filters, setFilters] = useState({ q: '', status: '' });
+  const [departmentFilter, setDepartmentFilter] = useState('');
+  const [positionFilter, setPositionFilter] = useState('');
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [editing, setEditing] = useState<Employee[] | undefined>(undefined);
   const [adding, setAdding] = useState(false);
   const [refresh, setRefresh] = useState(0);
   const [graceDays, setGraceDays] = useState<number | undefined>(undefined);
@@ -66,6 +117,8 @@ export default function EmployeesPage() {
               ...(filters.status === ''
                 ? {}
                 : { status: filters.status as Schemas['EmployeeStatus'] }),
+              ...(departmentFilter === '' ? {} : { departmentId: departmentFilter }),
+              ...(positionFilter === '' ? {} : { position: positionFilter }),
             },
           },
         })
@@ -74,10 +127,41 @@ export default function EmployeesPage() {
           if (result.data?.graceDays !== undefined) setGraceDays(result.data.graceDays);
           return result;
         }),
-    [filters, refresh],
+    [filters, departmentFilter, positionFilter, refresh],
   );
+  const organisation = useOrganisation(refresh);
+  const departmentName = (id: string | undefined) =>
+    organisation.all.find((department) => department.id === id)?.name;
+  const toggle = (id: string) => {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const columns: Column<Employee>[] = [
+    ...(canManage
+      ? [
+          {
+            key: 'select',
+            header: t('select'),
+            card: 'hidden' as const,
+            cell: (row: Employee) => (
+              <input
+                type="checkbox"
+                className="size-icon-md"
+                aria-label={t('selectOne', { name: `${row.firstName} ${row.lastName}` })}
+                checked={selected.has(row.id)}
+                onChange={() => {
+                  toggle(row.id);
+                }}
+              />
+            ),
+          },
+        ]
+      : []),
     {
       key: 'name',
       header: t('name'),
@@ -91,6 +175,18 @@ export default function EmployeesPage() {
         </span>
       ),
       sortValue: (row) => `${row.lastName} ${row.firstName}`,
+    },
+    {
+      key: 'department',
+      header: t('fields.department'),
+      cell: (row) => departmentName(row.departmentId) ?? '—',
+      sortValue: (row) => departmentName(row.departmentId) ?? '',
+    },
+    {
+      key: 'position',
+      header: t('fields.position'),
+      cell: (row) => row.position ?? '—',
+      sortValue: (row) => row.position ?? '',
     },
     { key: 'email', header: t('fields.email'), cell: (row) => <span dir="ltr">{row.email}</span> },
     {
@@ -127,10 +223,18 @@ export default function EmployeesPage() {
             align: 'end' as const,
             cell: (row: Employee) => {
               const available = transitions(row.status);
-              if (available.length === 0)
-                return <span className="text-caption text-text-muted">{tLife('none')}</span>;
               return (
                 <span className="flex flex-wrap justify-end gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    aria-label={`${t('edit')} ${row.firstName} ${row.lastName}`}
+                    onClick={() => {
+                      setEditing([row]);
+                    }}
+                  >
+                    {t('edit')}
+                  </Button>
                   {available.map((action) => (
                     <Button
                       key={action}
@@ -211,6 +315,58 @@ export default function EmployeesPage() {
           statusOptions={STATUSES.map((value) => ({ value, label: tStatus(value) }))}
           onApply={setFilters}
         />
+        <div className="mb-4 grid gap-4 sm:grid-cols-2">
+          <SelectField
+            label={t('fields.department')}
+            placeholder={t('allDepartments')}
+            options={organisation.all.map((department) => ({
+              value: department.id,
+              label: department.archived
+                ? t('archivedDepartment', { name: department.name })
+                : department.name,
+            }))}
+            value={departmentFilter}
+            onChange={(event) => {
+              setDepartmentFilter(event.target.value);
+            }}
+          />
+          <SelectField
+            label={t('fields.position')}
+            placeholder={t('allPositions')}
+            options={organisation.positions.map((position) => ({
+              value: position,
+              label: position,
+            }))}
+            value={positionFilter}
+            onChange={(event) => {
+              setPositionFilter(event.target.value);
+            }}
+          />
+        </div>
+        {canManage && selected.size > 0 ? (
+          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-card-desktop border border-border p-3">
+            <span className="text-body text-text">
+              {t('selectedCount', { count: selected.size })}
+            </span>
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditing((list.rows ?? []).filter((row) => selected.has(row.id)));
+              }}
+            >
+              {t('bulkChange')}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setSelected(new Set());
+              }}
+            >
+              {t('clearSelection')}
+            </Button>
+          </div>
+        ) : null}
         <DataTable
           caption={t('title')}
           columns={columns}
@@ -229,10 +385,28 @@ export default function EmployeesPage() {
       <AddEmployee
         open={adding}
         onOpenChange={setAdding}
+        departments={organisation.all.filter((department) => !department.archived)}
+        positions={organisation.positions}
         onCreated={() => {
           setRefresh((value) => value + 1);
         }}
       />
+      {editing !== undefined ? (
+        <AssignEmployees
+          employees={editing}
+          departments={organisation.all.filter((department) => !department.archived)}
+          positions={organisation.positions}
+          onClose={() => {
+            setEditing(undefined);
+          }}
+          onDone={(message) => {
+            setEditing(undefined);
+            setSelected(new Set());
+            setNotice(message);
+            setRefresh((value) => value + 1);
+          }}
+        />
+      ) : null}
       {target !== undefined ? (
         <ReasonDialog
           open
@@ -283,14 +457,148 @@ export default function EmployeesPage() {
   );
 }
 
+/**
+ * « Modifier » (one employee) or « Changer de département / de poste » (the selected ones):
+ * an unchecked field is left as it is (processus v2).
+ */
+function AssignEmployees({
+  employees,
+  departments,
+  positions,
+  onClose,
+  onDone,
+}: {
+  employees: readonly Employee[];
+  departments: readonly Department[];
+  positions: readonly string[];
+  onClose: () => void;
+  onDone: (message: string) => void;
+}) {
+  const t = useTranslations('company.employees');
+  const tRoot = useTranslations();
+  const single = employees.length === 1 ? employees[0] : undefined;
+  const [departmentId, setDepartmentId] = useState(single?.departmentId ?? '');
+  const [position, setPosition] = useState(single?.position ?? '');
+  const [changeDepartment, setChangeDepartment] = useState(single !== undefined);
+  const [changePosition, setChangePosition] = useState(single !== undefined);
+  const [error, setError] = useState<unknown>(undefined);
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    if (!changeDepartment && !changePosition) return;
+    setSaving(true);
+    setError(undefined);
+    try {
+      const { data, error: problem } = await getApi().POST('/v1/company/employees/assignments', {
+        body: {
+          employeeIds: employees.map((employee) => employee.id),
+          ...(changeDepartment ? { departmentId: departmentId === '' ? null : departmentId } : {}),
+          ...(changePosition ? { position: position.trim() === '' ? null : position.trim() } : {}),
+        },
+      });
+      if (data === undefined) setError(problem);
+      else onDone(t('assigned', { count: employees.length }));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open && !saving) onClose();
+      }}
+      title={
+        single === undefined
+          ? t('bulkTitle', { count: employees.length })
+          : t('editTitle', { name: `${single.firstName} ${single.lastName}` })
+      }
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" disabled={saving} onClick={onClose}>
+            {t('cancel')}
+          </Button>
+          <Button
+            loading={saving}
+            disabled={!changeDepartment && !changePosition}
+            onClick={() => void save()}
+          >
+            {t('save')}
+          </Button>
+        </div>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        {error !== undefined ? (
+          <Alert tone="danger">{tRoot(messageKey(errorMessageKey(error)))}</Alert>
+        ) : null}
+        {single === undefined ? (
+          <label className="flex items-center gap-2 text-body text-text">
+            <input
+              type="checkbox"
+              className="size-icon-md"
+              checked={changeDepartment}
+              onChange={(event) => {
+                setChangeDepartment(event.target.checked);
+              }}
+            />
+            {t('changeDepartment')}
+          </label>
+        ) : null}
+        {changeDepartment ? (
+          <SelectField
+            label={t('fields.department')}
+            placeholder={t('noDepartment')}
+            options={departments.map((department) => ({
+              value: department.id,
+              label: department.name,
+            }))}
+            value={departmentId}
+            onChange={(event) => {
+              setDepartmentId(event.target.value);
+            }}
+          />
+        ) : null}
+        {single === undefined ? (
+          <label className="flex items-center gap-2 text-body text-text">
+            <input
+              type="checkbox"
+              className="size-icon-md"
+              checked={changePosition}
+              onChange={(event) => {
+                setChangePosition(event.target.checked);
+              }}
+            />
+            {t('changePosition')}
+          </label>
+        ) : null}
+        {changePosition ? (
+          <PositionField
+            id="assign-positions"
+            label={t('fields.position')}
+            value={position}
+            onChange={setPosition}
+            positions={positions}
+          />
+        ) : null}
+      </div>
+    </Modal>
+  );
+}
+
 function AddEmployee({
   open,
   onOpenChange,
   onCreated,
+  departments,
+  positions,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: () => void;
+  departments: readonly Department[];
+  positions: readonly string[];
 }) {
   const t = useTranslations('company.employees');
   const tRoot = useTranslations();
@@ -308,7 +616,13 @@ function AddEmployee({
     setFieldErrors({});
     try {
       const { data, error: problem } = await getApi().POST('/v1/company/employees', {
-        body: draft,
+        body: {
+          ...draft,
+          departmentId: draft.departmentId === '' ? null : (draft.departmentId ?? null),
+          ...((draft.position ?? '').trim() === ''
+            ? {}
+            : { position: (draft.position ?? '').trim() }),
+        },
       });
       if (data !== undefined) {
         toast.notify('success', t('created', { name: `${data.firstName} ${data.lastName}` }));
@@ -365,6 +679,28 @@ function AddEmployee({
               }}
             />
           ))}
+          <SelectField
+            label={t('fields.department')}
+            placeholder={t('noDepartment')}
+            error={fieldErrors.departmentId}
+            options={departments.map((department) => ({
+              value: department.id,
+              label: department.name,
+            }))}
+            value={draft.departmentId ?? ''}
+            onChange={(event) => {
+              setDraft((current) => ({ ...current, departmentId: event.target.value }));
+            }}
+          />
+          <PositionField
+            id="add-positions"
+            label={t('fields.position')}
+            value={draft.position ?? ''}
+            onChange={(value) => {
+              setDraft((current) => ({ ...current, position: value }));
+            }}
+            positions={positions}
+          />
         </div>
         <div className="flex justify-end">
           <Button type="submit" loading={saving}>
