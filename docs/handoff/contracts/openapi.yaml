@@ -10546,9 +10546,9 @@ components:
       enum: [MERCHANT, COMPANY]
     KycDocumentType:
       title: KycDocumentType
-      description: Extrait du registre de commerce, attestation fiscale, pièce d'identité du gérant, RIB.
+      description: Extrait du registre de commerce, attestation fiscale, pièce d'identité du gérant, RIB, statuts, justificatif d'adresse (processus v2 — le Super-admin choisit les pièces demandées).
       type: string
-      enum: [REGISTRY_EXTRACT, TAX_CERTIFICATE, MANAGER_ID, BANK_DETAILS]
+      enum: [REGISTRY_EXTRACT, TAX_CERTIFICATE, MANAGER_ID, BANK_DETAILS, COMPANY_STATUTES, PROOF_OF_ADDRESS]
     KycDocument:
       title: KycDocument
       type: object
@@ -11061,6 +11061,14 @@ components:
           format: int32
           minimum: 1
           maximum: 10
+        kycRequiredDocuments:
+          description: Pièces KYC demandées aux clients (processus v2), au moins une.
+          type: array
+          minItems: 1
+          maxItems: 6
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/KycDocumentType'
         expiredCreditsDestination:
           $ref: '#/components/schemas/ExpiredCreditsDestination'
         payoutMinimumMillimes:

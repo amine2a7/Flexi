@@ -8,18 +8,33 @@ import { FILE_STORAGE, type FileStorage } from '../common/storage.js';
 import type { KycDocument, KycDocumentType } from '../generated/prisma/client.js';
 import { sniffProof } from '../orders/orders.service.js';
 
-/** The four documents of a file (processus v2), in display order. */
+/** Catalogue of the documents (processus v2), in display order; the super-admin picks some. */
 export const KYC_DOCUMENT_TYPES: readonly KycDocumentType[] = [
   'REGISTRY_EXTRACT',
   'TAX_CERTIFICATE',
   'MANAGER_ID',
   'BANK_DETAILS',
+  'COMPANY_STATUTES',
+  'PROOF_OF_ADDRESS',
 ];
+
+/** Documents a client files today (settings of the super-admin), in catalogue order. */
+export async function requiredDocuments(tx: Tx): Promise<KycDocumentType[]> {
+  const row = await tx.platformSettings.findUnique({
+    where: { id: 1 },
+    select: { kycRequiredDocuments: true },
+  });
+  const required = row?.kycRequiredDocuments ?? KYC_DOCUMENT_TYPES.slice(0, 4);
+  return KYC_DOCUMENT_TYPES.filter((type) => required.includes(type));
+}
 const MAX_DOCUMENT_BYTES = 5 * 1024 * 1024;
 
 /** Each type with its current document: « à déposer » (MISSING) when there is none. */
-export function documentsByType(documents: readonly KycDocument[]) {
-  return KYC_DOCUMENT_TYPES.map((type) => {
+export function documentsByType(
+  documents: readonly KycDocument[],
+  required: readonly KycDocumentType[],
+) {
+  return required.map((type) => {
     const current = documents.find(
       (document) => document.type === type && document.replacedAt === null,
     );
@@ -69,17 +84,22 @@ export class KycService {
     return file;
   }
 
-  private body(file: Awaited<ReturnType<KycService['current']>>) {
+  private body(
+    file: Awaited<ReturnType<KycService['current']>>,
+    required: readonly KycDocumentType[],
+  ) {
     return {
       id: file.id,
       status: file.status,
       ...(file.rejectionReason === null ? {} : { rejectionReason: file.rejectionReason }),
-      documents: documentsByType(file.documents),
+      documents: documentsByType(file.documents, required),
     };
   }
 
   async mine() {
-    return this.db.user(async (tx) => this.body(await this.current(tx)));
+    return this.db.user(async (tx) =>
+      this.body(await this.current(tx), await requiredDocuments(tx)),
+    );
   }
 
   /** Files (or files again) one document; refused once the file is validated. */
@@ -118,6 +138,19 @@ export class KycService {
       await tx.$queryRaw`SELECT id FROM kyc_files WHERE id = ${found.id}::uuid FOR UPDATE`;
       if (found.status === 'APPROVED') throw problems.conflict();
       const documentType = type as KycDocumentType;
+      const required = await requiredDocuments(tx);
+      // Only a document the super-admin asks for (settings).
+      if (!required.includes(documentType))
+        throw new ApiProblem(400, 'VALIDATION_FAILED', {
+          fields: [
+            {
+              in: 'body',
+              pointer: '/type',
+              code: 'INVALID_ENUM',
+              messageKey: 'errors.field.invalidEnum',
+            },
+          ],
+        });
       await tx.kycDocument.updateMany({
         where: { fileId: found.id, type: documentType, replacedAt: null },
         data: { replacedAt: new Date() },
@@ -149,7 +182,7 @@ export class KycService {
         },
       });
       await this.audit.record(tx, 'kyc.upload', documentType);
-      return this.body(await this.current(tx));
+      return this.body(await this.current(tx), required);
     });
   }
 

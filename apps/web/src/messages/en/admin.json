@@ -286,7 +286,10 @@
     "withholdingThresholdHint": "Above this amount, the withholding applies.",
     "withholdingPpCin": "Withholding PP CIN (% of the commission)",
     "withholdingPpMf": "Withholding PP MF (% of the commission)",
-    "withholdingPmMf": "Withholding PM MF (% of the commission)"
+    "withholdingPmMf": "Withholding PM MF (% of the commission)",
+    "kycDocuments": "KYC documents required",
+    "kycDocumentsHint": "The documents each client files in “My file”. A file is approved only when all of them are filed and compliant.",
+    "kycDocumentsRequired": "Choose at least one document."
   },
   "kyc": {
     "open": "Open",
@@ -321,7 +324,9 @@
       "REGISTRY_EXTRACT": "Trade register extract",
       "TAX_CERTIFICATE": "Tax certificate",
       "MANAGER_ID": "Manager's ID",
-      "BANK_DETAILS": "Bank details (RIB)"
+      "BANK_DETAILS": "Bank details (RIB)",
+      "COMPANY_STATUTES": "Company statutes",
+      "PROOF_OF_ADDRESS": "Proof of address"
     },
     "approve": "Approve the file",
     "approveTitle": "Approve {name}'s file?",

@@ -55,13 +55,17 @@
       "REGISTRY_EXTRACT": "Trade register extract or licence",
       "TAX_CERTIFICATE": "Tax identification card",
       "MANAGER_ID": "Manager's ID card",
-      "BANK_DETAILS": "Bank details (RIB)"
+      "BANK_DETAILS": "Bank details (RIB)",
+      "COMPANY_STATUTES": "Company statutes",
+      "PROOF_OF_ADDRESS": "Proof of address"
     },
     "hints": {
       "REGISTRY_EXTRACT": "Recent extract of the national business register.",
       "TAX_CERTIFICATE": "Card with the tax number.",
       "MANAGER_ID": "Both sides of the ID card.",
-      "BANK_DETAILS": "Bank details in the account holder's name."
+      "BANK_DETAILS": "Bank details in the account holder's name.",
+      "COMPANY_STATUTES": "Signed and registered statutes.",
+      "PROOF_OF_ADDRESS": "Bill or certificate less than 3 months old."
     },
     "notApproved": "Your file is not validated yet: you can order once FlexiPay validates it (Account › My file)."
   }

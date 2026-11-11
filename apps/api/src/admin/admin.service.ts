@@ -2,7 +2,7 @@ import { PiiService } from '../common/pii.js';
 import { randomInt } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import { credentialsOf, InvitationService } from '../auth/invitation.service.js';
-import { documentsByType } from '../kyc/kyc.service.js';
+import { documentsByType, KYC_DOCUMENT_TYPES, requiredDocuments } from '../kyc/kyc.service.js';
 import { AuditService } from '../common/audit.service.js';
 import { FourEyesService } from '../common/four-eyes.service.js';
 import { DisputesService } from '../risk/disputes.service.js';
@@ -30,6 +30,7 @@ import type {
   KycAccountType,
   KycStatus,
   Merchant,
+  KycDocumentType,
   LegalForm,
   MerchantCategory,
   PaymentStatus,
@@ -141,6 +142,7 @@ export interface PlatformSettingsInput {
   stampDutyMillimes: number;
   withholding?: { thresholdMillimes: number; ppCinBps: number; ppMfBps: number; pmMfBps: number };
   transferFeeMillimes?: number;
+  kycRequiredDocuments?: readonly KycDocumentType[];
   expiredCreditsDestination: 'PLATFORM_REVENUE' | 'COMPANY_RETURN';
   fundingAccount: { bankName: string; holder: string; rib: string; iban: string };
   secondValidationThresholdMillimes: number;
@@ -954,6 +956,9 @@ export class AdminService {
           pmMfBps: platform.withholdingPmMfBps,
         },
         transferFeeMillimes: toMillimes(platform.transferFeeMillimes),
+        kycRequiredDocuments: KYC_DOCUMENT_TYPES.filter((type) =>
+          platform.kycRequiredDocuments.includes(type),
+        ),
         expiredCreditsDestination: platform.expiredCreditsDestination,
         fundingAccount: {
           bankName: platform.fundingBankName,
@@ -1032,6 +1037,9 @@ export class AdminService {
         ...(settings.transferFeeMillimes === undefined
           ? {}
           : { transferFeeMillimes: BigInt(settings.transferFeeMillimes) }),
+        ...(settings.kycRequiredDocuments === undefined
+          ? {}
+          : { kycRequiredDocuments: [...settings.kycRequiredDocuments] }),
         expiredCreditsDestination: settings.expiredCreditsDestination,
         fundingBankName: settings.fundingAccount.bankName,
         fundingHolder: settings.fundingAccount.holder,
@@ -1166,7 +1174,10 @@ export class AdminService {
     };
   }
 
-  private kycDetail(file: Prisma.KycFileGetPayload<{ include: AdminService['kycInclude'] }>) {
+  private kycDetail(
+    file: Prisma.KycFileGetPayload<{ include: AdminService['kycInclude'] }>,
+    required: readonly KycDocumentType[],
+  ) {
     return {
       ...this.kycSummary(file),
       documents: file.documents.map((document) => ({
@@ -1182,7 +1193,7 @@ export class AdminService {
           : { correctionReason: document.correctionReason }),
       })),
       // Each of the four documents with its status (MISSING = « à déposer »).
-      pieces: documentsByType(file.documents),
+      pieces: documentsByType(file.documents, required),
       ...(file.rejectionReason === null ? {} : { rejectionReason: file.rejectionReason }),
       history: file.events.map((event) => ({
         action: event.action,
@@ -1236,7 +1247,7 @@ export class AdminService {
     return this.db.user(async (tx) => {
       const file = await tx.kycFile.findUnique({ where: { id }, include: this.kycInclude });
       if (file === null) throw problems.notFound();
-      return this.kycDetail(file);
+      return this.kycDetail(file, await requiredDocuments(tx));
     });
   }
 
@@ -1267,7 +1278,7 @@ export class AdminService {
       // Validated only with the four documents there and none to correct (processus v2).
       if (
         decision === 'APPROVED' &&
-        documentsByType(file.documents).some(
+        documentsByType(file.documents, await requiredDocuments(tx)).some(
           (piece) => piece.status === 'MISSING' || piece.status === 'TO_CORRECT',
         )
       )
@@ -1307,7 +1318,7 @@ export class AdminService {
         where: { id },
         include: this.kycInclude,
       });
-      return this.kycDetail(updated);
+      return this.kycDetail(updated, await requiredDocuments(tx));
     });
   }
 
@@ -1353,7 +1364,7 @@ export class AdminService {
         where: { id },
         include: this.kycInclude,
       });
-      return this.kycDetail(updated);
+      return this.kycDetail(updated, await requiredDocuments(tx));
     });
   }
 }

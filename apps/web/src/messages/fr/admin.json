@@ -286,7 +286,10 @@
     "withholdingThresholdHint": "Au-delà de ce montant, la retenue s'applique.",
     "withholdingPpCin": "Retenue PP CIN (% de la commission)",
     "withholdingPpMf": "Retenue PP MF (% de la commission)",
-    "withholdingPmMf": "Retenue PM MF (% de la commission)"
+    "withholdingPmMf": "Retenue PM MF (% de la commission)",
+    "kycDocuments": "Pièces KYC demandées",
+    "kycDocumentsHint": "Les pièces que chaque nouveau client dépose dans « Mon dossier ». Un dossier n’est validé que si elles sont toutes déposées et conformes.",
+    "kycDocumentsRequired": "Choisissez au moins une pièce."
   },
   "kyc": {
     "open": "Ouvrir",
@@ -321,7 +324,9 @@
       "REGISTRY_EXTRACT": "Extrait du registre de commerce",
       "TAX_CERTIFICATE": "Attestation fiscale",
       "MANAGER_ID": "Pièce d'identité du gérant",
-      "BANK_DETAILS": "Relevé d'identité bancaire (RIB)"
+      "BANK_DETAILS": "Relevé d'identité bancaire (RIB)",
+      "COMPANY_STATUTES": "Statuts de la société",
+      "PROOF_OF_ADDRESS": "Justificatif d’adresse"
     },
     "approve": "Valider le dossier",
     "approveTitle": "Valider le dossier de {name} ?",

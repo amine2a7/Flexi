@@ -68,6 +68,22 @@ const settingsBody = z.strictObject({
       })
       .optional(),
     transferFeeMillimes: millimes.optional(),
+    // Processus v2: the KYC documents a client files (at least one, each once).
+    kycRequiredDocuments: z
+      .array(
+        z.enum([
+          'REGISTRY_EXTRACT',
+          'TAX_CERTIFICATE',
+          'MANAGER_ID',
+          'BANK_DETAILS',
+          'COMPANY_STATUTES',
+          'PROOF_OF_ADDRESS',
+        ]),
+      )
+      .min(1)
+      .max(6)
+      .refine((list) => new Set(list).size === list.length)
+      .optional(),
     expiredCreditsDestination: z.enum(['PLATFORM_REVENUE', 'COMPANY_RETURN']),
     // A Tunisian IBAN is TN59 followed by the RIB: both must name the same account (S-PA-01).
     fundingAccount: z

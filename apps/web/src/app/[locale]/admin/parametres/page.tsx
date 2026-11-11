@@ -33,6 +33,16 @@ const DESTINATIONS: readonly Schemas['ExpiredCreditsDestination'][] = [
 ];
 
 /** Basis points as the user types them (percent, locale decimal separator), integers only. */
+const KYC_DOCUMENTS: Schemas['KycDocumentType'][] = [
+  'REGISTRY_EXTRACT',
+  'TAX_CERTIFICATE',
+  'MANAGER_ID',
+  'BANK_DETAILS',
+  'COMPANY_STATUTES',
+  'PROOF_OF_ADDRESS',
+];
+const DEFAULT_KYC = KYC_DOCUMENTS.slice(0, 4);
+
 function bpsToText(bps: number, locale: Locale): string {
   const fraction = bps % 100;
   if (fraction === 0) return String(Math.trunc(bps / 100));
@@ -50,7 +60,7 @@ function minutesList(text: string): number[] | undefined {
   const parts = text.split(/[,;\s]+/).filter((part) => part !== '');
   const values = parts.map((part) => integerIn(part, 1, 1440));
   if (values.length < 1 || values.length > 5) return undefined;
-  return values.every((value) => value !== undefined) ? (values) : undefined;
+  return values.every((value) => value !== undefined) ? values : undefined;
 }
 
 /**
@@ -107,6 +117,7 @@ export default function SettingsPage() {
 }
 
 function CurrentSettings({ settings }: { settings: Settings }) {
+  const tKyc = useTranslations('admin.kyc');
   const t = useTranslations('admin.settings');
   const tTypes = useTranslations('ui.creditTypes');
   const typeColumns: Column<Schemas['CreditTypeSettings']>[] = [
@@ -162,9 +173,18 @@ function CurrentSettings({ settings }: { settings: Settings }) {
               label: t('withholdingThreshold'),
               value: <Amount millimes={settings.withholding?.thresholdMillimes ?? 0} />,
             },
-            { label: t('withholdingPpCin'), value: <Rate bps={settings.withholding?.ppCinBps ?? 0} /> },
-            { label: t('withholdingPpMf'), value: <Rate bps={settings.withholding?.ppMfBps ?? 0} /> },
-            { label: t('withholdingPmMf'), value: <Rate bps={settings.withholding?.pmMfBps ?? 0} /> },
+            {
+              label: t('withholdingPpCin'),
+              value: <Rate bps={settings.withholding?.ppCinBps ?? 0} />,
+            },
+            {
+              label: t('withholdingPpMf'),
+              value: <Rate bps={settings.withholding?.ppMfBps ?? 0} />,
+            },
+            {
+              label: t('withholdingPmMf'),
+              value: <Rate bps={settings.withholding?.pmMfBps ?? 0} />,
+            },
             {
               label: t('payoutMinimum'),
               value: <Amount millimes={settings.payoutMinimumMillimes} />,
@@ -206,6 +226,12 @@ function CurrentSettings({ settings }: { settings: Settings }) {
             {
               label: t('invitationValidity'),
               value: t('daysValue', { count: settings.invitationValidityDays }),
+            },
+            {
+              label: t('kycDocuments'),
+              value: (settings.kycRequiredDocuments ?? DEFAULT_KYC)
+                .map((type) => tKyc(`documentTypes.${type}`))
+                .join(' · '),
             },
           ]}
         />
@@ -355,6 +381,10 @@ function ChangeSettings({
     reason: '',
   });
   const [destination, setDestination] = useState(current.expiredCreditsDestination);
+  const tKyc = useTranslations('admin.kyc');
+  const [kycDocs, setKycDocs] = useState<Schemas['KycDocumentType'][]>([
+    ...(current.kycRequiredDocuments ?? DEFAULT_KYC),
+  ]);
   const [types, setTypes] = useState(() =>
     current.creditTypes.map((item) => ({
       creditType: item.creditType,
@@ -505,7 +535,8 @@ function ChangeSettings({
       withholdingThreshold === undefined ||
       withholdingPpCin === undefined ||
       withholdingPpMf === undefined ||
-      withholdingPmMf === undefined
+      withholdingPmMf === undefined ||
+      kycDocs.length === 0
     ) {
       return;
     }
@@ -528,6 +559,7 @@ function ChangeSettings({
               pmMfBps: withholdingPmMf,
             },
             transferFeeMillimes: transferFee,
+            kycRequiredDocuments: KYC_DOCUMENTS.filter((type) => kycDocs.includes(type)),
             expiredCreditsDestination: destination,
             fundingAccount: { bankName, holder, rib, iban },
             secondValidationThresholdMillimes: parsed.threshold,
@@ -608,6 +640,32 @@ function ChangeSettings({
             {field('otp', t('otpValidityLabel'))}
             {field('pinLocks', t('pinLocksLabel'), { hint: t('pinLocksHint'), numeric: false })}
             {field('invitation', t('invitationValidityLabel'))}
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-label text-text">{t('kycDocuments')}</p>
+            <p className="text-caption text-text-muted">{t('kycDocumentsHint')}</p>
+            <div className="flex flex-wrap gap-3">
+              {KYC_DOCUMENTS.map((type) => (
+                <label key={type} className="flex items-center gap-2 text-body text-text">
+                  <input
+                    type="checkbox"
+                    className="size-icon-sm accent-navy"
+                    checked={kycDocs.includes(type)}
+                    onChange={(event) => {
+                      setKycDocs((list) =>
+                        event.target.checked
+                          ? [...list, type]
+                          : list.filter((item) => item !== type),
+                      );
+                    }}
+                  />
+                  {tKyc(`documentTypes.${type}`)}
+                </label>
+              ))}
+            </div>
+            {kycDocs.length === 0 ? (
+              <p className="text-caption text-danger-text">{t('kycDocumentsRequired')}</p>
+            ) : null}
           </div>
         </fieldset>
         <fieldset className="flex flex-col gap-4">

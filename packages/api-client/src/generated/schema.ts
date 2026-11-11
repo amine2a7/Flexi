@@ -4842,10 +4842,16 @@ export interface components {
     KycAccountType: 'MERCHANT' | 'COMPANY';
     /**
      * KycDocumentType
-     * @description Extrait du registre de commerce, attestation fiscale, pièce d'identité du gérant, RIB.
+     * @description Extrait du registre de commerce, attestation fiscale, pièce d'identité du gérant, RIB, statuts, justificatif d'adresse (processus v2 — le Super-admin choisit les pièces demandées).
      * @enum {string}
      */
-    KycDocumentType: 'REGISTRY_EXTRACT' | 'TAX_CERTIFICATE' | 'MANAGER_ID' | 'BANK_DETAILS';
+    KycDocumentType:
+      | 'REGISTRY_EXTRACT'
+      | 'TAX_CERTIFICATE'
+      | 'MANAGER_ID'
+      | 'BANK_DETAILS'
+      | 'COMPANY_STATUTES'
+      | 'PROOF_OF_ADDRESS';
     /** KycDocument */
     KycDocument: {
       id: components['schemas']['Uuid'];
@@ -5098,6 +5104,8 @@ export interface components {
        * @description Cycle de règlement (J + n jours ouvrés).
        */
       settlementDelayDays: number;
+      /** @description Pièces KYC demandées aux clients (processus v2), au moins une. */
+      kycRequiredDocuments?: components['schemas']['KycDocumentType'][];
       expiredCreditsDestination: components['schemas']['ExpiredCreditsDestination'];
       payoutMinimumMillimes: components['schemas']['AmountMillimes'];
       /** Format: int32 */
@@ -11231,7 +11239,14 @@ export const kycAccountTypeValues: ReadonlyArray<
 > = ['MERCHANT', 'COMPANY'];
 export const kycDocumentTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['KycDocumentType']
-> = ['REGISTRY_EXTRACT', 'TAX_CERTIFICATE', 'MANAGER_ID', 'BANK_DETAILS'];
+> = [
+  'REGISTRY_EXTRACT',
+  'TAX_CERTIFICATE',
+  'MANAGER_ID',
+  'BANK_DETAILS',
+  'COMPANY_STATUTES',
+  'PROOF_OF_ADDRESS',
+];
 export const kycDocumentContentTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['KycDocument']['contentType']
 > = ['image/jpeg', 'image/png', 'application/pdf'];

@@ -286,7 +286,10 @@
     "withholdingThresholdHint": "فوق هذا المبلغ يطبق الخصم.",
     "withholdingPpCin": "الخصم PP CIN (% من العمولة)",
     "withholdingPpMf": "الخصم PP MF (% من العمولة)",
-    "withholdingPmMf": "الخصم PM MF (% من العمولة)"
+    "withholdingPmMf": "الخصم PM MF (% من العمولة)",
+    "kycDocuments": "وثائق KYC المطلوبة",
+    "kycDocumentsHint": "الوثائق التي يودعها كل حريف في «ملفي». لا يُصادق على الملف إلا إذا أُودعت كلها وكانت مطابقة.",
+    "kycDocumentsRequired": "اختر وثيقة واحدة على الأقل."
   },
   "kyc": {
     "open": "فتح",
@@ -321,7 +324,9 @@
       "REGISTRY_EXTRACT": "مضمون السجل التجاري",
       "TAX_CERTIFICATE": "شهادة جبائية",
       "MANAGER_ID": "بطاقة هوية المسيّر",
-      "BANK_DETAILS": "كشف الهوية البنكية"
+      "BANK_DETAILS": "كشف الهوية البنكية",
+      "COMPANY_STATUTES": "النظام الأساسي للشركة",
+      "PROOF_OF_ADDRESS": "إثبات العنوان"
     },
     "approve": "المصادقة على الملف",
     "approveTitle": "المصادقة على ملف {name}؟",
