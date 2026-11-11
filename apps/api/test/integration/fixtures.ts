@@ -25,8 +25,9 @@ export const gridBody = (rateBps = 200) => [{ rateBps, minMillimes: null, maxMil
 
 /** Ledger lines of the transactions of a reference (code, direction, amount), sorted. */
 export async function ledgerLines(db: DbService, reference: string) {
-  const rows = await db.system((tx) =>
-    tx.$queryRaw<{ code: string; direction: string; amount: bigint }[]>`
+  const rows = await db.system(
+    (tx) =>
+      tx.$queryRaw<{ code: string; direction: string; amount: bigint }[]>`
       SELECT a.code, e.direction::text AS direction, e.amount_millimes AS amount
         FROM ledger_entries e
         JOIN ledger_accounts a ON a.id = e.account_id
@@ -34,7 +35,11 @@ export async function ledgerLines(db: DbService, reference: string) {
        WHERE t.reference = ${reference}
        ORDER BY a.code, e.direction`,
   );
-  return rows.map((row) => ({ code: row.code.split(':')[0], direction: row.direction, amount: Number(row.amount) }));
+  return rows.map((row) => ({
+    code: row.code.split(':')[0],
+    direction: row.direction,
+    amount: Number(row.amount),
+  }));
 }
 
 /** Platform and credit type settings of the demo (idempotent). */
@@ -164,4 +169,22 @@ export async function signedIn(base: string, user: TestUser): Promise<WebClient>
   });
   if (verify.status !== 200) throw new Error(`sign-in failed: ${JSON.stringify(verify.body)}`);
   return client;
+}
+
+/** The 4 documents of a KYC file, filed directly (processus v2: approval needs all of them). */
+export async function fileKycDocuments(db: DbService, fileId: string): Promise<void> {
+  await db.system((tx) =>
+    tx.kycDocument.createMany({
+      data: (['REGISTRY_EXTRACT', 'TAX_CERTIFICATE', 'MANAGER_ID', 'BANK_DETAILS'] as const).map(
+        (type) => ({
+          fileId,
+          type,
+          fileName: `${type}.pdf`,
+          contentType: 'application/pdf',
+          sizeBytes: 1_024,
+          storageKey: `test/${fileId}/${type}`,
+        }),
+      ),
+    }),
+  );
 }

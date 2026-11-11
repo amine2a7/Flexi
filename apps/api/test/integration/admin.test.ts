@@ -7,8 +7,15 @@ loadTestEnv();
 const { loadEnv } = await import('../../src/config/env.js');
 const { createApp } = await import('../../src/app.factory.js');
 const { DbService } = await import('../../src/common/db.service.js');
-const { createCompany, createUser, seedSettings, signedIn, createEmployee, sealed } =
-  await import('./fixtures.js');
+const {
+  createCompany,
+  createUser,
+  seedSettings,
+  signedIn,
+  createEmployee,
+  sealed,
+  fileKycDocuments,
+} = await import('./fixtures.js');
 const { SettingsService } = await import('../../src/platform/settings.service.js');
 
 const env = loadEnv();
@@ -71,6 +78,7 @@ describe('accounts and KYC', () => {
       body: { reason: '' },
     });
     expect(empty.status).toBe(400);
+    await fileKycDocuments(db, file?.id ?? '');
     const approved = await second.call('POST', `/v1/admin/kyc-files/${file?.id ?? ''}/approve`);
     expect(approved.body).toMatchObject({ status: 'APPROVED' });
     expect((approved.body.history as { action: string }[]).map((event) => event.action)).toEqual([
@@ -119,11 +127,31 @@ describe('commission grids', () => {
   });
 
   it.each([
-    ['overlapping tranches', [...GRID, tier(250, 16_000_000, 20_000_000)], '/commissionGrid/3', 'GRID_OVERLAP'],
+    [
+      'overlapping tranches',
+      [...GRID, tier(250, 16_000_000, 20_000_000)],
+      '/commissionGrid/3',
+      'GRID_OVERLAP',
+    ],
     ['no default line', [tier(300, 0, 1_000_000)], '/commissionGrid', 'GRID_DEFAULT_REQUIRED'],
-    ['two default lines', [...GRID, tier(100, null, null)], '/commissionGrid/3', 'GRID_DEFAULT_DUPLICATE'],
-    ['min above max', [tier(500, null, null), tier(300, 5_001, 5_000)], '/commissionGrid/1', 'GRID_BOUNDS'],
-    ['a shared bound', [...GRID.slice(0, 2), tier(300, 14_999_999, 18_000_000)], '/commissionGrid/2', 'GRID_OVERLAP'],
+    [
+      'two default lines',
+      [...GRID, tier(100, null, null)],
+      '/commissionGrid/3',
+      'GRID_DEFAULT_DUPLICATE',
+    ],
+    [
+      'min above max',
+      [tier(500, null, null), tier(300, 5_001, 5_000)],
+      '/commissionGrid/1',
+      'GRID_BOUNDS',
+    ],
+    [
+      'a shared bound',
+      [...GRID.slice(0, 2), tier(300, 14_999_999, 18_000_000)],
+      '/commissionGrid/2',
+      'GRID_OVERLAP',
+    ],
     ['no grid at all', undefined, '/commissionGrid', 'REQUIRED'],
   ])('refuses %s with a clear field error', async (_label, grid, pointer, code) => {
     const { first } = await admins();
@@ -272,8 +300,9 @@ describe('grid rules of 2026-11-04', () => {
         }),
       ),
     ).rejects.toThrow();
-    const shops = await db.run({ role: 'MERCHANT', merchantId: '0193a000-0000-7000-8000-00000000abcd' }, (tx) =>
-      tx.commissionGrid.findMany({ where: { companyId: a.id } }),
+    const shops = await db.run(
+      { role: 'MERCHANT', merchantId: '0193a000-0000-7000-8000-00000000abcd' },
+      (tx) => tx.commissionGrid.findMany({ where: { companyId: a.id } }),
     );
     expect(shops).toEqual([]);
   });
@@ -290,7 +319,10 @@ describe('grid rules of 2026-11-04', () => {
   });
 
   it('support reads the accounts without their commission grids (S-GC-04)', async () => {
-    const support = await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Sami S.', 'SUPPORT'));
+    const support = await signedIn(
+      base,
+      await createUser(db, env, 'ADMIN', {}, 'Sami S.', 'SUPPORT'),
+    );
     const list = await support.call('GET', '/v1/admin/companies');
     expect(list.status).toBe(200);
     expect(
@@ -319,7 +351,9 @@ describe('grid rules of 2026-11-04', () => {
       ),
     ).rejects.toMatchObject({ status: 422, code: 'COMMISSION_GRID_MISSING' });
     const alert = await db.system((tx) =>
-      tx.fraudAlert.findFirst({ where: { kind: 'COMMISSION_GRID_MISSING', subjectKey: orphan.id } }),
+      tx.fraudAlert.findFirst({
+        where: { kind: 'COMMISSION_GRID_MISSING', subjectKey: orphan.id },
+      }),
     );
     expect(alert).toMatchObject({ subject: orphan.name, severity: 'HIGH', status: 'OPEN' });
     const audit = await db.system((tx) =>
@@ -355,7 +389,11 @@ describe('records editable at any time (decision of 2026-11-03)', () => {
     expect(updated.status).toBe(200);
     expect(updated.body).toMatchObject({ city: 'Sousse', phone: '+21673000099' });
     expect(updated.body.history).toEqual([
-      expect.objectContaining({ fields: ['city', 'phone'], reason: 'Déménagement', actorName: 'Amine K.' }),
+      expect.objectContaining({
+        fields: ['city', 'phone'],
+        reason: 'Déménagement',
+        actorName: 'Amine K.',
+      }),
     ]);
     expect(JSON.stringify(updated.body.history)).not.toContain('21673000099');
     const company = await createCompany(db);
@@ -369,15 +407,23 @@ describe('records editable at any time (decision of 2026-11-03)', () => {
     const { first, second } = await admins();
     const merchantId = await shop(first);
     const iban = 'TN5901234567890123456789';
-    const requested = await first.call('POST', `/v1/admin/merchants/${merchantId}/iban-change-requests`, {
-      body: { iban, reason: 'Nouveau compte bancaire' },
-    });
+    const requested = await first.call(
+      'POST',
+      `/v1/admin/merchants/${merchantId}/iban-change-requests`,
+      {
+        body: { iban, reason: 'Nouveau compte bancaire' },
+      },
+    );
     expect(requested.status).toBe(201);
     expect(requested.body).toMatchObject({ type: 'IBAN_CHANGE', maskedIban: '•••• 6789' });
     expect(JSON.stringify(requested.body)).not.toContain(iban);
-    const again = await second.call('POST', `/v1/admin/merchants/${merchantId}/iban-change-requests`, {
-      body: { iban, reason: 'Doublon' },
-    });
+    const again = await second.call(
+      'POST',
+      `/v1/admin/merchants/${merchantId}/iban-change-requests`,
+      {
+        body: { iban, reason: 'Doublon' },
+      },
+    );
     expect(again.status).toBe(409);
     const record = await first.call('GET', `/v1/admin/merchants/${merchantId}/record`);
     expect(record.body.requests).toHaveLength(1);
@@ -387,21 +433,32 @@ describe('records editable at any time (decision of 2026-11-03)', () => {
     const after = await first.call('GET', `/v1/admin/merchants/${merchantId}/record`);
     expect(after.body).toMatchObject({ maskedIban: '•••• 6789', requests: [] });
     expect((after.body.history as { fields: string[] }[])[0]?.fields).toEqual(['iban']);
-    const refused = await first.call('POST', `/v1/admin/merchants/${merchantId}/iban-change-requests`, {
-      body: { iban: 'FR7612345', reason: 'Essai' },
-    });
+    const refused = await first.call(
+      'POST',
+      `/v1/admin/merchants/${merchantId}/iban-change-requests`,
+      {
+        body: { iban: 'FR7612345', reason: 'Essai' },
+      },
+    );
     expect(refused.status).toBe(400);
   });
 
   it('support reads a record without the phone nor the grid', async () => {
     const { first } = await admins();
     const merchantId = await shop(first);
-    const support = await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Sami S.', 'SUPPORT'));
+    const support = await signedIn(
+      base,
+      await createUser(db, env, 'ADMIN', {}, 'Sami S.', 'SUPPORT'),
+    );
     const record = await support.call('GET', `/v1/admin/merchants/${merchantId}/record`);
     expect(record.status).toBe(200);
     expect(record.body).toMatchObject({ phone: null, commissionGrid: null, gridVersions: [] });
     expect(
-      (await support.call('PATCH', `/v1/admin/merchants/${merchantId}`, { body: { city: 'Nabeul' } })).status,
+      (
+        await support.call('PATCH', `/v1/admin/merchants/${merchantId}`, {
+          body: { city: 'Nabeul' },
+        })
+      ).status,
     ).toBe(403);
   });
 });

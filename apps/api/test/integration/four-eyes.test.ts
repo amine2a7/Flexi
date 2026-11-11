@@ -9,7 +9,7 @@ loadTestEnv();
 const { loadEnv } = await import('../../src/config/env.js');
 const { createApp } = await import('../../src/app.factory.js');
 const { DbService } = await import('../../src/common/db.service.js');
-const { createUser, sealed, seedSettings, signedIn, oneLineGrid } =
+const { createUser, sealed, seedSettings, signedIn, oneLineGrid, fileKycDocuments } =
   await import('./fixtures.js');
 
 const env = loadEnv();
@@ -61,6 +61,7 @@ describe('four eyes', () => {
     const file = await db.system((tx) =>
       tx.kycFile.findFirstOrThrow({ where: { merchantId: String(created.body.id) } }),
     );
+    await fileKycDocuments(db, file.id);
     const own = await author.client.call('POST', `/v1/admin/kyc-files/${file.id}/approve`);
     expect(own.status).toBe(403);
     const ownReject = await author.client.call('POST', `/v1/admin/kyc-files/${file.id}/reject`, {
