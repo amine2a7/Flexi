@@ -175,7 +175,8 @@ describe('family accounts', () => {
     // A member never manages a family, and sees only its own wallet.
     expect((await sami.call('GET', '/v1/employee/family')).status).toBe(403);
     const wallet = await sami.call('GET', '/v1/employee/wallet');
-    expect(JSON.stringify(wallet.body)).not.toContain('150000');
+    // Only its own 35 TND: never the holder's 150 TND.
+    expect(wallet.body.totalBalanceMillimes).toBe(35_000);
 
     // The company never sees the member.
     const owner = await signedIn(

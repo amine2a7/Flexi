@@ -303,7 +303,8 @@ export class PaymentsService {
     const grant = await tx.familyGrant.findUnique({
       where: { memberEmployeeId_creditType: { memberEmployeeId: employeeId, creditType } },
     });
-    if (grant?.endsOn != null && dayOf(grant.endsOn) < businessDay())
+    const endsOn = grant?.endsOn ?? null;
+    if (endsOn !== null && dayOf(endsOn) < businessDay())
       throw refuse('FAMILY_GRANT_ENDED');
     return grant?.dailyLimitMillimes ?? null;
   }
