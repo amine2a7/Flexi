@@ -438,7 +438,9 @@ export class LedgerService {
        ORDER BY a.code`;
     // VAT and stamp duty owed to the State equal what the documents carry (decision of
     // 2026-11-03): validated orders, payouts not rejected, minus the VAT of cancelled commissions.
-    const [documents] = await tx.$queryRaw<{ vat: bigint; stamp: bigint }[]>`
+    const [documents] = await tx.$queryRaw<
+      { vat: bigint; stamp: bigint; withholding: bigint; transfer: bigint }[]
+    >`
       SELECT
         ((SELECT coalesce(sum(vat_millimes), 0) FROM credit_orders WHERE status = 'VALIDATED')
           + (SELECT coalesce(sum(vat_millimes), 0) FROM payout_requests WHERE status <> 'REJECTED')
@@ -446,12 +448,24 @@ export class LedgerService {
         )::bigint AS vat,
         ((SELECT coalesce(sum(stamp_duty_millimes), 0) FROM credit_orders WHERE status = 'VALIDATED')
           + (SELECT coalesce(sum(stamp_duty_millimes), 0) FROM payout_requests WHERE status <> 'REJECTED')
-        )::bigint AS stamp`;
+        )::bigint AS stamp,
+        -- Processus v2: the withholding tax (never reversed by a dispute, decision of the night of
+        -- 10/11) and the transfer fees follow the same documents.
+        ((SELECT coalesce(sum(withholding_millimes), 0) FROM credit_orders WHERE status = 'VALIDATED')
+          + (SELECT coalesce(sum(withholding_millimes), 0) FROM payout_requests WHERE status <> 'REJECTED')
+        )::bigint AS withholding,
+        ((SELECT coalesce(sum(transfer_fee_millimes), 0) FROM credit_orders WHERE status = 'VALIDATED')
+          + (SELECT coalesce(sum(transfer_fee_millimes), 0) FROM payout_requests WHERE status <> 'REJECTED')
+        )::bigint AS transfer`;
     const taxMismatches: string[] = [];
     if ((await this.balance(tx, accounts.vatCollected())) !== (documents?.vat ?? 0n))
       taxMismatches.push(accounts.vatCollected().code);
     if ((await this.balance(tx, accounts.stampDuty())) !== (documents?.stamp ?? 0n))
       taxMismatches.push(accounts.stampDuty().code);
+    if ((await this.balance(tx, accounts.withholdingTax())) !== (documents?.withholding ?? 0n))
+      taxMismatches.push(accounts.withholdingTax().code);
+    if ((await this.balance(tx, accounts.transferFees())) !== (documents?.transfer ?? 0n))
+      taxMismatches.push(accounts.transferFees().code);
     return {
       ok:
         mismatches.length === 0 &&
