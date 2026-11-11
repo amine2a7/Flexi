@@ -1025,6 +1025,245 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
   # ================================================================== profil
+  /v1/employee/family:
+    get:
+      tags: [employee]
+      operationId: getFamily
+      summary: 'Ma famille (processus v2) : membres, solde par type, plafond et date de fin'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/family/members:
+    post:
+      tags: [employee]
+      operationId: createFamilyMember
+      summary: Ajouter un membre (5 au plus ; identifiant et mot de passe temporaire affichés une fois)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FamilyMemberCreate'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyMemberCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/family/transfers:
+    post:
+      tags: [employee]
+      operationId: transferToFamilyMember
+      summary: Transférer du crédit à un membre (même type, sans frais, plafond et date de fin facultatifs)
+      x-financial: true
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FamilyTransfer'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyTransferResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableFinancial'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/family/members/{memberId}/reclaim:
+    post:
+      tags: [employee]
+      operationId: reclaimFamilyCredit
+      summary: Reprendre le crédit d'un membre (un type, ou tous si creditType est null)
+      x-financial: true
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FamilyReclaim'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyReclaimResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/family/members/{memberId}:
+    delete:
+      tags: [employee]
+      operationId: deleteFamilyMember
+      summary: Supprimer un membre (son crédit revient d'abord au bénéficiaire)
+      x-financial: true
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyReclaimResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/family-accounts:
+    get:
+      tags: [company]
+      operationId: getCompanyFamilyAccounts
+      summary: Comptes famille autorisés pour les employés (paramètre de l'entreprise)
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyAccountsSetting'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags: [company]
+      operationId: setCompanyFamilyAccounts
+      summary: Activer ou désactiver les comptes famille des employés
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FamilyAccountsSetting'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyAccountsSetting'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/employee/wallet:
     get:
       tags: [employee]
@@ -9471,6 +9710,174 @@ components:
           maxItems: 50
           items:
             $ref: '#/components/schemas/OverviewPayout'
+    FamilyRelationship:
+      title: FamilyRelationship
+      description: Lien avec le bénéficiaire — conjoint, enfant, parent.
+      type: string
+      enum: [SPOUSE, CHILD, PARENT]
+    FamilyMemberCreate:
+      title: FamilyMemberCreate
+      type: object
+      additionalProperties: false
+      required: [firstName, lastName, relationship, phone]
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 60
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 60
+        relationship:
+          $ref: '#/components/schemas/FamilyRelationship'
+        phone:
+          type: string
+          maxLength: 16
+    FamilyMemberCreated:
+      title: FamilyMemberCreated
+      type: object
+      additionalProperties: false
+      required: [id, firstName, lastName, relationship, credentials]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        firstName:
+          type: string
+          maxLength: 60
+        lastName:
+          type: string
+          maxLength: 60
+        relationship:
+          $ref: '#/components/schemas/FamilyRelationship'
+        credentials:
+          $ref: '#/components/schemas/TemporaryCredentials'
+    FamilyMemberBalance:
+      title: FamilyMemberBalance
+      type: object
+      additionalProperties: false
+      required: [creditType, amountMillimes, dailyLimitMillimes, endsOn]
+      properties:
+        creditType:
+          $ref: '#/components/schemas/CreditType'
+        amountMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        dailyLimitMillimes:
+          description: Plafond par jour fixé par le bénéficiaire (null = celui du type).
+          oneOf:
+            - $ref: '#/components/schemas/AmountMillimes'
+            - type: 'null'
+        endsOn:
+          description: Date de fin (null = aucune) ; après elle, le membre ne paie plus avec ce type.
+          type: [string, 'null']
+          format: date
+    FamilyMember:
+      title: FamilyMember
+      type: object
+      additionalProperties: false
+      required: [id, firstName, lastName, relationship, login, status, balances]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        firstName:
+          type: string
+          maxLength: 60
+        lastName:
+          type: string
+          maxLength: 60
+        relationship:
+          $ref: '#/components/schemas/FamilyRelationship'
+        login:
+          description: Identifiant de connexion du membre.
+          type: [string, 'null']
+          maxLength: 254
+        status:
+          $ref: '#/components/schemas/EmployeeStatus'
+        balances:
+          type: array
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/FamilyMemberBalance'
+    FamilyList:
+      title: FamilyList
+      type: object
+      additionalProperties: false
+      required: [enabled, maxMembers, data]
+      properties:
+        enabled:
+          description: Faux si l'entreprise a désactivé les comptes famille.
+          type: boolean
+        maxMembers:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 10
+        data:
+          type: array
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/FamilyMember'
+    FamilyTransfer:
+      title: FamilyTransfer
+      type: object
+      additionalProperties: false
+      required: [memberId, creditType, amountMillimes, dailyLimitMillimes, endsOn]
+      properties:
+        memberId:
+          $ref: '#/components/schemas/Uuid'
+        creditType:
+          $ref: '#/components/schemas/CreditType'
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        dailyLimitMillimes:
+          oneOf:
+            - $ref: '#/components/schemas/PositiveAmountMillimes'
+            - type: 'null'
+        endsOn:
+          type: [string, 'null']
+          format: date
+    FamilyTransferResult:
+      title: FamilyTransferResult
+      type: object
+      additionalProperties: false
+      required: [memberId, creditType, amountMillimes, transactionId]
+      properties:
+        memberId:
+          $ref: '#/components/schemas/Uuid'
+        creditType:
+          $ref: '#/components/schemas/CreditType'
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        transactionId:
+          $ref: '#/components/schemas/Uuid'
+    FamilyReclaim:
+      title: FamilyReclaim
+      type: object
+      additionalProperties: false
+      required: [creditType]
+      properties:
+        creditType:
+          oneOf:
+            - $ref: '#/components/schemas/CreditType'
+            - type: 'null'
+    FamilyReclaimResult:
+      title: FamilyReclaimResult
+      type: object
+      additionalProperties: false
+      required: [memberId, reclaimedMillimes]
+      properties:
+        memberId:
+          $ref: '#/components/schemas/Uuid'
+        reclaimedMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+    FamilyAccountsSetting:
+      title: FamilyAccountsSetting
+      type: object
+      additionalProperties: false
+      required: [enabled]
+      properties:
+        enabled:
+          type: boolean
     AllocationResult:
       title: AllocationResult
       type: object

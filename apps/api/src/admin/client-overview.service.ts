@@ -52,12 +52,14 @@ export class ClientOverviewService {
         include: { _count: { select: { employees: true } } },
       });
       const employees = await tx.employee.findMany({
-        where: { companyId },
+        where: { companyId, holderEmployeeId: null },
         orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
         include: { department: { select: { name: true } } },
         take: 500,
       });
-      const employeeCount = await tx.employee.count({ where: { companyId } });
+      const employeeCount = await tx.employee.count({
+        where: { companyId, holderEmployeeId: null },
+      });
       const found = await this.ledger.balances(
         tx,
         CREDIT_TYPES.map((type) => accounts.companyWallet(companyId, type)),

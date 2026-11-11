@@ -51,7 +51,7 @@ export async function seedSettings(db: DbService): Promise<void> {
         id: 1,
         payoutMinimumMillimes: 20_000n,
         creditValidityMonths: 12,
-        maxFamilyMembers: 4,
+        maxFamilyMembers: 5,
         orderFeeRateBps: 150,
       },
       update: {},

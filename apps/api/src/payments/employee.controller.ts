@@ -32,7 +32,7 @@ const payBody = z.strictObject({
 });
 
 /** Beneficiary routes: the web space /beneficiaire and the future mobile app (same contract). */
-@Roles('EMPLOYEE')
+@Roles('EMPLOYEE', 'FAMILY_MEMBER')
 @Controller('v1/employee')
 export class EmployeeController {
   constructor(

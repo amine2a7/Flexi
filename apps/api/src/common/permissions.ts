@@ -85,7 +85,9 @@ const ADMIN_BACK_OFFICE_READ = [
   'userBalances.read',
 ] as const;
 
-const EMPLOYEE = ['wallet.read', 'payments.pay'] as const;
+const EMPLOYEE = ['wallet.read', 'payments.pay', 'family.manage'] as const;
+/** A family member pays and reads its own wallet; it never manages a family (processus v2). */
+const FAMILY_MEMBER = ['wallet.read', 'payments.pay'] as const;
 
 export type Permission =
   | (typeof COMPANY_OWNER)[number]
@@ -165,7 +167,7 @@ const MATRIX: Record<Role, Partial<Record<SubRole | 'NONE', readonly Permission[
     ],
   },
   EMPLOYEE: { NONE: EMPLOYEE },
-  FAMILY_MEMBER: { NONE: EMPLOYEE },
+  FAMILY_MEMBER: { NONE: FAMILY_MEMBER },
 };
 
 /** Permissions of a session, published by GET /v1/me (the web masks what is not allowed). */

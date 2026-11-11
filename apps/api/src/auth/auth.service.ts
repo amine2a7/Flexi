@@ -166,12 +166,6 @@ export class AuthService {
           )
         : null;
     if (!canSignIn(user, employee, new Date()) || tempExpired) throw problems.invalidCredentials();
-    if (user.role === 'FAMILY_MEMBER') {
-      await this.db.system((tx) =>
-        this.audit.record(tx, 'auth.webRefused', user.displayName, 'Système'),
-      );
-      throw problems.forbidden();
-    }
 
     return this.db.system(async (tx): Promise<LoginOutcome> => {
       await this.clearFailures(tx, user);

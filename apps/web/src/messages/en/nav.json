@@ -50,7 +50,8 @@
     "pay": "Pay",
     "history": "History",
     "profile": "Profile",
-    "security": "Security"
+    "security": "Security",
+    "family": "My family"
   },
   "groups": {
     "steering": "Steering",

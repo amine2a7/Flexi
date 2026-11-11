@@ -2,12 +2,13 @@ import type { Schemas } from '@flexipay/api-client';
 
 type Role = Schemas['Role'];
 
-/** Home of each web space. Family members have no web space (mobile only). */
+/** Home of each web space. A family member uses the beneficiary space (processus v2). */
 export const SPACE_HOME: Partial<Record<Role, string>> = {
   ADMIN: '/admin',
   COMPANY: '/entreprise',
   MERCHANT: '/commercant',
   EMPLOYEE: '/beneficiaire',
+  FAMILY_MEMBER: '/beneficiaire',
 };
 
 const SPACE_PREFIX = /^\/(admin|entreprise|commercant|beneficiaire)(\/[a-z0-9-]+)*$/;

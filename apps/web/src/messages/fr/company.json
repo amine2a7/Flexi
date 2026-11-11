@@ -290,5 +290,12 @@
     "cancel": "Annuler",
     "emptyTitle": "Aucun modèle",
     "emptyHint": "Dans Attribuer, cochez « Enregistrer comme modèle » pour en créer un."
+  },
+  "familyAccounts": {
+    "title": "Comptes famille",
+    "hint": "Vos employés peuvent créer des comptes pour leurs proches et leur transférer une partie de leur crédit.",
+    "label": "Autoriser les comptes famille",
+    "on": "Comptes famille activés.",
+    "off": "Comptes famille désactivés."
   }
 }

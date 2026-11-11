@@ -245,14 +245,16 @@ enum IdempotencyState {
 // ------------------------------------------------------------------ tenants and users
 
 model Company {
-  id        String        @id @default(uuid(7)) @db.Uuid
-  name      String        @db.VarChar(200)
-  city      String        @db.VarChar(80)
-  phone     String // encrypted (AES-256-GCM)
-  email     String        @db.VarChar(254)
-  status    AccountStatus @default(PENDING_KYC)
-  legalForm LegalForm     @default(PM_MF) @map("legal_form")
-  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  id                    String        @id @default(uuid(7)) @db.Uuid
+  name                  String        @db.VarChar(200)
+  city                  String        @db.VarChar(80)
+  phone                 String // encrypted (AES-256-GCM)
+  email                 String        @db.VarChar(254)
+  status                AccountStatus @default(PENDING_KYC)
+  legalForm             LegalForm     @default(PM_MF) @map("legal_form")
+  /// Family accounts allowed for its employees (processus v2, on by default).
+  familyAccountsEnabled Boolean       @default(true) @map("family_accounts_enabled")
+  createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
 
   users               User[]
   employees           Employee[]
@@ -398,10 +400,17 @@ model Employee {
   /// Free text (processus v2), e.g. « Ouvrier »; the positions in use are suggested.
   position          String?        @db.VarChar(80)
   departmentId      String?        @map("department_id") @db.Uuid
+  /// Family member (processus v2): the beneficiary who holds this account, and the link.
+  holderEmployeeId  String?        @map("holder_employee_id") @db.Uuid
+  relationship      String?        @db.VarChar(20)
   createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
 
   company      Company       @relation(fields: [companyId], references: [id])
   department   Department?   @relation(fields: [departmentId], references: [id])
+  holder       Employee?     @relation("FamilyMembers", fields: [holderEmployeeId], references: [id])
+  members      Employee[]    @relation("FamilyMembers")
+  memberGrants FamilyGrant[] @relation("GrantMember")
+  holderGrants FamilyGrant[] @relation("GrantHolder")
   user         User?
   payments     Payment[]
   paymentCodes PaymentCode[]
@@ -410,6 +419,22 @@ model Employee {
   @@unique([companyId, employeeNumber])
   @@index([companyId])
   @@map("employees")
+}
+
+/// Daily cap and end date set by the holder on the credit of a family member, per type.
+model FamilyGrant {
+  memberEmployeeId   String     @map("member_employee_id") @db.Uuid
+  holderEmployeeId   String     @map("holder_employee_id") @db.Uuid
+  creditType         CreditType @map("credit_type")
+  dailyLimitMillimes BigInt?    @map("daily_limit_millimes")
+  endsOn             DateTime?  @map("ends_on") @db.Date
+  updatedAt          DateTime   @default(now()) @map("updated_at") @db.Timestamptz(3)
+
+  member Employee @relation("GrantMember", fields: [memberEmployeeId], references: [id])
+  holder Employee @relation("GrantHolder", fields: [holderEmployeeId], references: [id])
+
+  @@id([memberEmployeeId, creditType])
+  @@map("family_grants")
 }
 
 /// One account = one tenant (RG-2.5): companyId, merchantId or employeeId, never two of them.

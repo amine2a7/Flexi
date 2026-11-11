@@ -20,9 +20,12 @@ export interface Credentials {
 export function CredentialsDialog({
   credentials,
   onClose,
+  notice,
 }: {
   credentials: Credentials | undefined;
   onClose: () => void;
+  /** Replaces the default notice (e.g. a family member's account, processus v2). */
+  notice?: string;
 }) {
   const t = useTranslations('admin.credentials');
   const [copied, setCopied] = useState(false);
@@ -95,7 +98,7 @@ export function CredentialsDialog({
         <Alert tone="warning">
           <span className="flex items-start gap-2">
             <TriangleAlert aria-hidden="true" className="size-icon-sm shrink-0" />
-            {t('once')}
+            {notice ?? t('once')}
           </span>
         </Alert>
       </div>

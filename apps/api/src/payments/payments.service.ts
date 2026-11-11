@@ -221,8 +221,14 @@ export class PaymentsService {
       accounts.merchantWallet(payment.merchantId, payment.creditType),
     ]);
     const spent = (await this.spentToday(tx, payment.employeeId)).get(payment.creditType) ?? 0n;
-    if (spent + payment.amount > setting.dailyLimitMillimes) {
-      const remaining = setting.dailyLimitMillimes - spent;
+    // A family member (processus v2): the cap of its holder on this type, if lower.
+    const familyLimit = await this.familyLimit(tx, payment.employeeId, payment.creditType);
+    const limit =
+      familyLimit !== null && familyLimit < setting.dailyLimitMillimes
+        ? familyLimit
+        : setting.dailyLimitMillimes;
+    if (spent + payment.amount > limit) {
+      const remaining = limit - spent;
       throw new ApiProblem(422, 'LIMIT_EXCEEDED', {
         limitType: 'DAILY',
         remainingMillimes: toMillimes(remaining > 0n ? remaining : 0n),
@@ -267,6 +273,39 @@ export class PaymentsService {
         payment.amount,
       ),
     };
+  }
+
+  /**
+   * Family member (processus v2): pays only while its holder is active, the company allows family
+   * accounts and the end date set by the holder for this type is not past. Returns the daily cap
+   * set by the holder (null for a beneficiary, or without cap).
+   */
+  private async familyLimit(
+    tx: Tx,
+    employeeId: string,
+    creditType: CreditType,
+  ): Promise<bigint | null> {
+    const self = await tx.employee.findUnique({
+      where: { id: employeeId },
+      select: { holderEmployeeId: true },
+    });
+    const holderId = self?.holderEmployeeId ?? null;
+    if (holderId === null) return null;
+    const holder = await this.db.system((system) =>
+      system.employee.findUnique({
+        where: { id: holderId },
+        select: { status: true, company: { select: { familyAccountsEnabled: true } } },
+      }),
+    );
+    const refuse = (reason: string) => new ApiProblem(409, 'RESOURCE_STATE_CONFLICT', { reason });
+    if (holder?.status !== 'ACTIVE') throw refuse('HOLDER_NOT_ACTIVE');
+    if (!holder.company.familyAccountsEnabled) throw refuse('FAMILY_DISABLED');
+    const grant = await tx.familyGrant.findUnique({
+      where: { memberEmployeeId_creditType: { memberEmployeeId: employeeId, creditType } },
+    });
+    if (grant?.endsOn != null && dayOf(grant.endsOn) < businessDay())
+      throw refuse('FAMILY_GRANT_ENDED');
+    return grant?.dailyLimitMillimes ?? null;
   }
 
   /** Confirmation by PIN of a merchant request (financial, idempotent). */

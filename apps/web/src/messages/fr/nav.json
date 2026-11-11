@@ -50,7 +50,8 @@
     "pay": "Payer",
     "history": "Historique",
     "profile": "Profil",
-    "security": "Sécurité"
+    "security": "Sécurité",
+    "family": "Ma famille"
   },
   "groups": {
     "steering": "Pilotage",

@@ -344,6 +344,109 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/employee/family': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Ma famille (processus v2) : membres, solde par type, plafond et date de fin */
+    get: operations['getFamily'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/family/members': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Ajouter un membre (5 au plus ; identifiant et mot de passe temporaire affichés une fois) */
+    post: operations['createFamilyMember'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/family/transfers': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Transférer du crédit à un membre (même type, sans frais, plafond et date de fin facultatifs) */
+    post: operations['transferToFamilyMember'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/family/members/{memberId}/reclaim': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Reprendre le crédit d'un membre (un type, ou tous si creditType est null) */
+    post: operations['reclaimFamilyCredit'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/family/members/{memberId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Supprimer un membre (son crédit revient d'abord au bénéficiaire) */
+    delete: operations['deleteFamilyMember'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/company/family-accounts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Comptes famille autorisés pour les employés (paramètre de l'entreprise) */
+    get: operations['getCompanyFamilyAccounts'];
+    /** Activer ou désactiver les comptes famille des employés */
+    put: operations['setCompanyFamilyAccounts'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/employee/wallet': {
     parameters: {
       query?: never;
@@ -4322,6 +4425,87 @@ export interface components {
       sales: components['schemas']['OverviewSale'][];
       payouts: components['schemas']['OverviewPayout'][];
     };
+    /**
+     * FamilyRelationship
+     * @description Lien avec le bénéficiaire — conjoint, enfant, parent.
+     * @enum {string}
+     */
+    FamilyRelationship: 'SPOUSE' | 'CHILD' | 'PARENT';
+    /** FamilyMemberCreate */
+    FamilyMemberCreate: {
+      firstName: string;
+      lastName: string;
+      relationship: components['schemas']['FamilyRelationship'];
+      phone: string;
+    };
+    /** FamilyMemberCreated */
+    FamilyMemberCreated: {
+      id: components['schemas']['Uuid'];
+      firstName: string;
+      lastName: string;
+      relationship: components['schemas']['FamilyRelationship'];
+      credentials: components['schemas']['TemporaryCredentials'];
+    };
+    /** FamilyMemberBalance */
+    FamilyMemberBalance: {
+      creditType: components['schemas']['CreditType'];
+      amountMillimes: components['schemas']['AmountMillimes'];
+      /** @description Plafond par jour fixé par le bénéficiaire (null = celui du type). */
+      dailyLimitMillimes: components['schemas']['AmountMillimes'] | null;
+      /**
+       * Format: date
+       * @description Date de fin (null = aucune) ; après elle, le membre ne paie plus avec ce type.
+       */
+      endsOn: string | null;
+    };
+    /** FamilyMember */
+    FamilyMember: {
+      id: components['schemas']['Uuid'];
+      firstName: string;
+      lastName: string;
+      relationship: components['schemas']['FamilyRelationship'];
+      /** @description Identifiant de connexion du membre. */
+      login: string | null;
+      status: components['schemas']['EmployeeStatus'];
+      balances: components['schemas']['FamilyMemberBalance'][];
+    };
+    /** FamilyList */
+    FamilyList: {
+      /** @description Faux si l'entreprise a désactivé les comptes famille. */
+      enabled: boolean;
+      /** Format: int32 */
+      maxMembers: number;
+      data: components['schemas']['FamilyMember'][];
+    };
+    /** FamilyTransfer */
+    FamilyTransfer: {
+      memberId: components['schemas']['Uuid'];
+      creditType: components['schemas']['CreditType'];
+      amountMillimes: components['schemas']['PositiveAmountMillimes'];
+      dailyLimitMillimes: components['schemas']['PositiveAmountMillimes'] | null;
+      /** Format: date */
+      endsOn: string | null;
+    };
+    /** FamilyTransferResult */
+    FamilyTransferResult: {
+      memberId: components['schemas']['Uuid'];
+      creditType: components['schemas']['CreditType'];
+      amountMillimes: components['schemas']['PositiveAmountMillimes'];
+      transactionId: components['schemas']['Uuid'];
+    };
+    /** FamilyReclaim */
+    FamilyReclaim: {
+      creditType: components['schemas']['CreditType'] | null;
+    };
+    /** FamilyReclaimResult */
+    FamilyReclaimResult: {
+      memberId: components['schemas']['Uuid'];
+      reclaimedMillimes: components['schemas']['AmountMillimes'];
+    };
+    /** FamilyAccountsSetting */
+    FamilyAccountsSetting: {
+      enabled: boolean;
+    };
     /** AllocationResult */
     AllocationResult: {
       /** @description Soldes par type de l'entreprise après l'attribution. */
@@ -5985,6 +6169,243 @@ export interface operations {
       429: components['responses']['TooManyRequests'];
       500: components['responses']['InternalError'];
       503: components['responses']['ServiceUnavailable'];
+    };
+  };
+  getFamily: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FamilyList'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  createFamilyMember: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FamilyMemberCreate'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FamilyMemberCreated'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  transferToFamilyMember: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FamilyTransfer'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FamilyTransferResult'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      422: components['responses']['UnprocessableFinancial'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  reclaimFamilyCredit: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        memberId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FamilyReclaim'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FamilyReclaimResult'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  deleteFamilyMember: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        memberId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FamilyReclaimResult'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getCompanyFamilyAccounts: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FamilyAccountsSetting'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  setCompanyFamilyAccounts: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FamilyAccountsSetting'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FamilyAccountsSetting'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
     };
   };
   getEmployeeWallet: {
@@ -10666,6 +11087,9 @@ export const transferProofContentTypeValues: ReadonlyArray<
 export const allocationImportRowIssuesValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['AllocationImportRow']['issues']
 > = ['UNKNOWN_EMPLOYEE', 'INVALID_AMOUNT', 'NO_AMOUNT', 'TYPE_DISABLED'];
+export const familyRelationshipValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['FamilyRelationship']
+> = ['SPOUSE', 'CHILD', 'PARENT'];
 export const invoiceStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['InvoiceStatus']
 > = ['PAID', 'UNPAID', 'CANCELLED'];

@@ -53,7 +53,9 @@ export function SpaceLayout({ role, children }: { role: Role; children: ReactNod
         if (!active) return;
         if (data !== undefined) {
           setState(
-            data.role === role ? { status: 'ready', me: data } : { status: 'forbidden', me: data },
+            data.role === role || (role === 'EMPLOYEE' && data.role === 'FAMILY_MEMBER')
+              ? { status: 'ready', me: data }
+              : { status: 'forbidden', me: data },
           );
           return;
         }

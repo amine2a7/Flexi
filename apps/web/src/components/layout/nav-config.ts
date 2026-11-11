@@ -94,6 +94,7 @@ export const NAVIGATION: Partial<Record<Role, readonly NavEntry[]>> = {
       counter: 'employeeRequests',
     },
     { href: '/beneficiaire/historique', labelKey: 'nav.beneficiary.history', icon: History },
+    { href: '/beneficiaire/famille', labelKey: 'nav.beneficiary.family', icon: Users },
     { href: '/beneficiaire/profil', labelKey: 'nav.beneficiary.profile', icon: UserRound },
     { href: '/beneficiaire/securite', labelKey: 'nav.beneficiary.security', icon: ShieldCheck },
   ],

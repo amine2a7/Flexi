@@ -94,7 +94,7 @@ const ids = await prisma.$transaction(async (tx) => {
       id: 1,
       payoutMinimumMillimes: BigInt(TND(50)),
       creditValidityMonths: 12,
-      maxFamilyMembers: 4,
+      maxFamilyMembers: 5,
       orderFeeRateBps: 500,
     },
   });

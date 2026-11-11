@@ -290,5 +290,12 @@
     "cancel": "Cancel",
     "emptyTitle": "No template",
     "emptyHint": "In Allocate, tick “Save as a template” to create one."
+  },
+  "familyAccounts": {
+    "title": "Family accounts",
+    "hint": "Your employees can create accounts for their relatives and transfer part of their credit to them.",
+    "label": "Allow family accounts",
+    "on": "Family accounts switched on.",
+    "off": "Family accounts switched off."
   }
 }
