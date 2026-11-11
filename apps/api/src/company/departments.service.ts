@@ -141,11 +141,7 @@ export class DepartmentsService {
           ...(position === undefined ? {} : { position }),
         },
       });
-      await this.audit.record(
-        tx,
-        'employees.assign',
-        `${String(employeeIds.length)} employé(s)`,
-      );
+      await this.audit.record(tx, 'employees.assign', `${String(employeeIds.length)} employé(s)`);
       return {
         employeeIds: [...employeeIds],
         ...(change.departmentId === undefined ? {} : { departmentId: change.departmentId }),

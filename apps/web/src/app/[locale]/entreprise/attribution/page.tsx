@@ -1,39 +1,48 @@
 'use client';
 
 import type { Schemas } from '@flexipay/api-client';
-import { FileUp } from 'lucide-react';
+import { Eye, FileUp, ListChecks, Repeat } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { messageKey } from '@/i18n/keys';
+import { Link } from '@/i18n/navigation';
 import { getApi, newIdempotencyKey } from '@/lib/api/client';
 import { asProblem, errorMessageKey } from '@/lib/api/problem';
 import { useApiQuery } from '@/lib/api/use-api-query';
 import { usePagedList } from '@/lib/api/use-paged-list';
 import { formatMillimesWithCurrency } from '@/lib/format/money';
-import { parseMillimes } from '@/lib/format/money-input';
+import { EMPTY_TEXTS, amountTexts, readAmounts } from '@/lib/allocation-amounts';
 import { Amount } from '@/components/ui/amount';
-import { Button } from '@/components/ui/button';
-import { Card, CardTitle, StatCard } from '@/components/ui/card';
+import { AmountField } from '@/components/ui/amount-field';
+import { Button, buttonClasses } from '@/components/ui/button';
+import { Card, CardTitle } from '@/components/ui/card';
 import {
+  CREDIT_TYPES,
   CreditTypeBadge,
   CreditTypeBalanceCards,
-  CreditTypeSelect,
   useCreditTypeLabel,
   type CreditType,
 } from '@/components/ui/credit-type';
 import { DataTable, type Column } from '@/components/ui/data-table';
-import { TextField } from '@/components/ui/field';
+import { SelectField, TextField } from '@/components/ui/field';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { ConfirmDialog } from '@/components/ui/modal';
 import { Skeleton } from '@/components/ui/states';
 
 type Employee = Schemas['Employee'];
-type Preview = Schemas['AllocationImportPreview'];
+type Preview = Schemas['AllocationPreview'];
+type ImportPreview = Schemas['AllocationImportPreview'];
+interface Picked {
+  readonly id: string;
+  readonly name: string;
+}
 
 /**
- * Credit allocation by credit type: the company chooses the type and the amount, and only the
- * balance of THAT type is debited (decision of 2026-10-13). Also by CSV, one column per type.
+ * « Attribuer » (processus v2, processus 4): beneficiaries chosen with filters (department,
+ * position, name), an amount per credit type, a preview against the balances (what is missing in
+ * red), then the allocation; the filters and amounts can be saved as a template. Only the balance
+ * of each type is debited (decision of 2026-10-13). Also by CSV, one column per type.
  */
 export default function AllocationPage() {
   const t = useTranslations('company.allocation');
@@ -42,45 +51,141 @@ export default function AllocationPage() {
   const typeLabel = useCreditTypeLabel();
   const locale = useLocale();
   const [q, setQ] = useState('');
-  const [selected, setSelected] = useState<ReadonlyMap<string, Employee>>(new Map());
-  const [creditType, setCreditType] = useState<CreditType>('RESTAURATION');
-  const [amountText, setAmountText] = useState('');
+  const [departmentId, setDepartmentId] = useState('');
+  const [position, setPosition] = useState('');
+  const [selected, setSelected] = useState<ReadonlyMap<string, Picked>>(new Map());
+  const [texts, setTexts] = useState<Record<CreditType, string>>(EMPTY_TEXTS);
+  const [preview, setPreview] = useState<Preview | undefined>(undefined);
+  const [previewing, setPreviewing] = useState(false);
+  const [selectingAll, setSelectingAll] = useState(false);
+  const [templateId, setTemplateId] = useState<string | undefined>(undefined);
+  const [templateName, setTemplateName] = useState<string | undefined>(undefined);
+  const [saveTemplate, setSaveTemplate] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<unknown>(undefined);
-  const [errorType, setErrorType] = useState<CreditType | undefined>(undefined);
+  const [templateError, setTemplateError] = useState<unknown>(undefined);
   const [result, setResult] = useState<Schemas['AllocationResult'] | undefined>(undefined);
+  const [savedTemplate, setSavedTemplate] = useState<string | undefined>(undefined);
   const [refresh, setRefresh] = useState(0);
   const [intentKey, setIntentKey] = useState(newIdempotencyKey);
 
   const dashboard = useApiQuery(() => getApi().GET('/v1/company/dashboard'), [refresh]);
+  const departments = useApiQuery(() => getApi().GET('/v1/company/departments'), []);
+  const positions = useApiQuery(() => getApi().GET('/v1/company/positions'), [refresh]);
+  const departmentList = departments.status === 'success' ? departments.data.data : [];
   const list = usePagedList(
     (cursor, withCount) =>
       getApi().GET('/v1/company/employees', {
-        params: { query: { cursor, withCount, status: 'ACTIVE', ...(q === '' ? {} : { q }) } },
+        params: {
+          query: {
+            cursor,
+            withCount,
+            status: 'ACTIVE',
+            ...(q === '' ? {} : { q }),
+            ...(departmentId === '' ? {} : { departmentId }),
+            ...(position === '' ? {} : { position }),
+          },
+        },
       }),
-    [q, refresh],
+    [q, departmentId, position, refresh],
   );
-  const millimes = useMemo(() => parseMillimes(amountText, locale), [amountText, locale]);
-  const total = millimes === undefined ? undefined : millimes * selected.size;
+  const { invalid, amounts } = useMemo(() => readAmounts(texts, locale), [texts, locale]);
+  const filters = {
+    ...(departmentId === '' ? {} : { departmentId }),
+    ...(position === '' ? {} : { position }),
+  };
 
-  function toggle(employee: Employee) {
-    setSelected((current) => {
-      const next = new Map(current);
-      if (next.has(employee.id)) next.delete(employee.id);
-      else next.set(employee.id, employee);
-      return next;
-    });
+  // « Relancer » a template (Crédits › Modèles): its filters and amounts, the preview at once.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('modele');
+    if (id === null) return;
+    void (async () => {
+      const { data } = await getApi().GET('/v1/company/allocation-templates');
+      const template = data?.data.find((item) => item.id === id);
+      if (template === undefined) return;
+      setTemplateId(template.id);
+      setTemplateName(template.name);
+      setDepartmentId(template.departmentId ?? '');
+      setPosition(template.position ?? '');
+      setTexts(amountTexts(template.amounts, locale));
+      const { data: found, error: problem } = await getApi().POST(
+        '/v1/company/allocation-previews',
+        { body: { templateId: template.id, amounts: [] } },
+      );
+      if (found === undefined) {
+        setError(problem);
+        return;
+      }
+      setSelected(new Map(found.employees.map((item) => [item.id, picked(item)])));
+      setPreview(found);
+    })();
+  }, [locale]);
+
+  function picked(employee: { id: string; firstName: string; lastName: string }): Picked {
+    return {
+      id: employee.id,
+      name: `${employee.firstName} ${employee.lastName}`,
+    };
   }
 
-  async function allocate(lines: Schemas['AllocationLine'][], type?: CreditType): Promise<boolean> {
+  function changeSelection(next: ReadonlyMap<string, Picked>) {
+    setSelected(next);
+    setPreview(undefined);
+  }
+
+  function toggle(employee: Employee) {
+    const next = new Map(selected);
+    if (next.has(employee.id)) next.delete(employee.id);
+    else next.set(employee.id, picked(employee));
+    changeSelection(next);
+  }
+
+  /** « Tout sélectionner »: every employee of the filters, not only the page shown. */
+  async function selectAll() {
+    setSelectingAll(true);
+    setError(undefined);
+    try {
+      const { data, error: problem } = await getApi().POST('/v1/company/allocation-previews', {
+        body: { ...filters, ...(q === '' ? {} : { q }), amounts: [] },
+      });
+      if (data === undefined) setError(problem);
+      else changeSelection(new Map(data.employees.map((item) => [item.id, picked(item)])));
+    } finally {
+      setSelectingAll(false);
+    }
+  }
+
+  async function onPreview() {
+    setPreviewing(true);
+    setError(undefined);
+    try {
+      const { data, error: problem } = await getApi().POST('/v1/company/allocation-previews', {
+        body: { employeeIds: [...selected.keys()], amounts },
+      });
+      if (data === undefined) setError(problem);
+      else setPreview(data);
+    } finally {
+      setPreviewing(false);
+    }
+  }
+
+  async function allocate(
+    lines: Schemas['AllocationLine'][],
+    fromTemplate?: string,
+  ): Promise<boolean> {
     setSending(true);
     setError(undefined);
-    setErrorType(type);
+    setTemplateError(undefined);
+    setSavedTemplate(undefined);
     try {
       const { data, error: problem } = await getApi().POST('/v1/company/allocations', {
         params: { header: { 'Idempotency-Key': intentKey } },
-        body: { allocations: lines },
+        body: {
+          ...(fromTemplate === undefined ? {} : { templateId: fromTemplate }),
+          allocations: lines,
+        },
       });
       setConfirming(false);
       if (data === undefined) {
@@ -97,25 +202,45 @@ export default function AllocationPage() {
   }
 
   async function onAllocate() {
-    if (millimes === undefined) return;
+    if (preview === undefined) return;
     const done = await allocate(
-      [...selected.keys()].map((employeeId) => ({
-        employeeId,
-        creditType,
-        amountMillimes: millimes,
-      })),
-      creditType,
+      preview.employees.flatMap((employee) =>
+        amounts.map((amount) => ({
+          employeeId: employee.id,
+          creditType: amount.creditType,
+          amountMillimes: amount.amountMillimes,
+        })),
+      ),
+      templateId,
     );
-    if (done) {
-      setSelected(new Map());
-      setAmountText('');
+    if (!done) return;
+    if (saveTemplate && newTemplateName.trim() !== '') {
+      const { data, error: problem } = await getApi().POST('/v1/company/allocation-templates', {
+        body: {
+          name: newTemplateName.trim(),
+          departmentId: departmentId === '' ? null : departmentId,
+          position: position === '' ? null : position,
+          amounts,
+        },
+      });
+      if (data === undefined) setTemplateError(problem);
+      else setSavedTemplate(data.name);
     }
+    setSelected(new Map());
+    setPreview(undefined);
+    setTexts(EMPTY_TEXTS);
+    setSaveTemplate(false);
+    setNewTemplateName('');
+    setTemplateId(undefined);
+    setTemplateName(undefined);
   }
 
   const missing = (asProblem(error)?.details as { missingMillimes?: number } | undefined)
     ?.missingMillimes;
   const rows = list.rows ?? [];
   const allOnPage = rows.length > 0 && rows.every((row) => selected.has(row.id));
+  const departmentName = (id: string | null | undefined) =>
+    departmentList.find((department) => department.id === id)?.name ?? '—';
   const columns: Column<Employee>[] = [
     {
       key: 'select',
@@ -128,12 +253,26 @@ export default function AllocationPage() {
           onChange={() => {
             toggle(row);
           }}
-          className="size-icon-md"
+          className="size-icon-md accent-navy"
         />
       ),
     },
     { key: 'number', header: t('number'), cell: (row) => row.employeeNumber },
-    { key: 'name', header: t('name'), cell: (row) => `${row.firstName} ${row.lastName}` },
+    {
+      key: 'name',
+      header: t('name'),
+      cell: (row) => `${row.firstName} ${row.lastName}`,
+    },
+    {
+      key: 'department',
+      header: t('department'),
+      cell: (row) => departmentName(row.departmentId),
+    },
+    {
+      key: 'position',
+      header: t('position'),
+      cell: (row) => row.position ?? '—',
+    },
     {
       key: 'allocated',
       header: t('allocated'),
@@ -141,14 +280,27 @@ export default function AllocationPage() {
       cell: (row) => <Amount millimes={row.monthAllocatedMillimes} />,
     },
   ];
-  const typeBalance =
+  const enabled =
     dashboard.status === 'success'
-      ? dashboard.data.balances.find((item) => item.creditType === creditType)?.amountMillimes
-      : undefined;
+      ? CREDIT_TYPES.filter((type) =>
+          dashboard.data.balances.some((item) => item.creditType === type),
+        )
+      : CREDIT_TYPES;
+  const canPreview = selected.size > 0 && amounts.length > 0 && !invalid;
+  const lineCount = (preview?.employeeCount ?? 0) * amounts.length;
 
   return (
     <>
-      <PageHeader title={t('title')} description={t('description')} />
+      <PageHeader
+        title={t('title')}
+        description={t('description')}
+        actions={
+          <Link href="/entreprise/modeles" className={buttonClasses('secondary')}>
+            <Repeat aria-hidden="true" className="size-icon-sm" />
+            {t('templatesLink')}
+          </Link>
+        }
+      />
       <div className="mb-6">
         {dashboard.status === 'success' ? (
           <CreditTypeBalanceCards balances={dashboard.data.balances} progress="share" />
@@ -156,49 +308,112 @@ export default function AllocationPage() {
           <Skeleton className="h-input-height w-full" />
         )}
       </div>
-      {result !== undefined ? (
-        <div className="mb-6">
+      <div className="mb-6 flex flex-col gap-3" aria-live="polite">
+        {templateName !== undefined ? (
+          <Alert tone="info">{t('relaunching', { name: templateName })}</Alert>
+        ) : null}
+        {result !== undefined ? (
           <Alert tone="success">{t('importDone', { count: result.allocatedCount })}</Alert>
-        </div>
-      ) : null}
-      {error !== undefined ? (
-        <div className="mb-6">
+        ) : null}
+        {savedTemplate !== undefined ? (
+          <Alert tone="success">{t('templateSaved', { name: savedTemplate })}</Alert>
+        ) : null}
+        {templateError !== undefined ? (
+          <Alert tone="warning">
+            {t('templateNotSaved', {
+              reason: tRoot(messageKey(errorMessageKey(templateError))),
+            })}
+          </Alert>
+        ) : null}
+        {error !== undefined ? (
           <Alert tone="danger">
-            {missing !== undefined && errorType !== undefined
-              ? tTypes('insufficient', {
-                  type: typeLabel(errorType),
-                  missing: formatMillimesWithCurrency(missing, locale),
+            {missing !== undefined
+              ? t('insufficient', {
+                  amount: formatMillimesWithCurrency(missing, locale),
                 })
               : tRoot(messageKey(errorMessageKey(error)))}
           </Alert>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
+          <CardTitle description={t('stepPeopleHint')}>{t('stepPeople')}</CardTitle>
           <FilterBar
             searchLabel={t('search')}
-            onApply={(filters) => {
-              setQ(filters.q);
+            onApply={(applied) => {
+              setQ(applied.q);
             }}
           />
-          <div className="mb-3">
+          <div className="mb-4 grid gap-4 sm:grid-cols-2">
+            <SelectField
+              label={t('department')}
+              placeholder={t('allDepartments')}
+              options={departmentList
+                .filter((department) => !department.archived)
+                .map((department) => ({
+                  value: department.id,
+                  label: department.name,
+                }))}
+              value={departmentId}
+              onChange={(event) => {
+                setDepartmentId(event.target.value);
+                setTemplateId(undefined);
+                setTemplateName(undefined);
+              }}
+            />
+            <SelectField
+              label={t('position')}
+              placeholder={t('allPositions')}
+              options={(positions.status === 'success' ? positions.data.data : []).map((item) => ({
+                value: item,
+                label: item,
+              }))}
+              value={position}
+              onChange={(event) => {
+                setPosition(event.target.value);
+                setTemplateId(undefined);
+                setTemplateName(undefined);
+              }}
+            />
+          </div>
+          <div className="mb-3 flex flex-wrap items-center gap-3">
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={selectingAll}
+              icon={<ListChecks aria-hidden="true" className="size-icon-sm" />}
+              onClick={() => void selectAll()}
+            >
+              {t('selectAll')}
+            </Button>
             <Button
               variant="ghost"
               size="sm"
               disabled={rows.length === 0}
               onClick={() => {
-                setSelected((current) => {
-                  const next = new Map(current);
-                  for (const row of rows) {
-                    if (allOnPage) next.delete(row.id);
-                    else next.set(row.id, row);
-                  }
-                  return next;
-                });
+                const next = new Map(selected);
+                for (const row of rows) {
+                  if (allOnPage) next.delete(row.id);
+                  else next.set(row.id, picked(row));
+                }
+                changeSelection(next);
               }}
             >
               {t('selectPage')}
             </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={selected.size === 0}
+              onClick={() => {
+                changeSelection(new Map());
+              }}
+            >
+              {t('clearSelection')}
+            </Button>
+            <span className="text-caption text-text-muted">
+              {t('selected', { count: selected.size })}
+            </span>
           </div>
           <DataTable
             caption={t('title')}
@@ -218,48 +433,62 @@ export default function AllocationPage() {
         {/* Small screen: the action comes before the list of employees (ux, captures). */}
         <Card className="order-first lg:order-none">
           <div className="flex flex-col gap-5">
-            <CreditTypeSelect
-              label={t('typeLabel')}
-              hint={t('typeHint')}
-              value={creditType}
-              onChange={(value) => {
-                if (value !== '') setCreditType(value);
-              }}
-            />
-            {typeBalance !== undefined ? (
-              <p className="flex flex-wrap items-center gap-2 text-caption text-text-muted">
-                <span>{tTypes('balanceOf', { type: typeLabel(creditType) })}</span>
-                <Amount millimes={typeBalance} />
-              </p>
-            ) : null}
-            <TextField
-              label={t('amount')}
-              hint={
-                millimes === undefined
-                  ? undefined
-                  : t('amountPreview', { amount: formatMillimesWithCurrency(millimes, locale) })
-              }
-              error={amountText !== '' && millimes === undefined ? t('amountInvalid') : undefined}
-              inputMode="decimal"
-              dir="ltr"
-              value={amountText}
-              onChange={(event) => {
-                setAmountText(event.target.value);
-              }}
-            />
-            <StatCard
-              label={t('total')}
-              value={
-                total === undefined ? (
-                  <Skeleton className="h-input-height w-full" />
-                ) : (
-                  <Amount millimes={total} size="title" />
-                )
-              }
-              hint={t('selected', { count: selected.size })}
-            />
+            <CardTitle description={t('stepAmountsHint')}>{t('stepAmounts')}</CardTitle>
+            {enabled.map((type) => (
+              <AmountField
+                key={type}
+                label={t('amountOf', { type: typeLabel(type) })}
+                value={texts[type]}
+                onChange={(value) => {
+                  setTexts((current) => ({ ...current, [type]: value }));
+                  setPreview(undefined);
+                }}
+              />
+            ))}
             <Button
-              disabled={selected.size === 0 || millimes === undefined || millimes === 0}
+              variant="secondary"
+              disabled={!canPreview}
+              loading={previewing}
+              icon={<Eye aria-hidden="true" className="size-icon-sm" />}
+              onClick={() => void onPreview()}
+            >
+              {t('previewButton')}
+            </Button>
+            {preview !== undefined ? (
+              <PreviewCard preview={preview} />
+            ) : (
+              <p className="text-caption text-text-muted">{t('previewHint')}</p>
+            )}
+            <label className="flex items-center gap-2 text-body text-text">
+              <input
+                type="checkbox"
+                className="size-icon-sm accent-navy"
+                checked={saveTemplate}
+                onChange={(event) => {
+                  setSaveTemplate(event.target.checked);
+                }}
+              />
+              {t('saveAsTemplate')}
+            </label>
+            {saveTemplate ? (
+              <TextField
+                label={t('templateName')}
+                hint={t('templateNameHint')}
+                maxLength={80}
+                value={newTemplateName}
+                onChange={(event) => {
+                  setNewTemplateName(event.target.value);
+                }}
+              />
+            ) : null}
+            <Button
+              disabled={
+                preview === undefined ||
+                !preview.sufficient ||
+                preview.employeeCount === 0 ||
+                lineCount > 5_000 ||
+                (saveTemplate && newTemplateName.trim() === '')
+              }
               onClick={() => {
                 setConfirming(true);
               }}
@@ -270,23 +499,64 @@ export default function AllocationPage() {
         </Card>
       </div>
       <AllocationImport onAllocate={(lines) => allocate(lines)} sending={sending} />
-      {millimes !== undefined && total !== undefined ? (
+      {preview !== undefined ? (
         <ConfirmDialog
           open={confirming}
           onOpenChange={setConfirming}
           title={t('confirmTitle')}
-          description={t('confirmMessage', {
-            count: selected.size,
-            amount: formatMillimesWithCurrency(millimes, locale),
-          })}
-          confirmLabel={t('confirmSubmit', { amount: formatMillimesWithCurrency(total, locale) })}
+          description={t('confirmMany', { count: preview.employeeCount })}
+          confirmLabel={t('submit')}
           loading={sending}
           onConfirm={() => void onAllocate()}
         >
-          <CreditTypeBadge type={creditType} />
+          <span className="flex flex-wrap gap-3">
+            {preview.lines.map((line) => (
+              <span key={line.creditType} className="flex items-center gap-2">
+                <CreditTypeBadge type={line.creditType} />
+                <Amount millimes={line.totalMillimes} />
+              </span>
+            ))}
+          </span>
         </ConfirmDialog>
       ) : null}
+      <span className="sr-only">{tTypes('column')}</span>
     </>
+  );
+}
+
+/** Step 4: per type, the total, the balance, what remains, and what is missing (in red). */
+function PreviewCard({ preview }: { preview: Preview }) {
+  const t = useTranslations('company.allocation');
+  return (
+    <div className="flex flex-col gap-3 rounded-card-desktop border border-border p-3">
+      <p className="text-label text-text">{t('previewCount', { count: preview.employeeCount })}</p>
+      {preview.lines.map((line) => (
+        <dl key={line.creditType} className="flex flex-col gap-1 text-caption">
+          <dt>
+            <CreditTypeBadge type={line.creditType} />
+          </dt>
+          <dd className="flex justify-between gap-2">
+            <span className="text-text-muted">{t('previewTotal')}</span>
+            <Amount millimes={line.totalMillimes} />
+          </dd>
+          <dd className="flex justify-between gap-2">
+            <span className="text-text-muted">{t('previewBalance')}</span>
+            <Amount millimes={line.balanceMillimes} />
+          </dd>
+          <dd className="flex justify-between gap-2">
+            <span className="text-text-muted">{t('previewRemaining')}</span>
+            <Amount millimes={line.remainingMillimes} />
+          </dd>
+          {line.missingMillimes > 0 ? (
+            <dd className="flex justify-between gap-2 font-label text-danger-text">
+              <span>{t('previewMissing')}</span>
+              <Amount millimes={line.missingMillimes} />
+            </dd>
+          ) : null}
+        </dl>
+      ))}
+      {!preview.sufficient ? <Alert tone="danger">{t('previewInsufficient')}</Alert> : null}
+    </div>
   );
 }
 
@@ -302,7 +572,7 @@ function AllocationImport({
   const tTypes = useTranslations('ui.creditTypes');
   const tRoot = useTranslations();
   const [csv, setCsv] = useState<string | undefined>(undefined);
-  const [preview, setPreview] = useState<Preview | undefined>(undefined);
+  const [preview, setPreview] = useState<ImportPreview | undefined>(undefined);
   const [analysing, setAnalysing] = useState(false);
   const [error, setError] = useState<unknown>(undefined);
   const [confirming, setConfirming] = useState(false);

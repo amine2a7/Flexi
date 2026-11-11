@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Inject,
@@ -25,6 +26,7 @@ import { OrdersService } from '../orders/orders.service.js';
 import { SettingsService } from '../platform/settings.service.js';
 import { CompanyService } from './company.service.js';
 import { DepartmentsService } from './departments.service.js';
+import { AllocationTemplatesService } from './allocation-templates.service.js';
 import { UsersService } from '../users/users.service.js';
 import { accessReason } from '../users/users.controller.js';
 
@@ -59,10 +61,35 @@ const employeeBody = z.strictObject({
   position: position.optional(),
 });
 const allocationBody = z.strictObject({
+  /** The template relaunched (processus v2): marked as run, kept on each allocation. */
+  templateId: z.uuid().optional(),
   allocations: z
     .array(z.strictObject({ employeeId: z.uuid(), creditType, amountMillimes: positiveMillimes }))
     .min(1)
     .max(5_000),
+});
+/** One amount per credit type, the same for every selected employee (processus v2). */
+const typeAmounts = z
+  .array(z.strictObject({ creditType, amountMillimes: positiveMillimes }))
+  .max(4);
+const templateBody = z.strictObject({
+  name: z.string().trim().min(1).max(80),
+  departmentId: z.uuid().nullable(),
+  position: z
+    .string()
+    .trim()
+    .max(80)
+    .nullable()
+    .transform((value) => (value === null || value === '' ? null : value)),
+  amounts: typeAmounts.min(1),
+});
+const previewBody = z.strictObject({
+  templateId: z.uuid().optional(),
+  departmentId: z.uuid().nullable().optional(),
+  position: z.string().trim().max(80).nullable().optional(),
+  q: z.string().max(100).optional(),
+  employeeIds: z.array(z.uuid()).max(5_000).optional(),
+  amounts: typeAmounts,
 });
 
 @Roles('COMPANY')
@@ -75,6 +102,7 @@ export class CompanyController {
     @Inject(IdempotencyService) private readonly idempotency: IdempotencyService,
     @Inject(UsersService) private readonly users: UsersService,
     @Inject(DepartmentsService) private readonly departments: DepartmentsService,
+    @Inject(AllocationTemplatesService) private readonly templates: AllocationTemplatesService,
   ) {}
 
   @Can('balances.read')
@@ -271,7 +299,10 @@ export class CompanyController {
     @Res({ passthrough: true }) res: Response,
     @Body() body: unknown,
   ) {
-    const input = parse(z.union([z.strictObject({ quoteId: z.uuid() }), z.strictObject({ lines })]), body);
+    const input = parse(
+      z.union([z.strictObject({ quoteId: z.uuid() }), z.strictObject({ lines })]),
+      body,
+    );
     const outcome = await this.idempotency.run(req, async (tx) => ({
       status: 201,
       body: await this.orders.create(tx, input),
@@ -342,11 +373,47 @@ export class CompanyController {
     @Body() body: unknown,
   ) {
     const input = parse(allocationBody, body);
-    const outcome = await this.idempotency.run(req, async (tx, key) => ({
-      status: 201,
-      body: await this.company.allocate(tx, input.allocations, key),
-    }));
+    const outcome = await this.idempotency.run(req, async (tx, key) => {
+      if (input.templateId !== undefined) await this.templates.ran(tx, input.templateId);
+      return {
+        status: 201,
+        body: await this.company.allocate(tx, input.allocations, key, input.templateId),
+      };
+    });
     return sendOutcome(res, outcome);
+  }
+
+  /** Preview of an allocation (processus v2, step 4): employees, totals, balance left per type. */
+  @Can('credits.allocate')
+  @Post('allocation-previews')
+  @HttpCode(200)
+  previewAllocation(@Body() body: unknown) {
+    return this.templates.preview(parse(previewBody, body));
+  }
+
+  @Can('credits.allocate')
+  @Get('allocation-templates')
+  allocationTemplates() {
+    return this.templates.list();
+  }
+
+  @Can('credits.allocate')
+  @Post('allocation-templates')
+  createAllocationTemplate(@Body() body: unknown) {
+    return this.templates.create(parse(templateBody, body));
+  }
+
+  @Can('credits.allocate')
+  @Put('allocation-templates/:templateId')
+  updateAllocationTemplate(@Param('templateId') templateId: string, @Body() body: unknown) {
+    return this.templates.update(pathId('templateId', templateId), parse(templateBody, body));
+  }
+
+  @Can('credits.allocate')
+  @Delete('allocation-templates/:templateId')
+  @HttpCode(204)
+  async deleteAllocationTemplate(@Param('templateId') templateId: string): Promise<void> {
+    await this.templates.archive(pathId('templateId', templateId));
   }
 
   @Can('invoices.read')

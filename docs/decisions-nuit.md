@@ -15,3 +15,11 @@ Choix faits sans pouvoir te demander, une ligne chacun. Règle suivie : l'option
 - KYC : un nouveau dépôt remplace la pièce du même type (l'ancienne est conservée et marquée remplacée) ; un dossier refusé repasse « à contrôler » au premier nouveau dépôt.
 - KYC : tant que son dossier n'est pas validé, une entreprise ne peut ni simuler ni passer de commande (409 avec la raison KYC_NOT_APPROVED, expliquée à l'écran).
 - Départements : un département est archivé (jamais supprimé), seulement s'il n'a plus d'employé ; un département archivé ne reçoit plus d'employé.
+
+## Nuit du 11 au 12 novembre 2026
+
+- Plan : le plan « étape A (points 1 à 7) / étape B (points 8 à 13) / 7 actes » n'est dans aucun fichier du dépôt ni dans le PDF. Je l'ai reconstruit ainsi. Étape A : les points 1 à 7 de la demande du 10/11 (bug 5, bug 6, frais, mot de passe temporaire, Mon dossier KYC, départements et postes, attribution et modèles). Étape B : 8 seed de démo (déjà fait), 9 fiche client complète à onglets, 10 comptes famille (5 membres maximum), 11 forme juridique modifiable en double validation, 12 rapprochement quotidien qui contrôle aussi la retenue à la source et les frais de virement, 13 liste des pièces KYC paramétrable par le Super-admin.
+- Les 7 actes : le « Scénario complet tracé » du PDF. 1 création de Carthage par Amine (mot de passe temporaire). 2 dossier KYC déposé par Ahmed et validé par un autre admin. 3 département Production et 10 employés. 4 commande de 16 581,000, confirmation, virement déclaré, validations de Sarra puis de Nour. 5 attribution de 150 TND de Restauration à Production, modèle « Tickets mensuels Production ». 6 repas au Restaurant Le Jasmin. 7 virement de Karim (net 1 214,500) accepté puis payé par Sarra (VIR-FP-000231), grand livre à 16 581,000.
+- Attribution : un modèle garde le département, le poste et un montant par type (le même pour chaque employé) ; « Supprimer » archive le modèle ; la relance automatique mensuelle n'est pas faite (« à confirmer par Amine » dans le PDF).
+- Attribution : l'aperçu et « Tout sélectionner » ne retiennent que les employés qui peuvent recevoir des crédits (actifs ou invités) ; le bouton Attribuer reste grisé tant qu'un type manque de solde.
+- Méthode (ta demande de 13 h) : plus de tests entre les tâches, un commit par tâche, une seule passe complète à la fin.

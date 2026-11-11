@@ -3,6 +3,7 @@ import { UsersModule } from '../users/users.module.js';
 import { CompanyController } from '../company/company.controller.js';
 import { CompanyService } from '../company/company.service.js';
 import { DepartmentsService } from '../company/departments.service.js';
+import { AllocationTemplatesService } from '../company/allocation-templates.service.js';
 import { AdminOrdersController } from './admin-orders.controller.js';
 import { OrdersService } from './orders.service.js';
 
@@ -10,7 +11,7 @@ import { OrdersService } from './orders.service.js';
 @Module({
   imports: [UsersModule],
   controllers: [CompanyController, AdminOrdersController],
-  providers: [OrdersService, CompanyService, DepartmentsService],
+  providers: [OrdersService, CompanyService, DepartmentsService, AllocationTemplatesService],
   exports: [OrdersService, CompanyService],
 })
 export class OrdersModule {}

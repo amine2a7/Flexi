@@ -3271,6 +3271,176 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/company/allocation-previews:
+    post:
+      tags: [company]
+      operationId: previewAllocation
+      summary: Aperçu d'une attribution (processus v2, étape 4)
+      description: |
+        Employés retenus (filtres département et poste, filtres d'un modèle ou liste explicite ;
+        seulement ceux qui peuvent recevoir des crédits), total par type, solde de l'entreprise,
+        solde restant et montant manquant. Sans montant : la liste des employés seulement
+        (« Tout sélectionner »).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllocationPreviewRequest'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllocationPreview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/allocation-templates:
+    get:
+      tags: [company]
+      operationId: listAllocationTemplates
+      summary: Modèles d'attribution de l'entreprise (processus v2)
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllocationTemplateList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [company]
+      operationId: createAllocationTemplate
+      summary: Enregistrer un modèle (filtres et montant par type ; nom unique, sinon 409)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllocationTemplateInput'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllocationTemplate'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/company/allocation-templates/{templateId}:
+    put:
+      tags: [company]
+      operationId: updateAllocationTemplate
+      summary: Modifier un modèle
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllocationTemplateInput'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllocationTemplate'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags: [company]
+      operationId: deleteAllocationTemplate
+      summary: Supprimer un modèle (archivé ; les attributions faites le gardent)
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '204':
+          description: Modèle supprimé.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/company/invoices/{invoiceId}/pdf:
     get:
       tags: [company]
@@ -8723,6 +8893,9 @@ components:
       additionalProperties: false
       required: [allocations]
       properties:
+        templateId:
+          description: Modèle relancé (processus v2) ; marqué relancé, gardé sur chaque attribution.
+          $ref: '#/components/schemas/Uuid'
         allocations:
           type: array
           minItems: 1
@@ -8802,6 +8975,194 @@ components:
           format: int32
           minimum: 0
           maximum: 500
+    AllocationTypeAmount:
+      title: AllocationTypeAmount
+      description: Montant d'un type, le même pour chaque employé sélectionné.
+      type: object
+      additionalProperties: false
+      required: [creditType, amountMillimes]
+      properties:
+        creditType:
+          $ref: '#/components/schemas/CreditType'
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+    AllocationTemplateInput:
+      title: AllocationTemplateInput
+      type: object
+      additionalProperties: false
+      required: [name, departmentId, position, amounts]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        departmentId:
+          description: Département filtré (null = tous).
+          oneOf:
+            - $ref: '#/components/schemas/Uuid'
+            - type: 'null'
+        position:
+          description: Poste filtré, texte libre (null = tous).
+          type: [string, 'null']
+          maxLength: 80
+        amounts:
+          type: array
+          minItems: 1
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/AllocationTypeAmount'
+    AllocationTemplate:
+      title: AllocationTemplate
+      type: object
+      additionalProperties: false
+      required:
+        [id, name, departmentId, departmentName, position, amounts, lastRunAt, createdAt, updatedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        name:
+          type: string
+          maxLength: 80
+        departmentId:
+          oneOf:
+            - $ref: '#/components/schemas/Uuid'
+            - type: 'null'
+        departmentName:
+          type: [string, 'null']
+          maxLength: 80
+        position:
+          type: [string, 'null']
+          maxLength: 80
+        amounts:
+          type: array
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/AllocationTypeAmount'
+        lastRunAt:
+          description: Dernière relance (null si jamais relancé).
+          oneOf:
+            - $ref: '#/components/schemas/Timestamp'
+            - type: 'null'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+    AllocationTemplateList:
+      title: AllocationTemplateList
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          maxItems: 200
+          items:
+            $ref: '#/components/schemas/AllocationTemplate'
+    AllocationPreviewRequest:
+      title: AllocationPreviewRequest
+      type: object
+      additionalProperties: false
+      required: [amounts]
+      properties:
+        templateId:
+          description: Relancer un modèle (ses filtres ; ses montants si `amounts` est vide).
+          $ref: '#/components/schemas/Uuid'
+        departmentId:
+          oneOf:
+            - $ref: '#/components/schemas/Uuid'
+            - type: 'null'
+        position:
+          type: [string, 'null']
+          maxLength: 80
+        q:
+          type: string
+          maxLength: 100
+        employeeIds:
+          description: Liste explicite (sélection à la main) ; sinon les filtres.
+          type: array
+          maxItems: 5000
+          items:
+            $ref: '#/components/schemas/Uuid'
+        amounts:
+          type: array
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/AllocationTypeAmount'
+    AllocationPreviewEmployee:
+      title: AllocationPreviewEmployee
+      type: object
+      additionalProperties: false
+      required: [id, employeeNumber, firstName, lastName, departmentName, position]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        employeeNumber:
+          type: string
+          maxLength: 32
+        firstName:
+          type: string
+          maxLength: 60
+        lastName:
+          type: string
+          maxLength: 60
+        departmentName:
+          type: [string, 'null']
+          maxLength: 80
+        position:
+          type: [string, 'null']
+          maxLength: 80
+    AllocationPreviewLine:
+      title: AllocationPreviewLine
+      type: object
+      additionalProperties: false
+      required:
+        [
+          creditType,
+          perEmployeeMillimes,
+          totalMillimes,
+          balanceMillimes,
+          remainingMillimes,
+          missingMillimes,
+        ]
+      properties:
+        creditType:
+          $ref: '#/components/schemas/CreditType'
+        perEmployeeMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        totalMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        balanceMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        remainingMillimes:
+          description: Solde du type après l'attribution (0 s'il manque de l'argent).
+          $ref: '#/components/schemas/AmountMillimes'
+        missingMillimes:
+          description: Montant manquant (affiché en rouge), 0 si le solde suffit.
+          $ref: '#/components/schemas/AmountMillimes'
+    AllocationPreview:
+      title: AllocationPreview
+      type: object
+      additionalProperties: false
+      required: [employees, employeeCount, lines, sufficient]
+      properties:
+        employees:
+          type: array
+          maxItems: 5000
+          items:
+            $ref: '#/components/schemas/AllocationPreviewEmployee'
+        employeeCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 5000
+        lines:
+          type: array
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/AllocationPreviewLine'
+        sufficient:
+          description: Vrai si chaque type a assez de solde.
+          type: boolean
     AllocationResult:
       title: AllocationResult
       type: object

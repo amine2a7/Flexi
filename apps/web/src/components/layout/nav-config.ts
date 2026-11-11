@@ -14,6 +14,7 @@ import {
   History,
   Home,
   QrCode,
+  Repeat,
   ShieldCheck,
   UserCog,
   UserRound,
@@ -106,6 +107,11 @@ export const NAVIGATION: Partial<Record<Role, readonly NavEntry[]>> = {
         counter: 'companyOrdersToPay',
       },
       { href: '/entreprise/attribution', labelKey: 'nav.company.allocation', icon: Wallet },
+      {
+        href: '/entreprise/modeles',
+        labelKey: 'nav.company.allocationTemplates',
+        icon: Repeat,
+      },
     ]),
     group('team', Users, [
       { href: '/entreprise/employes', labelKey: 'nav.company.employees', icon: Users },

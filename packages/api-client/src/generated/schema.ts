@@ -1384,6 +1384,65 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/company/allocation-previews': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Aperçu d'une attribution (processus v2, étape 4)
+     * @description Employés retenus (filtres département et poste, filtres d'un modèle ou liste explicite ;
+     *     seulement ceux qui peuvent recevoir des crédits), total par type, solde de l'entreprise,
+     *     solde restant et montant manquant. Sans montant : la liste des employés seulement
+     *     (« Tout sélectionner »).
+     */
+    post: operations['previewAllocation'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/company/allocation-templates': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Modèles d'attribution de l'entreprise (processus v2) */
+    get: operations['listAllocationTemplates'];
+    put?: never;
+    /** Enregistrer un modèle (filtres et montant par type ; nom unique, sinon 409) */
+    post: operations['createAllocationTemplate'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/company/allocation-templates/{templateId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Modifier un modèle */
+    put: operations['updateAllocationTemplate'];
+    post?: never;
+    /** Supprimer un modèle (archivé ; les attributions faites le gardent) */
+    delete: operations['deleteAllocationTemplate'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/company/invoices/{invoiceId}/pdf': {
     parameters: {
       query?: never;
@@ -4027,6 +4086,8 @@ export interface components {
     };
     /** AllocationRequest */
     AllocationRequest: {
+      /** @description Modèle relancé (processus v2) ; marqué relancé, gardé sur chaque attribution. */
+      templateId?: components['schemas']['Uuid'];
       allocations: components['schemas']['AllocationLine'][];
     };
     /** AllocationImportRequest */
@@ -4055,6 +4116,80 @@ export interface components {
       validCount: number;
       /** Format: int32 */
       errorCount: number;
+    };
+    /**
+     * AllocationTypeAmount
+     * @description Montant d'un type, le même pour chaque employé sélectionné.
+     */
+    AllocationTypeAmount: {
+      creditType: components['schemas']['CreditType'];
+      amountMillimes: components['schemas']['PositiveAmountMillimes'];
+    };
+    /** AllocationTemplateInput */
+    AllocationTemplateInput: {
+      name: string;
+      /** @description Département filtré (null = tous). */
+      departmentId: components['schemas']['Uuid'] | null;
+      /** @description Poste filtré, texte libre (null = tous). */
+      position: string | null;
+      amounts: components['schemas']['AllocationTypeAmount'][];
+    };
+    /** AllocationTemplate */
+    AllocationTemplate: {
+      id: components['schemas']['Uuid'];
+      name: string;
+      departmentId: components['schemas']['Uuid'] | null;
+      departmentName: string | null;
+      position: string | null;
+      amounts: components['schemas']['AllocationTypeAmount'][];
+      /** @description Dernière relance (null si jamais relancé). */
+      lastRunAt: components['schemas']['Timestamp'] | null;
+      createdAt: components['schemas']['Timestamp'];
+      updatedAt: components['schemas']['Timestamp'];
+    };
+    /** AllocationTemplateList */
+    AllocationTemplateList: {
+      data: components['schemas']['AllocationTemplate'][];
+    };
+    /** AllocationPreviewRequest */
+    AllocationPreviewRequest: {
+      /** @description Relancer un modèle (ses filtres ; ses montants si `amounts` est vide). */
+      templateId?: components['schemas']['Uuid'];
+      departmentId?: components['schemas']['Uuid'] | null;
+      position?: string | null;
+      q?: string;
+      /** @description Liste explicite (sélection à la main) ; sinon les filtres. */
+      employeeIds?: components['schemas']['Uuid'][];
+      amounts: components['schemas']['AllocationTypeAmount'][];
+    };
+    /** AllocationPreviewEmployee */
+    AllocationPreviewEmployee: {
+      id: components['schemas']['Uuid'];
+      employeeNumber: string;
+      firstName: string;
+      lastName: string;
+      departmentName: string | null;
+      position: string | null;
+    };
+    /** AllocationPreviewLine */
+    AllocationPreviewLine: {
+      creditType: components['schemas']['CreditType'];
+      perEmployeeMillimes: components['schemas']['AmountMillimes'];
+      totalMillimes: components['schemas']['AmountMillimes'];
+      balanceMillimes: components['schemas']['AmountMillimes'];
+      /** @description Solde du type après l'attribution (0 s'il manque de l'argent). */
+      remainingMillimes: components['schemas']['AmountMillimes'];
+      /** @description Montant manquant (affiché en rouge), 0 si le solde suffit. */
+      missingMillimes: components['schemas']['AmountMillimes'];
+    };
+    /** AllocationPreview */
+    AllocationPreview: {
+      employees: components['schemas']['AllocationPreviewEmployee'][];
+      /** Format: int32 */
+      employeeCount: number;
+      lines: components['schemas']['AllocationPreviewLine'][];
+      /** @description Vrai si chaque type a assez de solde. */
+      sufficient: boolean;
     };
     /** AllocationResult */
     AllocationResult: {
@@ -7760,6 +7895,158 @@ export interface operations {
       403: components['responses']['Forbidden'];
       409: components['responses']['Conflict'];
       422: components['responses']['UnprocessableFinancial'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  previewAllocation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AllocationPreviewRequest'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AllocationPreview'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  listAllocationTemplates: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AllocationTemplateList'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  createAllocationTemplate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AllocationTemplateInput'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AllocationTemplate'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  updateAllocationTemplate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        templateId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AllocationTemplateInput'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AllocationTemplate'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  deleteAllocationTemplate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        templateId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Modèle supprimé. */
+      204: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
       429: components['responses']['TooManyRequests'];
       500: components['responses']['InternalError'];
     };

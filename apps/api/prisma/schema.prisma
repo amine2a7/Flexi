@@ -254,14 +254,15 @@ model Company {
   legalForm LegalForm     @default(PM_MF) @map("legal_form")
   createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  users           User[]
-  employees       Employee[]
-  orders          CreditOrder[]
-  invoices        Invoice[]
-  kycFiles        KycFile[]
-  commissionGrids CommissionGrid[]
-  departments     Department[]
-  orderQuotes     OrderQuote[]
+  users               User[]
+  employees           Employee[]
+  orders              CreditOrder[]
+  invoices            Invoice[]
+  kycFiles            KycFile[]
+  commissionGrids     CommissionGrid[]
+  departments         Department[]
+  orderQuotes         OrderQuote[]
+  allocationTemplates AllocationTemplate[]
 
   @@map("companies")
 }
@@ -275,8 +276,9 @@ model Department {
   archivedAt DateTime? @map("archived_at") @db.Timestamptz(3)
   createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  company   Company    @relation(fields: [companyId], references: [id])
-  employees Employee[]
+  company             Company              @relation(fields: [companyId], references: [id])
+  employees           Employee[]
+  allocationTemplates AllocationTemplate[]
 
   @@map("departments")
 }
@@ -758,12 +760,49 @@ model Allocation {
   amountMillimes BigInt     @map("amount_millimes")
   transactionId  String     @map("transaction_id") @db.Uuid
   createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  /// The template it was relaunched from (processus v2), null for a free allocation.
+  templateId     String?    @map("template_id") @db.Uuid
 
-  employee Employee @relation(fields: [employeeId], references: [id])
+  employee Employee            @relation(fields: [employeeId], references: [id])
+  template AllocationTemplate? @relation(fields: [templateId], references: [id])
 
   @@index([companyId, createdAt])
   @@index([employeeId])
   @@map("allocations")
+}
+
+/// Allocation template (processus v2, processus 4): filters and amount per type, relaunched with
+/// the current employees of the filters (never a frozen list of people). Archived, never deleted.
+model AllocationTemplate {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  companyId    String    @map("company_id") @db.Uuid
+  name         String    @db.VarChar(80)
+  departmentId String?   @map("department_id") @db.Uuid
+  position     String?   @db.VarChar(80)
+  createdBy    String    @map("created_by") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime  @default(now()) @map("updated_at") @db.Timestamptz(3)
+  lastRunAt    DateTime? @map("last_run_at") @db.Timestamptz(3)
+  archivedAt   DateTime? @map("archived_at") @db.Timestamptz(3)
+
+  company     Company                    @relation(fields: [companyId], references: [id])
+  department  Department?                @relation(fields: [departmentId], references: [id])
+  amounts     AllocationTemplateAmount[]
+  allocations Allocation[]
+
+  @@map("allocation_templates")
+}
+
+model AllocationTemplateAmount {
+  templateId     String     @map("template_id") @db.Uuid
+  companyId      String     @map("company_id") @db.Uuid
+  creditType     CreditType @map("credit_type")
+  amountMillimes BigInt     @map("amount_millimes")
+
+  template AllocationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@id([templateId, creditType])
+  @@map("allocation_template_amounts")
 }
 
 // ------------------------------------------------------------------ payments

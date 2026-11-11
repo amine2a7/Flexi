@@ -24,7 +24,12 @@ const TYPE_LABEL: Record<CreditType, string> = {
   CADEAUX: 'Cadeaux',
 };
 const dateFr = (date: Date) =>
-  date.toLocaleDateString('fr-TN', { timeZone: 'Africa/Tunis', day: '2-digit', month: '2-digit', year: 'numeric' });
+  date.toLocaleDateString('fr-TN', {
+    timeZone: 'Africa/Tunis',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE = /^\+216[0-9]{8}$/;
@@ -560,7 +565,12 @@ export class CompanyService {
    * credits the employee wallet of that type, with an expiring lot (validity of the type). One
    * ledger transaction for the whole request.
    */
-  async allocate(tx: Tx, lines: readonly AllocationInput[], key: string) {
+  async allocate(
+    tx: Tx,
+    lines: readonly AllocationInput[],
+    key: string,
+    templateId: string | null = null,
+  ) {
     const who = principal();
     const companyId = this.companyId();
     const enabled = await this.settings.enabledTypes(tx);
@@ -647,6 +657,7 @@ export class CompanyService {
         creditType: line.creditType,
         amountMillimes: fromMillimes(line.amountMillimes),
         transactionId: posted.transactionId,
+        templateId,
       })),
     });
     await this.audit.record(tx, 'credits.allocate', `${String(lines.length)} lignes`);
@@ -670,7 +681,10 @@ export class CompanyService {
     return this.db.user(async (tx) => {
       const invoice = await tx.invoice.findUnique({
         where: { id },
-        include: { order: { include: { lines: true } }, company: { select: { name: true, city: true } } },
+        include: {
+          order: { include: { lines: true } },
+          company: { select: { name: true, city: true } },
+        },
       });
       if (invoice === null) throw problems.notFound();
       const order = invoice.order;
@@ -679,7 +693,9 @@ export class CompanyService {
         { text: 'Titres-restaurant dématérialisés', size: 9 },
         { text: `Facture ${invoice.number}`, bold: true, size: 14, gap: 24 },
         { text: `Date : ${dateFr(invoice.issuedAt)}` },
-        { text: `Commande : ${order.reference} · Référence de virement : ${order.paymentReference}` },
+        {
+          text: `Commande : ${order.reference} · Référence de virement : ${order.paymentReference}`,
+        },
         { text: `Client : ${invoice.company.name}, ${invoice.company.city}`, gap: 12 },
         { text: 'Détail', bold: true, gap: 20 },
         ...order.lines.map((line) => ({
@@ -687,8 +703,14 @@ export class CompanyService {
           right: tnd(line.amountMillimes),
         })),
         { text: 'Montant des crédits', right: tnd(order.amountMillimes), bold: true, gap: 8 },
-        { text: `Commission FlexiPay (${percent(order.feeRateBps)})`, right: tnd(order.feesMillimes) },
-        { text: `TVA sur la commission (${percent(order.vatRateBps)})`, right: tnd(order.vatMillimes) },
+        {
+          text: `Commission FlexiPay (${percent(order.feeRateBps)})`,
+          right: tnd(order.feesMillimes),
+        },
+        {
+          text: `TVA sur la commission (${percent(order.vatRateBps)})`,
+          right: tnd(order.vatMillimes),
+        },
         ...(order.withholdingMillimes > 0n
           ? [
               {
@@ -707,7 +729,10 @@ export class CompanyService {
           gap: 30,
         },
       ];
-      return { data: pdfDocument(`Facture ${invoice.number}`, lines), fileName: `${invoice.number}.pdf` };
+      return {
+        data: pdfDocument(`Facture ${invoice.number}`, lines),
+        fileName: `${invoice.number}.pdf`,
+      };
     });
   }
 

@@ -255,7 +255,7 @@ describe('scénario complet tracé (processus v2)', () => {
 
     // The final check: no millime lost.
     await db.system(async (tx) => {
-      const balance = (account: Parameters<LedgerService['balance']>[1]) =>
+      const balance = (account: Parameters<typeof ledger.balance>[1]) =>
         ledger.balance(tx, account);
       const carthage =
         (await balance(accounts.companyWallet(companyId, 'RESTAURATION'))) +
