@@ -1588,6 +1588,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/admin/merchants/{merchantId}/overview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Fiche complète du commerçant : onglets Utilisateurs, Ventes, Virements, Dossier KYC */
+    get: operations['getMerchantOverview'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/companies/{companyId}/overview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Fiche complète de l'entreprise : onglets Utilisateurs, Départements, Employés, Soldes, Commandes, Attributions, Factures */
+    get: operations['getCompanyOverview'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/admin/merchants/{merchantId}/record': {
     parameters: {
       query?: never;
@@ -4190,6 +4224,103 @@ export interface components {
       lines: components['schemas']['AllocationPreviewLine'][];
       /** @description Vrai si chaque type a assez de solde. */
       sufficient: boolean;
+    };
+    /** OverviewKyc */
+    OverviewKyc: {
+      fileId: components['schemas']['Uuid'];
+      status: components['schemas']['KycStatus'];
+    };
+    /** OverviewUser */
+    OverviewUser: {
+      id: components['schemas']['Uuid'];
+      displayName: string;
+      email: string;
+      subRole: components['schemas']['SubRole'] | null;
+      status: components['schemas']['UserStatus'];
+      createdAt: components['schemas']['Timestamp'];
+    };
+    /** OverviewEmployee */
+    OverviewEmployee: {
+      id: components['schemas']['Uuid'];
+      employeeNumber: string;
+      firstName: string;
+      lastName: string;
+      departmentName: string | null;
+      position: string | null;
+      status: components['schemas']['EmployeeStatus'];
+    };
+    /** OverviewOrder */
+    OverviewOrder: {
+      id: components['schemas']['Uuid'];
+      reference: string;
+      status: components['schemas']['OrderStatus'];
+      amountMillimes: components['schemas']['AmountMillimes'];
+      totalMillimes: components['schemas']['AmountMillimes'];
+      createdAt: components['schemas']['Timestamp'];
+    };
+    /**
+     * OverviewAllocation
+     * @description Une attribution (une transaction du grand livre) et le modèle relancé, le cas échéant.
+     */
+    OverviewAllocation: {
+      transactionId: components['schemas']['Uuid'];
+      allocatedAt: components['schemas']['Timestamp'];
+      /** Format: int32 */
+      lineCount: number;
+      totalMillimes: components['schemas']['AmountMillimes'];
+      templateName: string | null;
+    };
+    /** OverviewInvoice */
+    OverviewInvoice: {
+      id: components['schemas']['Uuid'];
+      number: string;
+      status: components['schemas']['InvoiceStatus'];
+      totalMillimes: components['schemas']['AmountMillimes'];
+      issuedAt: components['schemas']['Timestamp'];
+    };
+    /** OverviewSale */
+    OverviewSale: {
+      id: components['schemas']['Uuid'];
+      reference: string;
+      creditType: components['schemas']['CreditType'];
+      amountMillimes: components['schemas']['AmountMillimes'];
+      status: components['schemas']['PaymentStatus'];
+      createdAt: components['schemas']['Timestamp'];
+    };
+    /** OverviewPayout */
+    OverviewPayout: {
+      id: components['schemas']['Uuid'];
+      reference: string;
+      creditType: components['schemas']['CreditType'];
+      status: components['schemas']['PayoutRequestStatus'];
+      grossMillimes: components['schemas']['AmountMillimes'];
+      netMillimes: components['schemas']['AmountMillimes'];
+      bankReference: string | null;
+      requestedAt: components['schemas']['Timestamp'];
+    };
+    /**
+     * CompanyOverview
+     * @description Fiche client complète (processus v2), lecture seule ; chaque ligne ouvre sa page dactions.
+     */
+    CompanyOverview: {
+      kyc: components['schemas']['OverviewKyc'] | null;
+      users: components['schemas']['OverviewUser'][];
+      departments: components['schemas']['Department'][];
+      /** Format: int32 */
+      employeeCount: number;
+      employees: components['schemas']['OverviewEmployee'][];
+      balances: components['schemas']['CreditTypeAmount'][];
+      orders: components['schemas']['OverviewOrder'][];
+      allocations: components['schemas']['OverviewAllocation'][];
+      templates: components['schemas']['AllocationTemplate'][];
+      invoices: components['schemas']['OverviewInvoice'][];
+    };
+    /** MerchantOverview */
+    MerchantOverview: {
+      kyc: components['schemas']['OverviewKyc'] | null;
+      users: components['schemas']['OverviewUser'][];
+      sales: components['schemas']['OverviewSale'][];
+      payouts: components['schemas']['OverviewPayout'][];
     };
     /** AllocationResult */
     AllocationResult: {
@@ -8396,6 +8527,66 @@ export interface operations {
       401: components['responses']['Unauthorized'];
       403: components['responses']['Forbidden'];
       409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getMerchantOverview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        merchantId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MerchantOverview'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getCompanyOverview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        companyId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CompanyOverview'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
       429: components['responses']['TooManyRequests'];
       500: components['responses']['InternalError'];
     };

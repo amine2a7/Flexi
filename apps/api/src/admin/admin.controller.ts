@@ -31,6 +31,7 @@ import {
 import { commissionGridSchema } from '@flexipay/shared';
 import { SettingsService } from '../platform/settings.service.js';
 import { AdminService } from './admin.service.js';
+import { ClientOverviewService } from './client-overview.service.js';
 
 const accountStatus = z.enum(['PENDING_KYC', 'APPROVED', 'REJECTED', 'SUSPENDED']);
 const category = z.enum([
@@ -109,6 +110,7 @@ export class AdminController {
     @Inject(AdminService) private readonly admin: AdminService,
     @Inject(ContactService) private readonly contact: ContactService,
     @Inject(IdempotencyService) private readonly idempotency: IdempotencyService,
+    @Inject(ClientOverviewService) private readonly overview: ClientOverviewService,
   ) {}
 
   @Can('dashboard.read')
@@ -160,6 +162,20 @@ export class AdminController {
       pathId('merchantId', merchantId),
       parse(z.strictObject({ acceptedCreditTypes: types }), body).acceptedCreditTypes,
     );
+  }
+
+  /** Tabs of the full merchant record (processus v2): users, sales, payouts, KYC file. */
+  @Can('accounts.read')
+  @Get('merchants/:merchantId/overview')
+  merchantOverview(@Param('merchantId') merchantId: string) {
+    return this.overview.merchant(pathId('merchantId', merchantId));
+  }
+
+  /** Tabs of the full company record (processus v2): users, employees, balances, orders… */
+  @Can('accounts.read')
+  @Get('companies/:companyId/overview')
+  companyOverview(@Param('companyId') companyId: string) {
+    return this.overview.company(pathId('companyId', companyId));
   }
 
   @Can('accounts.read')

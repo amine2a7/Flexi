@@ -3,7 +3,7 @@
 import type { Schemas } from '@flexipay/api-client';
 import { Landmark, Pencil, Percent } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState, type SyntheticEvent } from 'react';
+import { useState, type ReactNode, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
 import type { Locale } from '@/i18n/routing';
 import { getApi } from '@/lib/api/client';
@@ -82,9 +82,12 @@ export function rowsOf(grid: Schemas['CommissionGrid'] | null, locale: Locale): 
 export function AccountRecordPanel({
   owner,
   withHeader = false,
+  wrap,
 }: {
   owner: Owner;
   withHeader?: boolean;
+  /** Puts the record in a tab of the full client record (processus v2). */
+  wrap?: (record: ReactNode) => ReactNode;
 }) {
   const isCompany = 'companyId' in owner;
   const id = isCompany ? owner.companyId : owner.merchantId;
@@ -117,7 +120,11 @@ export function AccountRecordPanel({
           }
         />
       ) : null}
-      <RecordView record={record.data} owner={owner} onChanged={record.reload} />
+      {wrap === undefined ? (
+        <RecordView record={record.data} owner={owner} onChanged={record.reload} />
+      ) : (
+        wrap(<RecordView record={record.data} owner={owner} onChanged={record.reload} />)
+      )}
     </>
   );
 }

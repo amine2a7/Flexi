@@ -13,6 +13,7 @@ import { useApiQuery } from '@/lib/api/use-api-query';
 import { Button, buttonClasses } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
 import { AccountRecordPanel } from '@/components/admin/account-record';
+import { MerchantTabs } from '@/components/admin/client-tabs';
 import { CreditTypeCheckboxes, type CreditType } from '@/components/ui/credit-type';
 import { Alert, PageHeader } from '@/components/ui/layout-blocks';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
@@ -82,34 +83,41 @@ function MerchantRecord({ merchant }: { merchant: Schemas['MerchantAccount'] }) 
         description={tCategory(merchant.category)}
         actions={<StatusBadge status={merchant.status} />}
       />
-      <AccountRecordPanel owner={{ merchantId: merchant.id }} />
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardTitle>{t('typesTitle')}</CardTitle>
-          <div className="flex flex-col gap-4">
-            {error !== undefined ? (
-              <Alert tone="danger">{tRoot(messageKey(errorMessageKey(error)))}</Alert>
-            ) : null}
-            <CreditTypeCheckboxes
-              legend={t('types')}
-              hint={t('typesHint')}
-              {...(typesError === undefined ? {} : { error: typesError })}
-              value={types}
-              onChange={setTypes}
-            />
-            {canManage ? (
-              <Button
-                loading={saving}
-                icon={<Save aria-hidden="true" className="size-icon-sm" />}
-                className="self-start"
-                onClick={() => void save()}
-              >
-                {t('typesSave')}
-              </Button>
-            ) : null}
-          </div>
-        </Card>
-      </div>
+      <MerchantTabs
+        merchantId={merchant.id}
+        info={
+          <>
+            <AccountRecordPanel owner={{ merchantId: merchant.id }} />
+            <div className="mt-6 grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardTitle>{t('typesTitle')}</CardTitle>
+                <div className="flex flex-col gap-4">
+                  {error !== undefined ? (
+                    <Alert tone="danger">{tRoot(messageKey(errorMessageKey(error)))}</Alert>
+                  ) : null}
+                  <CreditTypeCheckboxes
+                    legend={t('types')}
+                    hint={t('typesHint')}
+                    {...(typesError === undefined ? {} : { error: typesError })}
+                    value={types}
+                    onChange={setTypes}
+                  />
+                  {canManage ? (
+                    <Button
+                      loading={saving}
+                      icon={<Save aria-hidden="true" className="size-icon-sm" />}
+                      className="self-start"
+                      onClick={() => void save()}
+                    >
+                      {t('typesSave')}
+                    </Button>
+                  ) : null}
+                </div>
+              </Card>
+            </div>
+          </>
+        }
+      />
     </>
   );
 }

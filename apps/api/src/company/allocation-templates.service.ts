@@ -34,11 +34,11 @@ export interface PreviewInput {
 /** At most this many employees in one allocation (contract: 5 000 lines). */
 const MAX_EMPLOYEES = 5_000;
 
-const withAmounts = {
+export const withTemplateAmounts = {
   amounts: true,
   department: { select: { name: true } },
 } satisfies Prisma.AllocationTemplateInclude;
-type TemplateRow = Prisma.AllocationTemplateGetPayload<{ include: typeof withAmounts }>;
+type TemplateRow = Prisma.AllocationTemplateGetPayload<{ include: typeof withTemplateAmounts }>;
 
 /** Amounts in the order of the credit types, whatever the order of the request. */
 function ordered<T extends { creditType: CreditType }>(rows: readonly T[]): T[] {
@@ -47,7 +47,7 @@ function ordered<T extends { creditType: CreditType }>(rows: readonly T[]): T[] 
   );
 }
 
-function view(row: TemplateRow) {
+export function templateView(row: TemplateRow) {
   return {
     id: row.id,
     name: row.name,
@@ -90,11 +90,11 @@ export class AllocationTemplatesService {
     return this.db.user(async (tx) => {
       const rows = await tx.allocationTemplate.findMany({
         where: { archivedAt: null },
-        include: withAmounts,
+        include: withTemplateAmounts,
         orderBy: { name: 'asc' },
         take: 200,
       });
-      return { data: rows.map(view) };
+      return { data: rows.map(templateView) };
     });
   }
 
@@ -115,7 +115,7 @@ export class AllocationTemplatesService {
         },
       });
       await this.audit.record(tx, 'allocationTemplates.create', input.name);
-      return view(await this.found(tx, id));
+      return templateView(await this.found(tx, id));
     });
   }
 
@@ -136,7 +136,7 @@ export class AllocationTemplatesService {
         },
       });
       await this.audit.record(tx, 'allocationTemplates.update', input.name);
-      return view(await this.found(tx, id));
+      return templateView(await this.found(tx, id));
     });
   }
 
@@ -154,7 +154,7 @@ export class AllocationTemplatesService {
   async found(tx: Tx, id: string): Promise<TemplateRow> {
     const row = await tx.allocationTemplate.findFirst({
       where: { id, archivedAt: null },
-      include: withAmounts,
+      include: withTemplateAmounts,
     });
     if (row === null) throw problems.notFound();
     return row;
@@ -184,7 +184,7 @@ export class AllocationTemplatesService {
       if (input.templateId !== undefined) {
         const template = await this.found(tx, input.templateId);
         filters = { departmentId: template.departmentId, position: template.position };
-        if (amounts.length === 0) amounts = view(template).amounts;
+        if (amounts.length === 0) amounts = templateView(template).amounts;
       }
       if (filters.departmentId !== null) {
         const department = await tx.department.findUnique({ where: { id: filters.departmentId } });

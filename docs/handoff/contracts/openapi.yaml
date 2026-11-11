@@ -3831,6 +3831,76 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/admin/merchants/{merchantId}/overview:
+    get:
+      tags: [admin]
+      operationId: getMerchantOverview
+      summary: 'Fiche complète du commerçant : onglets Utilisateurs, Ventes, Virements, Dossier KYC'
+      parameters:
+        - name: merchantId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MerchantOverview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/companies/{companyId}/overview:
+    get:
+      tags: [admin]
+      operationId: getCompanyOverview
+      summary: 'Fiche complète de l''entreprise : onglets Utilisateurs, Départements, Employés, Soldes, Commandes, Attributions, Factures'
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyOverview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/admin/merchants/{merchantId}/record:
     get:
       tags: [admin]
@@ -9163,6 +9233,244 @@ components:
         sufficient:
           description: Vrai si chaque type a assez de solde.
           type: boolean
+    OverviewKyc:
+      title: OverviewKyc
+      type: object
+      additionalProperties: false
+      required: [fileId, status]
+      properties:
+        fileId:
+          $ref: '#/components/schemas/Uuid'
+        status:
+          $ref: '#/components/schemas/KycStatus'
+    OverviewUser:
+      title: OverviewUser
+      type: object
+      additionalProperties: false
+      required: [id, displayName, email, subRole, status, createdAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        displayName:
+          type: string
+          maxLength: 120
+        email:
+          type: string
+          maxLength: 254
+        subRole:
+          oneOf:
+            - $ref: '#/components/schemas/SubRole'
+            - type: 'null'
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+    OverviewEmployee:
+      title: OverviewEmployee
+      type: object
+      additionalProperties: false
+      required: [id, employeeNumber, firstName, lastName, departmentName, position, status]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        employeeNumber:
+          type: string
+          maxLength: 32
+        firstName:
+          type: string
+          maxLength: 60
+        lastName:
+          type: string
+          maxLength: 60
+        departmentName:
+          type: [string, 'null']
+          maxLength: 80
+        position:
+          type: [string, 'null']
+          maxLength: 80
+        status:
+          $ref: '#/components/schemas/EmployeeStatus'
+    OverviewOrder:
+      title: OverviewOrder
+      type: object
+      additionalProperties: false
+      required: [id, reference, status, amountMillimes, totalMillimes, createdAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          maxLength: 40
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        amountMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        totalMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+    OverviewAllocation:
+      title: OverviewAllocation
+      description: Une attribution (une transaction du grand livre) et le modèle relancé, le cas échéant.
+      type: object
+      additionalProperties: false
+      required: [transactionId, allocatedAt, lineCount, totalMillimes, templateName]
+      properties:
+        transactionId:
+          $ref: '#/components/schemas/Uuid'
+        allocatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        lineCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 1000000
+        totalMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        templateName:
+          type: [string, 'null']
+          maxLength: 80
+    OverviewInvoice:
+      title: OverviewInvoice
+      type: object
+      additionalProperties: false
+      required: [id, number, status, totalMillimes, issuedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        number:
+          type: string
+          maxLength: 40
+        status:
+          $ref: '#/components/schemas/InvoiceStatus'
+        totalMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        issuedAt:
+          $ref: '#/components/schemas/Timestamp'
+    OverviewSale:
+      title: OverviewSale
+      type: object
+      additionalProperties: false
+      required: [id, reference, creditType, amountMillimes, status, createdAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          maxLength: 40
+        creditType:
+          $ref: '#/components/schemas/CreditType'
+        amountMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        status:
+          $ref: '#/components/schemas/PaymentStatus'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+    OverviewPayout:
+      title: OverviewPayout
+      type: object
+      additionalProperties: false
+      required: [id, reference, creditType, status, grossMillimes, netMillimes, bankReference, requestedAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        reference:
+          type: string
+          maxLength: 40
+        creditType:
+          $ref: '#/components/schemas/CreditType'
+        status:
+          $ref: '#/components/schemas/PayoutRequestStatus'
+        grossMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        netMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        bankReference:
+          type: [string, 'null']
+          maxLength: 64
+        requestedAt:
+          $ref: '#/components/schemas/Timestamp'
+    CompanyOverview:
+      title: CompanyOverview
+      description: Fiche client complète (processus v2), lecture seule ; chaque ligne ouvre sa page dactions.
+      type: object
+      additionalProperties: false
+      required: [kyc, users, departments, employeeCount, employees, balances, orders, allocations, templates, invoices]
+      properties:
+        kyc:
+          oneOf:
+            - $ref: '#/components/schemas/OverviewKyc'
+            - type: 'null'
+        users:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/OverviewUser'
+        departments:
+          type: array
+          maxItems: 500
+          items:
+            $ref: '#/components/schemas/Department'
+        employeeCount:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 1000000
+        employees:
+          type: array
+          maxItems: 500
+          items:
+            $ref: '#/components/schemas/OverviewEmployee'
+        balances:
+          type: array
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/CreditTypeAmount'
+        orders:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/OverviewOrder'
+        allocations:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/OverviewAllocation'
+        templates:
+          type: array
+          maxItems: 200
+          items:
+            $ref: '#/components/schemas/AllocationTemplate'
+        invoices:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/OverviewInvoice'
+    MerchantOverview:
+      title: MerchantOverview
+      type: object
+      additionalProperties: false
+      required: [kyc, users, sales, payouts]
+      properties:
+        kyc:
+          oneOf:
+            - $ref: '#/components/schemas/OverviewKyc'
+            - type: 'null'
+        users:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/OverviewUser'
+        sales:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/OverviewSale'
+        payouts:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/OverviewPayout'
     AllocationResult:
       title: AllocationResult
       type: object
