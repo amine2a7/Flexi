@@ -154,4 +154,77 @@ describe('monthly relaunch of a template', () => {
     expect(off.body).toMatchObject({ autoMonthlyDay: null });
     expect(await templates.runMonthly(at('2027-02-05T09:00:00+01:00'))).toBe(0);
   });
+
+  it('two processes relaunch it once; an inactive author relaunches nothing', async () => {
+    const company = await createCompany(db);
+    const author = await createUser(
+      db,
+      env,
+      'COMPANY',
+      { companyId: company.id },
+      'Leïla M.',
+      'OWNER',
+    );
+    const client = await signedIn(base, author);
+    const production = String(
+      (await client.call('POST', '/v1/company/departments', { body: { name: 'Production' } })).body
+        .id,
+    );
+    await person(company.id, production, 'Ouvrier');
+    await person(company.id, production, 'Ouvrier');
+    const wallet = accounts.companyWallet(company.id, 'RESTAURATION');
+    await db.system((tx) =>
+      ledger.post(tx, {
+        type: 'ALLOCATION',
+        reference: `TEST-FUND-${randomUUID().slice(0, 6)}`,
+        entries: [
+          { account: accounts.bankEscrow(), direction: 'D', amount: 1_000_000n },
+          { account: wallet, direction: 'C', amount: 1_000_000n },
+        ],
+      }),
+    );
+    const created = await client.call('POST', '/v1/company/allocation-templates', {
+      body: {
+        name: 'Tickets en parallèle',
+        departmentId: production,
+        position: 'Ouvrier',
+        amounts: [{ creditType: 'RESTAURATION', amountMillimes: 100_000 }],
+        autoMonthlyDay: 5,
+      },
+    });
+    const id = String(created.body.id);
+    const templates = app.get(AllocationTemplatesService);
+    const status = async () =>
+      db.system((tx) =>
+        tx.allocationTemplate.findUniqueOrThrow({
+          where: { id },
+          select: { lastAutoRunMonth: true, lastAutoRunStatus: true },
+        }),
+      );
+
+    // Two job runs at the same time (two API processes): one allocation, status DONE kept.
+    const runs = await Promise.all([
+      templates.runMonthly(at('2026-12-05T09:00:00+01:00')),
+      templates.runMonthly(at('2026-12-05T09:00:00+01:00')),
+    ]);
+    expect(runs[0] + runs[1]).toBe(1);
+    await db.system(async (tx) => {
+      expect(await ledger.balance(tx, wallet)).toBe(800_000n);
+    });
+    expect(await status()).toEqual({ lastAutoRunMonth: '2026-12', lastAutoRunStatus: 'DONE' });
+
+    // The author is deactivated: next month nothing moves, the template says why.
+    await db.system((tx) =>
+      tx.user.update({ where: { id: author.id }, data: { status: 'DEACTIVATED' } }),
+    );
+    expect(await templates.runMonthly(at('2027-01-05T09:00:00+01:00'))).toBe(0);
+    await db.system(async (tx) => {
+      expect(await ledger.balance(tx, wallet)).toBe(800_000n);
+      expect((await ledger.reconcile(tx)).ok).toBe(true);
+    });
+    expect(await status()).toEqual({
+      lastAutoRunMonth: '2027-01',
+      lastAutoRunStatus: 'AUTHOR_UNAVAILABLE',
+    });
+  });
 });

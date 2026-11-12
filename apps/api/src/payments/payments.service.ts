@@ -515,6 +515,7 @@ export class PaymentsService {
                     JOIN employees e2 ON e2.id = a2.owner_id
                    WHERE x2.transaction_id = t.id AND a2.owner_type = 'EMPLOYEE'
                      AND a2.owner_id <> ${employeeId}::uuid
+                   ORDER BY e2.last_name, e2.first_name, e2.id
                    LIMIT 1),
                  own.company_name),
                NULL::text, 'COMPLETED', t.created_at, t.id

@@ -38,6 +38,20 @@ export interface PreviewInput {
 
 /** Outcome kept on the template when its day was set after that day of the current month. */
 const NOT_DUE = 'NOT_DUE';
+/** Another process already relaunched the template this month: nothing written. */
+const ALREADY = 'ALREADY';
+
+/** A unique index refused the row (Postgres 23505, through Prisma or a raw query). */
+function isUniqueViolation(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const found = error as { code?: unknown; meta?: { code?: unknown }; message?: unknown };
+  return (
+    found.code === 'P2002' ||
+    found.code === '23505' ||
+    found.meta?.code === '23505' ||
+    (typeof found.message === 'string' && found.message.includes('23505'))
+  );
+}
 
 /**
  * Idempotency key of the automatic relaunch of a template for a month: the same for every run of
@@ -244,19 +258,38 @@ export class AllocationTemplatesService {
     let done = 0;
     for (const template of due) {
       const status = await this.runOne(template, month);
+      // DONE is written inside the allocation's own transaction; another process already took
+      // this month: nothing to write.
+      if (status === 'DONE') {
+        done += 1;
+        await this.db.system((tx) =>
+          this.audit.record(
+            tx,
+            'allocationTemplates.autoRun',
+            `${template.name} ${month} DONE`,
+            'Système',
+          ),
+        );
+        continue;
+      }
+      if (status === ALREADY) continue;
+      // A refusal never overwrites the month a run has already taken (ledger-auditor, Haute).
       await this.db.system(async (tx) => {
-        await tx.allocationTemplate.update({
-          where: { id: template.id },
+        const kept = await tx.allocationTemplate.updateMany({
+          where: {
+            id: template.id,
+            OR: [{ lastAutoRunMonth: null }, { lastAutoRunMonth: { not: month } }],
+          },
           data: { lastAutoRunMonth: month, lastAutoRunStatus: status },
         });
-        await this.audit.record(
-          tx,
-          'allocationTemplates.autoRun',
-          `${template.name} ${month} ${status}`,
-          'Système',
-        );
+        if (kept.count > 0)
+          await this.audit.record(
+            tx,
+            'allocationTemplates.autoRun',
+            `${template.name} ${month} ${status}`,
+            'Système',
+          );
       });
-      if (status === 'DONE') done += 1;
     }
     return done;
   }
@@ -302,16 +335,25 @@ export class AllocationTemplatesService {
             amountMillimes: line.perEmployeeMillimes,
           })),
         );
-        await this.db.user(async (tx) => {
+        return await this.db.user(async (tx) => {
+          // The month is taken in the transaction that allocates: a second process waits on this
+          // row, then finds the month taken and leaves without writing anything.
+          const taken = await tx.$executeRaw`
+            UPDATE allocation_templates
+               SET last_auto_run_month = ${month}, last_auto_run_status = 'DONE'
+             WHERE id = ${template.id}::uuid AND last_auto_run_month IS DISTINCT FROM ${month}`;
+          if (taken === 0) return ALREADY;
           await this.ran(tx, template.id);
           await this.company.allocate(tx, lines, monthlyKey(template.id, month), template.id);
+          return 'DONE';
         });
-        return 'DONE';
       } catch (error) {
         // The balance moved since the preview: refused as a whole, nothing posted.
         if (error instanceof ApiProblem && error.code === 'INSUFFICIENT_FUNDS') {
           return 'INSUFFICIENT_FUNDS';
         }
+        // The key of this month is already in the ledger: it was posted, never twice.
+        if (isUniqueViolation(error)) return ALREADY;
         this.logger.error(
           `template auto run failed: ${error instanceof Error ? error.constructor.name : 'unknown'}`,
         );
