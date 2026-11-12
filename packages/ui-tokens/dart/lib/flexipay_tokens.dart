@@ -46,6 +46,11 @@ abstract final class FlexiColors {
   static const Color paper = Color(0xFFFFFCF3);
   static const Color paperLine = Color(0xFFD9D2BC);
   static const Color paperInk = Color(0xFF7A7360);
+  static const Color bookEdge = Color(0xFF13294A);
+  static const Color paperEdge = Color(0xFFEDE7D4);
+  static const Color paperEdgeLight = Color(0xFFF5F0E0);
+  static const Color paperBorder = Color(0xFFE6E0CC);
+  static const Color navyLine = Color(0xFF3A5276);
   static const Color overlay = Color.fromRGBO(11, 29, 51, 0.5);
 }
 
@@ -149,9 +154,13 @@ abstract final class FlexiMotion {
   static const Duration peekDelay = Duration(milliseconds: 820);
   static const Duration wiggle = Duration(milliseconds: 1600);
   static const Duration bookAuto = Duration(milliseconds: 5200);
+  static const Duration cover = Duration(milliseconds: 1100);
+  static const Duration coverDelay = Duration(milliseconds: 600);
+  static const Duration slot = Duration(milliseconds: 520);
   static const Cubic easeOut = Cubic(0.2, 0, 0, 1);
   static const Cubic easeIn = Cubic(0.4, 0, 1, 1);
   static const Cubic easeSpring = Cubic(0.34, 1.56, 0.64, 1);
+  static const Cubic easeOpen = Cubic(0.6, 0, 0.2, 1);
   static const double distanceRise = 8;
   static const double distanceShake = 7;
   static const double distanceTearX = 260;
@@ -160,6 +169,8 @@ abstract final class FlexiMotion {
   static const double distanceWiggleRotate = 4;
   static const double distancePeek = 34;
   static const double distancePrint = 14;
+  static const double distanceCoverRotate = 168;
+  static const double distanceSlot = 60;
   static const double scalePress = 0.97;
   static const double scaleModal = 0.96;
   static const double scalePulse = 1.08;

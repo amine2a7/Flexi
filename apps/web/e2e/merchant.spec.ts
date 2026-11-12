@@ -1,24 +1,49 @@
 // Step 3 (Commerçant): collect a payment with the customer code, then simulate and request a
 // payout: the net shown by the simulation is the net of the request (frozen rate, rule 5).
-// Mocked API: customer code 12345678 is confirmed by the customer after 4 s.
+// Real API (demo seed): the customer shows a fresh code on its phone, the merchant types it,
+// the customer confirms with its PIN (1234 in the demo).
 import { expect, test } from '@playwright/test';
 import { dismissTour, signIn } from './sign-in';
 
-test('the merchant collects a payment confirmed by the customer', async ({ page }) => {
-  test.setTimeout(120_000);
+test('the merchant collects a payment confirmed by the customer', async ({ page, browser }) => {
+  test.setTimeout(180_000);
+  const phoneContext = await browser.newContext({
+    baseURL: test.info().project.use.baseURL,
+    locale: 'fr-FR',
+  });
+  const phone = await phoneContext.newPage();
+  await signIn(phone, 'beneficiaire@flexipay.test');
+  await phone.goto('/fr/beneficiaire/payer');
+  await dismissTour(phone);
+  await phone.getByRole('button', { name: 'Afficher mon code' }).click();
+  const shown = await phone
+    .getByText(/^\d{4} \d{4}$/)
+    .first()
+    .innerText();
+  const code = shown.replace(/\s/g, '');
+
   await signIn(page, 'commercant@flexipay.test');
   await page.goto('/fr/commercant/encaissement');
   await dismissTour(page);
-  await page.getByLabel('Code client (8 chiffres)').fill('12345678');
+  await page.getByLabel('Code client (8 chiffres)').fill(code);
   await page.getByLabel('Montant (TND)').fill('45,500');
   await page.getByRole('button', { name: 'Demander la confirmation' }).click();
   await expect(page.getByText('En attente du client')).toBeVisible();
+
+  await phone.getByRole('button', { name: 'Confirmer', exact: true }).first().click();
+  await phone.getByLabel('Code PIN (4 chiffres)').fill('1234');
+  await phone
+    .getByRole('dialog')
+    .getByRole('button', { name: /^Payer / })
+    .click();
   await expect(page.getByText('Paiement accepté')).toBeVisible({ timeout: 30_000 });
+  await phoneContext.close();
 });
 
 test('the net of the simulation is the net of the payout request', async ({ page }) => {
   test.setTimeout(120_000);
-  await signIn(page, 'commercant@flexipay.test');
+  // Le Jasmin (Karim) has 1 250 TND to transfer in the demo seed.
+  await signIn(page, 'karim@lejasmin.tn');
   await page.goto('/fr/commercant/virements');
   await dismissTour(page);
   await page.getByLabel('Montant à virer (TND)').fill('100');

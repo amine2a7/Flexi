@@ -46,6 +46,11 @@ module.exports = {
       "paper": "#FFFCF3",
       "paper-line": "#D9D2BC",
       "paper-ink": "#7A7360",
+      "book-edge": "#13294A",
+      "paper-edge": "#EDE7D4",
+      "paper-edge-light": "#F5F0E0",
+      "paper-border": "#E6E0CC",
+      "navy-line": "#3A5276",
       "overlay": "rgba(11,29,51,0.5)",
       "dark": {
         "bg": "#0B1220",
@@ -249,12 +254,16 @@ module.exports = {
         "peek": 420,
         "peek-delay": 820,
         "wiggle": 1600,
-        "book-auto": 5200
+        "book-auto": 5200,
+        "cover": 1100,
+        "cover-delay": 600,
+        "slot": 520
       },
       "easing": {
         "out": "cubic-bezier(.2,0,0,1)",
         "in": "cubic-bezier(.4,0,1,1)",
-        "spring": "cubic-bezier(.34,1.56,.64,1)"
+        "spring": "cubic-bezier(.34,1.56,.64,1)",
+        "open": "cubic-bezier(.6,0,.2,1)"
       },
       "distance": {
         "rise": 8,
@@ -264,7 +273,9 @@ module.exports = {
         "tear-rotate": 18,
         "wiggle-rotate": 4,
         "peek": 34,
-        "print": 14
+        "print": 14,
+        "cover-rotate": 168,
+        "slot": 60
       },
       "scale": {
         "press": 0.97,

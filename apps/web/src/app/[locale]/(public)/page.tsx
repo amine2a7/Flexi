@@ -1,40 +1,37 @@
-import { Building2, Store, UserRound, type LucideIcon } from 'lucide-react';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { ContactForm } from '@/components/public/contact-form';
 import { buttonClasses } from '@/components/ui/button';
 import { TicketBook } from '@/components/public/ticket-book';
-import { CreditTypeBadge } from '@/components/ui/credit-type';
 import { fetchPlatformTerms, termValues } from '@/lib/api/platform-terms';
-import { CREDIT_TYPES } from '@/lib/credit-types';
 
-const AUDIENCES: readonly { key: 'company' | 'merchant' | 'employee'; icon: LucideIcon }[] = [
-  { key: 'company', icon: Building2 },
-  { key: 'merchant', icon: Store },
-  { key: 'employee', icon: UserRound },
-];
-const STEPS = ['s1', 's2', 's3'] as const;
+const AUDIENCES = ['company', 'employee', 'merchant'] as const;
 
-/** Public home: presentation, credit types, benefits per audience, 3 steps, contact form. */
+/**
+ * Public home (maquette « Accueil · Le dernier carnet de tickets »): the story told by the ticket
+ * book, the three ways to use it, and a contact ticket.
+ */
 export default async function LandingPage() {
   const t = await getTranslations('landing');
-  const tContact = await getTranslations('contact');
+  const tContact = await getTranslations('contact.ticket');
   const terms = termValues(await fetchPlatformTerms(), await getLocale());
   const days = { days: terms.settlementDays };
   return (
     <>
-      <section className="bg-navy text-on-navy">
-        <div className="mx-auto grid w-full max-w-desktop-max-width gap-12 px-4 py-12 lg:grid-cols-2 lg:items-center lg:px-8 lg:py-16">
-          <div className="flex flex-col gap-6">
+      <section id="histoire" className="scroll-mt-4 bg-navy text-on-navy">
+        <div className="mx-auto flex w-full max-w-desktop-max-width flex-wrap items-center gap-12 px-6 pb-20 pt-10">
+          <div className="fp-cascade flex min-w-0 flex-1 basis-96 flex-col gap-5">
             <p className="text-micro font-label uppercase tracking-widest text-emerald">
               {t('hero.eyebrow')}
             </p>
-            <h1 className="font-display text-display-md lg:text-display">
-              {t('hero.title')} <span className="text-emerald">{t('hero.highlight')}</span>
+            <h1 className="font-display text-display-md leading-none text-balance lg:text-display">
+              {t('hero.title')}
+              <br />
+              <span className="text-emerald">{t('hero.highlight')}</span>
             </h1>
             <p className="max-w-form-max-width text-body-lg text-on-navy-muted">{t('hero.text')}</p>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/#contact" className={buttonClasses('success')}>
+            <div className="flex flex-wrap gap-2.5">
+              <Link href="/#contact" className={buttonClasses('success', 'md', 'font-title')}>
                 {t('hero.company')}
               </Link>
               <Link
@@ -42,99 +39,65 @@ export default async function LandingPage() {
                 className={buttonClasses(
                   'ghost',
                   'md',
-                  'border border-on-navy-muted text-on-navy hover:bg-navy-deep',
+                  'border border-navy-line text-on-navy hover:bg-navy-deep',
                 )}
               >
                 {t('hero.merchant')}
               </Link>
             </div>
           </div>
-          <TicketBook />
+          <div className="flex min-w-0 flex-1 basis-96 justify-center">
+            <TicketBook settlementDays={terms.settlementDays} />
+          </div>
         </div>
       </section>
 
-      <section className="border-b border-border bg-surface">
-        <div className="mx-auto flex w-full max-w-desktop-max-width flex-col gap-4 px-4 py-8 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-title-sm text-text">{t('types.title')}</h2>
-            <p className="text-body text-text-muted">{t('types.text')}</p>
+      <section id="pour-qui" className="scroll-mt-4 px-6 py-16 lg:py-20">
+        <div className="mx-auto flex w-full max-w-desktop-max-width flex-col gap-7">
+          <div>
+            <p className="text-micro font-label uppercase tracking-widest text-emerald-text">
+              {t('forWho.eyebrow')}
+            </p>
+            <h2 className="mt-1.5 font-display text-display-md leading-none text-navy">
+              {t('forWho.title')}
+            </h2>
           </div>
-          <ul className="flex flex-wrap gap-2">
-            {CREDIT_TYPES.map((type) => (
-              <li key={type}>
-                <CreditTypeBadge type={type} />
+          <ul className="grid gap-4 md:grid-cols-3">
+            {AUDIENCES.map((key) => (
+              <li
+                key={key}
+                className="flex flex-col gap-2.5 rounded-card-desktop border border-paper-border bg-paper p-6 transition duration-base ease-out hover:-translate-y-1 hover:-rotate-1 hover:shadow-raised motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:hover:rotate-0"
+              >
+                <p className="font-ticket text-micro uppercase text-paper-ink">
+                  {t(`forWho.${key}.tag`)}
+                </p>
+                <h3 className="text-title text-text">{t(`forWho.${key}.title`)}</h3>
+                <p className="text-body text-neutral-text">{t(`forWho.${key}.text`, days)}</p>
+                <Link
+                  href={key === 'employee' ? '/login' : '/#contact'}
+                  className="mt-auto inline-flex min-h-touch-target-min items-center font-label text-emerald-text underline-offset-4 hover:text-navy hover:underline"
+                >
+                  {t(`forWho.${key}.cta`)}
+                </Link>
               </li>
             ))}
           </ul>
         </div>
       </section>
 
-      <section
-        id="avantages"
-        className="mx-auto w-full max-w-desktop-max-width px-4 py-12 lg:px-8 lg:py-16"
-      >
-        <p className="mb-2 text-micro font-label uppercase tracking-widest text-emerald-text">
-          {t('forWho.eyebrow')}
-        </p>
-        <h2 className="mb-8 font-display text-display-md text-navy">{t('forWho.title')}</h2>
-        <ul className="grid gap-6 md:grid-cols-3">
-          {AUDIENCES.map(({ key, icon: Icon }) => (
-            <li
-              key={key}
-              className="flex flex-col rounded-card-desktop border border-paper-line bg-paper text-navy shadow-card transition duration-base ease-out hover:-translate-y-1 hover:-rotate-1 hover:shadow-raised motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:hover:rotate-0"
-            >
-              <div className="flex items-center justify-between gap-3 border-b-2 border-dashed border-paper-line px-6 py-4">
-                <p className="font-ticket text-micro uppercase text-paper-ink">
-                  {t(`forWho.${key}.tag`)}
-                </p>
-                <Icon aria-hidden="true" className="size-icon-md text-emerald-text" />
-              </div>
-              <div className="flex flex-1 flex-col gap-3 p-6">
-                <h3 className="font-display text-display-md">{t(`forWho.${key}.title`)}</h3>
-                <p className="text-body text-paper-ink">{t(`forWho.${key}.text`, days)}</p>
-                <Link
-                  href={key === 'employee' ? '/login' : '/#contact'}
-                  className="mt-auto inline-flex min-h-touch-target-min items-center text-label text-emerald-text underline-offset-4 hover:underline"
-                >
-                  {t(`forWho.${key}.cta`)}
-                </Link>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section id="comment" className="bg-surface">
-        <div className="mx-auto w-full max-w-desktop-max-width px-4 py-12 lg:px-8">
-          <h2 className="mb-6 text-title text-text">{t('steps.title')}</h2>
-          <ol className="grid gap-6 md:grid-cols-3">
-            {STEPS.map((step, index) => (
-              <li key={step} className="flex gap-4">
-                <span
-                  aria-hidden="true"
-                  className="flex size-avatar-md shrink-0 items-center justify-center rounded-badge bg-navy text-title-sm text-on-navy"
-                >
-                  {index + 1}
-                </span>
-                <span className="flex flex-col gap-1">
-                  <h3 className="text-title-sm text-text">{t(`steps.${step}.title`)}</h3>
-                  <p className="text-body text-text-muted">{t(`steps.${step}.text`, days)}</p>
-                </span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-
-      <section id="contact" className="mx-auto w-full max-w-desktop-max-width px-4 py-12 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-3">
-          <div className="flex flex-col gap-3">
-            <h2 className="text-title text-text">{tContact('title')}</h2>
-            <p className="text-body text-text-muted">{tContact('description')}</p>
-            <p className="text-caption text-text-muted">{tContact('privacy')}</p>
+      <section id="contact" className="scroll-mt-4 px-6 pb-20">
+        <div className="mx-auto flex w-full max-w-desktop-max-width flex-wrap items-start gap-10">
+          <div className="flex min-w-0 flex-1 basis-80 flex-col gap-3">
+            <p className="text-micro font-label uppercase tracking-widest text-emerald-text">
+              {tContact('eyebrow')}
+            </p>
+            <h2 className="font-display text-display-md leading-none text-navy">
+              {tContact('title')}
+            </h2>
+            <p className="max-w-form-max-width text-body text-neutral-text">{tContact('text')}</p>
           </div>
-          <div className="lg:col-span-2">
-            <ContactForm />
+          <div className="min-w-0 flex-1 basis-96">
+            <ContactForm variant="ticket" />
           </div>
         </div>
       </section>

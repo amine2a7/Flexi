@@ -24,5 +24,22 @@
   "sentTitle": "Message sent",
   "sentText": "Thank you. Your reference: {reference}. We will answer by e-mail.",
   "another": "Send another message",
-  "privacy": "Your details are only used to answer you."
+  "privacy": "Your details are only used to answer you.",
+  "ticket": {
+    "eyebrow": "Contact us",
+    "title": "Slip us a ticket",
+    "text": "A question, a demo, a partnership? Fill in the ticket: it lands straight in our box, and we answer by e-mail.",
+    "label": "Contact ticket",
+    "serial": "No. 000 120 774",
+    "name": "Name",
+    "email": "E-mail",
+    "company": "Company",
+    "type": "You are",
+    "message": "Your message",
+    "noSpam": "No spam. Just an answer.",
+    "submit": "Send my ticket",
+    "sentTitle": "Ticket received.",
+    "sentText": "It is in our box (reference {reference}). We answer by e-mail.",
+    "another": "Send another ticket"
+  }
 }

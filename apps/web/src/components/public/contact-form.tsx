@@ -1,15 +1,16 @@
 'use client';
 
 import type { Schemas } from '@flexipay/api-client';
-import { CheckCircle2, Send } from 'lucide-react';
+import { Check, CheckCircle2, Send } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, type SyntheticEvent } from 'react';
+import { useId, useState, type ReactNode, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
 import { getApi } from '@/lib/api/client';
 import { errorMessageKey, fieldErrors as readFieldErrors } from '@/lib/api/problem';
 import { Button } from '@/components/ui/button';
 import { SelectField, TextAreaField, TextField } from '@/components/ui/field';
 import { Alert } from '@/components/ui/layout-blocks';
+import { cn } from '@/lib/cn';
 
 type Requester = Schemas['ContactRequesterType'];
 type Field = 'name' | 'email' | 'phone' | 'requesterType' | 'message';
@@ -30,8 +31,11 @@ export function normalizePhone(text: string): string | undefined {
   return /^\+[1-9][0-9]{7,14}$/.test(full) ? full : undefined;
 }
 
-/** Public "Contact us" form; the message lands in the admin "Messages" page. */
-export function ContactForm() {
+/**
+ * Public "Contact us" form; the message lands in the admin "Messages" page. `ticket`: the home
+ * page's « Ticket de contact » (maquette Accueil), which slides into the box once sent.
+ */
+export function ContactForm({ variant = 'default' }: { variant?: 'default' | 'ticket' }) {
   const t = useTranslations('contact');
   const tRoot = useTranslations();
   const [draft, setDraft] = useState({
@@ -46,6 +50,8 @@ export function ContactForm() {
   const [failure, setFailure] = useState<unknown>(undefined);
   const [sending, setSending] = useState(false);
   const [reference, setReference] = useState<string | undefined>(undefined);
+  // The ticket slides into the box before the confirmation (reference kept meanwhile).
+  const [slotting, setSlotting] = useState<string | undefined>(undefined);
   const set = (field: keyof typeof draft) => (value: string) => {
     setDraft((previous) => ({ ...previous, [field]: value }));
   };
@@ -99,12 +105,155 @@ export function ContactForm() {
         } else setFailure(error);
         return;
       }
-      setReference(data.reference);
+      if (variant === 'ticket') setSlotting(data.reference);
+      else setReference(data.reference);
     } catch (reason) {
       setFailure(reason);
     } finally {
       setSending(false);
     }
+  }
+
+  const reset = () => {
+    setReference(undefined);
+    setDraft({
+      name: '',
+      email: '',
+      phone: '',
+      companyName: '',
+      requesterType: '',
+      message: '',
+    });
+  };
+
+  if (variant === 'ticket') {
+    if (reference !== undefined) {
+      return (
+        <div
+          role="status"
+          className="flex animate-pop flex-col items-center gap-2.5 rounded-card-desktop border border-border bg-surface px-6 py-9 text-center"
+        >
+          <span className="flex size-20 items-center justify-center rounded-badge bg-emerald-soft text-emerald-text">
+            <Check aria-hidden="true" className="size-10" strokeWidth={2.4} />
+          </span>
+          <p className="text-title text-text">{t('ticket.sentTitle')}</p>
+          <p className="text-body text-text-muted">{t('ticket.sentText', { reference })}</p>
+          <Button variant="secondary" className="mt-1.5" onClick={reset}>
+            {t('ticket.another')}
+          </Button>
+        </div>
+      );
+    }
+    return (
+      <form
+        onSubmit={(event) => void submit(event)}
+        onAnimationEnd={(event) => {
+          if (event.animationName === 'fp-slot' && slotting !== undefined) {
+            setReference(slotting);
+            setSlotting(undefined);
+          }
+        }}
+        className={cn(
+          'overflow-hidden rounded-card-desktop border border-paper-border bg-paper',
+          slotting !== undefined && 'animate-slot',
+        )}
+        noValidate
+      >
+        <div className="flex justify-between gap-3 bg-navy px-5 py-3.5 text-on-navy">
+          <span className="font-display text-title uppercase tracking-wide">
+            {t('ticket.label')}
+          </span>
+          <span className="self-center font-ticket text-micro text-on-navy-muted">
+            {t('ticket.serial')}
+          </span>
+        </div>
+        <div className="grid gap-3.5 px-5 py-5 sm:grid-cols-2">
+          {failure !== undefined ? (
+            <div className="sm:col-span-2">
+              <Alert tone="danger">{tRoot(messageKey(errorMessageKey(failure)))}</Alert>
+            </div>
+          ) : null}
+          <TicketField label={t('ticket.name')} error={errors.name}>
+            {(props) => (
+              <input
+                {...props}
+                autoComplete="name"
+                value={draft.name}
+                onChange={(event) => {
+                  set('name')(event.target.value);
+                }}
+              />
+            )}
+          </TicketField>
+          <TicketField label={t('ticket.email')} error={errors.email}>
+            {(props) => (
+              <input
+                {...props}
+                type="email"
+                dir="ltr"
+                autoComplete="email"
+                value={draft.email}
+                onChange={(event) => {
+                  set('email')(event.target.value);
+                }}
+              />
+            )}
+          </TicketField>
+          <TicketField label={t('ticket.company')}>
+            {(props) => (
+              <input
+                {...props}
+                autoComplete="organization"
+                value={draft.companyName}
+                onChange={(event) => {
+                  set('companyName')(event.target.value);
+                }}
+              />
+            )}
+          </TicketField>
+          <TicketField label={t('ticket.type')} error={errors.requesterType}>
+            {(props) => (
+              <select
+                {...props}
+                value={draft.requesterType}
+                onChange={(event) => {
+                  set('requesterType')(event.target.value);
+                }}
+              >
+                <option value="">{t('typePlaceholder')}</option>
+                {REQUESTERS.map((value) => (
+                  <option key={value} value={value}>
+                    {t(`types.${value}`)}
+                  </option>
+                ))}
+              </select>
+            )}
+          </TicketField>
+          <div className="sm:col-span-2">
+            <TicketField label={t('ticket.message')} error={errors.message}>
+              {(props) => (
+                <textarea
+                  {...props}
+                  rows={3}
+                  maxLength={2000}
+                  className={cn(props.className, 'h-auto resize-y py-2')}
+                  value={draft.message}
+                  onChange={(event) => {
+                    set('message')(event.target.value);
+                  }}
+                />
+              )}
+            </TicketField>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 pb-5">
+          <span className="text-caption text-paper-ink">{t('ticket.noSpam')}</span>
+          <Button type="submit" loading={sending || slotting !== undefined}>
+            {t('ticket.submit')}
+          </Button>
+        </div>
+      </form>
+    );
   }
 
   if (reference !== undefined) {
@@ -116,20 +265,7 @@ export function ContactForm() {
         <CheckCircle2 aria-hidden="true" className="size-icon-lg text-emerald-text" />
         <h3 className="text-title-sm text-text">{t('sentTitle')}</h3>
         <p className="text-body text-text-muted">{t('sentText', { reference })}</p>
-        <Button
-          variant="secondary"
-          onClick={() => {
-            setReference(undefined);
-            setDraft({
-              name: '',
-              email: '',
-              phone: '',
-              companyName: '',
-              requesterType: '',
-              message: '',
-            });
-          }}
-        >
+        <Button variant="secondary" onClick={reset}>
           {t('another')}
         </Button>
       </div>
@@ -221,5 +357,49 @@ export function ContactForm() {
         </Button>
       </div>
     </form>
+  );
+}
+
+interface TicketFieldProps {
+  id: string;
+  className: string;
+  'aria-invalid'?: true;
+  'aria-describedby'?: string;
+}
+
+/** A field of the contact ticket: small capitals label, underlined control, error under it. */
+function TicketField({
+  label,
+  error,
+  children,
+}: {
+  label: string;
+  error?: string | undefined;
+  children: (props: TicketFieldProps) => ReactNode;
+}) {
+  const id = useId();
+  const errorId = `${id}-error`;
+  return (
+    <div className="flex flex-col gap-1">
+      <label
+        htmlFor={id}
+        className="text-micro font-label uppercase tracking-widest text-neutral-text"
+      >
+        {label}
+      </label>
+      {children({
+        id,
+        className: cn(
+          'h-10 w-full border-0 border-b-2 bg-transparent text-body text-text focus:border-emerald-text focus:outline-none',
+          error === undefined ? 'border-paper-ink' : 'border-danger',
+        ),
+        ...(error === undefined ? {} : { 'aria-invalid': true, 'aria-describedby': errorId }),
+      })}
+      {error === undefined ? null : (
+        <p id={errorId} className="text-caption text-danger-text">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }

@@ -50,6 +50,11 @@
     "paper":       { "value": "#FFFCF3", "usage": "Fond des tickets (landing, connexion)" },
     "paper-line":  { "value": "#D9D2BC", "usage": "Perforations et bordures des tickets (décoratif)" },
     "paper-ink":   { "value": "#7A7360", "usage": "Texte secondaire sur paper (4,6:1)" },
+    "book-edge": { "value": "#13294A", "usage": "Tranche sombre du carnet de tickets (accueil), sous les tickets" },
+    "paper-edge": { "value": "#EDE7D4", "usage": "Tickets empilés sous le ticket du dessus (accueil)" },
+    "paper-edge-light": { "value": "#F5F0E0", "usage": "Ticket juste sous le ticket du dessus (accueil)" },
+    "paper-border": { "value": "#E6E0CC", "usage": "Bordure des cartes et pastilles papier (accueil, ticket de contact)" },
+    "navy-line": { "value": "#3A5276", "usage": "Bordure sur fond navy : bouton secondaire, couverture du carnet" },
     "overlay":     { "value": "rgba(11,29,51,0.5)", "usage": "Voile derrière modale et tiroir" }
   },
   "color-dark": {
@@ -129,9 +134,9 @@
     "raised": "0 4px 12px rgba(15,23,42,0.08)"
   },
   "motion": {
-    "duration": { "fast": 120, "base": 200, "slow": 320, "emphasis": 600, "bars": 700, "shake": 360, "bounce": 380, "copied": 1500, "success": 1600, "flash": 1600, "skeleton": 1200, "toast": 4000, "cascade-step": 40, "bars-step": 80, "tear": 650, "print": 900, "peek": 420, "peek-delay": 820, "wiggle": 1600, "book-auto": 5200 },
-    "easing": { "out": "cubic-bezier(.2,0,0,1)", "in": "cubic-bezier(.4,0,1,1)", "spring": "cubic-bezier(.34,1.56,.64,1)" },
-    "distance": { "rise": 8, "shake": 7, "tear-x": 260, "tear-y": 220, "tear-rotate": 18, "wiggle-rotate": 4, "peek": 34, "print": 14 },
+    "duration": { "fast": 120, "base": 200, "slow": 320, "emphasis": 600, "bars": 700, "shake": 360, "bounce": 380, "copied": 1500, "success": 1600, "flash": 1600, "skeleton": 1200, "toast": 4000, "cascade-step": 40, "bars-step": 80, "tear": 650, "print": 900, "peek": 420, "peek-delay": 820, "wiggle": 1600, "book-auto": 5200, "cover": 1100, "cover-delay": 600, "slot": 520 },
+    "easing": { "out": "cubic-bezier(.2,0,0,1)", "in": "cubic-bezier(.4,0,1,1)", "spring": "cubic-bezier(.34,1.56,.64,1)", "open": "cubic-bezier(.6,0,.2,1)" },
+    "distance": { "rise": 8, "shake": 7, "tear-x": 260, "tear-y": 220, "tear-rotate": 18, "wiggle-rotate": 4, "peek": 34, "print": 14, "cover-rotate": 168, "slot": 60 },
     "scale": { "press": 0.97, "modal": 0.96, "pulse": 1.08, "pop": 0.6 }
   },
   "status": {

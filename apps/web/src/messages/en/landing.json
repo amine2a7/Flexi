@@ -6,7 +6,8 @@
     "contact": "Contact us",
     "help": "Help",
     "signIn": "Sign in",
-    "label": "Site navigation"
+    "label": "Site navigation",
+    "forWho": "Who it is for"
   },
   "hero": {
     "eyebrow": "Meal vouchers and employee benefits · Tunisia",
@@ -58,13 +59,14 @@
   },
   "footer": {
     "rights": "© {year} FlexiPay. All rights reserved.",
-    "country": "Service operated in Tunisia, amounts in dinars (TND)."
+    "country": "Service operated in Tunisia, amounts in dinars (TND).",
+    "short": "© {year} FlexiPay · Tunis"
   },
   "book": {
     "number": "Voucher {n}/{total}",
     "detach": "Tear off the voucher",
     "reopen": "Reopen the book",
-    "left": "Vouchers left: {count}",
+    "left": "{count} tickets left in the book",
     "t1": {
       "tag": "The company",
       "title": "A company orders its credits",
@@ -94,6 +96,13 @@
       "title": "That was the last paper voucher",
       "text": "The book is empty. The rest happens on FlexiPay: join us or slip us a contact voucher.",
       "fine": "End of the book. Start of FlexiPay."
+    },
+    "empty": "Book empty",
+    "cover": {
+      "edition": "Book no. 1 · Last edition",
+      "title": "Book of tickets",
+      "count": "5 tickets",
+      "valid": "Valid all over Tunisia"
     }
   },
   "forWho": {

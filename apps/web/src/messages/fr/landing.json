@@ -6,7 +6,8 @@
     "contact": "Nous contacter",
     "help": "Aide",
     "signIn": "Se connecter",
-    "label": "Navigation du site"
+    "label": "Navigation du site",
+    "forWho": "Pour qui"
   },
   "hero": {
     "eyebrow": "Titres-restaurant et avantages salariés · Tunisie",
@@ -58,13 +59,14 @@
   },
   "footer": {
     "rights": "© {year} FlexiPay. Tous droits réservés.",
-    "country": "Service opéré en Tunisie, montants en dinars (TND)."
+    "country": "Service opéré en Tunisie, montants en dinars (TND).",
+    "short": "© {year} FlexiPay · Tunis"
   },
   "book": {
     "number": "Ticket {n}/{total}",
     "detach": "Détacher le ticket",
     "reopen": "Rouvrir le carnet",
-    "left": "Tickets restants : {count}",
+    "left": "Il reste {count} tickets dans le carnet",
     "t1": {
       "tag": "L’entreprise",
       "title": "Une entreprise commande ses crédits",
@@ -94,6 +96,13 @@
       "title": "C’était le dernier ticket papier",
       "text": "Le carnet est vide. Le reste se passe sur FlexiPay : rejoignez-nous ou glissez-nous un ticket de contact.",
       "fine": "Fin du carnet. Début de FlexiPay."
+    },
+    "empty": "Carnet vide",
+    "cover": {
+      "edition": "Carnet n° 1 · Dernière édition",
+      "title": "Carnet de tickets",
+      "count": "5 tickets",
+      "valid": "Valable partout en Tunisie"
     }
   },
   "forWho": {

@@ -34,6 +34,10 @@ test.describe('commission grids and simulations', () => {
     await expect(dialog.getByText(/chevauche une autre tranche/)).toBeVisible();
     await dialog.getByRole('button', { name: 'Supprimer la tranche 2' }).click();
     await dialog.getByRole('button', { name: "Créer l'entreprise" }).click();
+    // Processus v2: the temporary password of the new client is shown once.
+    const credentials = page.getByRole('dialog', { name: 'Identifiants à transmettre' });
+    await expect(credentials).toBeVisible();
+    await credentials.getByRole('button', { name: "J'ai transmis les identifiants" }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
@@ -50,7 +54,7 @@ test.describe('commission grids and simulations', () => {
   test('the merchant sees commission, VAT, stamp duty and net in the payout simulation', async ({
     page,
   }) => {
-    await signIn(page, 'commercant@flexipay.test');
+    await signIn(page, 'karim@lejasmin.tn');
     await dismissTour(page);
     await page.goto('/fr/commercant/virements');
     await page.getByLabel('Montant à virer (TND)').fill('60');

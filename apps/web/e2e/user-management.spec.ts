@@ -1,6 +1,9 @@
 // Step 2 (decisions A to D of 2026-10-23): a company suspends, reactivates and deactivates an
 // employee with a reason; an administrator sub-role without the right never sees the actions.
 import { expect, test } from '@playwright/test';
+
+// Employee rows are read from the table: on a phone the list becomes cards (desktop only).
+test.skip(({ isMobile }) => isMobile, 'tables become cards on a phone');
 import { dismissTour, signIn } from './sign-in';
 
 const REASON = 'Départ de la société confirmé par les RH.';
@@ -56,7 +59,9 @@ test('the company suspends, reactivates then deactivates an employee', async ({ 
   await row.getByRole('button', { name: 'Suspendre' }).click();
   await page.getByRole('dialog').getByLabel('Motif').fill(REASON);
   await page.getByRole('dialog').getByRole('button', { name: 'Suspendre le compte' }).click();
-  await expect(page.getByRole('row').filter({ hasText: name }).getByText('Suspendu')).toBeVisible();
+  await expect(
+    page.getByRole('row').filter({ hasText: name }).getByText('Suspendu').first(),
+  ).toBeVisible();
   await act('Réactiver', 'Réactiver le compte');
   await expect(page.getByRole('row').filter({ hasText: name }).getByText('Actif')).toBeVisible();
   await page

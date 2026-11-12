@@ -16,7 +16,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen flex-col bg-bg">
       <SkipLink />
       <header className="bg-navy">
-        <div className="mx-auto flex w-full max-w-desktop-max-width items-center justify-between gap-3 px-4 py-2 lg:px-8">
+        <div className="mx-auto flex w-full max-w-desktop-max-width flex-wrap items-center justify-between gap-3 px-6 py-4">
           <Link href="/" className="flex items-center gap-2 rounded-button">
             <span
               aria-hidden="true"
@@ -27,24 +27,21 @@ export function PublicShell({ children }: { children: ReactNode }) {
             <span className="text-title-sm text-on-navy">{tApp('name')}</span>
           </Link>
           <nav aria-label={t('nav.label')} className="flex items-center gap-1">
-            <Link href="/#comment" className={anchor}>
+            <Link href="/#histoire" className={anchor}>
               {t('nav.how')}
             </Link>
-            <Link href="/#avantages" className={anchor}>
-              {t('nav.benefits')}
+            <Link href="/#pour-qui" className={anchor}>
+              {t('nav.forWho')}
             </Link>
             <Link href="/#contact" className={anchor}>
               {t('nav.contact')}
-            </Link>
-            <Link href="/aide" className={anchor}>
-              {t('nav.help')}
             </Link>
           </nav>
           <div className="flex items-center gap-2">
             <div className="rounded-button bg-surface px-2">
               <LocaleSwitcher />
             </div>
-            <Link href="/login" className={buttonClasses('success', 'sm')}>
+            <Link href="/login" className={buttonClasses('success', 'sm', 'font-title')}>
               <LogIn aria-hidden="true" className="size-icon-sm rtl:rotate-180" />
               <span className="hidden sm:inline">{t('nav.signIn')}</span>
               <span className="sr-only sm:hidden">{t('nav.signIn')}</span>
@@ -55,18 +52,17 @@ export function PublicShell({ children }: { children: ReactNode }) {
       <main id="main-content" tabIndex={-1} className="fp-cascade flex-1">
         {children}
       </main>
-      <footer className="border-t border-border bg-surface">
-        <div className="mx-auto flex w-full max-w-desktop-max-width flex-col gap-3 px-4 py-6 text-caption text-text-muted md:flex-row md:items-center md:justify-between lg:px-8">
-          <p>{t('footer.rights', { year: new Date().getFullYear() })}</p>
-          <p>{t('footer.country')}</p>
-          <div className="flex gap-4">
-            <Link href="/aide" className="underline">
+      <footer className="bg-navy">
+        <div className="mx-auto flex w-full max-w-desktop-max-width flex-wrap justify-between gap-3.5 px-6 py-7 text-caption text-on-navy-muted">
+          <p>{t('footer.short', { year: new Date().getFullYear() })}</p>
+          <div className="flex flex-wrap gap-4">
+            <Link href="/aide" className="text-on-navy underline-offset-4 hover:underline">
               {t('nav.help')}
             </Link>
-            <Link href="/#contact" className="underline">
+            <Link href="/#contact" className="text-on-navy underline-offset-4 hover:underline">
               {t('nav.contact')}
             </Link>
-            <Link href="/login" className="underline">
+            <Link href="/login" className="text-on-navy underline-offset-4 hover:underline">
               {t('nav.signIn')}
             </Link>
           </div>

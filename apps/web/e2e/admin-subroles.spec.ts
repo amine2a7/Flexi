@@ -54,7 +54,7 @@ const SUB_ROLES = [
 
 async function menu(page: Page): Promise<string[]> {
   const hrefs = await page
-    .locator('nav a[href^="/fr/admin"]:visible')
+    .locator('nav a[href^="/fr/admin"]')
     .evaluateAll((links) => links.map((link) => link.getAttribute('href') ?? ''));
   return [...new Set(hrefs.map((href) => href.replace(/^\/fr/, '')))].sort();
 }
@@ -86,7 +86,7 @@ test('Finance never sees the KYC decision, Opérations never the payout decision
   await signIn(page, 'admin2@flexipay.test');
   await page.goto('/fr/admin/kyc');
   await dismissTour(page);
-  const file = page.locator('main a[href^="/fr/admin/kyc/"]').first();
+  const file = page.locator('main a[href^="/fr/admin/kyc/"]:visible').first();
   if ((await file.count()) > 0) {
     await file.click();
     await page.waitForLoadState('networkidle');

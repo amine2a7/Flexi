@@ -8,7 +8,9 @@ const PNG = Buffer.from(
   'base64',
 );
 
-test('the company declares its transfer at the first try', async ({ page }) => {
+test('the company declares its transfer at the first try', async ({ page, isMobile }) => {
+  // The order is opened from its table row: desktop screen (cards on a phone).
+  test.skip(isMobile, 'tables become cards on a phone');
   await signIn(page, 'comptable@flexipay.test');
   await page.goto('/fr/entreprise/commandes');
   await page

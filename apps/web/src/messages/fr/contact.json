@@ -24,5 +24,22 @@
   "sentTitle": "Message envoyé",
   "sentText": "Merci. Votre référence : {reference}. Nous vous répondons par e-mail.",
   "another": "Envoyer un autre message",
-  "privacy": "Vos coordonnées servent uniquement à vous répondre."
+  "privacy": "Vos coordonnées servent uniquement à vous répondre.",
+  "ticket": {
+    "eyebrow": "Nous contacter",
+    "title": "Glissez-nous un ticket",
+    "text": "Une question, une démo, un partenariat ? Remplissez le ticket : il arrive directement dans notre boîte, et on vous répond par e-mail.",
+    "label": "Ticket de contact",
+    "serial": "N° 000 120 774",
+    "name": "Nom",
+    "email": "E-mail",
+    "company": "Société",
+    "type": "Vous êtes",
+    "message": "Votre message",
+    "noSpam": "Pas de spam. Juste une réponse.",
+    "submit": "Envoyer mon ticket",
+    "sentTitle": "Ticket bien reçu.",
+    "sentText": "Il est dans notre boîte (référence {reference}). On vous répond par e-mail.",
+    "another": "Envoyer un autre ticket"
+  }
 }

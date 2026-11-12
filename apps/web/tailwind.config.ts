@@ -48,6 +48,9 @@ const animation = {
   wiggle: `fp-wiggle ${d('wiggle')} ${e('out')} infinite alternate`,
   print: `fp-print ${d('print')} ${e('out')} both`,
   peek: `fp-peek ${d('peek')} ${e('spring')} ${d('peek-delay')} both`,
+  // Home: the cover of the book opens once, the contact ticket slides into the box when sent.
+  cover: `fp-cover ${d('cover')} ${e('open')} ${d('cover-delay')} forwards`,
+  slot: `fp-slot ${d('slot')} ${e('in')} forwards`,
 };
 
 const motionPlugin = plugin((api) => {
@@ -62,6 +65,8 @@ const motionPlugin = plugin((api) => {
   vars['--fp-wiggle-rotate'] = `${String(motion.distance['wiggle-rotate'])}deg`;
   vars['--fp-peek'] = `${String(motion.distance.peek)}px`;
   vars['--fp-print'] = `${String(motion.distance.print)}px`;
+  vars['--fp-cover-rotate'] = `${String(motion.distance['cover-rotate'])}deg`;
+  vars['--fp-slot'] = `${String(motion.distance.slot)}px`;
   for (const [name, value] of Object.entries(motion.scale))
     vars[`--fp-scale-${name}`] = String(value);
   vars['--fp-slide'] = '100%';
@@ -76,6 +81,8 @@ const motionPlugin = plugin((api) => {
     '--fp-wiggle-rotate': '0deg',
     '--fp-peek': '0px',
     '--fp-print': '0px',
+    '--fp-cover-rotate': '0deg',
+    '--fp-slot': '0px',
     '--fp-slide': '0%',
     '--fp-grow-from': '1',
     '--fp-shimmer': '0',
@@ -147,6 +154,13 @@ const motionPlugin = plugin((api) => {
       from: { opacity: '0', transform: 'translateY(calc(var(--fp-print) * -1))' },
     },
     '@keyframes fp-peek': { from: { opacity: '0', transform: 'translateY(var(--fp-peek))' } },
+    // The cover turns on its spine (start edge) and disappears behind the book (backface hidden).
+    '@keyframes fp-cover': {
+      to: { transform: 'rotateY(calc(var(--fp-cover-rotate) * -1 * var(--fp-dir)))' },
+    },
+    '@keyframes fp-slot': {
+      to: { opacity: '0', transform: 'translateY(var(--fp-slot)) scale(var(--fp-scale-modal))' },
+    },
     ...cascade,
   });
 
@@ -167,6 +181,9 @@ const motionPlugin = plugin((api) => {
     '.fp-accordion[data-open="true"]': { 'grid-template-rows': '1fr' },
     '.fp-accordion > *': { overflow: 'hidden', 'min-height': '0' },
     '@media (prefers-reduced-motion: reduce)': { '.fp-accordion': { transition: 'none' } },
+    // The ticket book of the home page is seen in 3D (its cover turns on its spine).
+    '.fp-book': { perspective: '1400px' },
+    '.fp-backface-hidden': { 'backface-visibility': 'hidden' },
   });
 
   api.addComponents({

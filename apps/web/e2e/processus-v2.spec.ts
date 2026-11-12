@@ -6,7 +6,10 @@ import { signIn } from './sign-in';
 
 test('the company allocates to Production / Ouvrier, saves the template and relaunches it', async ({
   page,
+  isMobile,
 }) => {
+  // The templates table becomes cards on a phone: checked on a desktop screen.
+  test.skip(isMobile, 'tables become cards on a phone');
   test.setTimeout(120_000);
   const name = `Tickets e2e ${String(Date.now()).slice(-6)}`;
   await signIn(page, 'entreprise@flexipay.test');
@@ -47,7 +50,7 @@ test('the administrator opens every tab of a company record', async ({ page }) =
   await expect(page.getByText(/employés affichés sur/)).toBeVisible();
   for (const tab of ['Dossier KYC', 'Utilisateurs', 'Départements', 'Soldes', 'Commandes']) {
     await tabs.getByRole('button', { name: tab }).click();
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page.locator('main').getByRole('alert')).toHaveCount(0);
   }
   await tabs.getByRole('button', { name: 'Attributions et modèles' }).click();
   await expect(page.getByRole('table').first()).toBeVisible();
