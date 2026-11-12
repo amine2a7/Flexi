@@ -94,7 +94,7 @@ export function TicketBook({ settlementDays }: { settlementDays: number | string
         <span
           aria-hidden="true"
           className={cn(
-            'absolute inset-0 translate-x-1.5 translate-y-2.5 rotate-2 rounded-card-desktop bg-paper-edge rtl:-translate-x-1.5 rtl:-rotate-2',
+            'absolute inset-0 translate-x-1 translate-y-3 rotate-2 rounded-card-desktop bg-paper-edge rtl:-translate-x-1 rtl:-rotate-2',
             left <= 2 && 'opacity-0',
           )}
         />
@@ -122,7 +122,7 @@ export function TicketBook({ settlementDays }: { settlementDays: number | string
                   current && tearing && 'pointer-events-none animate-tear',
                 )}
               >
-                <span aria-hidden="true" className={cn('block h-2.5', ticket.band)} />
+                <span aria-hidden="true" className={cn('block h-2', ticket.band)} />
                 <div className="flex flex-1 flex-col gap-3 px-6 py-5">
                   <p className="flex justify-between gap-3 font-ticket text-micro uppercase text-paper-ink">
                     <span>{t('number', { n: position + 1, total: TICKETS.length })}</span>
@@ -136,9 +136,12 @@ export function TicketBook({ settlementDays }: { settlementDays: number | string
                     {ticket.types.map((type) => (
                       <li
                         key={type}
-                        className="inline-flex items-center gap-1.5 rounded-badge border border-paper-border bg-surface px-2.5 py-1 text-caption font-label"
+                        className="inline-flex items-center gap-2 rounded-badge border border-paper-border bg-surface px-3 py-1 text-caption font-label"
                       >
-                        <span aria-hidden="true" className={cn('size-2 rounded-sm', DOT[type])} />
+                        <span
+                          aria-hidden="true"
+                          className={cn('h-2 w-2 rounded-badge', DOT[type])}
+                        />
                         {typeLabel(type)}
                       </li>
                     ))}
@@ -146,10 +149,10 @@ export function TicketBook({ settlementDays }: { settlementDays: number | string
                 </div>
                 <div
                   aria-hidden="true"
-                  className="relative mx-3.5 border-t-2 border-dashed border-paper-line"
+                  className="relative mx-3 border-t-2 border-dashed border-paper-line"
                 >
-                  <span className="absolute -start-6 -top-3 size-5 rounded-badge bg-navy" />
-                  <span className="absolute -end-6 -top-3 size-5 rounded-badge bg-navy" />
+                  <span className="absolute -start-6 -top-3 h-6 w-6 rounded-badge bg-navy" />
+                  <span className="absolute -end-6 -top-3 h-6 w-6 rounded-badge bg-navy" />
                 </div>
                 <div className="flex items-center justify-between gap-3 px-6 pb-4 pt-3">
                   <Barcode />
@@ -180,7 +183,7 @@ export function TicketBook({ settlementDays }: { settlementDays: number | string
           </div>
         </div>
       </div>
-      <div className="flex flex-wrap items-center justify-center gap-3.5">
+      <div className="flex flex-wrap items-center justify-center gap-4">
         {last ? (
           <button
             type="button"

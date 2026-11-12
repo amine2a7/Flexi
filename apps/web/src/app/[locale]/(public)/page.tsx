@@ -19,8 +19,8 @@ export default async function LandingPage() {
   return (
     <>
       <section id="histoire" className="scroll-mt-4 bg-navy text-on-navy">
-        <div className="mx-auto flex w-full max-w-desktop-max-width flex-wrap items-center gap-12 px-6 pb-20 pt-10">
-          <div className="fp-cascade flex min-w-0 flex-1 basis-96 flex-col gap-5">
+        <div className="mx-auto grid w-full max-w-desktop-max-width items-center gap-12 px-6 pb-12 pt-10 lg:grid-cols-2 lg:pb-12">
+          <div className="fp-cascade flex min-w-0 flex-col gap-5">
             <p className="text-micro font-label uppercase tracking-widest text-emerald">
               {t('hero.eyebrow')}
             </p>
@@ -30,7 +30,7 @@ export default async function LandingPage() {
               <span className="text-emerald">{t('hero.highlight')}</span>
             </h1>
             <p className="max-w-form-max-width text-body-lg text-on-navy-muted">{t('hero.text')}</p>
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex flex-wrap gap-3">
               <Link href="/#contact" className={buttonClasses('success', 'md', 'font-title')}>
                 {t('hero.company')}
               </Link>
@@ -46,19 +46,19 @@ export default async function LandingPage() {
               </Link>
             </div>
           </div>
-          <div className="flex min-w-0 flex-1 basis-96 justify-center">
+          <div className="flex min-w-0 justify-center">
             <TicketBook settlementDays={terms.settlementDays} />
           </div>
         </div>
       </section>
 
-      <section id="pour-qui" className="scroll-mt-4 px-6 py-16 lg:py-20">
-        <div className="mx-auto flex w-full max-w-desktop-max-width flex-col gap-7">
+      <section id="pour-qui" className="scroll-mt-4 px-6 py-12">
+        <div className="mx-auto flex w-full max-w-desktop-max-width flex-col gap-8">
           <div>
             <p className="text-micro font-label uppercase tracking-widest text-emerald-text">
               {t('forWho.eyebrow')}
             </p>
-            <h2 className="mt-1.5 font-display text-display-md leading-none text-navy">
+            <h2 className="mt-2 font-display text-display-md leading-none text-navy">
               {t('forWho.title')}
             </h2>
           </div>
@@ -66,7 +66,7 @@ export default async function LandingPage() {
             {AUDIENCES.map((key) => (
               <li
                 key={key}
-                className="flex flex-col gap-2.5 rounded-card-desktop border border-paper-border bg-paper p-6 transition duration-base ease-out hover:-translate-y-1 hover:-rotate-1 hover:shadow-raised motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:hover:rotate-0"
+                className="flex flex-col gap-3 rounded-card-desktop border border-paper-border bg-paper p-6 transition duration-base ease-out hover:-translate-y-1 hover:-rotate-1 hover:shadow-raised motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:hover:rotate-0"
               >
                 <p className="font-ticket text-micro uppercase text-paper-ink">
                   {t(`forWho.${key}.tag`)}
@@ -85,9 +85,9 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <section id="contact" className="scroll-mt-4 px-6 pb-20">
-        <div className="mx-auto flex w-full max-w-desktop-max-width flex-wrap items-start gap-10">
-          <div className="flex min-w-0 flex-1 basis-80 flex-col gap-3">
+      <section id="contact" className="scroll-mt-4 px-6 pb-12 pt-4">
+        <div className="mx-auto grid w-full max-w-desktop-max-width items-start gap-10 lg:grid-cols-5">
+          <div className="flex min-w-0 flex-col gap-3 lg:col-span-2">
             <p className="text-micro font-label uppercase tracking-widest text-emerald-text">
               {tContact('eyebrow')}
             </p>
@@ -96,7 +96,7 @@ export default async function LandingPage() {
             </h2>
             <p className="max-w-form-max-width text-body text-neutral-text">{tContact('text')}</p>
           </div>
-          <div className="min-w-0 flex-1 basis-96">
+          <div className="min-w-0 lg:col-span-3">
             <ContactForm variant="ticket" />
           </div>
         </div>

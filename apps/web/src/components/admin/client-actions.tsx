@@ -95,7 +95,7 @@ export function AdminAddEmployee({
           setOpen(true);
         }}
       >
-        <UserPlus aria-hidden className="size-4" />
+        <UserPlus aria-hidden className="size-icon-sm" />
         {tTabs('addEmployee')}
       </Button>
       <Modal open={open} onOpenChange={setOpen} title={t('formTitle')}>

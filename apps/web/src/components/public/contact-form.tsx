@@ -131,14 +131,14 @@ export function ContactForm({ variant = 'default' }: { variant?: 'default' | 'ti
       return (
         <div
           role="status"
-          className="flex animate-pop flex-col items-center gap-2.5 rounded-card-desktop border border-border bg-surface px-6 py-9 text-center"
+          className="flex animate-pop flex-col items-center gap-3 rounded-card-desktop border border-border bg-surface px-6 py-10 text-center"
         >
-          <span className="flex size-20 items-center justify-center rounded-badge bg-emerald-soft text-emerald-text">
-            <Check aria-hidden="true" className="size-10" strokeWidth={2.4} />
+          <span className="flex h-12 w-12 items-center justify-center rounded-badge bg-emerald-soft text-emerald-text">
+            <Check aria-hidden="true" className="size-icon-lg" strokeWidth={2.4} />
           </span>
           <p className="text-title text-text">{t('ticket.sentTitle')}</p>
           <p className="text-body text-text-muted">{t('ticket.sentText', { reference })}</p>
-          <Button variant="secondary" className="mt-1.5" onClick={reset}>
+          <Button variant="secondary" className="mt-2" onClick={reset}>
             {t('ticket.another')}
           </Button>
         </div>
@@ -159,7 +159,7 @@ export function ContactForm({ variant = 'default' }: { variant?: 'default' | 'ti
         )}
         noValidate
       >
-        <div className="flex justify-between gap-3 bg-navy px-5 py-3.5 text-on-navy">
+        <div className="flex justify-between gap-3 bg-navy px-5 py-3 text-on-navy">
           <span className="font-display text-title uppercase tracking-wide">
             {t('ticket.label')}
           </span>
@@ -167,7 +167,7 @@ export function ContactForm({ variant = 'default' }: { variant?: 'default' | 'ti
             {t('ticket.serial')}
           </span>
         </div>
-        <div className="grid gap-3.5 px-5 py-5 sm:grid-cols-2">
+        <div className="grid gap-4 px-5 py-5 sm:grid-cols-2">
           {failure !== undefined ? (
             <div className="sm:col-span-2">
               <Alert tone="danger">{tRoot(messageKey(errorMessageKey(failure)))}</Alert>

@@ -53,7 +53,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
         {children}
       </main>
       <footer className="bg-navy">
-        <div className="mx-auto flex w-full max-w-desktop-max-width flex-wrap justify-between gap-3.5 px-6 py-7 text-caption text-on-navy-muted">
+        <div className="mx-auto flex w-full max-w-desktop-max-width flex-wrap justify-between gap-4 px-6 py-6 text-caption text-on-navy-muted">
           <p>{t('footer.short', { year: new Date().getFullYear() })}</p>
           <div className="flex flex-wrap gap-4">
             <Link href="/aide" className="text-on-navy underline-offset-4 hover:underline">
