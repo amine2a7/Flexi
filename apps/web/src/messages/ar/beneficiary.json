@@ -77,7 +77,8 @@
     "types": {
       "PAYMENT": "دفع",
       "ALLOCATION": "أرصدة مستلمة",
-      "EXPIRY": "أرصدة منتهية الصلاحية"
+      "EXPIRY": "أرصدة منتهية الصلاحية",
+      "FAMILY_TRANSFER": "تحويل عائلي"
     },
     "statuses": {
       "COMPLETED": "منجز",

@@ -7635,9 +7635,9 @@ components:
           pattern: '^[0-9]{4}$'
     EmployeeOperationType:
       title: EmployeeOperationType
-      description: Paiement chez un commerçant, crédits reçus de l'entreprise, crédits expirés.
+      description: Paiement chez un commerçant, crédits reçus de l'entreprise, crédits expirés, transfert familial (donné, reçu ou repris).
       type: string
-      enum: [PAYMENT, ALLOCATION, EXPIRY]
+      enum: [PAYMENT, ALLOCATION, EXPIRY, FAMILY_TRANSFER]
     EmployeeOperationStatus:
       title: EmployeeOperationStatus
       type: string

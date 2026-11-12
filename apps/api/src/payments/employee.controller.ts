@@ -21,7 +21,7 @@ import { PaymentsService } from './payments.service.js';
 
 const pin = z.string().regex(/^[0-9]{4}$/);
 const operationsQuery = z.object({
-  type: z.enum(['PAYMENT', 'ALLOCATION', 'EXPIRY']).optional(),
+  type: z.enum(['PAYMENT', 'ALLOCATION', 'EXPIRY', 'FAMILY_TRANSFER']).optional(),
   creditType: creditType.optional(),
 });
 const payBody = z.strictObject({

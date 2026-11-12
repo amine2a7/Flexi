@@ -106,6 +106,12 @@ export class PaymentsService {
         CREDIT_TYPES.map((type) => accounts.employeeWallet(employeeId, type)),
       );
       const spent = await this.spentToday(tx, employeeId);
+      // A family member sees the cap set by its holder when it is below the cap of the type.
+      const familyCaps = new Map(
+        (await tx.familyGrant.findMany({ where: { memberEmployeeId: employeeId } })).map(
+          (grant) => [grant.creditType, grant.dailyLimitMillimes],
+        ),
+      );
       const horizon = new Date(Date.now() + EXPIRY_ALERT_DAYS * 86_400_000);
       // One transaction = one connection: the lots of each type are read one after the other.
       const lotsByType = new Map<CreditType, Awaited<ReturnType<LedgerService['lots']>>>();
@@ -117,6 +123,8 @@ export class PaymentsService {
         );
         const expiring = lots.filter((lot) => lot.expiresAt <= horizon);
         const setting = types.find((row) => row.creditType === type);
+        const typeCap = setting?.dailyLimitMillimes ?? 0n;
+        const familyCap = familyCaps.get(type) ?? null;
         return {
           creditType: type,
           balanceMillimes: toMillimes(
@@ -124,7 +132,9 @@ export class PaymentsService {
           ),
           expiringMillimes: toMillimes(expiring.reduce((sum, lot) => sum + lot.remaining, 0n)),
           nextExpiryDate: expiring[0] === undefined ? null : businessDay(expiring[0].expiresAt),
-          dailyLimitMillimes: toMillimes(setting?.dailyLimitMillimes ?? 0n),
+          dailyLimitMillimes: toMillimes(
+            familyCap !== null && familyCap < typeCap ? familyCap : typeCap,
+          ),
           todaySpentMillimes: toMillimes(spent.get(type) ?? 0n),
           enabled: setting?.enabled ?? false,
         };
@@ -304,8 +314,7 @@ export class PaymentsService {
       where: { memberEmployeeId_creditType: { memberEmployeeId: employeeId, creditType } },
     });
     const endsOn = grant?.endsOn ?? null;
-    if (endsOn !== null && dayOf(endsOn) < businessDay())
-      throw refuse('FAMILY_GRANT_ENDED');
+    if (endsOn !== null && dayOf(endsOn) < businessDay()) throw refuse('FAMILY_GRANT_ENDED');
     return grant?.dailyLimitMillimes ?? null;
   }
 
@@ -465,7 +474,7 @@ export class PaymentsService {
       {
         id: string;
         reference: string;
-        type: 'PAYMENT' | 'ALLOCATION' | 'EXPIRY';
+        type: 'PAYMENT' | 'ALLOCATION' | 'EXPIRY' | 'FAMILY_TRANSFER';
         direction: 'DEBIT' | 'CREDIT';
         amount: bigint;
         credit_type: CreditType;
@@ -493,6 +502,33 @@ export class PaymentsService {
                x.credit_type::text, c.name, c.city, 'COMPLETED', x.occurred_at, x.transaction_id
           FROM credit_expiries x JOIN companies c ON c.id = x.company_id
          WHERE x.employee_id = ${employeeId}::uuid
+        UNION ALL
+        -- Family transfers and take-backs (processus v2): the net of the transaction on the wallet;
+        -- the other party is the other family member when visible, else the company.
+        SELECT 'FAMILY_TRANSFER:' || t.id, t.reference, 'FAMILY_TRANSFER',
+               CASE WHEN f.net > 0 THEN 'CREDIT' ELSE 'DEBIT' END, abs(f.net)::bigint,
+               f.credit_type::text,
+               coalesce(
+                 (SELECT e2.first_name || ' ' || e2.last_name
+                    FROM ledger_entries x2
+                    JOIN ledger_accounts a2 ON a2.id = x2.account_id
+                    JOIN employees e2 ON e2.id = a2.owner_id
+                   WHERE x2.transaction_id = t.id AND a2.owner_type = 'EMPLOYEE'
+                     AND a2.owner_id <> ${employeeId}::uuid
+                   LIMIT 1),
+                 own.company_name),
+               NULL::text, 'COMPLETED', t.created_at, t.id
+          FROM (SELECT e.transaction_id, a.credit_type,
+                       sum(CASE e.direction WHEN 'C' THEN e.amount_millimes ELSE -e.amount_millimes END) AS net
+                  FROM ledger_entries e JOIN ledger_accounts a ON a.id = e.account_id
+                 WHERE a.owner_type = 'EMPLOYEE' AND a.owner_id = ${employeeId}::uuid
+                 GROUP BY e.transaction_id, a.credit_type) f
+          JOIN ledger_transactions t
+            ON t.id = f.transaction_id AND t.type IN ('FAMILY_TRANSFER', 'FAMILY_RECLAIM')
+          CROSS JOIN (SELECT c.name AS company_name FROM employees me
+                        JOIN companies c ON c.id = me.company_id
+                       WHERE me.id = ${employeeId}::uuid) own
+         WHERE f.net <> 0
       ) o
       WHERE (${filters.type ?? null}::text IS NULL OR o.type = ${filters.type ?? null}::text)
         AND (${filters.creditType ?? null}::text IS NULL OR o.credit_type = ${filters.creditType ?? null}::text)
@@ -511,7 +547,10 @@ export class PaymentsService {
 
   async listOperations(
     query: Record<string, unknown>,
-    filters: { type?: 'PAYMENT' | 'ALLOCATION' | 'EXPIRY'; creditType?: CreditType },
+    filters: {
+      type?: 'PAYMENT' | 'ALLOCATION' | 'EXPIRY' | 'FAMILY_TRANSFER';
+      creditType?: CreditType;
+    },
   ): Promise<Page<unknown>> {
     const employeeId = this.employeeId();
     await this.expireStale();
@@ -585,7 +624,7 @@ export class PaymentsService {
 
   async operation(id: string) {
     return this.db.user(async (tx) => {
-      for (const prefix of ['PAYMENT', 'ALLOCATION', 'EXPIRY']) {
+      for (const prefix of ['PAYMENT', 'ALLOCATION', 'EXPIRY', 'FAMILY_TRANSFER']) {
         const found = await this.operations(tx, this.employeeId(), { id: `${prefix}:${id}` }, 0, 1);
         if (found.length > 0) return this.operationDetail(tx, `${prefix}:${id}`);
       }

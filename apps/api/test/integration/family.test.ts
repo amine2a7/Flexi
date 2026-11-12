@@ -177,6 +177,26 @@ describe('family accounts', () => {
     const wallet = await sami.call('GET', '/v1/employee/wallet');
     // Only its own 35 TND: never the holder's 150 TND.
     expect(wallet.body.totalBalanceMillimes).toBe(35_000);
+    // Its wallet shows the family cap (20 TND, not the 150 TND of the type) and today's spend.
+    const restauration = (
+      wallet.body.balances as {
+        creditType: string;
+        dailyLimitMillimes: number;
+        todaySpentMillimes: number;
+      }[]
+    ).find((row) => row.creditType === 'RESTAURATION');
+    expect(restauration).toMatchObject({ dailyLimitMillimes: 20_000, todaySpentMillimes: 15_000 });
+    // Its history shows the transfer received.
+    const received = await sami.call('GET', '/v1/employee/operations?type=FAMILY_TRANSFER');
+    expect(received.status).toBe(200);
+    expect(received.body.data).toEqual([
+      expect.objectContaining({
+        type: 'FAMILY_TRANSFER',
+        direction: 'CREDIT',
+        amountMillimes: 50_000,
+        creditType: 'RESTAURATION',
+      }),
+    ]);
 
     // The company never sees the member.
     const owner = await signedIn(
@@ -198,6 +218,26 @@ describe('family accounts', () => {
       );
       expect(await ledger.balance(tx, accounts.employeeWallet(memberId, 'RESTAURATION'))).toBe(0n);
       expect((await ledger.reconcile(tx)).ok).toBe(true);
+    });
+
+    // The holder's history: the 50 TND given to Sami, then the 35 TND taken back (newest first).
+    const history = await client.call('GET', '/v1/employee/operations?type=FAMILY_TRANSFER');
+    const rows = history.body.data as {
+      id: string;
+      direction: string;
+      amountMillimes: number;
+      counterpartyName: string;
+    }[];
+    expect(rows.map((row) => [row.direction, row.amountMillimes])).toEqual([
+      ['CREDIT', 35_000],
+      ['DEBIT', 50_000],
+    ]);
+    expect(rows[1]?.counterpartyName).toBe('Sami Jebali');
+    const receipt = await client.call('GET', `/v1/employee/operations/${rows[1]?.id ?? ''}`);
+    expect(receipt.body).toMatchObject({
+      type: 'FAMILY_TRANSFER',
+      amountMillimes: 50_000,
+      balanceAfterMillimes: 150_000,
     });
   });
 

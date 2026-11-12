@@ -3417,10 +3417,10 @@ export interface components {
     };
     /**
      * EmployeeOperationType
-     * @description Paiement chez un commerçant, crédits reçus de l'entreprise, crédits expirés.
+     * @description Paiement chez un commerçant, crédits reçus de l'entreprise, crédits expirés, transfert familial (donné, reçu ou repris).
      * @enum {string}
      */
-    EmployeeOperationType: 'PAYMENT' | 'ALLOCATION' | 'EXPIRY';
+    EmployeeOperationType: 'PAYMENT' | 'ALLOCATION' | 'EXPIRY' | 'FAMILY_TRANSFER';
     /**
      * EmployeeOperationStatus
      * @enum {string}
@@ -11165,7 +11165,7 @@ export const merchantCategoryValues: ReadonlyArray<
 ];
 export const employeeOperationTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['EmployeeOperationType']
-> = ['PAYMENT', 'ALLOCATION', 'EXPIRY'];
+> = ['PAYMENT', 'ALLOCATION', 'EXPIRY', 'FAMILY_TRANSFER'];
 export const employeeOperationStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['EmployeeOperationStatus']
 > = ['COMPLETED', 'PENDING', 'REFUSED'];

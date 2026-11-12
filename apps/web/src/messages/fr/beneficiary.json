@@ -77,7 +77,8 @@
     "types": {
       "PAYMENT": "Paiement",
       "ALLOCATION": "Crédits reçus",
-      "EXPIRY": "Crédits expirés"
+      "EXPIRY": "Crédits expirés",
+      "FAMILY_TRANSFER": "Transfert familial"
     },
     "statuses": {
       "COMPLETED": "Effectué",

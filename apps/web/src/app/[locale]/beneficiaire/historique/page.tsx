@@ -16,7 +16,12 @@ import { PageHeader } from '@/components/ui/layout-blocks';
 import { StatusBadge } from '@/components/ui/status-badge';
 
 type Operation = Schemas['EmployeeOperation'];
-const TYPES: Schemas['EmployeeOperationType'][] = ['PAYMENT', 'ALLOCATION', 'EXPIRY'];
+const TYPES: Schemas['EmployeeOperationType'][] = [
+  'PAYMENT',
+  'ALLOCATION',
+  'EXPIRY',
+  'FAMILY_TRANSFER',
+];
 
 /** History of the beneficiary: payments, credits received and expiries, by type of credit. */
 export default function BeneficiaryHistoryPage() {
