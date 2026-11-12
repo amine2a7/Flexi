@@ -25,7 +25,9 @@ for (const locale of ['fr', 'ar'] as const) {
     page.on('console', (message) => {
       if (message.type() === 'error') problems.push(message.text());
     });
-    await page.goto(`/${locale}/dev/composants`);
+    const response = await page.goto(`/${locale}/dev/composants`);
+    // Development only: an optimised build (pnpm demo:rapide) answers 404 by design.
+    test.skip(response?.status() === 404, 'component library: development server only');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     expect(await page.locator('html').getAttribute('dir')).toBe(locale === 'ar' ? 'rtl' : 'ltr');
     for (const id of SECTIONS) await expect(page.locator(`section#${id} h2`).first()).toBeVisible();
@@ -35,7 +37,8 @@ for (const locale of ['fr', 'ar'] as const) {
 }
 
 test('the dialogs of the library open and close with the keyboard', async ({ page }) => {
-  await page.goto('/fr/dev/composants#dialogs');
+  const response = await page.goto('/fr/dev/composants#dialogs');
+  test.skip(response?.status() === 404, 'component library: development server only');
   await page.getByRole('button', { name: 'Ouvrir une modale' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.keyboard.press('Escape');

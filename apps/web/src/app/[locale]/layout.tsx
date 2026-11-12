@@ -6,6 +6,7 @@ import { connection } from 'next/server';
 import type { ReactNode } from 'react';
 import { getDirection } from '@/i18n/direction';
 import { routing } from '@/i18n/routing';
+import { StyleNonce } from '@/components/layout/style-nonce';
 import { cn } from '@/lib/cn';
 import { fontArabic, fontDisplay, fontSans, fontTicket } from '../fonts';
 import '../globals.css';
@@ -42,6 +43,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
       )}
     >
       <body>
+        <StyleNonce />
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>
     </html>

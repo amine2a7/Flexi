@@ -29,7 +29,8 @@ const production = process.argv.includes('--build');
 const webBuildEnv = {
   ...process.env,
   NEXT_PUBLIC_API_BASE_URL: API_URL,
-  NEXT_DIST_DIR: '.next-demo',
+  // DEMO_DIST_DIR: another folder while a previous demo still holds .next-demo (Windows).
+  NEXT_DIST_DIR: process.env.DEMO_DIST_DIR ?? '.next-demo',
   NEXT_TELEMETRY_DISABLED: '1',
   // A local build: the only case where a production build may call an HTTP API (loopback).
   NEXT_PUBLIC_LOCAL_BUILD: '1',
