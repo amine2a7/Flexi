@@ -51,7 +51,7 @@ const employeesQuery = z.object({
 });
 /** Free-text position (processus v2), e.g. « Ouvrier »; empty or null detaches it. */
 const position = z.string().trim().max(80).nullable();
-const employeeBody = z.strictObject({
+export const employeeBody = z.strictObject({
   employeeNumber: z.string().max(20),
   firstName: z.string().max(60),
   lastName: z.string().max(60),

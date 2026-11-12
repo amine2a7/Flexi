@@ -2,7 +2,7 @@ import { PiiService } from '../common/pii.js';
 import { pdfDocument, percent, tnd, type PdfLine } from '../common/pdf.js';
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import { InvitationService } from '../auth/invitation.service.js';
+import { credentialsOf, InvitationService } from '../auth/invitation.service.js';
 import { AuditService } from '../common/audit.service.js';
 import { uuidv7 } from '../common/crypto.js';
 import { asService, DbService, type Tx } from '../common/db.service.js';
@@ -33,6 +33,17 @@ const dateFr = (date: Date) =>
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE = /^\+216[0-9]{8}$/;
+/** Fields of a new employee (company form, CSV line, administrator's client record). */
+interface NewEmployee {
+  employeeNumber: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  departmentId?: string | null;
+  position?: string | null;
+}
+
 const FIELDS = ['employeeNumber', 'firstName', 'lastName', 'email', 'phone'] as const;
 const PREVIEW_TTL_MS = 30 * 60_000;
 
@@ -293,16 +304,24 @@ export class CompanyService {
     });
   }
 
-  async createEmployee(input: {
-    employeeNumber: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    departmentId?: string | null;
-    position?: string | null;
-  }) {
-    const companyId = this.companyId();
+  async createEmployee(input: NewEmployee) {
+    return this.addEmployee(this.companyId(), input, 'user');
+  }
+
+  /**
+   * « Fiche client › Employés › Ajouter » (processus v2): an administrator adds an employee to a
+   * company; same checks as the company, scoped by the company id, and the temporary password
+   * is shown once in the answer (like a client created by the administrator).
+   */
+  async createEmployeeAsAdmin(companyId: string, input: NewEmployee) {
+    const company = await this.db.system((tx) =>
+      tx.company.findUnique({ where: { id: companyId }, select: { id: true } }),
+    );
+    if (company === null) throw problems.notFound();
+    return this.addEmployee(companyId, input, 'system');
+  }
+
+  private async addEmployee(companyId: string, input: NewEmployee, scope: 'user' | 'system') {
     const errors: { in: 'body'; pointer: string; code: 'REQUIRED' | 'INVALID_FORMAT' }[] = [];
     for (const field of FIELDS)
       if (input[field].trim() === '')
@@ -328,15 +347,18 @@ export class CompanyService {
     ]);
     const email = input.email.trim().toLowerCase();
     const taken = await this.db.system((tx) => this.invitations.emailsInUse(tx, [email]));
-    const body = await this.db.user(async (tx) => {
+    const run = async (tx: Tx) => {
+      // Scoped by the company id as well as by RLS: the administrator writes as the platform.
       const exists = await tx.employee.findFirst({
-        where: { OR: [{ employeeNumber: input.employeeNumber.trim() }, { email }] },
+        where: { companyId, OR: [{ employeeNumber: input.employeeNumber.trim() }, { email }] },
       });
       if (exists !== null) throw problems.conflict();
       // Department of the company (never an archived one) and free-text position (processus v2).
       const departmentId = input.departmentId ?? null;
       if (departmentId !== null) {
-        const department = await tx.department.findUnique({ where: { id: departmentId } });
+        const department = await tx.department.findFirst({
+          where: { id: departmentId, companyId },
+        });
         if (department === null) throw problems.notFound();
         if (department.archivedAt !== null) throw problems.conflict();
       }
@@ -360,9 +382,13 @@ export class CompanyService {
         await this.invitations.create(tx, [invitation]);
       await this.audit.record(tx, 'employees.create', `${employee.firstName} ${employee.lastName}`);
       return this.employeeBody(employee, 0n);
-    });
+    };
+    const body = scope === 'user' ? await this.db.user(run) : await this.db.system(run);
     if (taken.has(email)) await this.invitations.notifyExisting([email]);
     else if (invitation !== undefined) await this.invitations.deliver([invitation]);
+    // Shown once to the administrator only (an address already in use gets no new account).
+    if (scope === 'system' && invitation !== undefined && !taken.has(email))
+      return { ...body, credentials: credentialsOf(invitation) };
     return body;
   }
 

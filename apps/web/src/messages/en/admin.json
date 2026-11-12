@@ -735,6 +735,12 @@
     "openKyc": "Open the file (documents, approve, ask for a correction)",
     "kycHint": "The file is approved by an administrator other than the one who created the client.",
     "usersHint": "Open a user to change their role, suspend them or generate a new password.",
-    "empty": "Nothing yet"
+    "empty": "Nothing yet",
+    "addEmployee": "Add an employee",
+    "actions": "Actions",
+    "archiveTemplate": "Switch off",
+    "archiveTemplateTitle": "Switch off the template “{name}”?",
+    "archiveTemplateHint": "The template leaves the company's list; allocations already made stay in the history.",
+    "templateArchived": "Template “{name}” switched off."
   }
 }

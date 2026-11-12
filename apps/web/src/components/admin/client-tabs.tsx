@@ -7,6 +7,7 @@ import { Link } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
 import { getApi } from '@/lib/api/client';
 import { useApiQuery } from '@/lib/api/use-api-query';
+import { useCan } from '@/lib/session/session-context';
 import { formatDateTime } from '@/lib/format/date';
 import { Amount } from '@/components/ui/amount';
 import { Card } from '@/components/ui/card';
@@ -15,6 +16,7 @@ import { DataTable, type Column } from '@/components/ui/data-table';
 import { Tabs } from '@/components/ui/layout-blocks';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { AdminAddEmployee, AdminArchiveTemplate } from './client-actions';
 import { KycStatusBadge } from './kyc-status-badge';
 
 type CompanyOverview = Schemas['CompanyOverview'];
@@ -73,15 +75,32 @@ export function CompanyTabs({ companyId, info }: { companyId: string; info: Reac
       ) : overview.status === 'error' ? (
         <ErrorState error={overview.error} onRetry={overview.reload} />
       ) : (
-        <CompanyTabContent tab={tab} data={overview.data} />
+        <CompanyTabContent
+          tab={tab}
+          data={overview.data}
+          companyId={companyId}
+          reload={overview.reload}
+        />
       )}
     </>
   );
 }
 
-function CompanyTabContent({ tab, data }: { tab: CompanyTab; data: CompanyOverview }) {
+function CompanyTabContent({
+  tab,
+  data,
+  companyId,
+  reload,
+}: {
+  tab: CompanyTab;
+  data: CompanyOverview;
+  companyId: string;
+  reload: () => void;
+}) {
   const t = useTranslations('admin.clientTabs');
   const locale = useLocale();
+  // Adding an employee and switching a template off: the super-admin (companies.manage).
+  const canManage = useCan('companies.manage');
   switch (tab) {
     case 'kyc':
       return <KycTab kyc={data.kyc} />;
@@ -128,9 +147,18 @@ function CompanyTabContent({ tab, data }: { tab: CompanyTab; data: CompanyOvervi
       ];
       return (
         <Card>
-          <p className="mb-3 text-caption text-text-muted">
-            {t('employeesShown', { shown: data.employees.length, total: data.employeeCount })}
-          </p>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-caption text-text-muted">
+              {t('employeesShown', { shown: data.employees.length, total: data.employeeCount })}
+            </p>
+            {canManage ? (
+              <AdminAddEmployee
+                companyId={companyId}
+                departments={data.departments}
+                onCreated={reload}
+              />
+            ) : null}
+          </div>
           <DataTable
             caption={t('tabs.employees')}
             columns={columns}
@@ -234,6 +262,17 @@ function CompanyTabContent({ tab, data }: { tab: CompanyTab; data: CompanyOvervi
           cell: (row) =>
             row.lastRunAt === null ? t('never') : formatDateTime(row.lastRunAt, locale),
         },
+        ...(canManage
+          ? [
+              {
+                key: 'actions',
+                header: t('actions'),
+                cell: (row: Schemas['AllocationTemplate']) => (
+                  <AdminArchiveTemplate companyId={companyId} template={row} onDone={reload} />
+                ),
+              },
+            ]
+          : []),
       ];
       return (
         <div className="flex flex-col gap-6">

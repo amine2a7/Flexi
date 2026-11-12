@@ -735,6 +735,12 @@
     "openKyc": "Ouvrir le dossier (pièces, valider, demander une correction)",
     "kycHint": "Le dossier est validé par un autre administrateur que celui qui a créé le client.",
     "usersHint": "Ouvrez un utilisateur pour changer son rôle, le suspendre ou générer un nouveau mot de passe.",
-    "empty": "Rien pour le moment"
+    "empty": "Rien pour le moment",
+    "addEmployee": "Ajouter un employé",
+    "actions": "Actions",
+    "archiveTemplate": "Désactiver",
+    "archiveTemplateTitle": "Désactiver le modèle « {name} » ?",
+    "archiveTemplateHint": "Le modèle disparaît de la liste de l'entreprise ; les attributions déjà faites restent dans l'historique.",
+    "templateArchived": "Modèle « {name} » désactivé."
   }
 }

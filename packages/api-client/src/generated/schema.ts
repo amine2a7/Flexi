@@ -1725,6 +1725,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/admin/companies/{companyId}/employees': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Fiche client › Employés : ajouter un employé (identifiants affichés une fois) */
+    post: operations['createCompanyEmployeeAsAdmin'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/companies/{companyId}/allocation-templates/{templateId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Fiche client › Attributions et modèles : désactiver un modèle */
+    delete: operations['archiveCompanyTemplateAsAdmin'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/admin/merchants/{merchantId}/record': {
     parameters: {
       query?: never;
@@ -3943,6 +3977,8 @@ export interface components {
     };
     /** Employee */
     Employee: {
+      /** @description Identifiants affichés une seule fois, seulement à l'administrateur qui ajoute l'employé depuis la fiche client. */
+      credentials?: components['schemas']['TemporaryCredentials'];
       /** @description Poste (texte libre, ex. Ouvrier). */
       position?: string;
       /** @description Département de l'employé (absent sans département). */
@@ -9057,6 +9093,69 @@ export interface operations {
         content: {
           'application/json': components['schemas']['CompanyOverview'];
         };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  createCompanyEmployeeAsAdmin: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        companyId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EmployeeCreate'];
+      };
+    };
+    responses: {
+      /** @description Employé créé (statut Invité). */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Employee'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  archiveCompanyTemplateAsAdmin: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        companyId: components['schemas']['Uuid'];
+        templateId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Modèle désactivé. */
+      204: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       400: components['responses']['BadRequest'];
       401: components['responses']['Unauthorized'];

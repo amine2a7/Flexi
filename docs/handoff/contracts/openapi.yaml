@@ -4140,6 +4140,83 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/admin/companies/{companyId}/employees:
+    post:
+      tags: [admin]
+      operationId: createCompanyEmployeeAsAdmin
+      summary: 'Fiche client › Employés : ajouter un employé (identifiants affichés une fois)'
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeCreate'
+      responses:
+        '201':
+          description: Employé créé (statut Invité).
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/companies/{companyId}/allocation-templates/{templateId}:
+    delete:
+      tags: [admin]
+      operationId: archiveCompanyTemplateAsAdmin
+      summary: 'Fiche client › Attributions et modèles : désactiver un modèle'
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '204':
+          description: Modèle désactivé.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/admin/merchants/{merchantId}/record:
     get:
       tags: [admin]
@@ -8700,6 +8777,9 @@ components:
       additionalProperties: false
       required: [id, employeeNumber, firstName, lastName, email, phone, status, monthAllocatedMillimes]
       properties:
+        credentials:
+          description: Identifiants affichés une seule fois, seulement à l'administrateur qui ajoute l'employé depuis la fiche client.
+          $ref: '#/components/schemas/TemporaryCredentials'
         position:
           description: Poste (texte libre, ex. Ouvrier).
           type: string

@@ -150,6 +150,18 @@ export class AllocationTemplatesService {
     });
   }
 
+  /** « Fiche client › Modèles »: an administrator archives a template of this company only. */
+  async archiveAsAdmin(companyId: string, id: string): Promise<void> {
+    await this.db.system(async (tx) => {
+      const template = await tx.allocationTemplate.findFirst({
+        where: { id, companyId, archivedAt: null },
+      });
+      if (template === null) throw problems.notFound();
+      await tx.allocationTemplate.update({ where: { id }, data: { archivedAt: new Date() } });
+      await this.audit.record(tx, 'allocationTemplates.archive', template.name);
+    });
+  }
+
   /** A live template of the company (archived or another company's: 404). */
   async found(tx: Tx, id: string): Promise<TemplateRow> {
     const row = await tx.allocationTemplate.findFirst({

@@ -72,6 +72,8 @@ const EXPECTED: Record<string, Sub[]> = {
   'AdminController.messages': MESSAGES,
   'AdminController.message': MESSAGES,
   'AdminController.handle': MESSAGES,
+  'AdminClientController.createEmployee': SUPER,
+  'AdminClientController.archiveTemplate': SUPER,
   'AdminOrdersController.list': BACK_OFFICE,
   'AdminOrdersController.get': BACK_OFFICE,
   'AdminOrdersController.confirm': MONEY,

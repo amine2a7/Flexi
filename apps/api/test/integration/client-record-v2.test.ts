@@ -76,4 +76,79 @@ describe('full client record', () => {
     expect(record.body.legalForm).toBe('PP_CIN');
     expect((record.body.history as { fields: string[] }[])[0]?.fields).toEqual(['legalForm']);
   });
+
+  it('adds an employee and archives a template from the record of the company', async () => {
+    const company = await createCompany(db);
+    const other = await createCompany(db);
+    const admin = await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Amine K.'));
+    const support = await signedIn(
+      base,
+      await createUser(db, env, 'ADMIN', {}, 'Karim T.', 'SUPPORT'),
+    );
+    const employee = {
+      employeeNumber: `M-${String(Date.now()).slice(-6)}`,
+      firstName: 'Karim',
+      lastName: 'Ben Salah',
+      email: `karim.${String(Date.now())}@carthage.tn`,
+      phone: '+21698111222',
+    };
+    const path = `/v1/admin/companies/${company.id}/employees`;
+    expect((await support.call('POST', path, { body: employee })).status).toBe(403);
+    const created = await admin.call('POST', path, { body: employee });
+    expect(created.status).toBe(201);
+    expect(created.body).toMatchObject({
+      firstName: 'Karim',
+      status: 'INVITED',
+      credentials: {
+        email: employee.email,
+        temporaryPassword: expect.any(String) as string,
+      },
+    });
+    // Same number in the same company: refused; the company record lists the new employee.
+    expect((await admin.call('POST', path, { body: employee })).status).toBe(409);
+    const overview = await admin.call('GET', `/v1/admin/companies/${company.id}/overview`);
+    expect(overview.body.employeeCount).toBe(1);
+
+    // A template of the company, archived by the administrator (never through another company).
+    const owner = await signedIn(
+      base,
+      await createUser(db, env, 'COMPANY', { companyId: company.id }, 'Ahmed B.'),
+    );
+    const template = await owner.call('POST', '/v1/company/allocation-templates', {
+      body: {
+        name: 'Tickets mensuels',
+        departmentId: null,
+        position: null,
+        amounts: [{ creditType: 'RESTAURATION', amountMillimes: 150_000 }],
+      },
+    });
+    expect(template.status).toBe(201);
+    const templateId = String(template.body.id);
+    expect(
+      (
+        await admin.call(
+          'DELETE',
+          `/v1/admin/companies/${other.id}/allocation-templates/${templateId}`,
+        )
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await support.call(
+          'DELETE',
+          `/v1/admin/companies/${company.id}/allocation-templates/${templateId}`,
+        )
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await admin.call(
+          'DELETE',
+          `/v1/admin/companies/${company.id}/allocation-templates/${templateId}`,
+        )
+      ).status,
+    ).toBe(204);
+    const after = await admin.call('GET', `/v1/admin/companies/${company.id}/overview`);
+    expect(after.body.templates).toEqual([]);
+  });
 });

@@ -257,7 +257,10 @@ function GridPreview({
 }
 
 /** Taxes of the settings for a legal form (none chosen yet: no withholding in the preview). */
-function taxesOf(settings: Schemas['PlatformSettings'], legalForm: Schemas['LegalForm'] | undefined): Taxes {
+function taxesOf(
+  settings: Schemas['PlatformSettings'],
+  legalForm: Schemas['LegalForm'] | undefined,
+): Taxes {
   const withholding = settings.withholding;
   const rates = {
     PP_CIN: withholding?.ppCinBps,
@@ -268,7 +271,9 @@ function taxesOf(settings: Schemas['PlatformSettings'], legalForm: Schemas['Lega
     vatRateBps: settings.vatRateBps,
     stampDutyMillimes: settings.stampDutyMillimes,
     withholdingRateBps: legalForm === undefined ? 0 : (rates[legalForm] ?? 0),
-    ...(withholding === undefined ? {} : { withholdingThresholdMillimes: withholding.thresholdMillimes }),
+    ...(withholding === undefined
+      ? {}
+      : { withholdingThresholdMillimes: withholding.thresholdMillimes }),
     transferFeeMillimes: settings.transferFeeMillimes ?? 0,
   };
 }
