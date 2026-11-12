@@ -31,3 +31,15 @@ Transactions › « Ouvrir un litige » ; fiche du litige : note, « Accepter le
 ## Points à savoir
 - Les factures sont générées à la demande (pas de file asynchrone) ; police standard : pas de PDF en arabe.
 - E-mails et SMS : simulés (fichiers dans `var/outbox`).
+
+## Les 7 actes du scénario tracé (processus v2, ~25 min)
+
+Base `pnpm demo:reset`. Mot de passe `Test1234!`, code MFA `123456`. Total attendu au grand livre : **16 581,000 TND**, aucune alerte « Écart du grand livre ».
+
+1. **Création du client** (`admin@`) : Entreprises › « Créer une entreprise », forme juridique **PM MF**, grille 3 %. Fenêtre « Identifiants à transmettre » : e-mail + mot de passe temporaire, « Copier ». Sur la fiche : onglets Informations, Dossier KYC, Utilisateurs, Départements, Employés, Soldes, Commandes, Attributions et modèles, Factures ; « Générer un nouveau mot de passe ».
+2. **Dossier KYC** : le client (identifiants de l'acte 1) › Compte › Mon dossier : déposer RNE, carte fiscale, CIN du gérant, RIB. `operations@` › KYC : ouvrir le dossier, « Demander une correction » sur une pièce, puis valider (jamais par l'admin qui a créé le client). Paramètres › « Pièces KYC demandées » : la liste est modifiable (double validation).
+3. **Employés** (`entreprise@`, Groupe Carthage Services) : Équipe › Employés, filtres Département = Production, Poste ; « Changer de département / de poste » en masse.
+4. **Commande** : Commandes › Nouvelle commande, Restauration 10 000 + Carburant 6 000 → devis figé **16 581,000** (commission 480, TVA 91,200, retenue 3 % 4,800, timbre 1, virement 4). `admin@` confirme ; `comptable@` déclare VIR-BIAT-778213 + justificatif (passe du premier coup) ; `sarra@flexipay.tn` valide 1/2, `nour@flexipay.tn` 2/2 → soldes crédités, facture.
+5. **Attribution** (`entreprise@`) : Crédits › Attributions : Département Production, Poste Ouvrier, « Tout sélectionner », 150 TND de Restauration (+ Carburant si besoin), « Voir l'aperçu » (total, solde restant, manque en rouge), « Enregistrer comme modèle » « Tickets mensuels Production », Attribuer. Crédits › Modèles : « Relancer » ouvre l'aperçu avec les employés actuels.
+6. **Repas** : `beneficiaire@` › Payer chez Restaurant Le Jasmin (code commerçant), PIN `1234`. Famille : Bénéficiaire › Ma famille › « Ajouter un membre » (Sami, enfant), « Transférer » 50 TND plafond 20 TND/jour, « Reprendre le crédit ».
+7. **Virement de Karim** (`karim@lejasmin.tn`, PP CIN, grille 2 %) : Virements › demander 1 250,000 → net **1 214,500** (commission 25, TVA 4,750, retenue 3 %… voir facture, timbre 1, virement 4). `sarra@` › Virements : Accepter, puis « Enregistrer le paiement » VIR-FP-000231 → **Payé**. Administrateur › Sécurité : aucune alerte « Écart du grand livre ».

@@ -34,8 +34,9 @@ const SUB_ROLES = [
   {
     name: 'Finance',
     account: 'admin2@flexipay.test',
-    menu: without('/admin/messages', '/admin/securite'),
-    denied: ['/admin/messages', '/admin/securite'],
+    // Finance reads disputes (disputes.read), so it sees Sécurité & conformité.
+    menu: without('/admin/messages'),
+    denied: ['/admin/messages'],
   },
   {
     name: 'Support',
@@ -69,8 +70,8 @@ for (const subRole of SUB_ROLES) {
       await page.goto(`/fr${path}`);
       await dismissTour(page);
       if (path === '/admin') {
-        // Home denied: the support lands on its first page instead.
-        await expect(page).toHaveURL(/\/fr\/admin\/commercants$/);
+        // Home denied: the support lands on its first menu entry (Entreprises) instead.
+        await expect(page).toHaveURL(/\/fr\/admin\/entreprises$/);
       } else {
         await expect(page.getByRole('heading', { level: 1, name: 'Accès refusé' })).toBeVisible();
       }

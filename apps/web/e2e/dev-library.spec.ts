@@ -28,7 +28,7 @@ for (const locale of ['fr', 'ar'] as const) {
     await page.goto(`/${locale}/dev/composants`);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     expect(await page.locator('html').getAttribute('dir')).toBe(locale === 'ar' ? 'rtl' : 'ltr');
-    for (const id of SECTIONS) await expect(page.locator(`section#${id} h2`)).toBeVisible();
+    for (const id of SECTIONS) await expect(page.locator(`section#${id} h2`).first()).toBeVisible();
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
     expect(problems).toEqual([]);
   });

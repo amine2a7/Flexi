@@ -16,7 +16,10 @@ export default defineConfig({
   // Locally the dev server compiles pages on first hit: more workers make it time out.
   ...(process.env.CI ? {} : { workers: 2 }),
   forbidOnly: Boolean(process.env.CI),
-  retries: process.env.CI ? 1 : 0,
+  // Locally the dev server compiles a page on its first visit (often 10 to 20 s on Windows): a
+  // longer assertion timeout and one retry absorb that compile, CI keeps the defaults.
+  retries: 1,
+  ...(process.env.CI ? {} : { expect: { timeout: 20_000 } }),
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : [['list']],
   use: {
     // Full Chromium (new headless mode): no separate headless-shell download needed.

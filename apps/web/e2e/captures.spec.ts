@@ -38,7 +38,7 @@ const SPACES: Record<string, readonly Shot[]> = {
     {
       name: 'premiere-connexion',
       path: '',
-      prepare: startSignIn('premiere@flexipay.test', 'Temp1234!'),
+      prepare: startSignIn('premiere@flexipay.test', PASSWORD),
     },
     { name: 'mot-de-passe-oublie', path: '/mot-de-passe-oublie' },
     { name: 'session-expiree', path: '/session-expiree' },

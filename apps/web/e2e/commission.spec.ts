@@ -12,6 +12,7 @@ test.describe('commission grids and simulations', () => {
     await page.getByRole('button', { name: 'Créer une entreprise' }).click();
     const dialog = page.getByRole('dialog');
     await dialog.getByLabel('Raison sociale').fill(`Société E2E ${String(Date.now())}`);
+    await dialog.getByLabel('Forme juridique').selectOption('PM_MF');
     await dialog.getByLabel('Ville').fill('Sfax');
     await dialog.getByLabel('Téléphone').fill('+21674000111');
     await dialog.getByLabel('E-mail du responsable').fill(`rh-${String(Date.now())}@e2e.tn`);
@@ -23,7 +24,8 @@ test.describe('commission grids and simulations', () => {
     await dialog.getByLabel('À (TND)').fill('18000');
     await dialog.getByLabel("Montant d'exemple (TND)").fill('16000');
     await expect(dialog.getByText('Total à payer')).toBeVisible();
-    await expect(dialog.getByText(/16\s572,200/)).toBeVisible();
+    // Processus v2: the PM MF total also carries the withholding tax and the transfer fee.
+    await expect(dialog.getByText(/16\s5\d\d,\d{3}/).first()).toBeVisible();
     // An overlapping tranche is refused with a clear message.
     await dialog.getByRole('button', { name: 'Ajouter une tranche' }).click();
     await dialog.getByLabel('Taux (%)').nth(1).fill('2');

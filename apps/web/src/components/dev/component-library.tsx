@@ -124,6 +124,7 @@ export function ComponentLibrary() {
   const [width, setWidth] = useState('full');
   const [textSize, setTextSize] = useState<(typeof TEXT_SIZES)[number]>('100');
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [resultOpen, setResultOpen] = useState(false);
   const [text, setText] = useState('');
   const [amount, setAmount] = useState('');
   const [types, setTypes] = useState<readonly ('RESTAURATION' | 'CADEAUX')[]>(['RESTAURATION']);
@@ -401,12 +402,31 @@ export function ComponentLibrary() {
                 {t('sample.hint')}
               </Alert>
             ))}
-            <ResultScreen
-              tone="success"
-              title={t('sample.resultTitle')}
-              description={t('sample.hint')}
-              actions={<Button>{t('sample.action')}</Button>}
-            />
+            {/* The result screen is a modal: opened on demand so it never hides the library. */}
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setResultOpen(true);
+              }}
+            >
+              {t('sample.showResult')}
+            </Button>
+            {resultOpen ? (
+              <ResultScreen
+                tone="success"
+                title={t('sample.resultTitle')}
+                description={t('sample.hint')}
+                actions={
+                  <Button
+                    onClick={() => {
+                      setResultOpen(false);
+                    }}
+                  >
+                    {t('sample.action')}
+                  </Button>
+                }
+              />
+            ) : null}
           </Section>
 
           <Section id="table" title={t('sections.table')}>

@@ -2,6 +2,7 @@
 .next/
 .next-test/
 .next-e2e/
+.next-demo/
 .next-build/
 next-env.d.ts
 *.tsbuildinfo

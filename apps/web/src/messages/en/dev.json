@@ -86,6 +86,7 @@
       "emptyTitle": "No items",
       "emptyMessage": "Items will appear here.",
       "resultTitle": "Operation successful",
+      "showResult": "Show the result screen",
       "tableCaption": "Demo payments",
       "status": "Status",
       "openModal": "Open a dialog",

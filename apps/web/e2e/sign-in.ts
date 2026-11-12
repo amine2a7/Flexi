@@ -13,6 +13,13 @@ export async function signIn(page: Page, account: string): Promise<void> {
   await page.getByLabel('Code à 6 chiffres').fill(MFA);
   await page.getByRole('button', { name: 'Vérifier' }).click();
   await page.waitForURL((url) => !url.pathname.includes('/login'));
+  // Let the landing page finish (dev compile, session fetch) so that the next page.goto is not
+  // aborted by its late client navigation.
+  await page
+    .locator('#main-content h1')
+    .first()
+    .waitFor({ timeout: 60_000 })
+    .catch(() => undefined);
   await dismissTour(page);
 }
 

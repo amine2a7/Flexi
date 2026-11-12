@@ -386,6 +386,38 @@ const ids = await prisma.$transaction(async (tx) => {
       },
     });
   }
+  // Validated KYC files of the two main demo accounts (entreprise@, commercant@): their dashboard
+  // shows no « Complétez votre dossier » banner and « Mon dossier » shows the four documents.
+  for (const owner of [
+    { accountType: 'COMPANY' as const, companyId: carthage.id },
+    { accountType: 'MERCHANT' as const, merchantId: darElJeld.id },
+  ]) {
+    await tx.kycFile.create({
+      data: {
+        ...owner,
+        status: 'APPROVED',
+        createdBy: financeUser.id,
+        documents: {
+          create: (
+            ['REGISTRY_EXTRACT', 'TAX_CERTIFICATE', 'MANAGER_ID', 'BANK_DETAILS'] as const
+          ).map((type) => ({
+            type,
+            fileName: `${type.toLowerCase()}.png`,
+            contentType: 'image/png',
+            sizeBytes: png.length,
+            storageKey: pngKey,
+            status: 'VALIDATED',
+          })),
+        },
+        events: {
+          create: [
+            { action: 'SUBMITTED', actorName: 'Système' },
+            { action: 'APPROVED', actorName: 'Système' },
+          ],
+        },
+      },
+    });
+  }
   return {
     carthage,
     sousse,
