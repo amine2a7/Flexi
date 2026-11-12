@@ -29,7 +29,8 @@ test('the merchant collects a payment confirmed by the customer', async ({ page,
   await page.goto('/fr/commercant/encaissement');
   await dismissTour(page);
   await page.getByLabel('Code client (8 chiffres)').fill(code);
-  await page.getByLabel('Montant (TND)').fill('45,500');
+  // A small amount: the demo customer's daily cap stays far, even after several runs.
+  await page.getByLabel('Montant (TND)').fill('4,500');
   await page.getByRole('button', { name: 'Demander la confirmation' }).click();
   await expect(page.getByText('En attente du client')).toBeVisible();
 
