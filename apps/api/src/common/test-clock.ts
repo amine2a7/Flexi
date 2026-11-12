@@ -45,10 +45,11 @@ export function resetTestClock(): void {
   installed = false;
 }
 
+const LOOPBACK = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
+
 /** POST /__test/clock?days=N on the loopback: the new time; GET: the current time. */
 export const testClockHandler: RequestHandler = (req, res) => {
-  const remote = req.socket.remoteAddress ?? '';
-  if (!['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(remote)) {
+  if (!LOOPBACK.includes(req.socket.remoteAddress ?? '')) {
     res.status(404).end();
     return;
   }
@@ -65,3 +66,25 @@ export const testClockHandler: RequestHandler = (req, res) => {
   }
   res.json({ now: new Date().toISOString(), offsetDays: offsetMs / DAY_MS });
 };
+
+/**
+ * GET /__test/reconcile on the loopback: runs the reconciliation of the books now (the daily job
+ * of the API) and answers whether they balance; a gap raises the usual « Écart du grand livre »
+ * alert. Same guard as the clock: TEST_CLOCK=1, never in production.
+ */
+export function testReconcileHandler(reconcile: () => Promise<boolean>): RequestHandler {
+  return (req, res) => {
+    if (!LOOPBACK.includes(req.socket.remoteAddress ?? '') || req.method !== 'GET') {
+      res.status(404).end();
+      return;
+    }
+    reconcile().then(
+      (ok) => {
+        res.json({ ok });
+      },
+      () => {
+        res.status(500).json({ ok: false });
+      },
+    );
+  };
+}
