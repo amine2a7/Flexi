@@ -4,19 +4,26 @@ const DEFAULT_API_BASE_URL = 'http://localhost:3000';
 
 const apiBaseUrlSchema = z.url({ protocol: /^https?$/ });
 
+/** Loopback hosts: browsers treat them as secure contexts (local production build, e2e, demo). */
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
+
 /**
  * Origin of the API (contract `servers`). Production must be HTTPS; plain HTTP is accepted only
- * for local development. Returns `undefined` when the value is invalid so callers fail closed
+ * for local development or a production build talking to an API on the loopback. Returns `undefined` when the value is invalid so callers fail closed
  * (e.g. the CSP then allows no cross-origin connection).
  */
 export function getApiOrigin(
   raw: string | undefined = process.env.NEXT_PUBLIC_API_BASE_URL,
   isProduction: boolean = process.env.NODE_ENV === 'production',
 ): string | undefined {
+  // The local default is for development only: a production build without a value fails closed.
+  if ((raw === undefined || raw === '') && isProduction) return undefined;
   const value = raw === undefined || raw === '' ? DEFAULT_API_BASE_URL : raw;
   const parsed = apiBaseUrlSchema.safeParse(value);
   if (!parsed.success) return undefined;
   const url = new URL(parsed.data);
-  if (isProduction && url.protocol !== 'https:') return undefined;
+  if (isProduction && url.protocol !== 'https:' && !LOOPBACK_HOSTS.has(url.hostname)) {
+    return undefined;
+  }
   return url.origin;
 }

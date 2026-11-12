@@ -24,6 +24,13 @@ describe('getApiOrigin', () => {
     expect(getApiOrigin(undefined, true)).toBeUndefined();
   });
 
+  it('accepts plain HTTP in production only on the loopback (local production build)', () => {
+    expect(getApiOrigin('http://localhost:3198', true)).toBe('http://localhost:3198');
+    expect(getApiOrigin('http://127.0.0.1:3198', true)).toBe('http://127.0.0.1:3198');
+    expect(getApiOrigin('http://localhost.example.test', true)).toBeUndefined();
+    expect(getApiOrigin('http://10.0.0.5:3198', true)).toBeUndefined();
+  });
+
   it.each(['not a url', 'javascript:alert(1)', 'ftp://api.example.test', 'data:text/plain,x'])(
     'refuses %s',
     (raw) => {
