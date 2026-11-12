@@ -29,6 +29,11 @@ const schema = z.object({
     .string()
     .regex(/^[0-9]{6}$/)
     .optional(),
+  /**
+   * End-to-end tests only: the days of the API move forward on request (common/test-clock.ts).
+   * Refused in production.
+   */
+  TEST_CLOCK: z.enum(['0', '1']).optional(),
 });
 
 export type Env = Readonly<
@@ -46,6 +51,9 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   const env = parsed.data;
   if (env.NODE_ENV === 'production' && env.DEMO_FIXED_MFA_CODE !== undefined) {
     throw new Error('DEMO_FIXED_MFA_CODE is forbidden in production');
+  }
+  if (env.NODE_ENV === 'production' && env.TEST_CLOCK === '1') {
+    throw new Error('TEST_CLOCK is forbidden in production');
   }
   const webOrigins = env.WEB_ORIGINS.split(',')
     .map((origin) => origin.trim())

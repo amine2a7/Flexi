@@ -7,6 +7,7 @@ import { useState, type SyntheticEvent } from 'react';
 import { messageKey } from '@/i18n/keys';
 import { getApi, setCsrfToken } from '@/lib/api/client';
 import { errorMessageKey, fieldErrors as readFieldErrors } from '@/lib/api/problem';
+import { useApiQuery } from '@/lib/api/use-api-query';
 import { PasswordFields } from '@/components/auth/password-fields';
 import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
@@ -113,6 +114,9 @@ function PinCard() {
   const t = useTranslations('beneficiary.security');
   const tRoot = useTranslations();
   const toast = useToast();
+  // A new beneficiary has no PIN yet: it chooses its first one without a current PIN (once).
+  const profile = useApiQuery(() => getApi().GET('/v1/employee/profile'), []);
+  const first = profile.status === 'success' && !profile.data.pinSet;
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirmation, setConfirmation] = useState('');
@@ -124,12 +128,12 @@ function PinCard() {
 
   async function submit(event: SyntheticEvent) {
     event.preventDefault();
-    if (!format.test(current) || !format.test(next) || next !== confirmation) return;
+    if ((!first && !format.test(current)) || !format.test(next) || next !== confirmation) return;
     setSaving(true);
     setError(undefined);
     try {
       const { error: problem } = await getApi().POST('/v1/employee/pin', {
-        body: { currentPin: current, newPin: next },
+        body: first ? { newPin: next } : { currentPin: current, newPin: next },
       });
       if (problem !== undefined) {
         setError(problem);
@@ -137,7 +141,8 @@ function PinCard() {
       }
       setNext('');
       setConfirmation('');
-      toast.notify('success', t('pinChanged'));
+      toast.notify('success', first ? t('pinCreated') : t('pinChanged'));
+      profile.reload();
     } finally {
       setCurrent('');
       setSaving(false);
@@ -153,19 +158,22 @@ function PinCard() {
   } as const;
   return (
     <Card>
-      <CardTitle>{t('pinTitle')}</CardTitle>
+      <CardTitle>{first ? t('firstPinTitle') : t('pinTitle')}</CardTitle>
       <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-4" noValidate>
+        {first ? <Alert tone="info">{t('firstPinHint')}</Alert> : null}
         {error !== undefined ? (
           <Alert tone="danger">{tRoot(messageKey(errorMessageKey(error)))}</Alert>
         ) : null}
-        <TextField
-          {...pinField}
-          label={t('currentPin')}
-          value={current}
-          onChange={(event) => {
-            setCurrent(digits(event.target.value));
-          }}
-        />
+        {first ? null : (
+          <TextField
+            {...pinField}
+            label={t('currentPin')}
+            value={current}
+            onChange={(event) => {
+              setCurrent(digits(event.target.value));
+            }}
+          />
+        )}
         <TextField
           {...pinField}
           label={t('newPin')}
@@ -187,10 +195,12 @@ function PinCard() {
         <Button
           type="submit"
           loading={saving}
-          disabled={!format.test(current) || !format.test(next) || next !== confirmation}
+          disabled={
+            (!first && !format.test(current)) || !format.test(next) || next !== confirmation
+          }
           icon={<LockKeyhole aria-hidden="true" className="size-icon-md" />}
         >
-          {t('changePin')}
+          {first ? t('createPin') : t('changePin')}
         </Button>
       </form>
     </Card>

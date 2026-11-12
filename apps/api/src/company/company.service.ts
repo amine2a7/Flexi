@@ -386,8 +386,11 @@ export class CompanyService {
     const body = scope === 'user' ? await this.db.user(run) : await this.db.system(run);
     if (taken.has(email)) await this.invitations.notifyExisting([email]);
     else if (invitation !== undefined) await this.invitations.deliver([invitation]);
-    // Shown once to the administrator only (an address already in use gets no new account).
-    if (scope === 'system' && invitation !== undefined && !taken.has(email))
+    // Shown once to the person who created the employee (administrator or company), as for a
+    // client created by the administrator. Same answer for an address that already signs in
+    // elsewhere (securite S04: nothing tells it): that password is never activated, the person
+    // is told by e-mail to use its existing account.
+    if (invitation !== undefined)
       return { ...body, credentials: credentialsOf(invitation) };
     return body;
   }

@@ -118,7 +118,11 @@ export class PinService {
       : new ApiProblem(403, 'PIN_INVALID');
   }
 
-  async change(employeeId: string, currentPin: string, newPin: string): Promise<void> {
+  /**
+   * Changes the PIN (the current one is checked), or chooses the first PIN of a new beneficiary:
+   * without a current PIN, only while the account has none (one atomic UPDATE: never twice).
+   */
+  async change(employeeId: string, currentPin: string | undefined, newPin: string): Promise<void> {
     if (WEAK.has(newPin)) {
       throw new ApiProblem(400, 'VALIDATION_FAILED', {
         fields: [
@@ -130,6 +134,18 @@ export class PinService {
           },
         ],
       });
+    }
+    if (currentPin === undefined) {
+      const first = await hashSecret(newPin);
+      await this.db.system(async (tx) => {
+        const set = await tx.$executeRaw`
+          UPDATE employees SET pin_hash = ${first}, pin_failures = 0, pin_lock_level = 0,
+                 pin_locked_until = NULL
+           WHERE id = ${employeeId}::uuid AND pin_hash IS NULL`;
+        if (set === 0) throw new ApiProblem(403, 'PIN_INVALID');
+        await this.audit.record(tx, 'pin.created', `employé ${employeeId}`);
+      });
+      return;
     }
     await this.verify(employeeId, currentPin);
     const pinHash = await hashSecret(newPin);

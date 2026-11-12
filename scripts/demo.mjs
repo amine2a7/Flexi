@@ -58,6 +58,8 @@ const demoEnv = {
   DEMO_FIXED_MFA_CODE: MFA,
   API_PORT,
   WEB_ORIGINS: WEB_URL,
+  // DEMO_TEST_CLOCK=1: the API days can move forward (end-to-end journey, never in production).
+  ...(process.env.DEMO_TEST_CLOCK === '1' ? { TEST_CLOCK: '1' } : {}),
 };
 
 function run(args, env = demoEnv) {

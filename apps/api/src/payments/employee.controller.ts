@@ -133,7 +133,8 @@ export class EmployeeController {
   @Post('pin')
   @HttpCode(204)
   async changePin(@Body() body: unknown): Promise<void> {
-    const input = parse(z.strictObject({ currentPin: pin, newPin: pin }), body);
+    // The first PIN of a new beneficiary is chosen without a current PIN (once).
+    const input = parse(z.strictObject({ currentPin: pin.optional(), newPin: pin }), body);
     await this.payments.changePin(input.currentPin, input.newPin);
   }
 }

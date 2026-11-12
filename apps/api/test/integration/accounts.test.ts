@@ -79,6 +79,11 @@ describe('sign-in accounts created with their owner', () => {
     });
     expect(created.status).toBe(201);
     expect(created.body.status).toBe('INVITED');
+    // Processus v2 (journey of 2026-11-12): the company sees the temporary password once too,
+    // the same one as the invitation e-mail.
+    const credentials = created.body.credentials as { email: string; temporaryPassword: string };
+    expect(credentials.email).toBe(email);
+    expect(credentials.temporaryPassword).toMatch(/.{12,}/);
 
     const user = await db.system((tx) => tx.user.findUnique({ where: { email } }));
     expect(user).toMatchObject({

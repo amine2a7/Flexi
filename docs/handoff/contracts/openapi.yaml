@@ -7660,9 +7660,10 @@ components:
       title: PinChange
       type: object
       additionalProperties: false
-      required: [currentPin, newPin]
+      required: [newPin]
       properties:
         currentPin:
+          description: PIN actuel, obligatoire dès qu'un PIN existe ; absent pour le premier PIN d'un nouveau bénéficiaire (une seule fois).
           type: string
           pattern: '^[0-9]{4}$'
         newPin:
@@ -8778,7 +8779,7 @@ components:
       required: [id, employeeNumber, firstName, lastName, email, phone, status, monthAllocatedMillimes]
       properties:
         credentials:
-          description: Identifiants affichés une seule fois, seulement à l'administrateur qui ajoute l'employé depuis la fiche client.
+          description: Identifiants affichés une seule fois à qui crée l'employé (administrateur ou entreprise). Pour une adresse qui a déjà un compte, ce mot de passe n'est jamais activé (même réponse, rien n'est révélé).
           $ref: '#/components/schemas/TemporaryCredentials'
         position:
           description: Poste (texte libre, ex. Ouvrier).

@@ -3429,7 +3429,8 @@ export interface components {
     };
     /** PinChange */
     PinChange: {
-      currentPin: string;
+      /** @description PIN actuel, obligatoire dès qu'un PIN existe ; absent pour le premier PIN d'un nouveau bénéficiaire (une seule fois). */
+      currentPin?: string;
       newPin: string;
     };
     /** MerchantLookup */
@@ -3977,7 +3978,7 @@ export interface components {
     };
     /** Employee */
     Employee: {
-      /** @description Identifiants affichés une seule fois, seulement à l'administrateur qui ajoute l'employé depuis la fiche client. */
+      /** @description Identifiants affichés une seule fois à qui crée l'employé (administrateur ou entreprise). Pour une adresse qui a déjà un compte, ce mot de passe n'est jamais activé (même réponse, rien n'est révélé). */
       credentials?: components['schemas']['TemporaryCredentials'];
       /** @description Poste (texte libre, ex. Ouvrier). */
       position?: string;

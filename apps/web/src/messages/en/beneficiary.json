@@ -145,7 +145,11 @@
     "pinFormat": "4 digits.",
     "changePin": "Change the PIN",
     "pinChanged": "PIN changed.",
-    "required": "Required field."
+    "required": "Required field.",
+    "firstPinTitle": "Choose your PIN",
+    "firstPinHint": "Your PIN confirms every payment. Choose 4 digits that are hard to guess.",
+    "createPin": "Save my PIN",
+    "pinCreated": "PIN saved: you can pay."
   },
   "family": {
     "title": "My family",

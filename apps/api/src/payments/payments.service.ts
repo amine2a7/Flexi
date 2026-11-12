@@ -656,7 +656,7 @@ export class PaymentsService {
     await this.pins.verify(this.employeeId(), pin);
   }
 
-  async changePin(currentPin: string, newPin: string): Promise<void> {
+  async changePin(currentPin: string | undefined, newPin: string): Promise<void> {
     await this.pins.change(this.employeeId(), currentPin, newPin);
   }
 

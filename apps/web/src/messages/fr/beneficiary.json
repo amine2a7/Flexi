@@ -145,7 +145,11 @@
     "pinFormat": "4 chiffres.",
     "changePin": "Changer le PIN",
     "pinChanged": "PIN changé.",
-    "required": "Champ obligatoire."
+    "required": "Champ obligatoire.",
+    "firstPinTitle": "Choisissez votre code PIN",
+    "firstPinHint": "Votre code PIN confirme chaque paiement. Choisissez 4 chiffres difficiles à deviner.",
+    "createPin": "Enregistrer mon PIN",
+    "pinCreated": "PIN enregistré : vous pouvez payer."
   },
   "family": {
     "title": "Ma famille",

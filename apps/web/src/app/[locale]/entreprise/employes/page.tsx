@@ -23,6 +23,7 @@ import { ReasonDialog } from '@/components/ui/reason-dialog';
 import { StatusBadge, UserStatusBadge } from '@/components/ui/status-badge';
 import { useToast } from '@/components/ui/toast';
 import { useCan, useCanOpen } from '@/lib/session/session-context';
+import { CredentialsDialog, type Credentials } from '@/components/admin/credentials-dialog';
 
 type Employee = Schemas['Employee'];
 type Draft = Schemas['EmployeeCreate'];
@@ -608,6 +609,8 @@ function AddEmployee({
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof Draft, string>>>({});
   const [error, setError] = useState<unknown>(undefined);
   const [saving, setSaving] = useState(false);
+  // The temporary password, shown once (processus v2) to hand it to the employee.
+  const [credentials, setCredentials] = useState<Credentials | undefined>(undefined);
 
   async function onSubmit(event: SyntheticEvent) {
     event.preventDefault();
@@ -628,6 +631,7 @@ function AddEmployee({
         toast.notify('success', t('created', { name: `${data.firstName} ${data.lastName}` }));
         setDraft(EMPTY);
         onOpenChange(false);
+        setCredentials(data.credentials);
         onCreated();
         return;
       }
@@ -650,64 +654,72 @@ function AddEmployee({
   }
 
   return (
-    <Modal
-      open={open}
-      onOpenChange={onOpenChange}
-      title={t('formTitle')}
-      description={t('formDescription', { days: invitationDays })}
-    >
-      <form onSubmit={(event) => void onSubmit(event)} className="flex flex-col gap-4" noValidate>
-        {error !== undefined ? (
-          <Alert tone="danger">
-            {asProblem(error)?.code === 'RESOURCE_STATE_CONFLICT'
-              ? t('duplicate')
-              : tRoot(messageKey(errorMessageKey(error)))}
-          </Alert>
-        ) : null}
-        <div className="grid gap-4 sm:grid-cols-2">
-          {FIELDS.map((field) => (
-            <TextField
-              key={field}
-              label={t(`fields.${field}`)}
-              hint={field === 'phone' ? t('phoneHint') : undefined}
-              error={fieldErrors[field]}
-              type={field === 'email' ? 'email' : field === 'phone' ? 'tel' : 'text'}
-              dir={field === 'email' || field === 'phone' ? 'ltr' : undefined}
-              value={draft[field]}
+    <>
+      <Modal
+        open={open}
+        onOpenChange={onOpenChange}
+        title={t('formTitle')}
+        description={t('formDescription', { days: invitationDays })}
+      >
+        <form onSubmit={(event) => void onSubmit(event)} className="flex flex-col gap-4" noValidate>
+          {error !== undefined ? (
+            <Alert tone="danger">
+              {asProblem(error)?.code === 'RESOURCE_STATE_CONFLICT'
+                ? t('duplicate')
+                : tRoot(messageKey(errorMessageKey(error)))}
+            </Alert>
+          ) : null}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {FIELDS.map((field) => (
+              <TextField
+                key={field}
+                label={t(`fields.${field}`)}
+                hint={field === 'phone' ? t('phoneHint') : undefined}
+                error={fieldErrors[field]}
+                type={field === 'email' ? 'email' : field === 'phone' ? 'tel' : 'text'}
+                dir={field === 'email' || field === 'phone' ? 'ltr' : undefined}
+                value={draft[field]}
+                onChange={(event) => {
+                  setDraft((current) => ({ ...current, [field]: event.target.value }));
+                }}
+              />
+            ))}
+            <SelectField
+              label={t('fields.department')}
+              placeholder={t('noDepartment')}
+              error={fieldErrors.departmentId}
+              options={departments.map((department) => ({
+                value: department.id,
+                label: department.name,
+              }))}
+              value={draft.departmentId ?? ''}
               onChange={(event) => {
-                setDraft((current) => ({ ...current, [field]: event.target.value }));
+                setDraft((current) => ({ ...current, departmentId: event.target.value }));
               }}
             />
-          ))}
-          <SelectField
-            label={t('fields.department')}
-            placeholder={t('noDepartment')}
-            error={fieldErrors.departmentId}
-            options={departments.map((department) => ({
-              value: department.id,
-              label: department.name,
-            }))}
-            value={draft.departmentId ?? ''}
-            onChange={(event) => {
-              setDraft((current) => ({ ...current, departmentId: event.target.value }));
-            }}
-          />
-          <PositionField
-            id="add-positions"
-            label={t('fields.position')}
-            value={draft.position ?? ''}
-            onChange={(value) => {
-              setDraft((current) => ({ ...current, position: value }));
-            }}
-            positions={positions}
-          />
-        </div>
-        <div className="flex justify-end">
-          <Button type="submit" loading={saving}>
-            {t('submit')}
-          </Button>
-        </div>
-      </form>
-    </Modal>
+            <PositionField
+              id="add-positions"
+              label={t('fields.position')}
+              value={draft.position ?? ''}
+              onChange={(value) => {
+                setDraft((current) => ({ ...current, position: value }));
+              }}
+              positions={positions}
+            />
+          </div>
+          <div className="flex justify-end">
+            <Button type="submit" loading={saving}>
+              {t('submit')}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+      <CredentialsDialog
+        credentials={credentials}
+        onClose={() => {
+          setCredentials(undefined);
+        }}
+      />
+    </>
   );
 }
