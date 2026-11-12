@@ -6,6 +6,9 @@ import { expect, test } from '@playwright/test';
 import { dismissTour, signIn } from './sign-in';
 
 test('the merchant collects a payment confirmed by the customer', async ({ page, browser }) => {
+  // One demo customer, one live code at a time (a new code cancels the previous one): the test
+  // runs once, on the desktop project, never in parallel with itself.
+  test.skip(test.info().project.name !== 'desktop', 'one demo customer code at a time');
   test.setTimeout(180_000);
   const phoneContext = await browser.newContext({
     baseURL: test.info().project.use.baseURL,
