@@ -2,6 +2,8 @@
 //   pnpm demo        empties the local database, applies the migrations, loads the demo seed,
 //                    starts the API then the web (webpack) and prints the URL and the accounts;
 //   pnpm demo:reset  loads the demo data again (empty database + seed), servers left running.
+//   pnpm demo:rapide same, but the web is an optimised local build (`next build` then
+//                    `next start`): every page is ready at once, no compile on first visit.
 //   node scripts/demo.mjs --api-only  starts one more API on the current data (no reset, no
 //                    web), for a production web on DEMO_WEB_PORT (e2e pass on a build).
 // Refuses any database that is not on this machine, and never runs in production.
@@ -22,6 +24,14 @@ const API_URL = `http://localhost:${API_PORT}`;
 const MFA = '123456';
 const resetOnly = process.argv.includes('--reset');
 const apiOnly = process.argv.includes('--api-only');
+const production = process.argv.includes('--build');
+// The optimised build has its own folder: a development server may keep `.next`.
+const webBuildEnv = {
+  ...process.env,
+  NEXT_PUBLIC_API_BASE_URL: API_URL,
+  NEXT_DIST_DIR: '.next-demo',
+  NEXT_TELEMETRY_DISABLED: '1',
+};
 
 function refuse(message) {
   console.error(`pnpm demo: ${message}`);
@@ -103,6 +113,9 @@ if (resetOnly) {
   printAccess();
   process.exit(0);
 }
+if (production) {
+  await run(['--filter', '@flexipay/web', 'exec', 'next', 'build'], webBuildEnv);
+}
 
 const children = [
   spawn('pnpm', ['--filter', '@flexipay/api', 'dev'], {
@@ -117,12 +130,19 @@ if (apiOnly) {
   console.log(`API seule : ${API_URL} (origine autorisée ${WEB_URL})`);
 } else {
   children.push(
-    spawn('pnpm', ['--filter', '@flexipay/web', 'dev'], {
-      cwd: root,
-      env: { ...process.env, WEB_PORT, NEXT_PUBLIC_API_BASE_URL: API_URL },
-      stdio: 'inherit',
-      shell,
-    }),
+    production
+      ? spawn('pnpm', ['--filter', '@flexipay/web', 'exec', 'next', 'start', '-p', WEB_PORT], {
+          cwd: root,
+          env: webBuildEnv,
+          stdio: 'inherit',
+          shell,
+        })
+      : spawn('pnpm', ['--filter', '@flexipay/web', 'dev'], {
+          cwd: root,
+          env: { ...process.env, WEB_PORT, NEXT_PUBLIC_API_BASE_URL: API_URL },
+          stdio: 'inherit',
+          shell,
+        }),
   );
   await waitFor(`${WEB_URL}/fr`, 'web');
   printAccess();

@@ -17,7 +17,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "demo": "node scripts/demo.mjs",
-    "demo:reset": "node scripts/demo.mjs --reset"
+    "demo:reset": "node scripts/demo.mjs --reset",
+    "demo:rapide": "node scripts/demo.mjs --build"
   },
   "prettier": "@flexipay/config/prettier",
   "devDependencies": {
