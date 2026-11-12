@@ -1,4 +1,4 @@
-import type { RequestHandler } from 'express';
+import type { Request, RequestHandler } from 'express';
 
 /**
  * Test clock of the end-to-end journey (request of 2026-11-12): the days of the whole API process
@@ -46,10 +46,31 @@ export function resetTestClock(): void {
 }
 
 const LOOPBACK = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
+const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
+/** Header a test runner sends on purpose (a web page cannot send it without a preflight). */
+export const TEST_HEADER = 'x-flexipay-test';
+
+/**
+ * A request of the local test runner only (securite, revue du 2026-11-12): from the loopback,
+ * not relayed (no Forwarded / X-Forwarded-For / X-Real-IP: a tunnel or port forward shows
+ * 127.0.0.1), not sent by a web page (no Origin), to a local Host, with the test header.
+ */
+export function isLocalTestRequest(req: Request): boolean {
+  const host = (req.headers.host ?? '').replace(/:\d+$/, '');
+  return (
+    LOOPBACK.includes(req.socket.remoteAddress ?? '') &&
+    req.headers.forwarded === undefined &&
+    req.headers['x-forwarded-for'] === undefined &&
+    req.headers['x-real-ip'] === undefined &&
+    req.headers.origin === undefined &&
+    LOCAL_HOSTS.includes(host) &&
+    req.headers[TEST_HEADER] === '1'
+  );
+}
 
 /** POST /__test/clock?days=N on the loopback: the new time; GET: the current time. */
 export const testClockHandler: RequestHandler = (req, res) => {
-  if (!LOOPBACK.includes(req.socket.remoteAddress ?? '')) {
+  if (!isLocalTestRequest(req)) {
     res.status(404).end();
     return;
   }
@@ -68,13 +89,13 @@ export const testClockHandler: RequestHandler = (req, res) => {
 };
 
 /**
- * GET /__test/reconcile on the loopback: runs the reconciliation of the books now (the daily job
+ * POST /__test/reconcile on the loopback: runs the reconciliation of the books now (the daily job
  * of the API) and answers whether they balance; a gap raises the usual « Écart du grand livre »
  * alert. Same guard as the clock: TEST_CLOCK=1, never in production.
  */
 export function testReconcileHandler(reconcile: () => Promise<boolean>): RequestHandler {
   return (req, res) => {
-    if (!LOOPBACK.includes(req.socket.remoteAddress ?? '') || req.method !== 'GET') {
+    if (!isLocalTestRequest(req) || req.method !== 'POST') {
       res.status(404).end();
       return;
     }

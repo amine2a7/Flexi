@@ -15,6 +15,8 @@ const ROOT = join(import.meta.dirname, '..', '..', '..');
 const SHOTS = join(import.meta.dirname, 'captures', 'parcours');
 const API = `http://localhost:${process.env.E2E_API_PORT ?? '3198'}`;
 const SEED_PASSWORD = 'Test1234!';
+/** The test routes of the API answer the local test runner only (header sent on purpose). */
+const TEST_HEADERS = { 'x-flexipay-test': '1' };
 const MFA = '123456';
 const NEW_PASSWORD = 'Parcours-2026!sur';
 const PIN = '4826';
@@ -36,7 +38,9 @@ async function capture(page: Page, name: string): Promise<void> {
 }
 
 async function advanceDays(request: APIRequestContext, days: number): Promise<void> {
-  const response = await request.post(`${API}/__test/clock?days=${String(days)}`);
+  const response = await request.post(`${API}/__test/clock?days=${String(days)}`, {
+    headers: TEST_HEADERS,
+  });
   expect(response.ok(), 'TEST_CLOCK=1 is required on the API').toBe(true);
 }
 
@@ -141,7 +145,9 @@ test('parcours complet : de la création du client au virement du commerçant', 
   test.setTimeout(30 * 60_000);
   // Only on an API started with the test clock (DEMO_TEST_CLOCK=1 pnpm demo:rapide): elsewhere
   // the journey is skipped before anything is reset.
-  const clock = await request.get(`${API}/__test/clock`).catch(() => undefined);
+  const clock = await request
+    .get(`${API}/__test/clock`, { headers: TEST_HEADERS })
+    .catch(() => undefined);
   test.skip(clock?.ok() !== true, 'needs the API test clock (DEMO_TEST_CLOCK=1 pnpm demo:rapide)');
   mkdirSync(SHOTS, { recursive: true });
   // A database reset at start (demo seed: admin@, operations@, sarra@, nour@ and the settings).
@@ -452,7 +458,7 @@ test('parcours complet : de la création du client au virement du commerçant', 
   // Every millime is found: 8 700 + 6 000 + 50 + 1 214,500 + 581 + 35,500 = 16 581,000.
   expect(8_700_000 + 6_000_000 + 50_000 + 1_214_500 + 581_000 + 35_500).toBe(16_581_000);
   // The reconciliation of the books, run now: balances, double entry, lots, taxes.
-  const books = await request.get(`${API}/__test/reconcile`);
+  const books = await request.post(`${API}/__test/reconcile`, { headers: TEST_HEADERS });
   expect(await books.json()).toEqual({ ok: true });
   await login(admin, 'admin@flexipay.test', SEED_PASSWORD);
   await admin.goto('/fr/admin/securite');
