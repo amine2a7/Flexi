@@ -5,10 +5,8 @@ export default [
   {
     ignores: [
       ...ignores,
-      '.next/**',
-      '.next-test/**',
-      '.next-e2e/**',
-      '.next-build/**',
+      // Every Next.js output folder (.next, .next-e2e, .next-demo of pnpm demo:rapide…).
+      '.next*/**',
       'next-env.d.ts',
       'playwright-report/**',
       'test-results/**',

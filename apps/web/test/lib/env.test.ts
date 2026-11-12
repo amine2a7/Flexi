@@ -24,11 +24,13 @@ describe('getApiOrigin', () => {
     expect(getApiOrigin(undefined, true)).toBeUndefined();
   });
 
-  it('accepts plain HTTP in production only on the loopback (local production build)', () => {
-    expect(getApiOrigin('http://localhost:3198', true)).toBe('http://localhost:3198');
-    expect(getApiOrigin('http://127.0.0.1:3198', true)).toBe('http://127.0.0.1:3198');
-    expect(getApiOrigin('http://localhost.example.test', true)).toBeUndefined();
-    expect(getApiOrigin('http://10.0.0.5:3198', true)).toBeUndefined();
+  it('accepts plain HTTP in production only on the loopback of a build marked local', () => {
+    expect(getApiOrigin('http://localhost:3198', true, true)).toBe('http://localhost:3198');
+    expect(getApiOrigin('http://127.0.0.1:3198', true, true)).toBe('http://127.0.0.1:3198');
+    expect(getApiOrigin('http://localhost.example.test', true, true)).toBeUndefined();
+    expect(getApiOrigin('http://10.0.0.5:3198', true, true)).toBeUndefined();
+    // Not marked local: a production build never talks HTTP, even to the loopback.
+    expect(getApiOrigin('http://localhost:3198', true, false)).toBeUndefined();
   });
 
   it.each(['not a url', 'javascript:alert(1)', 'ftp://api.example.test', 'data:text/plain,x'])(

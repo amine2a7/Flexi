@@ -4,7 +4,11 @@ const DEFAULT_API_BASE_URL = 'http://localhost:3000';
 
 const apiBaseUrlSchema = z.url({ protocol: /^https?$/ });
 
-/** Loopback hosts: browsers treat them as secure contexts (local production build, e2e, demo). */
+/**
+ * Loopback hosts: browsers treat them as secure contexts. Accepted over HTTP by a production build
+ * only when the build says it is local (NEXT_PUBLIC_LOCAL_BUILD=1, set by `pnpm demo:rapide`): a
+ * real deployment pointed at a local API by mistake still fails closed.
+ */
 const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 /**
@@ -15,6 +19,7 @@ const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 export function getApiOrigin(
   raw: string | undefined = process.env.NEXT_PUBLIC_API_BASE_URL,
   isProduction: boolean = process.env.NODE_ENV === 'production',
+  localBuild: boolean = process.env.NEXT_PUBLIC_LOCAL_BUILD === '1',
 ): string | undefined {
   // The local default is for development only: a production build without a value fails closed.
   if ((raw === undefined || raw === '') && isProduction) return undefined;
@@ -22,7 +27,11 @@ export function getApiOrigin(
   const parsed = apiBaseUrlSchema.safeParse(value);
   if (!parsed.success) return undefined;
   const url = new URL(parsed.data);
-  if (isProduction && url.protocol !== 'https:' && !LOOPBACK_HOSTS.has(url.hostname)) {
+  if (
+    isProduction &&
+    url.protocol !== 'https:' &&
+    !(localBuild && LOOPBACK_HOSTS.has(url.hostname))
+  ) {
     return undefined;
   }
   return url.origin;
