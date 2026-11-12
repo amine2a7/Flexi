@@ -59,14 +59,15 @@ export default function LoginPage() {
         tabIndex={-1}
         className="flex flex-1 items-center justify-center px-4 py-12"
       >
-        <div className="fp-cascade flex w-full max-w-auth-card-max-width flex-col items-center">
+        {/* The ticket is printed (connexion-web), then its badge peeks out above the stub. */}
+        <div className="flex w-full max-w-auth-card-max-width flex-col items-center">
           <span
             aria-hidden="true"
-            className="-mb-4 flex size-avatar-lg items-center justify-center rounded-badge border-4 border-navy bg-paper text-navy"
+            className="relative z-10 -mb-4 flex size-avatar-lg animate-peek items-center justify-center rounded-badge border-4 border-navy bg-paper text-navy"
           >
             <UtensilsCrossed className="size-icon-md" />
           </span>
-          <div className="w-full overflow-hidden rounded-card-desktop bg-paper shadow-card">
+          <div className="w-full animate-print overflow-hidden rounded-card-desktop bg-paper shadow-card">
             <div className="flex items-end justify-between gap-3 bg-navy px-6 pb-4 pt-6 text-on-navy">
               <div className="flex flex-col gap-1">
                 <p className="font-display text-title uppercase">{t('label')}</p>

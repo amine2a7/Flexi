@@ -13,3 +13,4 @@ blob-report/
 # Written by `next dev` (agent instruction files): not project content, never committed
 AGENTS.md
 CLAUDE.md
+.next-demo-dev/

@@ -243,7 +243,13 @@ module.exports = {
         "skeleton": 1200,
         "toast": 4000,
         "cascade-step": 40,
-        "bars-step": 80
+        "bars-step": 80,
+        "tear": 650,
+        "print": 900,
+        "peek": 420,
+        "peek-delay": 820,
+        "wiggle": 1600,
+        "book-auto": 5200
       },
       "easing": {
         "out": "cubic-bezier(.2,0,0,1)",
@@ -252,7 +258,13 @@ module.exports = {
       },
       "distance": {
         "rise": 8,
-        "shake": 7
+        "shake": 7,
+        "tear-x": 260,
+        "tear-y": 220,
+        "tear-rotate": 18,
+        "wiggle-rotate": 4,
+        "peek": 34,
+        "print": 14
       },
       "scale": {
         "press": 0.97,

@@ -42,6 +42,12 @@ const animation = {
   'grow-y': `fp-grow-y ${d('slow')} ${e('out')} both`,
   shimmer: `fp-shimmer ${d('skeleton')} linear infinite`,
   flash: `fp-flash ${d('flash')} ${e('out')} forwards`,
+  // Ticket book (docs/design/carnet-tickets): a ticket torn off the book, the scissors that
+  // sway, the sign-in ticket printed then its badge peeking out.
+  tear: `fp-tear ${d('tear')} ${e('in')} forwards`,
+  wiggle: `fp-wiggle ${d('wiggle')} ${e('out')} infinite alternate`,
+  print: `fp-print ${d('print')} ${e('out')} both`,
+  peek: `fp-peek ${d('peek')} ${e('spring')} ${d('peek-delay')} both`,
 };
 
 const motionPlugin = plugin((api) => {
@@ -50,6 +56,12 @@ const motionPlugin = plugin((api) => {
   for (const [name, value] of Object.entries(motion.easing)) vars[`--fp-e-${name}`] = value;
   vars['--fp-rise'] = `${String(motion.distance.rise)}px`;
   vars['--fp-shake'] = `${String(motion.distance.shake)}px`;
+  vars['--fp-tear-x'] = `${String(motion.distance['tear-x'])}px`;
+  vars['--fp-tear-y'] = `${String(motion.distance['tear-y'])}px`;
+  vars['--fp-tear-rotate'] = `${String(motion.distance['tear-rotate'])}deg`;
+  vars['--fp-wiggle-rotate'] = `${String(motion.distance['wiggle-rotate'])}deg`;
+  vars['--fp-peek'] = `${String(motion.distance.peek)}px`;
+  vars['--fp-print'] = `${String(motion.distance.print)}px`;
   for (const [name, value] of Object.entries(motion.scale))
     vars[`--fp-scale-${name}`] = String(value);
   vars['--fp-slide'] = '100%';
@@ -58,6 +70,12 @@ const motionPlugin = plugin((api) => {
   const still: Record<string, string> = {
     '--fp-rise': '0px',
     '--fp-shake': '0px',
+    '--fp-tear-x': '0px',
+    '--fp-tear-y': '0px',
+    '--fp-tear-rotate': '0deg',
+    '--fp-wiggle-rotate': '0deg',
+    '--fp-peek': '0px',
+    '--fp-print': '0px',
     '--fp-slide': '0%',
     '--fp-grow-from': '1',
     '--fp-shimmer': '0',
@@ -108,6 +126,27 @@ const motionPlugin = plugin((api) => {
       '70%': { opacity: '1' },
       '100%': { opacity: '0' },
     },
+    // Torn off: a small lift, then up and away (mirrored in Arabic); a fade when motion is reduced.
+    '@keyframes fp-tear': {
+      '0%': { opacity: '1', transform: 'none' },
+      '25%': {
+        transform:
+          'rotate(calc(var(--fp-tear-rotate) / 9 * var(--fp-dir))) translateY(calc(var(--fp-rise) * -1))',
+      },
+      '100%': {
+        opacity: '0',
+        transform:
+          'rotate(calc(var(--fp-tear-rotate) * var(--fp-dir))) translate(calc(var(--fp-tear-x) * var(--fp-dir)), calc(var(--fp-tear-y) * -1))',
+      },
+    },
+    '@keyframes fp-wiggle': {
+      from: { transform: 'rotate(calc(var(--fp-wiggle-rotate) * -1))' },
+      to: { transform: 'rotate(var(--fp-wiggle-rotate))' },
+    },
+    '@keyframes fp-print': {
+      from: { opacity: '0', transform: 'translateY(calc(var(--fp-print) * -1))' },
+    },
+    '@keyframes fp-peek': { from: { opacity: '0', transform: 'translateY(var(--fp-peek))' } },
     ...cascade,
   });
 

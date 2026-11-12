@@ -19,7 +19,7 @@ const STEPS = ['s1', 's2', 's3'] as const;
 export default async function LandingPage() {
   const t = await getTranslations('landing');
   const tContact = await getTranslations('contact');
-  const terms = termValues(await fetchPlatformTerms(), (await getLocale()));
+  const terms = termValues(await fetchPlatformTerms(), await getLocale());
   const days = { days: terms.settlementDays };
   return (
     <>
@@ -81,7 +81,7 @@ export default async function LandingPage() {
           {AUDIENCES.map(({ key, icon: Icon }) => (
             <li
               key={key}
-              className="flex flex-col rounded-card-desktop border border-paper-line bg-paper text-navy shadow-card"
+              className="flex flex-col rounded-card-desktop border border-paper-line bg-paper text-navy shadow-card transition duration-base ease-out hover:-translate-y-1 hover:-rotate-1 hover:shadow-raised motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:hover:rotate-0"
             >
               <div className="flex items-center justify-between gap-3 border-b-2 border-dashed border-paper-line px-6 py-4">
                 <p className="font-ticket text-micro uppercase text-paper-ink">

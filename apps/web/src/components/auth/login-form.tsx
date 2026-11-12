@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, type SyntheticEvent } from 'react';
 import { cn } from '@/lib/cn';
+import { useReplay } from '@/lib/motion';
 import { Link, useRouter } from '@/i18n/navigation';
 import { messageKey } from '@/i18n/keys';
 import { getApi, setCsrfToken } from '@/lib/api/client';
@@ -45,6 +46,9 @@ export function LoginForm() {
   const [error, setError] = useState<unknown>(undefined);
   const [missing, setMissing] = useState({ identifier: false, password: false });
   const [stamp, setStamp] = useState<'ok' | 'refused' | undefined>(undefined);
+  // Each refused attempt shakes the ticket (connexion-web), a fade when motion is reduced.
+  const [refusals, setRefusals] = useState(0);
+  const shake = useReplay(refusals);
   const [windowExpired] = useState(() => getAuthFlow().passwordWindowExpired === true);
 
   useEffect(() => {
@@ -69,7 +73,10 @@ export function LoginForm() {
       if (data === undefined) {
         setError(problem);
         setPassword('');
-        if (asProblem(problem)?.code === 'INVALID_CREDENTIALS') setStamp('refused');
+        if (asProblem(problem)?.code === 'INVALID_CREDENTIALS') {
+          setStamp('refused');
+          setRefusals((count) => count + 1);
+        }
         return;
       }
       setStamp('ok');
@@ -117,7 +124,8 @@ export function LoginForm() {
       ) : null}
       <form
         onSubmit={(event) => void onSubmit(event)}
-        className="relative flex flex-col gap-5"
+        className={cn('relative flex flex-col gap-5', shake.active && 'animate-shake')}
+        onAnimationEnd={shake.onAnimationEnd}
         noValidate
       >
         {stamp !== undefined ? (

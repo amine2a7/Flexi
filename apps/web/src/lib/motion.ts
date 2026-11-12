@@ -6,7 +6,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // Animations of docs/design/animations/animations.md. Durations come from the motion tokens; a
 // money action never waits for an animation (the effects below only follow what happened).
 
-type MotionName = 'fast' | 'base' | 'slow' | 'emphasis' | 'success' | 'copied' | 'toast';
+type MotionName =
+  'fast' | 'base' | 'slow' | 'emphasis' | 'success' | 'copied' | 'toast' | 'book-auto';
 
 const DURATIONS = (tokensPreset.theme as { motion: { duration: Record<MotionName, number> } })
   .motion.duration;
