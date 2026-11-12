@@ -49,17 +49,19 @@ test('the net of the simulation is the net of the payout request', async ({ page
   await page.getByLabel('Montant à virer (TND)').fill('100');
   await page.getByRole('button', { name: 'Simuler', exact: true }).click();
   const summary = page.locator('dl').filter({ hasText: 'Net viré' }).first();
-  const net = (await summary.getByText(/TND/).last().innerText()).trim();
+  // An amount is read whole from its label (« 1 234,000 TND »): figures and currency are apart.
+  const net =
+    (await summary.locator('[aria-label$="TND"]').last().getAttribute('aria-label')) ?? '';
   expect(net).toMatch(/\d/);
   await page.getByRole('button', { name: 'Demander ce virement' }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('button', { name: /^Demander / }).click();
   await expect(dialog).toHaveCount(0);
   // The new request (first of the tracking list) carries the same net.
-  await page.getByRole('tab', { name: 'Suivi des demandes' }).click();
+  await page.getByRole('button', { name: 'Suivi des demandes' }).click();
   await page
     .getByRole('link', { name: /VIR-|Voir/ })
     .first()
     .click();
-  await expect(page.getByText(net, { exact: true }).first()).toBeVisible();
+  await expect(page.locator(`[aria-label="${net}"]`).first()).toBeVisible();
 });

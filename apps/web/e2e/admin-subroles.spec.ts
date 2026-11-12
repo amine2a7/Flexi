@@ -96,7 +96,7 @@ test('Finance never sees the KYC decision, Opérations never the payout decision
   await signIn(page, 'operations@flexipay.test');
   await page.goto('/fr/admin/virements');
   await dismissTour(page);
-  const payout = page.locator('main a[href^="/fr/admin/virements/"]').first();
+  const payout = page.locator('main a[href^="/fr/admin/virements/"]:visible').first();
   if ((await payout.count()) > 0) {
     await payout.click();
     await page.waitForLoadState('networkidle');

@@ -35,7 +35,7 @@ test('the company allocates to Production / Ouvrier, saves the template and rela
   await expect(page.getByText('Employés concernés : 4')).toBeVisible();
 });
 
-test('the administrator opens every tab of a company record', async ({ page }) => {
+test('the administrator opens every tab of a company record', async ({ page, isMobile }) => {
   test.setTimeout(120_000);
   await signIn(page, 'admin@flexipay.test');
   await page.goto('/fr/admin/entreprises');
@@ -53,5 +53,8 @@ test('the administrator opens every tab of a company record', async ({ page }) =
     await expect(page.locator('main').getByRole('alert')).toHaveCount(0);
   }
   await tabs.getByRole('button', { name: 'Attributions et modèles' }).click();
-  await expect(page.getByRole('table').first()).toBeVisible();
+  // A table on a desktop screen, cards on a phone.
+  await expect(
+    isMobile ? page.locator('main ul').first() : page.getByRole('table').first(),
+  ).toBeVisible();
 });

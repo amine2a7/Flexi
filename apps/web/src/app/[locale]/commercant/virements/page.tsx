@@ -203,12 +203,12 @@ export default function PayoutsPage() {
             </Button>
           ) : null}
           <Link
-          href={`/commercant/virements/${row.id}`}
-          className={buttonClasses('ghost', 'sm')}
-          aria-label={t('openPayout', { reference: row.reference })}
-        >
-          {t('open')}
-          <ChevronRight aria-hidden="true" className="size-icon-sm rtl:rotate-180" />
+            href={`/commercant/virements/${row.id}`}
+            className={buttonClasses('ghost', 'sm')}
+            aria-label={t('openPayout', { reference: row.reference })}
+          >
+            {t('open')}
+            <ChevronRight aria-hidden="true" className="size-icon-sm rtl:rotate-180" />
           </Link>
         </div>
       ),
@@ -407,25 +407,26 @@ export default function PayoutsPage() {
               onPrevious={list.previous}
             />
           </Card>
-          {quote !== undefined ? (
-            <ConfirmDialog
-              open={confirming}
-              onOpenChange={setConfirming}
-              title={t('confirmTitle')}
-              description={t('confirmMessage')}
-              confirmLabel={t('confirmSubmit', {
-                amount: formatMillimesWithCurrency(quote.netMillimes, locale),
-              })}
-              loading={sending}
-              onConfirm={() => void onRequest()}
-            >
-              <AmountBreakdown
-                lines={breakdown}
-                total={{ label: t('net'), millimes: quote.netMillimes }}
-              />
-            </ConfirmDialog>
-          ) : null}
         </div>
+      ) : null}
+      {/* The confirmation belongs to the « Demander un virement » tab, never to the tracking. */}
+      {quote !== undefined ? (
+        <ConfirmDialog
+          open={confirming}
+          onOpenChange={setConfirming}
+          title={t('confirmTitle')}
+          description={t('confirmMessage')}
+          confirmLabel={t('confirmSubmit', {
+            amount: formatMillimesWithCurrency(quote.netMillimes, locale),
+          })}
+          loading={sending}
+          onConfirm={() => void onRequest()}
+        >
+          <AmountBreakdown
+            lines={breakdown}
+            total={{ label: t('net'), millimes: quote.netMillimes }}
+          />
+        </ConfirmDialog>
       ) : null}
     </>
   );

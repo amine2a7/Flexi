@@ -43,12 +43,15 @@ test('the company suspends, reactivates then deactivates an employee', async ({ 
     .getByRole('row')
     .filter({ has: page.getByRole('button', { name: 'Suspendre' }) })
     .first();
-  const name = (await row.getByRole('cell').first().innerText()).split('\n')[0] ?? '';
+  // The actions are labelled with the employee's name (« Suspendre Hichem Gharbi »).
+  const label =
+    (await row.getByRole('button', { name: 'Suspendre' }).getAttribute('aria-label')) ?? '';
+  const name = label.replace(/^Suspendre\s+/, '');
   const act = async (button: string, confirm: string) => {
     await page
       .getByRole('row')
       .filter({ hasText: name })
-      .getByRole('button', { name: button })
+      .getByRole('button', { name: `${button} ${name}` })
       .click();
     const dialog = page.getByRole('dialog');
     await expect(dialog.getByRole('button', { name: confirm })).toBeDisabled();
