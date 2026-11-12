@@ -4335,6 +4335,8 @@ export interface components {
     };
     /** AllocationTemplateInput */
     AllocationTemplateInput: {
+      /** @description Jour de la relance automatique chaque mois (1 à 28) ; null = relance à la main ; absent = inchangé. Un jour déjà passé ce mois-ci commence le mois suivant. */
+      autoMonthlyDay?: number | null;
       name: string;
       /** @description Département filtré (null = tous). */
       departmentId: components['schemas']['Uuid'] | null;
@@ -4344,6 +4346,10 @@ export interface components {
     };
     /** AllocationTemplate */
     AllocationTemplate: {
+      /** @description Jour de la relance automatique chaque mois (1 à 28), ou null. */
+      autoMonthlyDay: number | null;
+      /** @description Dernière relance automatique (mois et résultat) ; null si aucune. */
+      lastAutoRun: null | components['schemas']['TemplateAutoRun'];
       id: components['schemas']['Uuid'];
       name: string;
       departmentId: components['schemas']['Uuid'] | null;
@@ -4354,6 +4360,15 @@ export interface components {
       lastRunAt: components['schemas']['Timestamp'] | null;
       createdAt: components['schemas']['Timestamp'];
       updatedAt: components['schemas']['Timestamp'];
+    };
+    /** TemplateAutoRun */
+    TemplateAutoRun: {
+      month: string;
+      /**
+       * @description Faite, solde insuffisant (rien n'a bougé), aucun employé, auteur du modèle inactif, ou erreur.
+       * @enum {string}
+       */
+      status: 'DONE' | 'INSUFFICIENT_FUNDS' | 'NO_EMPLOYEE' | 'AUTHOR_UNAVAILABLE' | 'FAILED';
     };
     /** AllocationTemplateList */
     AllocationTemplateList: {
@@ -11310,6 +11325,9 @@ export const transferProofContentTypeValues: ReadonlyArray<
 export const allocationImportRowIssuesValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['AllocationImportRow']['issues']
 > = ['UNKNOWN_EMPLOYEE', 'INVALID_AMOUNT', 'NO_AMOUNT', 'TYPE_DISABLED'];
+export const templateAutoRunStatusValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['TemplateAutoRun']['status']
+> = ['DONE', 'INSUFFICIENT_FUNDS', 'NO_EMPLOYEE', 'AUTHOR_UNAVAILABLE', 'FAILED'];
 export const familyRelationshipValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['FamilyRelationship']
 > = ['SPOUSE', 'CHILD', 'PARENT'];

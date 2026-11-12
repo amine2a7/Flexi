@@ -268,13 +268,21 @@ export class PayoutsService {
         { text: 'FlexiPay', bold: true, size: 18 },
         { text: 'Titres-restaurant dématérialisés', size: 9 },
         { text: `Facture de commission ${number}`, bold: true, size: 14, gap: 24 },
-        { text: `Date : ${payout.requestedAt.toLocaleDateString('fr-TN', { timeZone: 'Africa/Tunis' })}` },
+        {
+          text: `Date : ${payout.requestedAt.toLocaleDateString('fr-TN', { timeZone: 'Africa/Tunis' })}`,
+        },
         { text: `Virement : ${payout.reference}` },
         { text: `Commerçant : ${payout.merchant.name}, ${payout.merchant.city}`, gap: 12 },
         { text: 'Détail', bold: true, gap: 20 },
         { text: 'Montant du virement', right: tnd(payout.grossMillimes) },
-        { text: `Commission FlexiPay (${percent(payout.commissionRateBps)})`, right: tnd(-payout.commissionMillimes) },
-        { text: `TVA sur la commission (${percent(payout.vatRateBps)})`, right: tnd(-payout.vatMillimes) },
+        {
+          text: `Commission FlexiPay (${percent(payout.commissionRateBps)})`,
+          right: tnd(-payout.commissionMillimes),
+        },
+        {
+          text: `TVA sur la commission (${percent(payout.vatRateBps)})`,
+          right: tnd(-payout.vatMillimes),
+        },
         ...(payout.withholdingMillimes > 0n
           ? [
               {
@@ -852,7 +860,9 @@ export class PayoutsService {
            FOR UPDATE SKIP LOCKED`;
       if (claimed.length === 0) return undefined;
       const batch = await tx.settlementBatch.findUniqueOrThrow({ where: { id } });
-      const payouts = await tx.payoutRequest.findMany({ where: { batchId: id, status: 'CHECKED' } });
+      const payouts = await tx.payoutRequest.findMany({
+        where: { batchId: id, status: 'CHECKED' },
+      });
       // Accounts first and all at once, as everywhere (ledger-auditor C4).
       await this.ledger.lockAccounts(tx, [
         accounts.payoutPayable(),
@@ -1013,7 +1023,9 @@ export class PayoutsService {
               },
             ]
           : []),
-        ...(deducted > 0n ? [{ account: debtAccount, direction: 'C' as const, amount: deducted }] : []),
+        ...(deducted > 0n
+          ? [{ account: debtAccount, direction: 'C' as const, amount: deducted }]
+          : []),
       ],
     });
     if (deducted > 0n)
@@ -1103,7 +1115,8 @@ export class PayoutsService {
       await tx.settlementBatch.update({ where: { id }, data: { status: 'PAID', bankReference } });
       await this.audit.record(tx, 'settlements.execute', id, 'Système');
     });
-    for (const line of rejected) await this.notifyCancelled(line.merchantId, line.reference, line.reason);
+    for (const line of rejected)
+      await this.notifyCancelled(line.merchantId, line.reference, line.reason);
   }
 
   /**

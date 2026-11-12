@@ -289,7 +289,18 @@
     "save": "Enregistrer",
     "cancel": "Annuler",
     "emptyTitle": "Aucun modèle",
-    "emptyHint": "Dans Attribuer, cochez « Enregistrer comme modèle » pour en créer un."
+    "emptyHint": "Dans Attribuer, cochez « Enregistrer comme modèle » pour en créer un.",
+    "auto": "Relance automatique",
+    "autoOff": "À la main",
+    "autoDay": "Le {day} de chaque mois",
+    "autoHint": "Le modèle se relance seul ce jour-là, pour les employés actuels de ses filtres, une fois par mois. Si le solde ne suffit pas, rien n'est attribué et vous relancez à la main.",
+    "autoStatus": {
+      "DONE": "Relancé en {month}",
+      "INSUFFICIENT_FUNDS": "Échec en {month} : solde insuffisant",
+      "NO_EMPLOYEE": "Rien en {month} : aucun employé",
+      "AUTHOR_UNAVAILABLE": "Échec en {month} : l'auteur du modèle n'est plus actif",
+      "FAILED": "Échec en {month} : relancez à la main"
+    }
   },
   "familyAccounts": {
     "title": "Comptes famille",

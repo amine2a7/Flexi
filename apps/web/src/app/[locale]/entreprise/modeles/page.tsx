@@ -97,6 +97,28 @@ export default function AllocationTemplatesPage() {
       cell: (row) => (row.lastRunAt === null ? t('never') : formatDateTime(row.lastRunAt, locale)),
     },
     {
+      key: 'auto',
+      header: t('auto'),
+      cell: (row) => (
+        <span className="flex flex-col gap-1">
+          <span>
+            {row.autoMonthlyDay === null ? t('autoOff') : t('autoDay', { day: row.autoMonthlyDay })}
+          </span>
+          {row.lastAutoRun === null ? null : (
+            <span
+              className={
+                row.lastAutoRun.status === 'DONE'
+                  ? 'text-caption text-emerald-text'
+                  : 'text-caption text-danger-text'
+              }
+            >
+              {t(`autoStatus.${row.lastAutoRun.status}`, { month: row.lastAutoRun.month })}
+            </span>
+          )}
+        </span>
+      ),
+    },
+    {
       key: 'actions',
       header: t('actions'),
       cell: (row) => (
@@ -206,6 +228,9 @@ function EditTemplate({
   const [name, setName] = useState(template.name);
   const [departmentId, setDepartmentId] = useState(template.departmentId ?? '');
   const [position, setPosition] = useState(template.position ?? '');
+  const [autoDay, setAutoDay] = useState(
+    template.autoMonthlyDay === null ? '' : String(template.autoMonthlyDay),
+  );
   const [texts, setTexts] = useState<Record<CreditType, string>>(() =>
     template.amounts.length === 0 ? EMPTY_TEXTS : amountTexts(template.amounts, locale),
   );
@@ -228,6 +253,7 @@ function EditTemplate({
             departmentId: departmentId === '' ? null : departmentId,
             position: position === '' ? null : position,
             amounts,
+            autoMonthlyDay: autoDay === '' ? null : Number(autoDay),
           },
         },
       );
@@ -297,6 +323,19 @@ function EditTemplate({
           value={position}
           onChange={(event) => {
             setPosition(event.target.value);
+          }}
+        />
+        <SelectField
+          label={t('auto')}
+          hint={t('autoHint')}
+          placeholder={t('autoOff')}
+          options={Array.from({ length: 28 }, (_, index) => ({
+            value: String(index + 1),
+            label: t('autoDay', { day: index + 1 }),
+          }))}
+          value={autoDay}
+          onChange={(event) => {
+            setAutoDay(event.target.value);
           }}
         />
         {CREDIT_TYPES.map((type) => (

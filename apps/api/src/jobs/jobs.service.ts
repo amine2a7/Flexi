@@ -10,6 +10,7 @@ import type { Env } from '../config/env.js';
 import { AuditService } from '../common/audit.service.js';
 import { uuidv7 } from '../common/crypto.js';
 import { DbService } from '../common/db.service.js';
+import { AllocationTemplatesService } from '../company/allocation-templates.service.js';
 import type { CreditType } from '../generated/prisma/enums.js';
 import { LedgerService, accounts } from '../ledger/ledger.service.js';
 import { PaymentsService } from '../payments/payments.service.js';
@@ -37,6 +38,7 @@ export class JobsService implements OnApplicationBootstrap, OnApplicationShutdow
     @Inject(PayoutsService) private readonly payouts: PayoutsService,
     @Inject(PaymentsService) private readonly payments: PaymentsService,
     @Inject(FraudService) private readonly fraud: FraudService,
+    @Inject(AllocationTemplatesService) private readonly templates: AllocationTemplatesService,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -82,7 +84,12 @@ export class JobsService implements OnApplicationBootstrap, OnApplicationShutdow
         VALUES (${uuidv7()}::uuid, 'LEDGER_MISMATCH'::"FraudAlertKind", 'HIGH'::"FraudAlertSeverity",
                 ${subject}, ${`ledger:${new Date().toISOString().slice(0, 10)}`})
         ON CONFLICT (kind, subject_key) DO NOTHING`;
-      await this.audit.record(tx, 'ledger.reconcileFailed', accountsInError.join(', ').slice(0, 200) || 'débits ≠ crédits', 'Système');
+      await this.audit.record(
+        tx,
+        'ledger.reconcileFailed',
+        accountsInError.join(', ').slice(0, 200) || 'débits ≠ crédits',
+        'Système',
+      );
     });
     return false;
   }
@@ -93,6 +100,8 @@ export class JobsService implements OnApplicationBootstrap, OnApplicationShutdow
       ['settlements', () => this.payouts.executeDueBatches()],
       ['requests', () => this.payments.expireStale()],
       ['fraud', () => this.fraud.detect()],
+      // Templates relaunched on their day of the month (processus v2, once a month each).
+      ['templates', () => this.templates.runMonthly()],
     ] as const) {
       try {
         await job();

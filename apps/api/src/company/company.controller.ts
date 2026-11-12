@@ -82,6 +82,8 @@ const templateBody = z.strictObject({
     .nullable()
     .transform((value) => (value === null || value === '' ? null : value)),
   amounts: typeAmounts.min(1),
+  /** Day of the automatic monthly relaunch (1 to 28: present in every month); null = by hand. */
+  autoMonthlyDay: z.number().int().min(1).max(28).nullable().optional(),
 });
 const previewBody = z.strictObject({
   templateId: z.uuid().optional(),

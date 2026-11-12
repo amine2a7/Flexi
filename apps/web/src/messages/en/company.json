@@ -289,7 +289,18 @@
     "save": "Save",
     "cancel": "Cancel",
     "emptyTitle": "No template",
-    "emptyHint": "In Allocate, tick “Save as a template” to create one."
+    "emptyHint": "In Allocate, tick “Save as a template” to create one.",
+    "auto": "Automatic relaunch",
+    "autoOff": "By hand",
+    "autoDay": "On day {day} of each month",
+    "autoHint": "The template relaunches itself on that day, for the current employees of its filters, once a month. If the balance is short, nothing is allocated and you relaunch by hand.",
+    "autoStatus": {
+      "DONE": "Relaunched in {month}",
+      "INSUFFICIENT_FUNDS": "Failed in {month}: balance too low",
+      "NO_EMPLOYEE": "Nothing in {month}: no employee",
+      "AUTHOR_UNAVAILABLE": "Failed in {month}: the template's author is no longer active",
+      "FAILED": "Failed in {month}: relaunch by hand"
+    }
   },
   "familyAccounts": {
     "title": "Family accounts",

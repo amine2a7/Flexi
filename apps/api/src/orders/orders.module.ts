@@ -13,6 +13,6 @@ import { OrdersService } from './orders.service.js';
   imports: [UsersModule],
   controllers: [CompanyController, AdminOrdersController, AdminClientController],
   providers: [OrdersService, CompanyService, DepartmentsService, AllocationTemplatesService],
-  exports: [OrdersService, CompanyService],
+  exports: [OrdersService, CompanyService, AllocationTemplatesService],
 })
 export class OrdersModule {}

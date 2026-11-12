@@ -117,10 +117,14 @@ export class AdminPayoutsController {
     const input = parse(payment, body);
     const outcome = await this.idempotency.run(req, async (tx) => ({
       status: 200,
-      body: await this.payouts.recordPayment(tx, { payoutId: id }, {
-        ...input,
-        amountMillimes: BigInt(input.amountMillimes),
-      }),
+      body: await this.payouts.recordPayment(
+        tx,
+        { payoutId: id },
+        {
+          ...input,
+          amountMillimes: BigInt(input.amountMillimes),
+        },
+      ),
     }));
     return sendOutcome(res, outcome);
   }
@@ -139,10 +143,14 @@ export class AdminPayoutsController {
     const input = parse(payment, body);
     const outcome = await this.idempotency.run(req, async (tx) => ({
       status: 200,
-      body: await this.payouts.recordPayment(tx, { batchId: id }, {
-        ...input,
-        amountMillimes: BigInt(input.amountMillimes),
-      }),
+      body: await this.payouts.recordPayment(
+        tx,
+        { batchId: id },
+        {
+          ...input,
+          amountMillimes: BigInt(input.amountMillimes),
+        },
+      ),
     }));
     return sendOutcome(res, outcome);
   }

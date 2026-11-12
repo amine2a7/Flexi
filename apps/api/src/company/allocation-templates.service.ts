@@ -1,11 +1,14 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { createHash } from 'node:crypto';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { canReceiveCredits } from '../common/account-lifecycle.js';
 import { AuditService } from '../common/audit.service.js';
 import { uuidv7 } from '../common/crypto.js';
 import { DbService, type Tx } from '../common/db.service.js';
 import { fromMillimes, toMillimes } from '../common/money.js';
-import { problems, validationFailed } from '../common/problem.js';
-import { principal } from '../common/request-context.js';
+import { permissionsOf } from '../common/permissions.js';
+import { ApiProblem, problems, validationFailed } from '../common/problem.js';
+import { principal, runWithContext } from '../common/request-context.js';
+import { businessDay, businessMonth } from '../common/tunis.js';
 import type { CreditType, Prisma } from '../generated/prisma/client.js';
 import { CREDIT_TYPES, SettingsService } from '../platform/settings.service.js';
 import { CompanyService } from './company.service.js';
@@ -20,6 +23,8 @@ export interface TemplateInput {
   departmentId: string | null;
   position: string | null;
   amounts: readonly TypeAmount[];
+  /** Day of the month (1 to 28) of the automatic relaunch; null = by hand; absent = unchanged. */
+  autoMonthlyDay?: number | null;
 }
 
 export interface PreviewInput {
@@ -29,6 +34,32 @@ export interface PreviewInput {
   q?: string;
   employeeIds?: readonly string[];
   amounts: readonly TypeAmount[];
+}
+
+/** Outcome kept on the template when its day was set after that day of the current month. */
+const NOT_DUE = 'NOT_DUE';
+
+/**
+ * Idempotency key of the automatic relaunch of a template for a month: the same for every run of
+ * the job that month, so the ledger posts it once whatever happens (several API processes).
+ */
+export function monthlyKey(templateId: string, month: string): string {
+  const hex = createHash('sha256').update(`template-auto:${templateId}:${month}`).digest('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
+
+/**
+ * The day is set after it has passed this month: the first automatic run is next month (setting
+ * the 5th on the 12th never allocates at once).
+ */
+function firstRun(day: number | null | undefined, now = new Date()) {
+  if (day === undefined) return {};
+  if (day === null) return { autoMonthlyDay: null };
+  const today = Number(businessDay(now).slice(8, 10));
+  return {
+    autoMonthlyDay: day,
+    ...(day <= today ? { lastAutoRunMonth: businessMonth(now), lastAutoRunStatus: NOT_DUE } : {}),
+  };
 }
 
 /** At most this many employees in one allocation (contract: 5 000 lines). */
@@ -59,6 +90,14 @@ export function templateView(row: TemplateRow) {
       amountMillimes: toMillimes(amount.amountMillimes),
     })),
     lastRunAt: row.lastRunAt?.toISOString() ?? null,
+    autoMonthlyDay: row.autoMonthlyDay,
+    // NOT_DUE marks the month in which the day was set after it had passed: nothing ran.
+    lastAutoRun:
+      row.lastAutoRunMonth === null ||
+      row.lastAutoRunStatus === null ||
+      row.lastAutoRunStatus === NOT_DUE
+        ? null
+        : { month: row.lastAutoRunMonth, status: row.lastAutoRunStatus },
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -72,6 +111,8 @@ export function templateView(row: TemplateRow) {
  */
 @Injectable()
 export class AllocationTemplatesService {
+  private readonly logger = new Logger('TemplatesAuto');
+
   constructor(
     @Inject(DbService) private readonly db: DbService,
     @Inject(AuditService) private readonly audit: AuditService,
@@ -110,6 +151,7 @@ export class AllocationTemplatesService {
           name: input.name,
           departmentId: input.departmentId,
           position: input.position,
+          ...firstRun(input.autoMonthlyDay ?? null),
           createdBy: principal().userId,
           amounts: { create: this.amountRows(companyId, input.amounts) },
         },
@@ -131,6 +173,7 @@ export class AllocationTemplatesService {
           name: input.name,
           departmentId: input.departmentId,
           position: input.position,
+          ...firstRun(input.autoMonthlyDay),
           updatedAt: new Date(),
           amounts: { create: this.amountRows(companyId, input.amounts) },
         },
@@ -176,6 +219,105 @@ export class AllocationTemplatesService {
   async ran(tx: Tx, id: string): Promise<void> {
     await this.found(tx, id);
     await tx.allocationTemplate.update({ where: { id }, data: { lastRunAt: new Date() } });
+  }
+
+  /**
+   * Monthly relaunch (processus v2, decision of 2026-11-12): every template whose day has come
+   * this month and that has not run this month is relaunched AS ITS AUTHOR (still an active user
+   * of the company allowed to allocate), for the current employees of its filters. Never over the
+   * balance: nothing moves and the template keeps the refusal; the company relaunches by hand.
+   * Returns the number of templates relaunched.
+   */
+  async runMonthly(now = new Date()): Promise<number> {
+    const month = businessMonth(now);
+    const day = Number(businessDay(now).slice(8, 10));
+    const due = await this.db.system((tx) =>
+      tx.allocationTemplate.findMany({
+        where: {
+          archivedAt: null,
+          autoMonthlyDay: { not: null, lte: day },
+          OR: [{ lastAutoRunMonth: null }, { lastAutoRunMonth: { not: month } }],
+        },
+        select: { id: true, companyId: true, createdBy: true, name: true },
+      }),
+    );
+    let done = 0;
+    for (const template of due) {
+      const status = await this.runOne(template, month);
+      await this.db.system(async (tx) => {
+        await tx.allocationTemplate.update({
+          where: { id: template.id },
+          data: { lastAutoRunMonth: month, lastAutoRunStatus: status },
+        });
+        await this.audit.record(
+          tx,
+          'allocationTemplates.autoRun',
+          `${template.name} ${month} ${status}`,
+          'Système',
+        );
+      });
+      if (status === 'DONE') done += 1;
+    }
+    return done;
+  }
+
+  private async runOne(
+    template: { id: string; companyId: string; createdBy: string },
+    month: string,
+  ): Promise<string> {
+    const author = await this.db.system((tx) =>
+      tx.user.findUnique({ where: { id: template.createdBy } }),
+    );
+    if (
+      author?.status !== 'ACTIVE' ||
+      author.companyId !== template.companyId ||
+      !permissionsOf(author.role, author.subRole).includes('credits.allocate')
+    ) {
+      return 'AUTHOR_UNAVAILABLE';
+    }
+    const context = {
+      requestId: `template-auto-${template.id}`,
+      ip: 'system',
+      principal: {
+        userId: author.id,
+        sessionId: '00000000-0000-0000-0000-000000000000',
+        role: author.role,
+        subRole: author.subRole,
+        displayName: author.displayName,
+        step: 'NONE' as const,
+        companyId: author.companyId,
+        merchantId: null,
+        employeeId: null,
+      },
+    };
+    return runWithContext(context, async () => {
+      try {
+        const preview = await this.preview({ templateId: template.id, amounts: [] });
+        if (preview.employeeCount === 0) return 'NO_EMPLOYEE';
+        if (!preview.sufficient) return 'INSUFFICIENT_FUNDS';
+        const lines = preview.employees.flatMap((employee) =>
+          preview.lines.map((line) => ({
+            employeeId: employee.id,
+            creditType: line.creditType,
+            amountMillimes: line.perEmployeeMillimes,
+          })),
+        );
+        await this.db.user(async (tx) => {
+          await this.ran(tx, template.id);
+          await this.company.allocate(tx, lines, monthlyKey(template.id, month), template.id);
+        });
+        return 'DONE';
+      } catch (error) {
+        // The balance moved since the preview: refused as a whole, nothing posted.
+        if (error instanceof ApiProblem && error.code === 'INSUFFICIENT_FUNDS') {
+          return 'INSUFFICIENT_FUNDS';
+        }
+        this.logger.error(
+          `template auto run failed: ${error instanceof Error ? error.constructor.name : 'unknown'}`,
+        );
+        return 'FAILED';
+      }
+    });
   }
 
   /**
