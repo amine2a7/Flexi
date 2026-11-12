@@ -38,9 +38,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
             </Link>
           </nav>
           <div className="flex items-center gap-2">
-            <div className="rounded-button bg-surface px-2">
-              <LocaleSwitcher />
-            </div>
+            <LocaleSwitcher tone="dark" />
             <Link href="/login" className={buttonClasses('success', 'sm', 'font-title')}>
               <LogIn aria-hidden="true" className="size-icon-sm rtl:rotate-180" />
               <span className="hidden sm:inline">{t('nav.signIn')}</span>

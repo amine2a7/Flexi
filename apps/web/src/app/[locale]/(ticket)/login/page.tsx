@@ -30,9 +30,7 @@ export default function LoginPage() {
             </span>
             <span className="text-title-sm text-on-navy">{tApp('name')}</span>
           </Link>
-          <div className="rounded-button bg-surface px-2">
-            <LocaleSwitcher />
-          </div>
+          <LocaleSwitcher tone="dark" />
         </div>
         <div className="flex flex-col gap-4">
           <p className="font-display text-display-md lg:text-display">
