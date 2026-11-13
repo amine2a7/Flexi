@@ -326,7 +326,9 @@
       "MANAGER_ID": "بطاقة هوية المسيّر",
       "BANK_DETAILS": "كشف الهوية البنكية",
       "COMPANY_STATUTES": "النظام الأساسي للشركة",
-      "PROOF_OF_ADDRESS": "إثبات العنوان"
+      "PROOF_OF_ADDRESS": "إثبات العنوان",
+      "MANAGER_ID_FRONT": "بطاقة التعريف (الوجه)",
+      "MANAGER_ID_BACK": "بطاقة التعريف (الظهر)"
     },
     "approve": "المصادقة على الملف",
     "approveTitle": "المصادقة على ملف {name}؟",
@@ -611,7 +613,8 @@
       "amount": "أدخل مبلغًا بالدينار، بثلاثة أرقام عشرية على الأكثر."
     },
     "lineWithholding": "الخصم من المورد",
-    "lineTransfer": "مصاريف التحويل"
+    "lineTransfer": "مصاريف التحويل",
+    "lineTtc": "الرسوم شاملة الأداء"
   },
   "record": {
     "contact": "المعلومات",

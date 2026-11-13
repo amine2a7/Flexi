@@ -12,8 +12,16 @@ const { createApp } = await import('../../src/app.factory.js');
 const { DbService } = await import('../../src/common/db.service.js');
 const { LedgerService, accounts } = await import('../../src/ledger/ledger.service.js');
 const { hashSecret } = await import('../../src/auth/password.js');
-const { PASSWORD, createCompany, createEmployee, createUser, sealed, seedSettings, signedIn, oneLineGrid } =
-  await import('./fixtures.js');
+const {
+  PASSWORD,
+  createCompany,
+  createEmployee,
+  createUser,
+  sealed,
+  seedSettings,
+  signedIn,
+  oneLineGrid,
+} = await import('./fixtures.js');
 
 const env = loadEnv();
 const db = new DbService(env);

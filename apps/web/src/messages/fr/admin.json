@@ -326,7 +326,9 @@
       "MANAGER_ID": "Pièce d'identité du gérant",
       "BANK_DETAILS": "Relevé d'identité bancaire (RIB)",
       "COMPANY_STATUTES": "Statuts de la société",
-      "PROOF_OF_ADDRESS": "Justificatif d’adresse"
+      "PROOF_OF_ADDRESS": "Justificatif d’adresse",
+      "MANAGER_ID_FRONT": "CIN recto",
+      "MANAGER_ID_BACK": "CIN verso"
     },
     "approve": "Valider le dossier",
     "approveTitle": "Valider le dossier de {name} ?",
@@ -611,7 +613,8 @@
       "amount": "Saisissez un montant en TND, 3 décimales au plus."
     },
     "lineWithholding": "Retenue à la source",
-    "lineTransfer": "Frais de virement"
+    "lineTransfer": "Frais de virement",
+    "lineTtc": "Frais TTC"
   },
   "record": {
     "contact": "Informations",

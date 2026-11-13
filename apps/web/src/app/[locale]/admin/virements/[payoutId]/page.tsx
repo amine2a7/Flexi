@@ -133,6 +133,14 @@ function PayoutView({
           millimes: payout.vatMillimes,
           sign: 'debit',
         },
+        {
+          label: tFees('ttc'),
+          millimes: payout.commissionMillimes + payout.vatMillimes,
+          sign: 'debit' as const,
+          subtotal: true,
+        },
+        { label: tFees('stamp'), millimes: payout.stampDutyMillimes, sign: 'debit' },
+        { label: tFees('transfer'), millimes: payout.transferFeeMillimes, sign: 'debit' },
         ...(payout.withholdingMillimes > 0
           ? [
               {
@@ -143,8 +151,6 @@ function PayoutView({
               },
             ]
           : []),
-        { label: tFees('stamp'), millimes: payout.stampDutyMillimes, sign: 'debit' },
-        { label: tFees('transfer'), millimes: payout.transferFeeMillimes, sign: 'debit' },
       ]}
       total={{ label: t('net'), millimes: payout.netMillimes }}
     />

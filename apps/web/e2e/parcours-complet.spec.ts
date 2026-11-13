@@ -49,7 +49,7 @@ async function login(page: Page, email: string, password: string): Promise<void>
   await page.goto('/fr/login');
   await page.getByLabel('E-mail ou téléphone').fill(email);
   await page.getByLabel('Mot de passe', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Composter mon ticket' }).click();
+  await page.getByRole('button', { name: 'Valider mon ticket' }).click();
   const mfa = page.getByLabel('Code à 6 chiffres');
   await page.waitForURL((url) => !url.pathname.endsWith('/login'));
   if (page.url().includes('/login/mfa')) {
@@ -66,7 +66,7 @@ async function firstLogin(page: Page, email: string, temporary: string): Promise
   await page.goto('/fr/login');
   await page.getByLabel('E-mail ou téléphone').fill(email);
   await page.getByLabel('Mot de passe', { exact: true }).fill(temporary);
-  await page.getByRole('button', { name: 'Composter mon ticket' }).click();
+  await page.getByRole('button', { name: 'Valider mon ticket' }).click();
   await expect(page.getByRole('heading', { name: 'Choisissez votre mot de passe' })).toBeVisible();
   await page.getByLabel('Nouveau mot de passe').fill(NEW_PASSWORD);
   await page.getByLabel('Confirmer le mot de passe').fill(NEW_PASSWORD);
@@ -115,8 +115,9 @@ async function fileKyc(page: Page, space: 'entreprise' | 'commercant'): Promise<
   await page.goto(`/fr/${space}/dossier`);
   await expect(page.getByRole('heading', { level: 1, name: 'Mon dossier' })).toBeVisible();
   const inputs = page.locator('input[type="file"][id^="kyc-"]');
-  await expect(inputs).toHaveCount(4);
-  for (let index = 0; index < 4; index += 1) {
+  // Five pieces since the corrections of 2026-11-13: the CIN in two, front and back.
+  await expect(inputs).toHaveCount(5);
+  for (let index = 0; index < 5; index += 1) {
     const input = inputs.nth(index);
     const id = (await input.getAttribute('id')) ?? `piece-${String(index)}`;
     await input.setInputFiles(pdf(`${id}.pdf`));

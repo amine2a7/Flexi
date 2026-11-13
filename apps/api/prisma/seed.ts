@@ -374,7 +374,9 @@ const ids = await prisma.$transaction(async (tx) => {
         // Opened by Finance: the super-admin and Opérations can decide it (four eyes).
         createdBy: financeUser.id,
         documents: {
-          create: (['REGISTRY_EXTRACT', 'TAX_CERTIFICATE', 'MANAGER_ID'] as const).map((type) => ({
+          create: (
+            ['REGISTRY_EXTRACT', 'TAX_CERTIFICATE', 'MANAGER_ID_FRONT', 'MANAGER_ID_BACK'] as const
+          ).map((type) => ({
             type,
             fileName: `${type.toLowerCase()}.png`,
             contentType: 'image/png',
@@ -399,7 +401,13 @@ const ids = await prisma.$transaction(async (tx) => {
         createdBy: financeUser.id,
         documents: {
           create: (
-            ['REGISTRY_EXTRACT', 'TAX_CERTIFICATE', 'MANAGER_ID', 'BANK_DETAILS'] as const
+            [
+              'REGISTRY_EXTRACT',
+              'TAX_CERTIFICATE',
+              'MANAGER_ID_FRONT',
+              'MANAGER_ID_BACK',
+              'BANK_DETAILS',
+            ] as const
           ).map((type) => ({
             type,
             fileName: `${type.toLowerCase()}.png`,

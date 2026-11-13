@@ -1,5 +1,5 @@
 // « Scénario complet tracé » of processus v2, replayed on the real API: from the creation of
-// Carthage Industries to Karim's payout, 16 581,000 TND come in and every millime is found at the
+// Carthage Industries to Karim's payout, 16 576,200 TND come in and every millime is found at the
 // end (balances, payout, fees), with the books reconciled.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadTestEnv } from './setup.js';
@@ -60,7 +60,7 @@ function form(fields: Record<string, string>, fileField: string, name: string): 
 }
 
 describe('scénario complet tracé (processus v2)', () => {
-  it('16 581,000 TND come in, and every millime is found at the end', async () => {
+  it('16 576,200 TND come in, and every millime is found at the end', async () => {
     const stamp = String(Date.now()).slice(-6);
     // 1. Amine (Operations, here the super-admin who creates clients) creates Carthage.
     const amine = await signedIn(
@@ -127,7 +127,7 @@ describe('scénario complet tracé (processus v2)', () => {
         ),
       ),
     );
-    // 6. Order: Restauration 10 000 + Carburant 6 000, frozen quote 16 581,000.
+    // 6. Order: Restauration 10 000 + Carburant 6 000, frozen quote 16 576,200 (corrections of 13/11: no withholding, frais TTC under 1 000).
     const quote = await ahmed.call('POST', '/v1/company/order-quotes', {
       body: {
         lines: [
@@ -136,7 +136,7 @@ describe('scénario complet tracé (processus v2)', () => {
         ],
       },
     });
-    expect(quote.body.totalMillimes).toBe(16_581_000);
+    expect(quote.body.totalMillimes).toBe(16_576_200);
     const order = await ahmed.call('POST', '/v1/company/orders', {
       body: { quoteId: quote.body.quoteId },
       headers: key(),
@@ -146,7 +146,7 @@ describe('scénario complet tracé (processus v2)', () => {
     expect((await amine.call('POST', `/v1/admin/credit-orders/${orderId}/confirm`)).status).toBe(
       200,
     );
-    // 8. Ahmed transfers 16 581,000 and declares VIR-BIAT-778213.
+    // 8. Ahmed transfers 16 576,200 and declares VIR-BIAT-778213.
     const declared = await ahmed.call(
       'POST',
       `/v1/company/orders/${orderId}/transfer-declarations`,
@@ -155,7 +155,7 @@ describe('scénario complet tracé (processus v2)', () => {
           {
             transferReference: 'VIR-BIAT-778213',
             transferDate: new Date().toISOString().slice(0, 10),
-            amountMillimes: '16581000',
+            amountMillimes: '16576200',
           },
           'proof',
           'avis.png',
@@ -221,7 +221,7 @@ describe('scénario complet tracé (processus v2)', () => {
       });
       expect(paid.status).toBe(201);
     }
-    // 13. Karim asks the payout of his 1 250,000: net announced 1 214,500.
+    // 13. Karim asks the payout of his 1 250,000: net announced 1 215,250.
     const karim = await signedIn(
       base,
       await createUser(db, env, 'MERCHANT', { merchantId: jasmin.id }, 'Karim'),
@@ -229,7 +229,7 @@ describe('scénario complet tracé (processus v2)', () => {
     const payoutQuote = await karim.call('POST', '/v1/merchant/payout-quotes', {
       body: { creditType: 'RESTAURATION', grossMillimes: TND(1_250) },
     });
-    expect(payoutQuote.body.netMillimes).toBe(1_214_500);
+    expect(payoutQuote.body.netMillimes).toBe(1_215_250);
     const requested = await karim.call('POST', '/v1/merchant/payouts', {
       body: { quoteId: payoutQuote.body.quoteId },
       headers: key(),
@@ -245,7 +245,7 @@ describe('scénario complet tracé (processus v2)', () => {
     ).toBe(200);
     const recorded = await sarra.call('POST', `/v1/admin/payout-requests/${payoutId}/payment`, {
       headers: key(),
-      body: { bankReference: 'VIR-FP-000231', paidOn: '2026-11-16', amountMillimes: 1_214_500 },
+      body: { bankReference: 'VIR-FP-000231', paidOn: '2026-11-16', amountMillimes: 1_215_250 },
     });
     expect(recorded.body).toMatchObject({ status: 'EXECUTED' });
     expect((await karim.call('GET', `/v1/merchant/payouts/${payoutId}`)).body).toMatchObject({
@@ -267,13 +267,13 @@ describe('scénario complet tracé (processus v2)', () => {
       expect(employees).toBe(250_000n);
       const fees = await tx.creditOrder.findUniqueOrThrow({ where: { id: orderId } });
       const carthageFees = fees.totalMillimes - fees.amountMillimes;
-      expect(carthageFees).toBe(581_000n);
+      expect(carthageFees).toBe(576_200n);
       const payout = await tx.payoutRequest.findUniqueOrThrow({ where: { id: payoutId } });
-      expect(payout.paidAmountMillimes).toBe(1_214_500n);
+      expect(payout.paidAmountMillimes).toBe(1_215_250n);
       const karimFees = payout.grossMillimes - payout.netMillimes;
-      expect(karimFees).toBe(35_500n);
+      expect(karimFees).toBe(34_750n);
       expect(carthage + employees + payout.netMillimes + carthageFees + karimFees).toBe(
-        16_581_000n,
+        16_576_200n,
       );
       const books = await ledger.reconcile(tx);
       expect(books.ok).toBe(true);

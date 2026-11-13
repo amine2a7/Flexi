@@ -4894,13 +4894,15 @@ export interface components {
     KycAccountType: 'MERCHANT' | 'COMPANY';
     /**
      * KycDocumentType
-     * @description Extrait du registre de commerce, attestation fiscale, pièce d'identité du gérant, RIB, statuts, justificatif d'adresse (processus v2 — le Super-admin choisit les pièces demandées).
+     * @description Extrait du registre de commerce, attestation fiscale, pièce d'identité du gérant (MANAGER_ID, ancienne pièce unique, puis recto et verso séparés depuis le 13/11), RIB, statuts, justificatif d'adresse (processus v2 — le Super-admin choisit les pièces demandées).
      * @enum {string}
      */
     KycDocumentType:
       | 'REGISTRY_EXTRACT'
       | 'TAX_CERTIFICATE'
       | 'MANAGER_ID'
+      | 'MANAGER_ID_FRONT'
+      | 'MANAGER_ID_BACK'
       | 'BANK_DETAILS'
       | 'COMPANY_STATUTES'
       | 'PROOF_OF_ADDRESS';
@@ -11361,6 +11363,8 @@ export const kycDocumentTypeValues: ReadonlyArray<
   'REGISTRY_EXTRACT',
   'TAX_CERTIFICATE',
   'MANAGER_ID',
+  'MANAGER_ID_FRONT',
+  'MANAGER_ID_BACK',
   'BANK_DETAILS',
   'COMPANY_STATUTES',
   'PROOF_OF_ADDRESS',

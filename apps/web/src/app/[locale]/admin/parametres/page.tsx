@@ -36,12 +36,13 @@ const DESTINATIONS: readonly Schemas['ExpiredCreditsDestination'][] = [
 const KYC_DOCUMENTS: Schemas['KycDocumentType'][] = [
   'REGISTRY_EXTRACT',
   'TAX_CERTIFICATE',
-  'MANAGER_ID',
+  'MANAGER_ID_FRONT',
+  'MANAGER_ID_BACK',
   'BANK_DETAILS',
   'COMPANY_STATUTES',
   'PROOF_OF_ADDRESS',
 ];
-const DEFAULT_KYC = KYC_DOCUMENTS.slice(0, 4);
+const DEFAULT_KYC = KYC_DOCUMENTS.slice(0, 5);
 
 function bpsToText(bps: number, locale: Locale): string {
   const fraction = bps % 100;

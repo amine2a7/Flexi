@@ -6,7 +6,7 @@ async function submitPassword(page: Page, account: string, password: string): Pr
   await page.goto('/fr/login');
   await page.getByLabel('E-mail ou téléphone').fill(account);
   await page.getByLabel('Mot de passe', { exact: true }).fill(password);
-  await page.getByRole('button', { name: 'Composter mon ticket' }).click();
+  await page.getByRole('button', { name: 'Valider mon ticket' }).click();
 }
 
 test.describe('sign-in', () => {
@@ -33,7 +33,7 @@ test.describe('sign-in', () => {
 
   test('empty fields keep the button active and say what is missing', async ({ page }) => {
     await page.goto('/fr/login');
-    await page.getByRole('button', { name: 'Composter mon ticket' }).click();
+    await page.getByRole('button', { name: 'Valider mon ticket' }).click();
     await expect(page.getByText('Saisissez votre e-mail ou votre téléphone.')).toBeVisible();
     await expect(page.getByText('Saisissez votre mot de passe.')).toBeVisible();
   });
@@ -43,7 +43,7 @@ test.describe('sign-in', () => {
     await expect(page).toHaveURL(/\/fr\/login\?returnTo=/);
     await page.getByLabel('E-mail ou téléphone').fill('entreprise@flexipay.test');
     await page.getByLabel('Mot de passe', { exact: true }).fill(PASSWORD);
-    await page.getByRole('button', { name: 'Composter mon ticket' }).click();
+    await page.getByRole('button', { name: 'Valider mon ticket' }).click();
     await page.getByLabel('Code à 6 chiffres').fill(MFA);
     await page.getByRole('button', { name: 'Vérifier' }).click();
     await expect(page).toHaveURL(/\/fr\/entreprise\/factures$/);

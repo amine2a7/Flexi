@@ -237,16 +237,12 @@ export default function PayoutsPage() {
             millimes: quote.vatMillimes,
             sign: 'debit' as const,
           },
-          ...(quote.withholdingMillimes > 0
-            ? [
-                {
-                  label: tFees('withholding'),
-                  note: formatRateBps(quote.withholdingRateBps, locale),
-                  millimes: quote.withholdingMillimes,
-                  sign: 'debit' as const,
-                },
-              ]
-            : []),
+          {
+            label: tFees('ttc'),
+            millimes: quote.commissionMillimes + quote.vatMillimes,
+            sign: 'debit' as const,
+            subtotal: true,
+          },
           {
             label: tFees('stamp'),
             millimes: quote.stampDutyMillimes,
@@ -257,6 +253,16 @@ export default function PayoutsPage() {
             millimes: quote.transferFeeMillimes,
             sign: 'debit' as const,
           },
+          ...(quote.withholdingMillimes > 0
+            ? [
+                {
+                  label: tFees('withholding'),
+                  note: formatRateBps(quote.withholdingRateBps, locale),
+                  millimes: quote.withholdingMillimes,
+                  sign: 'debit' as const,
+                },
+              ]
+            : []),
         ];
 
   return (

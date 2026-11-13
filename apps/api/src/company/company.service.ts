@@ -740,16 +740,22 @@ export class CompanyService {
           text: `TVA sur la commission (${percent(order.vatRateBps)})`,
           right: tnd(order.vatMillimes),
         },
+        {
+          text: 'Frais TTC (commission + TVA)',
+          right: tnd(order.feesMillimes + order.vatMillimes),
+          bold: true,
+        },
+        { text: 'Timbre fiscal', right: tnd(order.stampDutyMillimes) },
+        { text: 'Frais de virement', right: tnd(order.transferFeeMillimes) },
+        // Deducted, never added (corrections of 2026-11-13): only above 1 000 TND of frais TTC.
         ...(order.withholdingMillimes > 0n
           ? [
               {
-                text: `Retenue à la source (${percent(order.withholdingRateBps)} de la commission)`,
-                right: tnd(order.withholdingMillimes),
+                text: `Retenue à la source (${percent(order.withholdingRateBps)} des frais TTC)`,
+                right: tnd(-order.withholdingMillimes),
               },
             ]
           : []),
-        { text: 'Timbre fiscal', right: tnd(order.stampDutyMillimes) },
-        { text: 'Frais de virement', right: tnd(order.transferFeeMillimes) },
         { text: 'Total à payer', right: tnd(order.totalMillimes), bold: true, size: 12, gap: 10 },
         { text: `Statut : ${invoice.status === 'PAID' ? 'payée' : 'à payer'}`, gap: 16 },
         {

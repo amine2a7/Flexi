@@ -4,7 +4,7 @@ import { FourEyesService } from '../common/four-eyes.service.js';
 import { randomDigits, uuidv7 } from '../common/crypto.js';
 import { DbService, type Tx } from '../common/db.service.js';
 import { FILE_STORAGE, type FileStorage } from '../common/storage.js';
-import { feesOf, feesTotal, toMillimes } from '../common/money.js';
+import { feesOf, orderTotal, toMillimes } from '../common/money.js';
 import type { Page, PageRequest } from '../common/pagination.js';
 import { Paginator } from '../common/pagination.js';
 import { ApiProblem, problems, validationFailed } from '../common/problem.js';
@@ -265,7 +265,7 @@ export class OrdersService {
           withholdingMillimes: fees.withholding,
           stampDutyMillimes: fees.stamp,
           transferFeeMillimes: fees.transfer,
-          totalMillimes: amount + feesTotal(fees),
+          totalMillimes: orderTotal(amount, fees),
           expiresAt: new Date(Date.now() + platform.quoteValidityDays * 86_400_000),
         },
       });
@@ -314,6 +314,7 @@ export class OrdersService {
       fees: {
         commission: quote.feesMillimes,
         vat: quote.vatMillimes,
+        feesTtc: quote.feesMillimes + quote.vatMillimes,
         withholding: quote.withholdingMillimes,
         withholdingRateBps: quote.withholdingRateBps,
         stamp: quote.stampDutyMillimes,
@@ -355,7 +356,7 @@ export class OrdersService {
         withholdingMillimes: fees.withholding,
         stampDutyMillimes: fees.stamp,
         transferFeeMillimes: fees.transfer,
-        totalMillimes: amount + feesTotal(fees),
+        totalMillimes: orderTotal(amount, fees),
         paymentReference: `FXP-${randomDigits(8)}`,
         quoteExpiresAt: frozen.expiresAt,
         secondValidationRequired: amount > platform.secondValidationThresholdMillimes,
@@ -686,6 +687,17 @@ export class OrdersService {
       idempotencyKey: key,
       entries: [
         { account: accounts.bankEscrow(), direction: 'D', amount: order.totalMillimes },
+        // The withholding is deducted by the company from what it transfers (corrections of
+        // 2026-11-13): a tax credit of FlexiPay on the State, never a fee added to the total.
+        ...(order.withholdingMillimes > 0n
+          ? [
+              {
+                account: accounts.withholdingCredit(),
+                direction: 'D' as const,
+                amount: order.withholdingMillimes,
+              },
+            ]
+          : []),
         ...order.lines.map((line) => ({
           account: accounts.companyWallet(order.companyId, line.creditType),
           direction: 'C' as const,
@@ -695,7 +707,6 @@ export class OrdersService {
         ...[
           { account: accounts.companyFees(), amount: order.feesMillimes },
           { account: accounts.vatCollected(), amount: order.vatMillimes },
-          { account: accounts.withholdingTax(), amount: order.withholdingMillimes },
           { account: accounts.stampDuty(), amount: order.stampDutyMillimes },
           { account: accounts.transferFees(), amount: order.transferFeeMillimes },
         ]

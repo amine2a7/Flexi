@@ -101,16 +101,21 @@ export function OrderSummaryCard({ order, showCompany }: { order: Order; showCom
           { label: t('credits'), value: <Amount millimes={order.amountMillimes} /> },
           { label: t('fees'), value: <Amount millimes={order.feesMillimes} /> },
           { label: tFees('vat'), value: <Amount millimes={order.vatMillimes} /> },
+          {
+            label: tFees('ttc'),
+            value: <Amount millimes={order.feesMillimes + order.vatMillimes} />,
+          },
+          { label: tFees('stamp'), value: <Amount millimes={order.stampDutyMillimes} /> },
+          { label: tFees('transfer'), value: <Amount millimes={order.transferFeeMillimes} /> },
+          // Deducted from the total, never added (corrections of 2026-11-13).
           ...(order.withholdingMillimes > 0
             ? [
                 {
                   label: tFees('withholding'),
-                  value: <Amount millimes={order.withholdingMillimes} />,
+                  value: <Amount millimes={order.withholdingMillimes} sign="debit" />,
                 },
               ]
             : []),
-          { label: tFees('stamp'), value: <Amount millimes={order.stampDutyMillimes} /> },
-          { label: tFees('transfer'), value: <Amount millimes={order.transferFeeMillimes} /> },
           {
             label: t('total'),
             value: <Amount millimes={order.totalMillimes} size="title" />,

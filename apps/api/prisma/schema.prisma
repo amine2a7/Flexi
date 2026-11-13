@@ -158,6 +158,8 @@ enum KycDocumentType {
   REGISTRY_EXTRACT
   TAX_CERTIFICATE
   MANAGER_ID
+  MANAGER_ID_FRONT
+  MANAGER_ID_BACK
   BANK_DETAILS
   COMPANY_STATUTES
   PROOF_OF_ADDRESS
@@ -573,7 +575,7 @@ model PlatformSettings {
   creditValidityMonths              Int                       @map("credit_validity_months")
   maxFamilyMembers                  Int                       @map("max_family_members")
   /// Documents a client files for its KYC (processus v2), chosen by the super-admin.
-  kycRequiredDocuments              KycDocumentType[]         @default([REGISTRY_EXTRACT, TAX_CERTIFICATE, MANAGER_ID, BANK_DETAILS]) @map("kyc_required_documents")
+  kycRequiredDocuments              KycDocumentType[]         @default([REGISTRY_EXTRACT, TAX_CERTIFICATE, MANAGER_ID_FRONT, MANAGER_ID_BACK, BANK_DETAILS]) @map("kyc_required_documents")
   orderFeeRateBps                   Int                       @map("order_fee_rate_bps")
   /// VAT on the commission and stamp duty (decision of 2026-11-03), set by the super-admin.
   vatRateBps                        Int                       @default(1900) @map("vat_rate_bps")

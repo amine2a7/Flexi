@@ -29,10 +29,11 @@ export interface Taxes {
 }
 
 /**
- * Fees of an order or a payout (processus v2, Règles de frais): commission at the grid rate, VAT on
- * the ROUNDED commission, withholding tax on the commission when the amount is above the threshold
- * (rate of the legal form, added like the VAT), stamp duty and transfer fee. All in millimes, half
- * up. Same rule as `orderBreakdown` / `payoutBreakdown` of the shared package.
+ * Fees of an order or a payout (Règles de frais, corrections of 2026-11-13): commission at the grid
+ * rate, VAT on the ROUNDED commission, « frais TTC » = commission + VAT, withholding tax = rate of
+ * the legal form x frais TTC only when the frais TTC are above the threshold (1 000 TND), stamp
+ * duty and transfer fee. The withholding is always DEDUCTED (orderTotal, payoutNet). All in
+ * millimes, half up. Same rule as `orderBreakdown` / `payoutBreakdown` of the shared package.
  */
 export function feesOf(
   amount: bigint,
@@ -41,27 +42,36 @@ export function feesOf(
 ): {
   commission: bigint;
   vat: bigint;
+  feesTtc: bigint;
   withholding: bigint;
   withholdingRateBps: number;
   stamp: bigint;
   transfer: bigint;
 } {
   const commission = commissionOf(amount, rateBps);
+  const vat = commissionOf(commission, taxes.vatRateBps);
+  const feesTtc = commission + vat;
   const withholdingRateBps =
-    amount > taxes.withholdingThresholdMillimes ? taxes.withholdingRateBps : 0;
+    feesTtc > taxes.withholdingThresholdMillimes ? taxes.withholdingRateBps : 0;
   return {
     commission,
-    vat: commissionOf(commission, taxes.vatRateBps),
-    withholding: commissionOf(commission, withholdingRateBps),
+    vat,
+    feesTtc,
+    withholding: commissionOf(feesTtc, withholdingRateBps),
     withholdingRateBps,
     stamp: taxes.stampDutyMillimes,
     transfer: taxes.transferFeeMillimes,
   };
 }
 
-/** Sum of the fees added to an order or taken from a payout. */
-export function feesTotal(fees: ReturnType<typeof feesOf>): bigint {
-  return fees.commission + fees.vat + fees.withholding + fees.stamp + fees.transfer;
+/** Total of an order: credits + frais TTC + stamp + transfer fee - withholding. */
+export function orderTotal(amount: bigint, fees: ReturnType<typeof feesOf>): bigint {
+  return amount + fees.feesTtc + fees.stamp + fees.transfer - fees.withholding;
+}
+
+/** Net of a payout: gross - frais TTC - stamp - transfer fee - withholding. */
+export function payoutNet(gross: bigint, fees: ReturnType<typeof feesOf>): bigint {
+  return gross - fees.feesTtc - fees.stamp - fees.transfer - fees.withholding;
 }
 
 export function commissionOf(gross: bigint, rateBps: number): bigint {

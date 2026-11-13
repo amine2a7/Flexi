@@ -92,17 +92,53 @@ describe('fees of processus v2 (Règles de frais)', () => {
     transferFeeMillimes: 4_000,
   });
 
-  it('example 1: PM MF order, grid 3 %, 16 000 TND -> 16 581,000', () => {
+  it('example 1: PM MF order, grid 3 %, 16 000 TND -> 16 576,200 (corrections of 13/11)', () => {
     expect(
       orderBreakdown(16_000_000, [{ rateBps: 300, minMillimes: null, maxMillimes: null }], v2(100))
         .totalMillimes,
-    ).toBe(16_581_000);
+    ).toBe(16_576_200);
   });
 
-  it('example 2: PP CIN payout, grid 2 %, 1 250 TND -> net 1 214,500', () => {
+  it('example 2: PP CIN payout, grid 2 %, 1 250 TND -> net 1 215,250 (corrections of 13/11)', () => {
     expect(
       payoutBreakdown(1_250_000, [{ rateBps: 200, minMillimes: null, maxMillimes: null }], v2(300))
         .netMillimes,
-    ).toBe(1_214_500);
+    ).toBe(1_215_250);
+  });
+});
+
+// Corrections after the demo (2026-11-13): frais TTC = commission + VAT; withholding = rate of the
+// legal form x frais TTC above 1 000 TND, deducted from the total or the net.
+describe('fees v2 with the withholding on the frais TTC', () => {
+  const V2 = (withholdingRateBps: number) => ({
+    vatRateBps: 1_900,
+    stampDutyMillimes: 1_000,
+    withholdingRateBps,
+    withholdingThresholdMillimes: 1_000_000,
+    transferFeeMillimes: 4_000,
+  });
+
+  it('order of 16 000 TND, PM MF 3 % -> 16 576,200', () => {
+    expect(orderBreakdown(16_000_000, [tier(300, null, null)], V2(100))).toMatchObject({
+      feesTtcMillimes: 571_200,
+      withholdingMillimes: 0,
+      totalMillimes: 16_576_200,
+    });
+  });
+
+  it('order of 40 000 TND, PM MF 3 % -> 41 418,720 (withholding 14,280 deducted)', () => {
+    expect(orderBreakdown(40_000_000, [tier(300, null, null)], V2(100))).toMatchObject({
+      feesTtcMillimes: 1_428_000,
+      withholdingMillimes: 14_280,
+      totalMillimes: 41_418_720,
+    });
+  });
+
+  it('payout of 1 250 TND, PP CIN 2 % -> net 1 215,250', () => {
+    expect(payoutBreakdown(1_250_000, [tier(200, null, null)], V2(300))).toMatchObject({
+      feesTtcMillimes: 29_750,
+      withholdingMillimes: 0,
+      netMillimes: 1_215_250,
+    });
   });
 });

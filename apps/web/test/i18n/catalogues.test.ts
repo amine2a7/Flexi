@@ -53,7 +53,7 @@ describe('message catalogues', () => {
         fr: 'Français',
         ar: 'العربية',
         en: 'English',
-        short: { fr: 'FR', ar: 'ع', en: 'EN' },
+        short: { fr: 'FR', ar: 'عربي', en: 'EN' },
       });
     }
   });

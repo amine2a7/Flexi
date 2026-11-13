@@ -9,7 +9,7 @@ export async function signIn(page: Page, account: string): Promise<void> {
   await page.goto('/fr/login');
   await page.getByLabel('E-mail ou téléphone').fill(account);
   await page.getByLabel('Mot de passe', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Composter mon ticket' }).click();
+  await page.getByRole('button', { name: 'Valider mon ticket' }).click();
   await page.getByLabel('Code à 6 chiffres').fill(MFA);
   await page.getByRole('button', { name: 'Vérifier' }).click();
   await page.waitForURL((url) => !url.pathname.includes('/login'));

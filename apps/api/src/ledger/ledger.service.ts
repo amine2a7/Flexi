@@ -55,6 +55,11 @@ export const accounts = {
   stampDuty: () => platform('STAMP_DUTY', 'LIABILITY', true),
   /** Withholding tax on the commission, owed to the State (processus v2, decision of 2026-11-10). */
   withholdingTax: () => platform('WITHHOLDING_TAX', 'LIABILITY', true),
+  /**
+   * Withholding deducted by a company from an order (corrections of 2026-11-13): a tax credit of
+   * FlexiPay on the State (asset), justified by the company's withholding certificate.
+   */
+  withholdingCredit: () => platform('WITHHOLDING_CREDIT', 'ASSET', true),
   /** Transfer fee of each order and each merchant payout (processus v2). */
   transferFees: () => platform('REVENUE_TRANSFER_FEES', 'REVENUE', true),
   expiredCredits: () => platform('REVENUE_EXPIRED', 'REVENUE', true),
@@ -439,7 +444,13 @@ export class LedgerService {
     // VAT and stamp duty owed to the State equal what the documents carry (decision of
     // 2026-11-03): validated orders, payouts not rejected, minus the VAT of cancelled commissions.
     const [documents] = await tx.$queryRaw<
-      { vat: bigint; stamp: bigint; withholding: bigint; transfer: bigint }[]
+      {
+        vat: bigint;
+        stamp: bigint;
+        withholding: bigint;
+        withholding_credit: bigint;
+        transfer: bigint;
+      }[]
     >`
       SELECT
         ((SELECT coalesce(sum(vat_millimes), 0) FROM credit_orders WHERE status = 'VALIDATED')
@@ -450,10 +461,12 @@ export class LedgerService {
           + (SELECT coalesce(sum(stamp_duty_millimes), 0) FROM payout_requests WHERE status <> 'REJECTED')
         )::bigint AS stamp,
         -- Processus v2: the withholding tax (never reversed by a dispute, decision of the night of
-        -- 10/11) and the transfer fees follow the same documents.
-        ((SELECT coalesce(sum(withholding_millimes), 0) FROM credit_orders WHERE status = 'VALIDATED')
-          + (SELECT coalesce(sum(withholding_millimes), 0) FROM payout_requests WHERE status <> 'REJECTED')
+        -- 10/11) and the transfer fees follow the same documents. Withholding of the payouts is
+        -- owed to the State; withholding of the orders is a tax credit (corrections of 13/11).
+        (SELECT coalesce(sum(withholding_millimes), 0) FROM payout_requests WHERE status <> 'REJECTED'
         )::bigint AS withholding,
+        (SELECT coalesce(sum(withholding_millimes), 0) FROM credit_orders WHERE status = 'VALIDATED'
+        )::bigint AS withholding_credit,
         ((SELECT coalesce(sum(transfer_fee_millimes), 0) FROM credit_orders WHERE status = 'VALIDATED')
           + (SELECT coalesce(sum(transfer_fee_millimes), 0) FROM payout_requests WHERE status <> 'REJECTED')
         )::bigint AS transfer`;
@@ -464,6 +477,11 @@ export class LedgerService {
       taxMismatches.push(accounts.stampDuty().code);
     if ((await this.balance(tx, accounts.withholdingTax())) !== (documents?.withholding ?? 0n))
       taxMismatches.push(accounts.withholdingTax().code);
+    if (
+      (await this.balance(tx, accounts.withholdingCredit())) !==
+      (documents?.withholding_credit ?? 0n)
+    )
+      taxMismatches.push(accounts.withholdingCredit().code);
     if ((await this.balance(tx, accounts.transferFees())) !== (documents?.transfer ?? 0n))
       taxMismatches.push(accounts.transferFees().code);
     return {

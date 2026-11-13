@@ -712,7 +712,7 @@ describe('cancellation of a confirmed payment by the shop', () => {
 describe('fees of a merchant payout (processus v2)', () => {
   beforeAll(freshApp);
 
-  it('PP CIN, grid 2 %, 1 250,000 -> net 1 214,500; one ledger line per fee', async () => {
+  it('PP CIN, grid 2 %, 1 250,000 -> net 1 215,250 (frais TTC 29,750: no withholding); one ledger line per fee', async () => {
     const merchant = await createMerchant(['RESTAURATION'], 200);
     await db.system(async (tx) => {
       await tx.merchant.update({ where: { id: merchant.id }, data: { legalForm: 'PP_CIN' } });
@@ -736,22 +736,21 @@ describe('fees of a merchant payout (processus v2)', () => {
     expect(quote.body).toMatchObject({
       commissionMillimes: 25_000,
       vatMillimes: 4_750,
-      withholdingRateBps: 300,
-      withholdingMillimes: 750,
+      withholdingRateBps: 0,
+      withholdingMillimes: 0,
       stampDutyMillimes: 1_000,
       transferFeeMillimes: 4_000,
-      netMillimes: 1_214_500,
+      netMillimes: 1_215_250,
     });
     const requested = await shop.call('POST', '/v1/merchant/payouts', {
       body: { quoteId: quote.body.quoteId },
       headers: key(),
     });
-    expect(requested.body).toMatchObject({ netMillimes: 1_214_500, withholdingMillimes: 750 });
+    expect(requested.body).toMatchObject({ netMillimes: 1_215_250, withholdingMillimes: 0 });
     const entries = await ledgerLines(db, String(requested.body.reference));
     expect(entries).toEqual(
       expect.arrayContaining([
-        { code: 'PAYOUT_PAYABLE', direction: 'C', amount: 1_214_500 },
-        { code: 'WITHHOLDING_TAX', direction: 'C', amount: 750 },
+        { code: 'PAYOUT_PAYABLE', direction: 'C', amount: 1_215_250 },
         { code: 'REVENUE_TRANSFER_FEES', direction: 'C', amount: 4_000 },
       ]),
     );
@@ -787,8 +786,7 @@ describe('settlement batches: Finance release in four eyes, simulated bank (task
       headers: key(),
     });
     const finance =
-      by ??
-      (await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Finance A.', 'FINANCE')));
+      by ?? (await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Finance A.', 'FINANCE')));
     const approved = await finance.call(
       'POST',
       `/v1/admin/payout-requests/${String(requested.body.id)}/approve`,

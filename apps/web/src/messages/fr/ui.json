@@ -69,7 +69,8 @@
     "vat": "TVA sur la commission",
     "stamp": "Timbre fiscal",
     "withholding": "Retenue à la source",
-    "transfer": "Frais de virement"
+    "transfer": "Frais de virement",
+    "ttc": "Frais TTC"
   },
   "legalForm": {
     "label": "Forme juridique",

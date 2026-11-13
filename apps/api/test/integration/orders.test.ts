@@ -82,7 +82,7 @@ async function companyWithGrid(tiers: { rateBps: number; min?: bigint; max?: big
 }
 
 describe('commission, VAT and stamp duty of an order (decisions of 2026-11-03)', () => {
-  it('order of 10 000 TND at 5 %: total 10 605,000 TND, separate ledger entries', async () => {
+  it('order of 10 000 TND at 5 %: total 10 600,000 TND, separate ledger entries', async () => {
     const company = await companyWithGrid([{ rateBps: 500 }]);
     const owner = await signedIn(
       base,
@@ -98,13 +98,13 @@ describe('commission, VAT and stamp duty of an order (decisions of 2026-11-03)',
       vatRateBps: 1_900,
       vatMillimes: 95_000,
       stampDutyMillimes: 1_000,
-      totalMillimes: 10_605_000,
+      totalMillimes: 10_600_000,
     });
     const created = await owner.call('POST', '/v1/company/orders', {
       body: { lines },
       headers: key(),
     });
-    expect(created.body).toMatchObject({ totalMillimes: 10_605_000, vatMillimes: 95_000 });
+    expect(created.body).toMatchObject({ totalMillimes: 10_600_000, vatMillimes: 95_000 });
     const id = String(created.body.id);
     await admin.call('POST', `/v1/admin/credit-orders/${id}/confirm`);
     await owner.call('POST', `/v1/company/orders/${id}/transfer-declarations`, {
@@ -116,7 +116,7 @@ describe('commission, VAT and stamp duty of an order (decisions of 2026-11-03)',
     });
     expect(validated.body.status).toBe('VALIDATED');
     expect(await ledgerLines(db, String(created.body.reference))).toEqual([
-      { code: 'BANK_ESCROW', direction: 'D', amount: 10_605_000 },
+      { code: 'BANK_ESCROW', direction: 'D', amount: 10_600_000 },
       { code: 'COMPANY_WALLET', direction: 'C', amount: 10_000_000 },
       { code: 'REVENUE_COMPANY_FEES', direction: 'C', amount: 500_000 },
       { code: 'REVENUE_TRANSFER_FEES', direction: 'C', amount: 4_000 },
@@ -161,7 +161,7 @@ describe('commission, VAT and stamp duty of an order (decisions of 2026-11-03)',
       feesMillimes: 480_000,
       vatMillimes: 91_200,
       stampDutyMillimes: 1_000,
-      totalMillimes: 16_581_000,
+      totalMillimes: 16_576_200,
     });
     // 18 000 TND is still in the tranche (both bounds included).
     const upper = await owner.call('POST', '/v1/company/order-quotes', {
@@ -272,7 +272,7 @@ describe('credit order circuit', () => {
       vatRateBps: 1_900,
       vatMillimes: 4_275,
       stampDutyMillimes: 1_000,
-      totalMillimes: 1_532_000,
+      totalMillimes: 1_531_775,
     });
 
     const headers = key();
@@ -286,7 +286,7 @@ describe('credit order circuit', () => {
     expect(created.status).toBe(201);
     expect(created.body).toMatchObject({
       status: 'AWAITING_CONFIRMATION',
-      totalMillimes: 1_532_000,
+      totalMillimes: 1_531_775,
     });
     expect((created.body.lines as { creditType: string }[]).map((line) => line.creditType)).toEqual(
       ['RESTAURATION', 'CADEAUX'],
@@ -311,7 +311,7 @@ describe('credit order circuit', () => {
     const invoices = await owner.call('GET', '/v1/company/invoices');
     expect((invoices.body.data as { status: string; totalMillimes: number }[])[0]).toMatchObject({
       status: 'UNPAID',
-      totalMillimes: 1_532_000,
+      totalMillimes: 1_531_775,
     });
 
     const declared = await owner.call('POST', `/v1/company/orders/${id}/transfer-declarations`, {

@@ -338,7 +338,11 @@ describe('routes of the other spaces', () => {
       [
         'POST',
         '/v1/admin/commission-grids/change-requests',
-        { companyId: ID, tiers: [{ rateBps: 210, minMillimes: null, maxMillimes: null }], reason: 'R' },
+        {
+          companyId: ID,
+          tiers: [{ rateBps: 210, minMillimes: null, maxMillimes: null }],
+          reason: 'R',
+        },
       ],
     ]);
   });

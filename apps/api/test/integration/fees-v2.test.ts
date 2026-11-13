@@ -8,12 +8,13 @@ loadTestEnv();
 const { loadEnv } = await import('../../src/config/env.js');
 const { createApp } = await import('../../src/app.factory.js');
 const { DbService } = await import('../../src/common/db.service.js');
-const { createUser, ledgerLines, sealed, seedSettings, signedIn } =
-  await import('./fixtures.js');
+const { LedgerService } = await import('../../src/ledger/ledger.service.js');
+const { createUser, ledgerLines, sealed, seedSettings, signedIn } = await import('./fixtures.js');
 
 const env = loadEnv();
 const db = new DbService(env);
 const app = await createApp(env, false);
+const ledger = new LedgerService();
 let base = '';
 
 // Smallest valid PNG (8-byte signature + IHDR + IEND).
@@ -70,7 +71,7 @@ async function companyWithGrid(tiers: { rateBps: number; min?: bigint; max?: big
 
 describe('fees of a credit order (processus v2)', () => {
   // TEST-FIRST (processus v2, Règles de frais, example 1).
-  it('PM MF company, grid 3 %: 10 000 Restauration + 6 000 Carburant -> 16 581,000, one ledger line per fee', async () => {
+  it('PM MF company, grid 3 %: 10 000 Restauration + 6 000 Carburant -> 16 576,200, one ledger line per fee', async () => {
     const company = await companyWithGrid([{ rateBps: 300 }]);
     const owner = await signedIn(
       base,
@@ -86,24 +87,24 @@ describe('fees of a credit order (processus v2)', () => {
       amountMillimes: 16_000_000,
       feesMillimes: 480_000,
       vatMillimes: 91_200,
-      withholdingRateBps: 100,
-      withholdingMillimes: 4_800,
+      withholdingRateBps: 0,
+      withholdingMillimes: 0,
       stampDutyMillimes: 1_000,
       transferFeeMillimes: 4_000,
-      totalMillimes: 16_581_000,
+      totalMillimes: 16_576_200,
     });
     const created = await owner.call('POST', '/v1/company/orders', {
       body: { quoteId: quote.body.quoteId },
       headers: key(),
     });
-    expect(created.body.totalMillimes).toBe(16_581_000);
+    expect(created.body.totalMillimes).toBe(16_576_200);
     const id = String(created.body.id);
     await db.system((tx) =>
       tx.creditOrder.update({ where: { id }, data: { secondValidationRequired: false } }),
     );
     await admin.call('POST', `/v1/admin/credit-orders/${id}/confirm`);
     await owner.call('POST', `/v1/company/orders/${id}/transfer-declarations`, {
-      form: declaration('16581000'),
+      form: declaration('16576200'),
       headers: key(),
     });
     expect(
@@ -113,13 +114,62 @@ describe('fees of a credit order (processus v2)', () => {
     const entries = await ledgerLines(db, String(created.body.reference));
     expect(entries).toEqual(
       expect.arrayContaining([
-        { code: 'BANK_ESCROW', direction: 'D', amount: 16_581_000 },
+        { code: 'BANK_ESCROW', direction: 'D', amount: 16_576_200 },
         { code: 'REVENUE_COMPANY_FEES', direction: 'C', amount: 480_000 },
         { code: 'VAT_COLLECTED', direction: 'C', amount: 91_200 },
-        { code: 'WITHHOLDING_TAX', direction: 'C', amount: 4_800 },
         { code: 'STAMP_DUTY', direction: 'C', amount: 1_000 },
         { code: 'REVENUE_TRANSFER_FEES', direction: 'C', amount: 4_000 },
       ]),
     );
+  });
+
+  // TEST-FIRST (corrections after the demo, 2026-11-13): frais TTC 1 428 > 1 000 TND, so the
+  // withholding (1 % of the frais TTC for a PM MF) is deducted from the total, never added.
+  it('PM MF company, grid 3 %: 40 000 TND -> 41 418,720 (withholding 14,280 deducted)', async () => {
+    const company = await companyWithGrid([{ rateBps: 300 }]);
+    const owner = await signedIn(
+      base,
+      await createUser(db, env, 'COMPANY', { companyId: company.id }, 'Ahmed B.'),
+    );
+    const admin = await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Sarra F.'));
+    const quote = await owner.call('POST', '/v1/company/order-quotes', {
+      body: { lines: [{ creditType: 'RESTAURATION', amountMillimes: 40_000_000 }] },
+    });
+    expect(quote.body).toMatchObject({
+      feesMillimes: 1_200_000,
+      vatMillimes: 228_000,
+      withholdingRateBps: 100,
+      withholdingMillimes: 14_280,
+      totalMillimes: 41_418_720,
+    });
+    const created = await owner.call('POST', '/v1/company/orders', {
+      body: { quoteId: quote.body.quoteId },
+      headers: key(),
+    });
+    const id = String(created.body.id);
+    await db.system((tx) =>
+      tx.creditOrder.update({ where: { id }, data: { secondValidationRequired: false } }),
+    );
+    await admin.call('POST', `/v1/admin/credit-orders/${id}/confirm`);
+    await owner.call('POST', `/v1/company/orders/${id}/transfer-declarations`, {
+      form: declaration('41418720'),
+      headers: key(),
+    });
+    expect(
+      (await admin.call('POST', `/v1/admin/credit-orders/${id}/validate`, { headers: key() }))
+        .status,
+    ).toBe(200);
+    const entries = await ledgerLines(db, String(created.body.reference));
+    expect(entries).toEqual(
+      expect.arrayContaining([
+        { code: 'BANK_ESCROW', direction: 'D', amount: 41_418_720 },
+        { code: 'WITHHOLDING_CREDIT', direction: 'D', amount: 14_280 },
+        { code: 'REVENUE_COMPANY_FEES', direction: 'C', amount: 1_200_000 },
+        { code: 'VAT_COLLECTED', direction: 'C', amount: 228_000 },
+      ]),
+    );
+    await db.system(async (tx) => {
+      expect((await ledger.reconcile(tx)).ok).toBe(true);
+    });
   });
 });

@@ -69,7 +69,8 @@
     "vat": "VAT on the commission",
     "stamp": "Stamp duty",
     "withholding": "Withholding tax",
-    "transfer": "Transfer fee"
+    "transfer": "Transfer fee",
+    "ttc": "Fees incl. VAT"
   },
   "legalForm": {
     "label": "Legal form",

@@ -35,7 +35,7 @@
     "description": "Déposez les pièces demandées par FlexiPay. Une fois votre dossier validé, votre compte est actif.",
     "approved": "Dossier validé : votre compte est actif.",
     "toCorrect": "FlexiPay demande une correction : redéposez les pièces signalées.",
-    "missing": "Complétez votre dossier : déposez les 4 pièces (PDF ou image, 5 Mo maximum chacune).",
+    "missing": "Complétez votre dossier : déposez les pièces demandées (PDF ou image, 5 Mo maximum chacune).",
     "underReview": "Dossier complet : FlexiPay le vérifie.",
     "upload": "Déposer",
     "replace": "Remplacer",
@@ -57,7 +57,9 @@
       "MANAGER_ID": "CIN du gérant",
       "BANK_DETAILS": "RIB",
       "COMPANY_STATUTES": "Statuts de la société",
-      "PROOF_OF_ADDRESS": "Justificatif d’adresse"
+      "PROOF_OF_ADDRESS": "Justificatif d’adresse",
+      "MANAGER_ID_FRONT": "CIN recto",
+      "MANAGER_ID_BACK": "CIN verso"
     },
     "hints": {
       "REGISTRY_EXTRACT": "Extrait récent du registre national des entreprises.",
@@ -65,7 +67,9 @@
       "MANAGER_ID": "Recto et verso de la carte d'identité.",
       "BANK_DETAILS": "Relevé d'identité bancaire au nom du titulaire du compte.",
       "COMPANY_STATUTES": "Statuts signés et enregistrés.",
-      "PROOF_OF_ADDRESS": "Facture ou attestation de moins de 3 mois."
+      "PROOF_OF_ADDRESS": "Facture ou attestation de moins de 3 mois.",
+      "MANAGER_ID_FRONT": "Face avant de la carte d'identité du gérant.",
+      "MANAGER_ID_BACK": "Face arrière de la carte d'identité du gérant."
     },
     "notApproved": "Votre dossier n'est pas encore validé : vous pourrez commander dès que FlexiPay l'aura validé (Compte › Mon dossier)."
   }

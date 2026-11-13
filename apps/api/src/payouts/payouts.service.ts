@@ -4,7 +4,7 @@ import { AuditService } from '../common/audit.service.js';
 import { FourEyesService } from '../common/four-eyes.service.js';
 import { uuidv7 } from '../common/crypto.js';
 import { DbService, type Tx } from '../common/db.service.js';
-import { feesOf, feesTotal, fromMillimes, toMillimes } from '../common/money.js';
+import { feesOf, fromMillimes, payoutNet, toMillimes } from '../common/money.js';
 import { currentGridInclude, defaultRate, gridBody } from '../platform/commission-grids.js';
 import { Paginator, type Page } from '../common/pagination.js';
 import { ApiProblem, problems, validationFailed } from '../common/problem.js';
@@ -283,16 +283,22 @@ export class PayoutsService {
           text: `TVA sur la commission (${percent(payout.vatRateBps)})`,
           right: tnd(-payout.vatMillimes),
         },
+        {
+          text: 'Frais TTC (commission + TVA)',
+          right: tnd(-(payout.commissionMillimes + payout.vatMillimes)),
+          bold: true,
+        },
+        { text: 'Timbre fiscal', right: tnd(-payout.stampDutyMillimes) },
+        { text: 'Frais de virement', right: tnd(-payout.transferFeeMillimes) },
+        // Deducted (corrections of 2026-11-13): only above 1 000 TND of frais TTC.
         ...(payout.withholdingMillimes > 0n
           ? [
               {
-                text: `Retenue à la source (${percent(payout.withholdingRateBps)} de la commission)`,
+                text: `Retenue à la source (${percent(payout.withholdingRateBps)} des frais TTC)`,
                 right: tnd(-payout.withholdingMillimes),
               },
             ]
           : []),
-        { text: 'Timbre fiscal', right: tnd(-payout.stampDutyMillimes) },
-        { text: 'Frais de virement', right: tnd(-payout.transferFeeMillimes) },
         { text: 'Net viré', right: tnd(payout.netMillimes), bold: true, size: 12, gap: 10 },
         {
           text: `Total facturé (commission, TVA, retenue, timbre, virement) : ${tnd(payout.grossMillimes - payout.netMillimes)}`,
@@ -334,7 +340,7 @@ export class PayoutsService {
       const rate = await this.settings.commissionRate(tx, { merchantId }, gross);
       const taxes = await this.settings.taxes(tx, await this.legalForm(tx, merchantId));
       const fees = feesOf(gross, rate, taxes);
-      const net = gross - feesTotal(fees);
+      const net = payoutNet(gross, fees);
       // The fees must leave a positive amount to transfer.
       if (net <= 0n)
         throw validationFailed([

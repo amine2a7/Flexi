@@ -310,16 +310,12 @@ function PreviewLines({
       millimes: lines.vatMillimes,
       ...(kind === 'merchant' ? { sign: 'debit' as const } : {}),
     },
-    ...(lines.withholdingMillimes > 0
-      ? [
-          {
-            label: t('lineWithholding'),
-            note: rate(lines.withholdingRateBps),
-            millimes: lines.withholdingMillimes,
-            ...(kind === 'merchant' ? { sign: 'debit' as const } : {}),
-          },
-        ]
-      : []),
+    {
+      label: t('lineTtc'),
+      millimes: lines.feesTtcMillimes,
+      subtotal: true,
+      ...(kind === 'merchant' ? { sign: 'debit' as const } : {}),
+    },
     {
       label: t('lineStamp'),
       millimes: lines.stampDutyMillimes,
@@ -330,6 +326,17 @@ function PreviewLines({
       millimes: lines.transferFeeMillimes,
       ...(kind === 'merchant' ? { sign: 'debit' as const } : {}),
     },
+    // Deducted from the total or the net, never added (corrections of 2026-11-13).
+    ...(lines.withholdingMillimes > 0
+      ? [
+          {
+            label: t('lineWithholding'),
+            note: rate(lines.withholdingRateBps),
+            millimes: lines.withholdingMillimes,
+            sign: 'debit' as const,
+          },
+        ]
+      : []),
   ];
   return (
     <AmountBreakdown

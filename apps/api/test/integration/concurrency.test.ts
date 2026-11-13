@@ -276,17 +276,13 @@ describe('concurrent decisions on one financial object', () => {
         },
       }),
     );
-    const requested = await initiator.call(
-      'POST',
-      '/v1/admin/commission-grids/change-requests',
-      {
-        body: {
-          companyId: company.id,
-          tiers: [{ rateBps: 210, minMillimes: null, maxMillimes: null }],
-          reason: 'Révision',
-        },
+    const requested = await initiator.call('POST', '/v1/admin/commission-grids/change-requests', {
+      body: {
+        companyId: company.id,
+        tiers: [{ rateBps: 210, minMillimes: null, maxMillimes: null }],
+        reason: 'Révision',
       },
-    );
+    });
     expect(requested.status).toBe(201);
     const id = String(requested.body.id);
     const results = await Promise.all([

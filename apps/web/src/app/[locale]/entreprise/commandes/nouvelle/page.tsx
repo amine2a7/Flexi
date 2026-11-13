@@ -124,15 +124,11 @@ export default function NewOrderPage() {
             note: formatRateBps(quote.vatRateBps, locale),
             millimes: quote.vatMillimes,
           },
-          ...(quote.withholdingMillimes > 0
-            ? [
-                {
-                  label: tFees('withholding'),
-                  note: formatRateBps(quote.withholdingRateBps, locale),
-                  millimes: quote.withholdingMillimes,
-                },
-              ]
-            : []),
+          {
+            label: tFees('ttc'),
+            millimes: quote.feesMillimes + quote.vatMillimes,
+            subtotal: true,
+          },
           {
             label: tFees('stamp'),
             millimes: quote.stampDutyMillimes,
@@ -141,6 +137,16 @@ export default function NewOrderPage() {
             label: tFees('transfer'),
             millimes: quote.transferFeeMillimes,
           },
+          ...(quote.withholdingMillimes > 0
+            ? [
+                {
+                  label: tFees('withholding'),
+                  note: formatRateBps(quote.withholdingRateBps, locale),
+                  millimes: quote.withholdingMillimes,
+                  sign: 'debit' as const,
+                },
+              ]
+            : []),
         ];
   return (
     <>

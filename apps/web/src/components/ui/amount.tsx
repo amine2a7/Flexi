@@ -71,6 +71,8 @@ interface BreakdownLine {
   readonly millimes: number;
   readonly sign?: 'credit' | 'debit';
   readonly note?: string;
+  /** A subtotal of the lines above (« Frais TTC »): set apart, never added again. */
+  readonly subtotal?: boolean;
 }
 
 /** Gross -> deductions -> net, every figure from the API (charte A.5, UX-04). */
@@ -84,8 +86,18 @@ export function AmountBreakdown({
   return (
     <dl className="flex flex-col gap-3">
       {lines.map((line) => (
-        <div key={line.label} className="flex items-baseline justify-between gap-4">
-          <dt className="text-body text-text-muted">
+        <div
+          key={line.label}
+          className={cn(
+            'flex items-baseline justify-between gap-4',
+            line.subtotal === true && 'border-t border-dashed border-border pt-3',
+          )}
+        >
+          <dt
+            className={
+              line.subtotal === true ? 'text-label text-text' : 'text-body text-text-muted'
+            }
+          >
             {line.label}
             {line.note !== undefined ? (
               <span className="ms-2 text-caption">{line.note}</span>

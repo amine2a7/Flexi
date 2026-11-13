@@ -326,7 +326,9 @@
       "MANAGER_ID": "Manager's ID",
       "BANK_DETAILS": "Bank details (RIB)",
       "COMPANY_STATUTES": "Company statutes",
-      "PROOF_OF_ADDRESS": "Proof of address"
+      "PROOF_OF_ADDRESS": "Proof of address",
+      "MANAGER_ID_FRONT": "ID card (front)",
+      "MANAGER_ID_BACK": "ID card (back)"
     },
     "approve": "Approve the file",
     "approveTitle": "Approve {name}'s file?",
@@ -611,7 +613,8 @@
       "amount": "Enter an amount in TND, 3 decimals at most."
     },
     "lineWithholding": "Withholding tax",
-    "lineTransfer": "Transfer fee"
+    "lineTransfer": "Transfer fee",
+    "lineTtc": "Fees incl. VAT"
   },
   "record": {
     "contact": "Information",

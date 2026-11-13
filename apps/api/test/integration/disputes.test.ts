@@ -170,9 +170,10 @@ const approvePayout = async (finance: Awaited<ReturnType<typeof admin>>, payoutI
 /** The settlement date of the batch has come: the job executes it. */
 const runBatch = async (batchId: string) => {
   const owner = await ownerClient();
-  await owner.query(`UPDATE settlement_batches SET settlement_date = current_date, status = 'RELEASED' WHERE id = $1`, [
-    batchId,
-  ]);
+  await owner.query(
+    `UPDATE settlement_batches SET settlement_date = current_date, status = 'RELEASED' WHERE id = $1`,
+    [batchId],
+  );
   await owner.end();
   await app.get(PayoutsService).executeDueBatches();
 };

@@ -35,7 +35,7 @@
     "description": "File the documents FlexiPay asks for. Once your file is validated, your account is active.",
     "approved": "File validated: your account is active.",
     "toCorrect": "FlexiPay asks a correction: file the flagged documents again.",
-    "missing": "Complete your file: file the 4 documents (PDF or image, 5 MB each at most).",
+    "missing": "Complete your file: upload the requested documents (PDF or image, 5 MB maximum each).",
     "underReview": "File complete: FlexiPay is checking it.",
     "upload": "Upload",
     "replace": "Replace",
@@ -57,7 +57,9 @@
       "MANAGER_ID": "Manager's ID card",
       "BANK_DETAILS": "Bank details (RIB)",
       "COMPANY_STATUTES": "Company statutes",
-      "PROOF_OF_ADDRESS": "Proof of address"
+      "PROOF_OF_ADDRESS": "Proof of address",
+      "MANAGER_ID_FRONT": "ID card (front)",
+      "MANAGER_ID_BACK": "ID card (back)"
     },
     "hints": {
       "REGISTRY_EXTRACT": "Recent extract of the national business register.",
@@ -65,7 +67,9 @@
       "MANAGER_ID": "Both sides of the ID card.",
       "BANK_DETAILS": "Bank details in the account holder's name.",
       "COMPANY_STATUTES": "Signed and registered statutes.",
-      "PROOF_OF_ADDRESS": "Bill or certificate less than 3 months old."
+      "PROOF_OF_ADDRESS": "Bill or certificate less than 3 months old.",
+      "MANAGER_ID_FRONT": "Front of the manager's ID card.",
+      "MANAGER_ID_BACK": "Back of the manager's ID card."
     },
     "notApproved": "Your file is not validated yet: you can order once FlexiPay validates it (Account › My file)."
   }

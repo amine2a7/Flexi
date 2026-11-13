@@ -175,16 +175,22 @@ export async function signedIn(base: string, user: TestUser): Promise<WebClient>
 export async function fileKycDocuments(db: DbService, fileId: string): Promise<void> {
   await db.system((tx) =>
     tx.kycDocument.createMany({
-      data: (['REGISTRY_EXTRACT', 'TAX_CERTIFICATE', 'MANAGER_ID', 'BANK_DETAILS'] as const).map(
-        (type) => ({
-          fileId,
-          type,
-          fileName: `${type}.pdf`,
-          contentType: 'application/pdf',
-          sizeBytes: 1_024,
-          storageKey: `test/${fileId}/${type}`,
-        }),
-      ),
+      data: (
+        [
+          'REGISTRY_EXTRACT',
+          'TAX_CERTIFICATE',
+          'MANAGER_ID_FRONT',
+          'MANAGER_ID_BACK',
+          'BANK_DETAILS',
+        ] as const
+      ).map((type) => ({
+        fileId,
+        type,
+        fileName: `${type}.pdf`,
+        contentType: 'application/pdf',
+        sizeBytes: 1_024,
+        storageKey: `test/${fileId}/${type}`,
+      })),
     }),
   );
 }

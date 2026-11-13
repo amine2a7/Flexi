@@ -75,6 +75,8 @@ const settingsBody = z.strictObject({
           'REGISTRY_EXTRACT',
           'TAX_CERTIFICATE',
           'MANAGER_ID',
+          'MANAGER_ID_FRONT',
+          'MANAGER_ID_BACK',
           'BANK_DETAILS',
           'COMPANY_STATUTES',
           'PROOF_OF_ADDRESS',
@@ -248,10 +250,7 @@ export class AdminController {
   @Post('merchants/:merchantId/iban-change-requests')
   @HttpCode(201)
   ibanChangeRequest(@Param('merchantId') merchantId: string, @Body() body: unknown) {
-    const input = parse(
-      z.strictObject({ iban: z.string().regex(/^TN[0-9]{22}$/), reason }),
-      body,
-    );
+    const input = parse(z.strictObject({ iban: z.string().regex(/^TN[0-9]{22}$/), reason }), body);
     return this.admin.requestIbanChange(pathId('merchantId', merchantId), input.iban, input.reason);
   }
 
