@@ -147,10 +147,12 @@ export function TeamUsers({
   const close = () => {
     setDialog(undefined);
   };
+  // The list reloads through a loading state that unmounts this component: with a password to
+  // show, the reload waits until its window is closed (otherwise the password is never seen).
   const done = (next?: Credentials) => {
     setDialog(undefined);
-    if (next !== undefined) setCredentials(next);
-    onChange();
+    if (next === undefined) onChange();
+    else setCredentials(next);
   };
 
   return (
@@ -193,6 +195,7 @@ export function TeamUsers({
         notice={t('credentialsNotice')}
         onClose={() => {
           setCredentials(undefined);
+          onChange();
         }}
       />
     </div>
