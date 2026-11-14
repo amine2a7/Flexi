@@ -59,6 +59,13 @@ export function MfaChallengeForm() {
         return;
       }
       setCsrfToken(data.csrfToken);
+      // A temporary password (new account, « Nouveau mot de passe »): the code is checked, then
+      // the password is chosen before the space opens (the API refuses the space until then).
+      if (data.nextStep === 'PASSWORD_CHANGE') {
+        updateAuthFlow({ challengeId: undefined, restrictedUntil: data.restrictedUntil });
+        router.replace('/login/premiere-connexion');
+        return;
+      }
       await enter();
     } catch (reason) {
       setError(reason);
