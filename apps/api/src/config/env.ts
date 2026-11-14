@@ -34,6 +34,15 @@ const schema = z.object({
    * Refused in production.
    */
   TEST_CLOCK: z.enum(['0', '1']).optional(),
+  /**
+   * Path under which the browser reaches the API when the web relays it on its own origin
+   * (request of 2026-11-14: Next rewrite /api -> API, one tunnel): the refresh cookie is scoped to
+   * `<prefix>/v1/auth`. Empty when the browser calls the API directly.
+   */
+  PUBLIC_PATH_PREFIX: z
+    .string()
+    .regex(/^(\/[a-z][a-z0-9-]*)?$/)
+    .default(''),
 });
 
 export type Env = Readonly<

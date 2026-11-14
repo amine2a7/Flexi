@@ -12,7 +12,8 @@
     "statistics": "Statistiques",
     "settings": "Paramètres",
     "support": "Support",
-    "kyc": "Mon dossier"
+    "kyc": "Mon dossier",
+    "users": "Utilisateurs"
   },
   "company": {
     "dashboard": "Accueil",
@@ -25,7 +26,8 @@
     "support": "Support",
     "reporting": "Suivi de consommation",
     "departments": "Départements",
-    "kyc": "Mon dossier"
+    "kyc": "Mon dossier",
+    "users": "Utilisateurs"
   },
   "admin": {
     "dashboard": "Vue d'ensemble",

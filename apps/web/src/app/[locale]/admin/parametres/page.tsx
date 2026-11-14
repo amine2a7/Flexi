@@ -447,7 +447,7 @@ function ChangeSettings({
       invitation: integerIn(draft.invitation, 1, 30),
       quote: integerIn(draft.quote, 1, 90),
       cancel: integerIn(draft.cancel, 0, 72),
-      settlement: integerIn(draft.settlement, 1, 10),
+      settlement: integerIn(draft.settlement, 0, 10),
     };
     const message = t('invalid');
     const errors: Partial<Record<DraftKey, string>> = Object.fromEntries(

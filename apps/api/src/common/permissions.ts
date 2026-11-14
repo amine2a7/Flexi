@@ -18,6 +18,7 @@ const COMPANY_OWNER = [
   'fundingAccount.read',
   'invoices.read',
   'kyc.submit',
+  'team.manage',
 ] as const;
 
 const MERCHANT_OWNER = [
@@ -32,6 +33,7 @@ const MERCHANT_OWNER = [
   'documents.read',
   'shop.read',
   'kyc.submit',
+  'team.manage',
 ] as const;
 
 // Admin permissions never reuse a company or merchant name: a tenant route must stay unreachable
@@ -98,10 +100,13 @@ export type Permission =
 
 /**
  * Role x sub-role matrix. A sub-role missing from the matrix gets nothing (deny by default).
- * - Company: Administrateur (OWNER) = everything; RH (MANAGER) = employees, allocations, balances;
- *   Comptable (ACCOUNTANT) = orders, transfer declarations, invoices; READ_ONLY = reading.
- * - Merchant: Gérant (OWNER) = everything; Caissier (CASHIER) = collect and the day's history,
- *   no payout (IBAN masked everywhere); ACCOUNTANT = reading of the finances, no collect.
+ * - Company (request of 2026-11-14): Propriétaire (OWNER) = everything, and its RH and Finance
+ *   users (`team.manage`); RH (MANAGER) = employees, departments, allocations, balances; Finance
+ *   (FINANCE) = orders, transfer declarations, invoices. READ_ONLY and ACCOUNTANT are former
+ *   sub-roles, no longer given (reading only, until the administrator changes them).
+ * - Merchant: Propriétaire (OWNER) = everything, and its cashiers (`team.manage`); Caissier
+ *   (CASHIER) = collect and the day's collections, nothing else. ACCOUNTANT is a former sub-role,
+ *   no longer given (reading of the finances, no collect).
  * - Admin (decision C of 2026-10-23): SUPER_ADMIN = everything (admins, roles, statuses,
  *   settings), never an exception to the four eyes; Opérations (COMPLIANCE) = KYC and audit, reading
  *   of accounts, commissions, orders, settlements, balances, users; FINANCE = commissions and rates,
@@ -143,7 +148,7 @@ const MATRIX: Record<Role, Partial<Record<SubRole | 'NONE', readonly Permission[
   COMPANY: {
     OWNER: COMPANY_OWNER,
     MANAGER: ['balances.read', 'employees.read', 'employees.manage', 'credits.allocate'],
-    ACCOUNTANT: [
+    FINANCE: [
       'balances.read',
       'orders.read',
       'orders.create',
@@ -151,6 +156,7 @@ const MATRIX: Record<Role, Partial<Record<SubRole | 'NONE', readonly Permission[
       'fundingAccount.read',
       'invoices.read',
     ],
+    ACCOUNTANT: ['balances.read', 'orders.read', 'invoices.read'],
     READ_ONLY: ['balances.read', 'employees.read', 'orders.read', 'invoices.read'],
   },
   MERCHANT: {

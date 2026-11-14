@@ -18,6 +18,7 @@ import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { AdminAddEmployee, AdminArchiveTemplate } from './client-actions';
 import { KycStatusBadge } from './kyc-status-badge';
+import { TeamUsers, type TeamScope } from '@/components/team/team-users';
 
 type CompanyOverview = Schemas['CompanyOverview'];
 type MerchantOverview = Schemas['MerchantOverview'];
@@ -105,7 +106,13 @@ function CompanyTabContent({
     case 'kyc':
       return <KycTab kyc={data.kyc} />;
     case 'users':
-      return <UsersTab users={data.users} />;
+      return (
+        <UsersTab
+          users={data.users}
+          scope={{ kind: 'admin', tenant: 'COMPANY', tenantId: companyId }}
+          onChange={reload}
+        />
+      );
     case 'departments': {
       const columns: Column<Schemas['Department']>[] = [
         { key: 'name', header: t('name'), cell: (row) => row.name },
@@ -344,7 +351,16 @@ export function MerchantTabs({ merchantId, info }: { merchantId: string; info: R
     if (overview.status === 'loading') content = <LoadingBlock lines={6} />;
     else if (overview.status === 'error')
       content = <ErrorState error={overview.error} onRetry={overview.reload} />;
-    else content = <MerchantTabContent tab={tab} data={overview.data} locale={locale} />;
+    else
+      content = (
+        <MerchantTabContent
+          tab={tab}
+          data={overview.data}
+          locale={locale}
+          merchantId={merchantId}
+          reload={overview.reload}
+        />
+      );
   }
   return (
     <>
@@ -363,14 +379,25 @@ function MerchantTabContent({
   tab,
   data,
   locale,
+  merchantId,
+  reload,
 }: {
   tab: MerchantTab;
   data: MerchantOverview;
   locale: Locale;
+  merchantId: string;
+  reload: () => void;
 }) {
   const t = useTranslations('admin.clientTabs');
   if (tab === 'kyc') return <KycTab kyc={data.kyc} />;
-  if (tab === 'users') return <UsersTab users={data.users} />;
+  if (tab === 'users')
+    return (
+      <UsersTab
+        users={data.users}
+        scope={{ kind: 'admin', tenant: 'MERCHANT', tenantId: merchantId }}
+        onChange={reload}
+      />
+    );
   if (tab === 'sales') {
     const columns: Column<Schemas['OverviewSale']>[] = [
       { key: 'reference', header: t('reference'), cell: (row) => row.reference },
@@ -456,43 +483,28 @@ function KycTab({ kyc }: { kyc: Schemas['OverviewKyc'] | null }) {
   );
 }
 
-function UsersTab({ users }: { users: readonly Schemas['OverviewUser'][] }) {
-  const t = useTranslations('admin.clientTabs');
-  const tSub = useTranslations('subRole');
-  const locale = useLocale();
-  const columns: Column<Schemas['OverviewUser']>[] = [
-    {
-      key: 'name',
-      header: t('name'),
-      cell: (row) => (
-        <Link href={`/admin/utilisateurs/${row.id}`} className={linkClass}>
-          {row.displayName}
-        </Link>
-      ),
-    },
-    { key: 'email', header: t('email'), cell: (row) => row.email },
-    {
-      key: 'role',
-      header: t('role'),
-      cell: (row) => (row.subRole === null ? '—' : tSub(row.subRole)),
-    },
-    {
-      key: 'status',
-      header: t('status'),
-      cell: (row) => <StatusBadge status={row.status} context="user" />,
-    },
-    { key: 'date', header: t('createdAt'), cell: (row) => formatDateTime(row.createdAt, locale) },
-  ];
+/**
+ * « Utilisateurs » tab (request of 2026-11-14): every sign-in account of the client. The
+ * super-admin creates, edits (name, role), deactivates and generates a new password, each action
+ * in the audit log; Opérations, Finance and Support read only.
+ */
+function UsersTab({
+  users,
+  scope,
+  onChange,
+}: {
+  users: readonly Schemas['OverviewUser'][];
+  scope: TeamScope;
+  onChange: () => void;
+}) {
+  const t = useTranslations('account.team');
+  const canManage = useCan('users.manage');
   return (
     <Card>
-      <p className="mb-3 text-caption text-text-muted">{t('usersHint')}</p>
-      <DataTable
-        caption={t('tabs.users')}
-        columns={columns}
-        rows={[...users]}
-        rowKey={(row) => row.id}
-        empty={{ title: t('empty') }}
-      />
+      <p className="mb-3 text-caption text-text-muted">
+        {canManage ? t('adminHint') : t('readOnlyHint')}
+      </p>
+      <TeamUsers scope={scope} users={users} canManage={canManage} onChange={onChange} />
     </Card>
   );
 }

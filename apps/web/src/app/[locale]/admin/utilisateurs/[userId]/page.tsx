@@ -28,8 +28,8 @@ type SubRole = Schemas['SubRole'];
 
 const SUB_ROLES: Partial<Record<Schemas['Role'], readonly SubRole[]>> = {
   ADMIN: ['SUPER_ADMIN', 'COMPLIANCE', 'FINANCE', 'SUPPORT'],
-  COMPANY: ['OWNER', 'MANAGER', 'ACCOUNTANT', 'READ_ONLY'],
-  MERCHANT: ['OWNER', 'CASHIER', 'ACCOUNTANT'],
+  COMPANY: ['OWNER', 'MANAGER', 'FINANCE'],
+  MERCHANT: ['OWNER', 'CASHIER'],
 };
 const HISTORY_KEYS = new Set([
   'users.create',

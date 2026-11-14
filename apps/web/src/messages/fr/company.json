@@ -259,7 +259,18 @@
     "duplicate": "Un département porte déjà ce nom.",
     "required": "Saisissez un nom.",
     "emptyTitle": "Aucun département",
-    "emptyText": "Créez un premier département pour regrouper vos employés."
+    "emptyText": "Créez un premier département pour regrouper vos employés.",
+    "actions": "Actions",
+    "rename": "Renommer",
+    "renameTitle": "Renommer « {name} »",
+    "renameSubmit": "Enregistrer",
+    "renamed": "Département renommé en « {name} ».",
+    "delete": "Supprimer",
+    "deleteTitle": "Supprimer le département « {name} » ?",
+    "deleteText": "Le département disparaît de la liste. Son nom pourra être réutilisé.",
+    "deleteConfirm": "Supprimer",
+    "deleted": "Département « {name} » supprimé.",
+    "notEmpty": "Ce département compte encore {count} employé(s) : rattachez-les à un autre département avant de le supprimer."
   },
   "templates": {
     "title": "Modèles d’attribution",

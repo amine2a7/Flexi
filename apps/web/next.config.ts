@@ -12,6 +12,16 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   // The dev indicator is a focusable button inserted before the app: it breaks keyboard e2e tests.
   devIndicators: false,
+  // Same-origin API (request of 2026-11-14): with NEXT_PUBLIC_API_BASE_URL=/api the browser calls
+  // /api/..., relayed here to API_PROXY_TARGET, so a single tunnel exposes the web and the API.
+  rewrites() {
+    const target = process.env.API_PROXY_TARGET;
+    if (process.env.NEXT_PUBLIC_API_BASE_URL !== '/api' || target === undefined) {
+      return Promise.resolve([]);
+    }
+    const destination = `${new URL(target).origin}/:path*`;
+    return Promise.resolve([{ source: '/api/:path*', destination }]);
+  },
   headers() {
     return Promise.resolve([
       {

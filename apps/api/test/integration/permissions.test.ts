@@ -114,7 +114,7 @@ async function allowed(client: WebClient, calls: Call[]): Promise<void> {
 
 const order = { lines: [{ creditType: 'RESTAURATION', amountMillimes: 1_000_000 }] };
 
-describe('company sub-roles (Administrateur OWNER, RH MANAGER, Comptable ACCOUNTANT)', () => {
+describe('company sub-roles (Propriétaire OWNER, RH MANAGER, Finance FINANCE)', () => {
   it('HR manages employees and allocations, never orders, transfers nor invoices', async () => {
     const hr = await companyUser('MANAGER');
     await refused(hr, [
@@ -132,8 +132,8 @@ describe('company sub-roles (Administrateur OWNER, RH MANAGER, Comptable ACCOUNT
     ]);
   });
 
-  it('the accountant handles orders, transfers and invoices, never employees nor allocations', async () => {
-    const accountant = await companyUser('ACCOUNTANT');
+  it('finance handles orders, transfers and invoices, never employees nor allocations', async () => {
+    const accountant = await companyUser('FINANCE');
     await refused(accountant, [
       ['GET', '/v1/company/employees'],
       [

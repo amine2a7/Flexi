@@ -17,10 +17,12 @@ import { permissionsOf } from '../common/permissions.js';
 import { principal } from '../common/request-context.js';
 import { LedgerService, accounts } from '../ledger/ledger.service.js';
 import type { Prisma, Role, SubRole } from '../generated/prisma/client.js';
+import { TEAM_SUB_ROLES } from './team-rules.js';
 
 const ADMIN_SUB_ROLES: readonly SubRole[] = ['SUPER_ADMIN', 'COMPLIANCE', 'FINANCE', 'SUPPORT'];
-const COMPANY_SUB_ROLES: readonly SubRole[] = ['OWNER', 'MANAGER', 'ACCOUNTANT', 'READ_ONLY'];
-const MERCHANT_SUB_ROLES: readonly SubRole[] = ['OWNER', 'CASHIER', 'ACCOUNTANT'];
+// Sub-roles given to a company or a merchant (request of 2026-11-14, team-rules.ts).
+const COMPANY_SUB_ROLES = TEAM_SUB_ROLES.COMPANY;
+const MERCHANT_SUB_ROLES = TEAM_SUB_ROLES.MERCHANT;
 const CREDIT_TYPES = ['RESTAURATION', 'HABILLEMENT', 'CARBURANT', 'CADEAUX'] as const;
 const HISTORY_SIZE = 50;
 

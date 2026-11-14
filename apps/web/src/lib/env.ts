@@ -36,3 +36,30 @@ export function getApiOrigin(
   }
   return url.origin;
 }
+
+/**
+ * Prefix of the API on the origin of the web (request of 2026-11-14): with
+ * NEXT_PUBLIC_API_BASE_URL=/api the browser calls /api/v1/..., which Next rewrites to the API
+ * (API_PROXY_TARGET, next.config.ts), so one tunnel exposes everything.
+ */
+export const SAME_ORIGIN_PREFIX = '/api';
+
+export function isSameOriginApi(raw: string | undefined = process.env.NEXT_PUBLIC_API_BASE_URL) {
+  return raw === SAME_ORIGIN_PREFIX;
+}
+
+/**
+ * Base of the API calls of the browser: the same-origin prefix, or the API origin (undefined when
+ * not configured: callers fail closed).
+ */
+export function getApiBaseUrl(): string | undefined {
+  return isSameOriginApi() ? SAME_ORIGIN_PREFIX : getApiOrigin();
+}
+
+/**
+ * Origin of the API for the server rendering (it cannot call a relative URL): the target of the
+ * rewrite in same-origin mode, the public API origin otherwise.
+ */
+export function getServerApiOrigin(): string | undefined {
+  return isSameOriginApi() ? getApiOrigin(process.env.API_PROXY_TARGET) : getApiOrigin();
+}

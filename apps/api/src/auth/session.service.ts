@@ -144,7 +144,7 @@ export class SessionService {
       httpOnly: true,
       secure: true,
       sameSite: 'strict',
-      path: '/v1/auth',
+      path: `${this.env.PUBLIC_PATH_PREFIX}/v1/auth`,
       maxAge,
     });
   }
@@ -155,7 +155,7 @@ export class SessionService {
       httpOnly: true,
       secure: true,
       sameSite: 'strict',
-      path: '/v1/auth',
+      path: `${this.env.PUBLIC_PATH_PREFIX}/v1/auth`,
     });
   }
 

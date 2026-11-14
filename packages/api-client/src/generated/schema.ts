@@ -1053,6 +1053,130 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/team/users': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Utilisateurs de mon entreprise ou de mon commerce
+     * @description Propriétaire seulement (permission `team.manage`, demande du 2026-11-14). Comptes de l'entreprise (Propriétaire, RH, Finance) ou du commerce (Propriétaire, Caissier) de la session, jamais d'un autre locataire.
+     */
+    get: operations['listTeamUsers'];
+    put?: never;
+    /**
+     * Créer un utilisateur (RH, Finance ou Caissier)
+     * @description Permission `team.manage`. Le propriétaire donne RH (`MANAGER`) ou Finance (`FINANCE`) dans une entreprise, Caissier (`CASHIER`) dans un commerce, jamais Propriétaire. Mot de passe temporaire affiché une seule fois et envoyé par e-mail. Une adresse qui se connecte déjà reçoit la même réponse, aucun compte n'est créé et son titulaire est prévenu (S04). Tracé dans l'audit.
+     */
+    post: operations['createTeamUser'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/team/users/{userId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Modifier le nom ou le rôle d'un utilisateur
+     * @description Permission `team.manage`. Seulement un compte RH, Finance ou Caissier du locataire de la session (`404` pour un autre locataire, `403` pour un propriétaire ou soi-même). Un changement de rôle ferme les sessions du compte. Tracé dans l'audit.
+     */
+    patch: operations['updateTeamUser'];
+    trace?: never;
+  };
+  '/v1/team/users/{userId}/deactivate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Désactiver un utilisateur
+     * @description Permission `team.manage`. Irréversible ; sessions fermées ; `409` si le compte est déjà désactivé. Tracé dans l'audit.
+     */
+    post: operations['deactivateTeamUser'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/team/users/{userId}/reset-password': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Générer un nouveau mot de passe temporaire
+     * @description Permission `team.manage`. Compte actif seulement (`409` sinon). Affiché une seule fois et envoyé par e-mail ; l'ancien mot de passe et les sessions du compte sont fermés. Tracé dans l'audit.
+     */
+    post: operations['resetTeamUserPassword'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/companies/{companyId}/users': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Créer un utilisateur d'une entreprise
+     * @description Super-administrateur (permission `users.manage`, demande du 2026-11-14). Propriétaire, RH ou Finance ; mot de passe temporaire affiché une seule fois ; `409` si l'adresse se connecte déjà. Tracé dans l'audit.
+     */
+    post: operations['adminCreateCompanyUser'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/merchants/{merchantId}/users': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Créer un utilisateur d'un commerçant
+     * @description Super-administrateur (permission `users.manage`, demande du 2026-11-14). Propriétaire ou Caissier ; mot de passe temporaire affiché une seule fois ; `409` si l'adresse se connecte déjà. Tracé dans l'audit.
+     */
+    post: operations['adminCreateMerchantUser'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/company/departments': {
     parameters: {
       query?: never;
@@ -2283,7 +2407,11 @@ export interface paths {
     delete?: never;
     options?: never;
     head?: never;
-    patch?: never;
+    /**
+     * Modifier le nom ou le rôle d'un utilisateur d'entreprise ou de commerçant
+     * @description Super-administrateur (permission `users.manage`, demande du 2026-11-14). Compte d'une entreprise ou d'un commerçant seulement (`404` sinon) ; le dernier propriétaire actif n'est jamais rétrogradé (`409`). Un changement de rôle ferme les sessions du compte. Motif obligatoire, tracé dans l'audit.
+     */
+    patch: operations['adminUpdateTenantUser'];
     trace?: never;
   };
   '/v1/admin/users/{userId}/suspend': {
@@ -3119,8 +3247,10 @@ export interface components {
     /**
      * SubRole
      * @description Sous-rôle (spec 01 §2, cahier ENT-10, spec 07 §2). ADMIN : `SUPER_ADMIN`, `FINANCE`,
-     *     `SUPPORT`, `COMPLIANCE`. COMPANY : `OWNER`, `MANAGER`, `ACCOUNTANT`, `READ_ONLY`.
-     *     MERCHANT : `OWNER`, `CASHIER`, `ACCOUNTANT`. Aucun pour EMPLOYEE et FAMILY_MEMBER.
+     *     `SUPPORT`, `COMPLIANCE`. COMPANY (2026-11-14) : `OWNER` (Propriétaire), `MANAGER` (RH),
+     *     `FINANCE` (Finance). MERCHANT : `OWNER` (Propriétaire), `CASHIER` (Caissier).
+     *     `ACCOUNTANT` et `READ_ONLY` sont d'anciens sous-rôles, plus attribués (lecture seule).
+     *     Aucun pour EMPLOYEE et FAMILY_MEMBER.
      *     Liste extensible. Le client ne déduit **aucun droit** du sous-rôle : il utilise
      *     `permissions`.
      * @enum {string}
@@ -3143,10 +3273,11 @@ export interface components {
      *     inconnue du client est ignorée ; le web masque ce qui n'est pas permis, le serveur
      *     refuse (`403 FORBIDDEN`) : chaque route exige une permission, calculée à partir du rôle
      *     et du sous-rôle de la session (jamais de la requête), une route sans règle est refusée.
-     *     Matrice (2026-10-21) — Entreprise : OWNER tout ; MANAGER (RH) `balances.read`,
-     *     `employees.read`, `employees.manage`, `credits.allocate` ; ACCOUNTANT (comptable)
-     *     `balances.read`, `orders.read`, `orders.create`, `orders.declareTransfer`,
-     *     `fundingAccount.read`, `invoices.read` ; READ_ONLY lecture. Commerçant : OWNER tout ;
+     *     Matrice (2026-11-14) — Entreprise : OWNER (Propriétaire) tout, dont `team.manage` (ses
+     *     utilisateurs RH et Finance) ; MANAGER (RH) `balances.read`, `employees.read`,
+     *     `employees.manage`, `credits.allocate` ; FINANCE `balances.read`, `orders.read`,
+     *     `orders.create`, `orders.declareTransfer`, `fundingAccount.read`, `invoices.read`.
+     *     Commerçant : OWNER (Propriétaire) tout, dont `team.manage` (ses caissiers) ;
      *     CASHIER `payments.collect`, `sales.readToday` (ventes du jour seulement), `shop.read` ;
      *     ACCOUNTANT lecture des finances. Administrateur : SUPER_ADMIN tout (seul à créer les
      *     comptes et à demander un changement de paramétrage ou de commission ; jamais d'exception
@@ -4660,6 +4791,54 @@ export interface components {
       paymentsMillimes: components['schemas']['AmountMillimes'];
     };
     /**
+     * TeamSubRole
+     * @description Sous-rôle d'un compte d'entreprise (`OWNER` Propriétaire, `MANAGER` RH, `FINANCE`
+     *     Finance) ou de commerçant (`OWNER` Propriétaire, `CASHIER` Caissier), demande du
+     *     2026-11-14.
+     * @enum {string}
+     */
+    TeamSubRole: 'OWNER' | 'MANAGER' | 'FINANCE' | 'CASHIER';
+    /** TeamUser */
+    TeamUser: {
+      id: components['schemas']['Uuid'];
+      displayName: string;
+      email: string;
+      subRole: components['schemas']['SubRole'] | null;
+      status: components['schemas']['UserStatus'];
+      createdAt: components['schemas']['Timestamp'];
+    };
+    /** TeamUserList */
+    TeamUserList: {
+      data: components['schemas']['TeamUser'][];
+    };
+    /** TeamUserCreate */
+    TeamUserCreate: {
+      displayName: string;
+      /** Format: email */
+      email: string;
+      subRole: components['schemas']['TeamSubRole'];
+    };
+    /** TeamUserCreated */
+    TeamUserCreated: {
+      credentials: components['schemas']['TemporaryCredentials'];
+    };
+    /** TeamUserUpdate */
+    TeamUserUpdate: {
+      displayName?: string;
+      subRole?: components['schemas']['TeamSubRole'];
+    };
+    /** AdminTeamUserUpdate */
+    AdminTeamUserUpdate: {
+      displayName?: string;
+      subRole?: components['schemas']['TeamSubRole'];
+      reason: string;
+    };
+    /** TeamUserPassword */
+    TeamUserPassword: {
+      user: components['schemas']['TeamUser'];
+      credentials: components['schemas']['TemporaryCredentials'];
+    };
+    /**
      * TemporaryCredentials
      * @description Identifiant et mot de passe temporaire, renvoyés UNE seule fois (création d'une entreprise
      *     ou d'un commerçant, « Générer un nouveau mot de passe »), seulement à un administrateur qui
@@ -5155,7 +5334,7 @@ export interface components {
       paymentCancelHours: number;
       /**
        * Format: int32
-       * @description Cycle de règlement (J + n jours ouvrés).
+       * @description Cycle de règlement (J + n jours ouvrés, J+0 accepté).
        */
       settlementDelayDays: number;
       /** @description Pièces KYC demandées aux clients (processus v2), au moins une. */
@@ -7706,6 +7885,230 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  listTeamUsers: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TeamUserList'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  createTeamUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TeamUserCreate'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TeamUserCreated'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  updateTeamUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TeamUserUpdate'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TeamUser'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  deactivateTeamUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TeamUser'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  resetTeamUserPassword: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TeamUserPassword'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  adminCreateCompanyUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        companyId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TeamUserCreate'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TeamUserCreated'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  adminCreateMerchantUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        merchantId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TeamUserCreate'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TeamUserCreated'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   listCompanyDepartments: {
     parameters: {
       query?: never;
@@ -10171,6 +10574,41 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  adminUpdateTenantUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdminTeamUserUpdate'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TeamUser'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   suspendUser: {
     parameters: {
       query?: never;
@@ -11337,6 +11775,9 @@ export const familyRelationshipValues: ReadonlyArray<
 export const invoiceStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['InvoiceStatus']
 > = ['PAID', 'UNPAID', 'CANCELLED'];
+export const teamSubRoleValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['TeamSubRole']
+> = ['OWNER', 'MANAGER', 'FINANCE', 'CASHIER'];
 export const legalFormValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['LegalForm']
 > = ['PP_CIN', 'PP_MF', 'PM_MF'];

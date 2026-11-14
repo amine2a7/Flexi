@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getApiOrigin } from '@/lib/env';
+import { getApiBaseUrl, getApiOrigin, getServerApiOrigin, isSameOriginApi } from '@/lib/env';
 
 describe('getApiOrigin', () => {
   // The developer's shell may define NEXT_PUBLIC_API_BASE_URL: tests must not depend on it.
@@ -39,4 +39,25 @@ describe('getApiOrigin', () => {
       expect(getApiOrigin(raw, false)).toBeUndefined();
     },
   );
+});
+
+describe('same-origin API (request of 2026-11-14)', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('/api: the browser calls the web origin, the server rendering the rewrite target', () => {
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '/api');
+    vi.stubEnv('API_PROXY_TARGET', 'http://localhost:3198');
+    expect(isSameOriginApi()).toBe(true);
+    expect(getApiBaseUrl()).toBe('/api');
+    expect(getServerApiOrigin()).toBe('http://localhost:3198');
+  });
+
+  it('an absolute origin is used as before', () => {
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:3198');
+    expect(isSameOriginApi()).toBe(false);
+    expect(getApiBaseUrl()).toBe('http://localhost:3198');
+    expect(getServerApiOrigin()).toBe('http://localhost:3198');
+  });
 });

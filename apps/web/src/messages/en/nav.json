@@ -12,7 +12,8 @@
     "statistics": "Statistics",
     "settings": "Settings",
     "support": "Support",
-    "kyc": "My file"
+    "kyc": "My file",
+    "users": "Users"
   },
   "company": {
     "dashboard": "Home",
@@ -25,7 +26,8 @@
     "support": "Support",
     "reporting": "Consumption tracking",
     "departments": "Departments",
-    "kyc": "My file"
+    "kyc": "My file",
+    "users": "Users"
   },
   "admin": {
     "dashboard": "Overview",

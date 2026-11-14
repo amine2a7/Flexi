@@ -259,7 +259,18 @@
     "duplicate": "A department already has this name.",
     "required": "Enter a name.",
     "emptyTitle": "No department",
-    "emptyText": "Create a first department to group your employees."
+    "emptyText": "Create a first department to group your employees.",
+    "actions": "Actions",
+    "rename": "Rename",
+    "renameTitle": "Rename “{name}”",
+    "renameSubmit": "Save",
+    "renamed": "Department renamed to “{name}”.",
+    "delete": "Delete",
+    "deleteTitle": "Delete the department “{name}”?",
+    "deleteText": "The department leaves the list. Its name can be used again.",
+    "deleteConfirm": "Delete",
+    "deleted": "Department “{name}” deleted.",
+    "notEmpty": "This department still has {count} employee(s): move them to another department before deleting it."
   },
   "templates": {
     "title": "Allocation templates",

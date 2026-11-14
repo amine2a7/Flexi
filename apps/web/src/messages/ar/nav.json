@@ -12,7 +12,8 @@
     "statistics": "الإحصائيات",
     "settings": "الإعدادات",
     "support": "الدعم",
-    "kyc": "ملفي"
+    "kyc": "ملفي",
+    "users": "المستخدمون"
   },
   "company": {
     "dashboard": "الرئيسية",
@@ -25,7 +26,8 @@
     "support": "الدعم",
     "reporting": "متابعة الاستهلاك",
     "departments": "الأقسام",
-    "kyc": "ملفي"
+    "kyc": "ملفي",
+    "users": "المستخدمون"
   },
   "admin": {
     "dashboard": "نظرة عامة",

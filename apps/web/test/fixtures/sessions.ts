@@ -67,6 +67,16 @@ const PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
   ],
   'rh@flexipay.test': ['balances.read', 'employees.read', 'employees.manage', 'credits.allocate'],
   'lecture@flexipay.test': ['balances.read', 'employees.read', 'orders.read', 'invoices.read'],
+  'comptable@flexipay.test': [
+    'balances.read',
+    'orders.read',
+    'orders.create',
+    'orders.declareTransfer',
+    'fundingAccount.read',
+    'invoices.read',
+  ],
+  'entreprise@flexipay.test': ['balances.read', 'employees.read', 'orders.read', 'team.manage'],
+  'commercant@flexipay.test': ['stats.read', 'payments.collect', 'shop.read', 'team.manage'],
   'caissier@flexipay.test': ['payments.collect', 'sales.readToday', 'shop.read'],
   'beneficiaire@flexipay.test': ['wallet.read', 'payments.pay'],
 };

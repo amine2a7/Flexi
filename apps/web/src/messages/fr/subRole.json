@@ -4,8 +4,8 @@
   "SUPPORT": "Support",
   "COMPLIANCE": "Opérations",
   "OWNER": "Propriétaire",
-  "MANAGER": "Gestionnaire",
-  "ACCOUNTANT": "Comptable",
-  "READ_ONLY": "Lecture seule",
+  "MANAGER": "RH",
+  "ACCOUNTANT": "Comptable (ancien rôle)",
+  "READ_ONLY": "Lecture seule (ancien rôle)",
   "CASHIER": "Caissier"
 }

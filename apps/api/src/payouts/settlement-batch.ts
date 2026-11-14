@@ -10,15 +10,17 @@ import { addDays, businessDay, dateOnly } from '../common/tunis.js';
  */
 export async function nextBatch(tx: Tx) {
   const today = businessDay();
-  const [open] = await tx.$queryRaw<{ id: string }[]>`
-    SELECT id FROM settlement_batches
-     WHERE status = 'SCHEDULED' AND settlement_date > ${dateOnly(today)}::date
-     ORDER BY settlement_date LIMIT 1 FOR UPDATE`;
-  if (open !== undefined) return tx.settlementBatch.findUniqueOrThrow({ where: { id: open.id } });
   const { settlementDelayDays } = await tx.platformSettings.findUniqueOrThrow({
     where: { id: 1 },
     select: { settlementDelayDays: true },
   });
+  // A cycle of J+0 (request of 2026-11-14) joins today's batch; otherwise a batch of a later day.
+  const earliest = dateOnly(addDays(today, Math.min(settlementDelayDays, 1)));
+  const [open] = await tx.$queryRaw<{ id: string }[]>`
+    SELECT id FROM settlement_batches
+     WHERE status = 'SCHEDULED' AND settlement_date >= ${earliest}::date
+     ORDER BY settlement_date LIMIT 1 FOR UPDATE`;
+  if (open !== undefined) return tx.settlementBatch.findUniqueOrThrow({ where: { id: open.id } });
   const [sequence] = await tx.$queryRaw<
     { value: bigint }[]
   >`SELECT nextval('batch_reference_seq') AS value`;

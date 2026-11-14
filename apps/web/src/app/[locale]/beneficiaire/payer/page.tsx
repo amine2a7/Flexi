@@ -9,7 +9,7 @@ import { Link } from '@/i18n/navigation';
 import { csrfHeader, getApi, newIdempotencyKey } from '@/lib/api/client';
 import { errorMessageKey } from '@/lib/api/problem';
 import { useApiQuery } from '@/lib/api/use-api-query';
-import { getApiOrigin } from '@/lib/env';
+import { getApiBaseUrl } from '@/lib/env';
 import { formatMillimesWithCurrency } from '@/lib/format/money';
 import { parseMillimes } from '@/lib/format/money-input';
 import { useFundsMessage } from '@/components/beneficiaire/funds-message';
@@ -332,7 +332,7 @@ function DemoRequest({ onCreated }: { onCreated: () => void }) {
   const create = async (): Promise<void> => {
     setFailed(false);
     try {
-      const response = await fetch(`${getApiOrigin() ?? ''}/__demo/employee/payment-request`, {
+      const response = await fetch(`${getApiBaseUrl() ?? ''}/__demo/employee/payment-request`, {
         method: 'POST',
         credentials: 'include',
         headers: { ...WEB_CHANNEL_HEADER, ...(await csrfHeader()) },

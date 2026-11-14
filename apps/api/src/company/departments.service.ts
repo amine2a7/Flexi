@@ -25,7 +25,9 @@ export class DepartmentsService {
   async list() {
     this.companyId();
     return this.db.user(async (tx) => {
+      // A deleted department (archived, always empty) is no longer listed (request of 2026-11-14).
       const rows = await tx.department.findMany({
+        where: { archivedAt: null },
         orderBy: { name: 'asc' },
         include: { _count: { select: { employees: true } } },
       });
@@ -44,7 +46,7 @@ export class DepartmentsService {
     const companyId = this.companyId();
     return this.db.user(async (tx) => {
       const taken = await tx.department.findFirst({
-        where: { name: { equals: name, mode: 'insensitive' } },
+        where: { name: { equals: name, mode: 'insensitive' }, archivedAt: null },
       });
       if (taken !== null) throw problems.conflict();
       const created = await tx.department.create({ data: { id: uuidv7(), companyId, name } });
@@ -60,9 +62,9 @@ export class DepartmentsService {
         where: { id },
         include: { _count: { select: { employees: true } } },
       });
-      if (department === null) throw problems.notFound();
+      if (department?.archivedAt !== null) throw problems.notFound();
       const taken = await tx.department.findFirst({
-        where: { name: { equals: name, mode: 'insensitive' }, NOT: { id } },
+        where: { name: { equals: name, mode: 'insensitive' }, archivedAt: null, NOT: { id } },
       });
       if (taken !== null) throw problems.conflict();
       await tx.department.update({ where: { id }, data: { name } });
@@ -71,7 +73,7 @@ export class DepartmentsService {
         id,
         name,
         employeeCount: department._count.employees,
-        archived: department.archivedAt !== null,
+        archived: false,
       };
     });
   }

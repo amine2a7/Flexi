@@ -30,8 +30,6 @@ const roleBody = z.strictObject({
     'SUPPORT',
     'OWNER',
     'MANAGER',
-    'ACCOUNTANT',
-    'READ_ONLY',
     'CASHIER',
   ]),
   reason: accessReason,

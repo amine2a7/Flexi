@@ -450,6 +450,8 @@ tags:
     description: Espace Commerçant (spec 07, données fictives côté web)
   - name: company
     description: Espace Entreprise (spec 05)
+  - name: team
+    description: Utilisateurs d'une entreprise ou d'un commerce, gérés par le propriétaire (demande du 2026-11-14)
   - name: admin
     description: Espace Administrateur (spec 04)
   - name: employee
@@ -2504,6 +2506,295 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/team/users:
+    get:
+      tags: [team]
+      operationId: listTeamUsers
+      summary: Utilisateurs de mon entreprise ou de mon commerce
+      description: >-
+        Propriétaire seulement (permission `team.manage`, demande du 2026-11-14). Comptes de
+        l'entreprise (Propriétaire, RH, Finance) ou du commerce (Propriétaire, Caissier) de la
+        session, jamais d'un autre locataire.
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamUserList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [team]
+      operationId: createTeamUser
+      summary: Créer un utilisateur (RH, Finance ou Caissier)
+      description: >-
+        Permission `team.manage`. Le propriétaire donne RH (`MANAGER`) ou Finance (`FINANCE`) dans
+        une entreprise, Caissier (`CASHIER`) dans un commerce, jamais Propriétaire. Mot de passe
+        temporaire affiché une seule fois et envoyé par e-mail. Une adresse qui se connecte déjà
+        reçoit la même réponse, aucun compte n'est créé et son titulaire est prévenu (S04). Tracé
+        dans l'audit.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamUserCreate'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamUserCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/team/users/{userId}:
+    patch:
+      tags: [team]
+      operationId: updateTeamUser
+      summary: Modifier le nom ou le rôle d'un utilisateur
+      description: >-
+        Permission `team.manage`. Seulement un compte RH, Finance ou Caissier du locataire de la
+        session (`404` pour un autre locataire, `403` pour un propriétaire ou soi-même). Un
+        changement de rôle ferme les sessions du compte. Tracé dans l'audit.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamUserUpdate'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamUser'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/team/users/{userId}/deactivate:
+    post:
+      tags: [team]
+      operationId: deactivateTeamUser
+      summary: Désactiver un utilisateur
+      description: >-
+        Permission `team.manage`. Irréversible ; sessions fermées ; `409` si le compte est déjà
+        désactivé. Tracé dans l'audit.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamUser'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/team/users/{userId}/reset-password:
+    post:
+      tags: [team]
+      operationId: resetTeamUserPassword
+      summary: Générer un nouveau mot de passe temporaire
+      description: >-
+        Permission `team.manage`. Compte actif seulement (`409` sinon). Affiché une seule fois et
+        envoyé par e-mail ; l'ancien mot de passe et les sessions du compte sont fermés. Tracé
+        dans l'audit.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamUserPassword'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/companies/{companyId}/users:
+    post:
+      tags: [admin]
+      operationId: adminCreateCompanyUser
+      summary: Créer un utilisateur d'une entreprise
+      description: >-
+        Super-administrateur (permission `users.manage`, demande du 2026-11-14). Propriétaire, RH
+        ou Finance ; mot de passe temporaire affiché une seule fois ; `409` si l'adresse se
+        connecte déjà. Tracé dans l'audit.
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamUserCreate'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamUserCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/merchants/{merchantId}/users:
+    post:
+      tags: [admin]
+      operationId: adminCreateMerchantUser
+      summary: Créer un utilisateur d'un commerçant
+      description: >-
+        Super-administrateur (permission `users.manage`, demande du 2026-11-14). Propriétaire ou
+        Caissier ; mot de passe temporaire affiché une seule fois ; `409` si l'adresse se connecte
+        déjà. Tracé dans l'audit.
+      parameters:
+        - name: merchantId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamUserCreate'
+      responses:
+        '201':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamUserCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -5401,6 +5692,53 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
+    patch:
+      tags: [admin]
+      operationId: adminUpdateTenantUser
+      summary: Modifier le nom ou le rôle d'un utilisateur d'entreprise ou de commerçant
+      description: >-
+        Super-administrateur (permission `users.manage`, demande du 2026-11-14). Compte d'une
+        entreprise ou d'un commerçant seulement (`404` sinon) ; le dernier propriétaire actif
+        n'est jamais rétrogradé (`409`). Un changement de rôle ferme les sessions du compte.
+        Motif obligatoire, tracé dans l'audit.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminTeamUserUpdate'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamUser'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/admin/users/{userId}/suspend:
     post:
       tags: [admin]
@@ -7184,8 +7522,10 @@ components:
       title: SubRole
       description: |
         Sous-rôle (spec 01 §2, cahier ENT-10, spec 07 §2). ADMIN : `SUPER_ADMIN`, `FINANCE`,
-        `SUPPORT`, `COMPLIANCE`. COMPANY : `OWNER`, `MANAGER`, `ACCOUNTANT`, `READ_ONLY`.
-        MERCHANT : `OWNER`, `CASHIER`, `ACCOUNTANT`. Aucun pour EMPLOYEE et FAMILY_MEMBER.
+        `SUPPORT`, `COMPLIANCE`. COMPANY (2026-11-14) : `OWNER` (Propriétaire), `MANAGER` (RH),
+        `FINANCE` (Finance). MERCHANT : `OWNER` (Propriétaire), `CASHIER` (Caissier).
+        `ACCOUNTANT` et `READ_ONLY` sont d'anciens sous-rôles, plus attribués (lecture seule).
+        Aucun pour EMPLOYEE et FAMILY_MEMBER.
         Liste extensible. Le client ne déduit **aucun droit** du sous-rôle : il utilise
         `permissions`.
       type: string
@@ -7199,10 +7539,11 @@ components:
         inconnue du client est ignorée ; le web masque ce qui n'est pas permis, le serveur
         refuse (`403 FORBIDDEN`) : chaque route exige une permission, calculée à partir du rôle
         et du sous-rôle de la session (jamais de la requête), une route sans règle est refusée.
-        Matrice (2026-10-21) — Entreprise : OWNER tout ; MANAGER (RH) `balances.read`,
-        `employees.read`, `employees.manage`, `credits.allocate` ; ACCOUNTANT (comptable)
-        `balances.read`, `orders.read`, `orders.create`, `orders.declareTransfer`,
-        `fundingAccount.read`, `invoices.read` ; READ_ONLY lecture. Commerçant : OWNER tout ;
+        Matrice (2026-11-14) — Entreprise : OWNER (Propriétaire) tout, dont `team.manage` (ses
+        utilisateurs RH et Finance) ; MANAGER (RH) `balances.read`, `employees.read`,
+        `employees.manage`, `credits.allocate` ; FINANCE `balances.read`, `orders.read`,
+        `orders.create`, `orders.declareTransfer`, `fundingAccount.read`, `invoices.read`.
+        Commerçant : OWNER (Propriétaire) tout, dont `team.manage` (ses caissiers) ;
         CASHIER `payments.collect`, `sales.readToday` (ventes du jour seulement), `shop.read` ;
         ACCOUNTANT lecture des finances. Administrateur : SUPER_ADMIN tout (seul à créer les
         comptes et à demander un changement de paramétrage ou de commission ; jamais d'exception
@@ -10213,6 +10554,109 @@ components:
         paymentsMillimes:
           description: Paiements confirmés chez les commerçants sur le mois.
           $ref: '#/components/schemas/AmountMillimes'
+    TeamSubRole:
+      title: TeamSubRole
+      description: |
+        Sous-rôle d'un compte d'entreprise (`OWNER` Propriétaire, `MANAGER` RH, `FINANCE`
+        Finance) ou de commerçant (`OWNER` Propriétaire, `CASHIER` Caissier), demande du
+        2026-11-14.
+      type: string
+      enum: [OWNER, MANAGER, FINANCE, CASHIER]
+    TeamUser:
+      title: TeamUser
+      type: object
+      additionalProperties: false
+      required: [id, displayName, email, subRole, status, createdAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        displayName:
+          type: string
+          maxLength: 120
+        email:
+          type: string
+          maxLength: 254
+        subRole:
+          oneOf:
+            - $ref: '#/components/schemas/SubRole'
+            - type: 'null'
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+    TeamUserList:
+      title: TeamUserList
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          maxItems: 200
+          items:
+            $ref: '#/components/schemas/TeamUser'
+    TeamUserCreate:
+      title: TeamUserCreate
+      type: object
+      additionalProperties: false
+      required: [displayName, email, subRole]
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        subRole:
+          $ref: '#/components/schemas/TeamSubRole'
+    TeamUserCreated:
+      title: TeamUserCreated
+      type: object
+      additionalProperties: false
+      required: [credentials]
+      properties:
+        credentials:
+          $ref: '#/components/schemas/TemporaryCredentials'
+    TeamUserUpdate:
+      title: TeamUserUpdate
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        subRole:
+          $ref: '#/components/schemas/TeamSubRole'
+    AdminTeamUserUpdate:
+      title: AdminTeamUserUpdate
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        subRole:
+          $ref: '#/components/schemas/TeamSubRole'
+        reason:
+          type: string
+          minLength: 10
+          maxLength: 500
+    TeamUserPassword:
+      title: TeamUserPassword
+      type: object
+      additionalProperties: false
+      required: [user, credentials]
+      properties:
+        user:
+          $ref: '#/components/schemas/TeamUser'
+        credentials:
+          $ref: '#/components/schemas/TemporaryCredentials'
     TemporaryCredentials:
       title: TemporaryCredentials
       description: |
@@ -11165,10 +11609,10 @@ components:
           minimum: 0
           maximum: 72
         settlementDelayDays:
-          description: Cycle de règlement (J + n jours ouvrés).
+          description: Cycle de règlement (J + n jours ouvrés, J+0 accepté).
           type: integer
           format: int32
-          minimum: 1
+          minimum: 0
           maximum: 10
         kycRequiredDocuments:
           description: Pièces KYC demandées aux clients (processus v2), au moins une.
@@ -11226,7 +11670,7 @@ components:
         settlementDelayDays:
           type: integer
           format: int32
-          minimum: 1
+          minimum: 0
           maximum: 10
         invitationValidityDays:
           type: integer

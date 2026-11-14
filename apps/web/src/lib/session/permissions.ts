@@ -38,13 +38,18 @@ const PAGE_PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
   '/entreprise/dossier': ['kyc.submit'],
   '/commercant/dossier': ['kyc.submit'],
   '/entreprise/reporting': ['balances.read'],
+  '/entreprise/utilisateurs': ['team.manage'],
+  '/commercant/utilisateurs': ['team.manage'],
   '/commercant': ['stats.read'],
   '/commercant/encaissement': ['payments.collect'],
   '/commercant/historique': ['sales.read', 'sales.readToday'],
   '/commercant/creances': ['receivables.read'],
   '/commercant/virements': ['payouts.read'],
   '/commercant/reglements': ['settlements.read'],
-  '/commercant/mon-commerce': ['shop.read'],
+  // The cashier reads the shop for the collect page only: the shop page and the support are the
+  // owner's (request of 2026-11-14: a cashier collects and sees the day, nothing else).
+  '/commercant/mon-commerce': ['stats.read'],
+  '/commercant/support': ['stats.read'],
   '/commercant/statistiques': ['stats.read'],
 };
 

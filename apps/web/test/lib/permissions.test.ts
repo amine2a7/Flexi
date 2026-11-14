@@ -64,6 +64,28 @@ describe('page permissions', () => {
     expect(canOpen(readOnly, '/entreprise/employes/import')).toBe(false);
   });
 
+  it('only the owners open « Utilisateurs »; a cashier never opens the shop page nor support', () => {
+    expect(canOpen(account('entreprise@flexipay.test'), '/entreprise/utilisateurs')).toBe(true);
+    expect(canOpen(account('commercant@flexipay.test'), '/commercant/utilisateurs')).toBe(true);
+    expect(canOpen(account('commercant@flexipay.test'), '/commercant/mon-commerce')).toBe(true);
+    expect(canOpen(account('rh@flexipay.test'), '/entreprise/utilisateurs')).toBe(false);
+    expect(canOpen(account('comptable@flexipay.test'), '/entreprise/utilisateurs')).toBe(false);
+    const cashier = account('caissier@flexipay.test');
+    expect(canOpen(cashier, '/commercant/utilisateurs')).toBe(false);
+    expect(canOpen(cashier, '/commercant/mon-commerce')).toBe(false);
+    expect(canOpen(cashier, '/commercant/support')).toBe(false);
+  });
+
+  it('company Finance: orders, transfers and invoices, never employees, departments nor allocation', () => {
+    const finance = account('comptable@flexipay.test');
+    expect(canOpen(finance, '/entreprise/commandes/nouvelle')).toBe(true);
+    expect(canOpen(finance, '/entreprise/factures')).toBe(true);
+    expect(canOpen(finance, '/entreprise/employes')).toBe(false);
+    expect(canOpen(finance, '/entreprise/departements')).toBe(false);
+    expect(canOpen(finance, '/entreprise/attribution')).toBe(false);
+    expect(canOpen(account('rh@flexipay.test'), '/entreprise/departements')).toBe(true);
+  });
+
   it('a page outside the table is open (employee space, unknown paths: the API decides)', () => {
     expect(canOpen(account('beneficiaire@flexipay.test'), '/beneficiaire/payer')).toBe(true);
   });

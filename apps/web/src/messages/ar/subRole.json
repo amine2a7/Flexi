@@ -4,8 +4,8 @@
   "SUPPORT": "الدعم",
   "COMPLIANCE": "العمليات",
   "OWNER": "المالك",
-  "MANAGER": "المسيّر",
-  "ACCOUNTANT": "المحاسب",
-  "READ_ONLY": "قراءة فقط",
+  "MANAGER": "الموارد البشرية",
+  "ACCOUNTANT": "المحاسب (دور سابق)",
+  "READ_ONLY": "قراءة فقط (دور سابق)",
   "CASHIER": "أمين الصندوق"
 }

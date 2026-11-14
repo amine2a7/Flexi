@@ -1,6 +1,6 @@
 import type { Schemas } from '@flexipay/api-client';
 import type { Locale } from '@/i18n/routing';
-import { getApiOrigin } from '@/lib/env';
+import { getServerApiOrigin } from '@/lib/env';
 import { formatMillimesWithCurrency } from '@/lib/format/money';
 
 export type PlatformTerms = Schemas['PlatformTerms'];
@@ -27,7 +27,7 @@ export function termValues(terms: PlatformTerms | undefined, locale: Locale) {
 
 /** Server pages (landing, help): the terms read at request time, undefined when unreachable. */
 export async function fetchPlatformTerms(): Promise<PlatformTerms | undefined> {
-  const origin = getApiOrigin();
+  const origin = getServerApiOrigin();
   if (origin === undefined) return undefined;
   try {
     // Cached a minute: the server rendering never spends the rate limit of the API (S-PA-06).

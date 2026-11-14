@@ -25,10 +25,19 @@ const MFA = '123456';
 const resetOnly = process.argv.includes('--reset');
 const apiOnly = process.argv.includes('--api-only');
 const production = process.argv.includes('--build');
+// Same-origin API (request of 2026-11-14): the optimised web relays /api to the API, so a single
+// tunnel exposes both; DEMO_SAME_ORIGIN=1 does the same for an API started with --api-only.
+const sameOrigin = production || process.env.DEMO_SAME_ORIGIN === '1';
+// DEMO_PUBLIC_ORIGIN: the public address of a tunnel (https://…), allowed by the API as well.
+const webOrigins = [WEB_URL, ...(process.env.DEMO_PUBLIC_ORIGIN ?? '').split(',')]
+  .map((origin) => origin.trim())
+  .filter((origin) => origin !== '')
+  .join(',');
 // The optimised build has its own folder: a development server may keep `.next`.
 const webBuildEnv = {
   ...process.env,
-  NEXT_PUBLIC_API_BASE_URL: API_URL,
+  NEXT_PUBLIC_API_BASE_URL: '/api',
+  API_PROXY_TARGET: API_URL,
   // DEMO_DIST_DIR: another folder while a previous demo still holds .next-demo (Windows).
   NEXT_DIST_DIR: process.env.DEMO_DIST_DIR ?? '.next-demo',
   NEXT_TELEMETRY_DISABLED: '1',
@@ -57,7 +66,8 @@ const demoEnv = {
   NODE_ENV: 'development',
   DEMO_FIXED_MFA_CODE: MFA,
   API_PORT,
-  WEB_ORIGINS: WEB_URL,
+  WEB_ORIGINS: webOrigins,
+  ...(sameOrigin ? { PUBLIC_PATH_PREFIX: '/api' } : {}),
   // DEMO_TEST_CLOCK=1: the API days can move forward (end-to-end journey, never in production).
   ...(process.env.DEMO_TEST_CLOCK === '1' ? { TEST_CLOCK: '1' } : {}),
 };
@@ -93,17 +103,18 @@ const ACCOUNTS = [
   ['Finance (seconde validation) Nour', 'nour@flexipay.tn'],
   ['Gérant Le Jasmin (Karim)', 'karim@lejasmin.tn'],
   ['Support', 'support@flexipay.test'],
-  ['Administrateur entreprise', 'entreprise@flexipay.test'],
+  ['Propriétaire entreprise', 'entreprise@flexipay.test'],
   ['RH', 'rh@flexipay.test'],
-  ['Comptable', 'comptable@flexipay.test'],
-  ['Gérant', 'commercant@flexipay.test'],
+  ['Finance entreprise', 'comptable@flexipay.test'],
+  ['Propriétaire commerce', 'commercant@flexipay.test'],
   ['Caissier', 'caissier@flexipay.test'],
   ['Bénéficiaire', 'beneficiaire@flexipay.test'],
   ['Première connexion', 'premiere@flexipay.test'],
 ];
 
 function printAccess() {
-  console.log(`\nFlexiPay démo : ${WEB_URL}/fr   (API ${API_URL})`);
+  const api = sameOrigin ? `${WEB_URL}/api -> ${API_URL}` : API_URL;
+  console.log(`\nFlexiPay démo : ${WEB_URL}/fr   (API ${api})`);
   console.log(`Mot de passe Test1234! · code MFA ${MFA} · PIN démo 1234`);
   for (const [role, email] of ACCOUNTS) console.log(`  ${role.padEnd(27)} ${email}`);
   console.log('Cas et où les trouver : docs/demo/donnees-demo.md\n');

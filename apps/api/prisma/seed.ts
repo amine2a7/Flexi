@@ -305,14 +305,14 @@ const ids = await prisma.$transaction(async (tx) => {
     companyId: carthage.id,
   });
   await user('rh@flexipay.test', 'Nour H.', 'COMPANY', 'MANAGER', { companyId: carthage.id });
-  await user('comptable@flexipay.test', 'Walid S.', 'COMPANY', 'ACCOUNTANT', {
+  await user('comptable@flexipay.test', 'Walid S.', 'COMPANY', 'FINANCE', {
     companyId: carthage.id,
   });
   await user(
     'premiere@flexipay.test',
     'Rim A.',
     'COMPANY',
-    'READ_ONLY',
+    'FINANCE',
     { companyId: carthage.id },
     {
       expiresAt: new Date(now + 7 * DAY),

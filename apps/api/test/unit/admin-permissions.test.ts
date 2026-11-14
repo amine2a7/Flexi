@@ -49,7 +49,7 @@ describe('administrator sub-roles (decision C)', () => {
 
   it('no administrator permission opens a company or merchant route', () => {
     const tenant = [
-      ...(['OWNER', 'MANAGER', 'ACCOUNTANT', 'READ_ONLY'] as const).flatMap((sub) =>
+      ...(['OWNER', 'MANAGER', 'FINANCE', 'ACCOUNTANT', 'READ_ONLY'] as const).flatMap((sub) =>
         permissionsOf('COMPANY', sub),
       ),
       ...(['OWNER', 'CASHIER', 'ACCOUNTANT'] as const).flatMap((sub) =>

@@ -4,8 +4,8 @@
   "SUPPORT": "Support",
   "COMPLIANCE": "Operations",
   "OWNER": "Owner",
-  "MANAGER": "Manager",
-  "ACCOUNTANT": "Accountant",
-  "READ_ONLY": "Read only",
+  "MANAGER": "HR",
+  "ACCOUNTANT": "Accountant (former role)",
+  "READ_ONLY": "Read only (former role)",
   "CASHIER": "Cashier"
 }

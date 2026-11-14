@@ -105,7 +105,7 @@ const settingsBody = z.strictObject({
     otpValidityMinutes: z.number().int().min(1).max(30),
     pinLockMinutes: z.array(z.number().int().min(1).max(1440)).min(1).max(5),
     paymentCancelHours: z.number().int().min(0).max(72),
-    settlementDelayDays: z.number().int().min(1).max(10),
+    settlementDelayDays: z.number().int().min(0).max(10),
     creditTypes: z
       .array(
         z.strictObject({

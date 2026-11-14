@@ -1,5 +1,5 @@
 import { createApiClient, WEB_CHANNEL_HEADER, type ApiClient } from '@flexipay/api-client';
-import { getApiOrigin } from '@/lib/env';
+import { getApiBaseUrl, isSameOriginApi, SAME_ORIGIN_PREFIX } from '@/lib/env';
 
 // The CSRF token lives in memory only (contract §6): never in storage, never in the URL.
 let csrfToken: string | undefined;
@@ -87,15 +87,23 @@ async function isCsrfRefusal(response: Response): Promise<boolean> {
  * The single API client of the web app. The origin is a build-time constant (getApiOrigin);
  * without a valid one the app refuses to call anything (fail closed, securite F1/F3 note).
  */
+/** Path of an API request without the same-origin prefix (/api/v1/auth/login -> /v1/auth/login). */
+function apiPath(url: string): string {
+  const { pathname } = new URL(url, 'http://localhost');
+  return isSameOriginApi() && pathname.startsWith(`${SAME_ORIGIN_PREFIX}/`)
+    ? pathname.slice(SAME_ORIGIN_PREFIX.length)
+    : pathname;
+}
+
 export function getApi(): ApiClient {
   if (client !== undefined) return client;
-  const baseUrl = getApiOrigin();
+  const baseUrl = getApiBaseUrl();
   if (baseUrl === undefined) throw new Error('API origin is not configured');
   client = createApiClient({ baseUrl, getCsrfToken: () => csrfToken });
   client.use({
     async onRequest({ request, id }) {
       const unsafe = UNSAFE_METHODS.has(request.method.toUpperCase());
-      if (!unsafe || PUBLIC_ROUTES.has(new URL(request.url).pathname)) return undefined;
+      if (!unsafe || PUBLIC_ROUTES.has(apiPath(request.url))) return undefined;
       if (csrfToken === undefined) {
         const token = await recoverCsrfToken(baseUrl);
         if (token !== undefined) request.headers.set('X-CSRF-Token', token);
@@ -127,7 +135,7 @@ export function getApi(): ApiClient {
 
 /** CSRF header for a request outside the typed client (development routes), recovered if needed. */
 export async function csrfHeader(): Promise<Record<string, string>> {
-  const baseUrl = getApiOrigin();
+  const baseUrl = getApiBaseUrl();
   const token = csrfToken ?? (baseUrl === undefined ? undefined : await recoverCsrfToken(baseUrl));
   return token === undefined ? {} : { 'X-CSRF-Token': token };
 }
