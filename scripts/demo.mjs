@@ -96,26 +96,18 @@ async function waitFor(url, label) {
 }
 
 const ACCOUNTS = [
-  ['Super-admin', 'admin@flexipay.test'],
-  ['Opérations', 'operations@flexipay.test'],
-  ['Finance', 'admin2@flexipay.test'],
-  ['Finance (scénario) Sarra', 'sarra@flexipay.tn'],
-  ['Finance (seconde validation) Nour', 'nour@flexipay.tn'],
-  ['Gérant Le Jasmin (Karim)', 'karim@lejasmin.tn'],
+  ['Super-admin', 'superadmin@flexipay.test'],
+  ['Finance', 'nizar@flexipay.test'],
+  ['Opérations', 'ali@flexipay.test'],
   ['Support', 'support@flexipay.test'],
-  ['Propriétaire entreprise', 'entreprise@flexipay.test'],
-  ['RH', 'rh@flexipay.test'],
-  ['Finance entreprise', 'comptable@flexipay.test'],
-  ['Propriétaire commerce', 'commercant@flexipay.test'],
-  ['Caissier', 'caissier@flexipay.test'],
-  ['Bénéficiaire', 'beneficiaire@flexipay.test'],
-  ['Première connexion', 'premiere@flexipay.test'],
+  ['Propriétaire BIAT', 'biat@flexipay.test'],
+  ['Propriétaire Carrefour', 'carrefour@flexipay.test'],
 ];
 
 function printAccess() {
   const api = sameOrigin ? `${WEB_URL}/api -> ${API_URL}` : API_URL;
   console.log(`\nFlexiPay démo : ${WEB_URL}/fr   (API ${api})`);
-  console.log(`Mot de passe Test1234! · code MFA ${MFA} · PIN démo 1234`);
+  console.log(`Mot de passe Flexi2026 · code MFA ${MFA}`);
   for (const [role, email] of ACCOUNTS) console.log(`  ${role.padEnd(27)} ${email}`);
   console.log('Cas et où les trouver : docs/demo/donnees-demo.md\n');
 }

@@ -3,19 +3,14 @@
 export const DEV_PANEL_MARKER = '__FLEXIPAY_DEV_PANEL__';
 
 export const DEMO_MFA_CODE = '123456';
-const PASSWORD = 'Test1234!';
+const PASSWORD = 'Flexi2026';
 
 /** One account per role and sub-role; `role` is the key of its label (dev.accounts.*). */
 export const DEMO_ACCOUNT_HINTS = [
-  { role: 'admin', identifier: 'admin@flexipay.test', password: PASSWORD },
-  { role: 'operations', identifier: 'operations@flexipay.test', password: PASSWORD },
-  { role: 'admin2', identifier: 'admin2@flexipay.test', password: PASSWORD },
+  { role: 'admin', identifier: 'superadmin@flexipay.test', password: PASSWORD },
+  { role: 'admin2', identifier: 'nizar@flexipay.test', password: PASSWORD },
+  { role: 'operations', identifier: 'ali@flexipay.test', password: PASSWORD },
   { role: 'support', identifier: 'support@flexipay.test', password: PASSWORD },
-  { role: 'company', identifier: 'entreprise@flexipay.test', password: PASSWORD },
-  { role: 'hr', identifier: 'rh@flexipay.test', password: PASSWORD },
-  { role: 'accountant', identifier: 'comptable@flexipay.test', password: PASSWORD },
-  { role: 'merchant', identifier: 'commercant@flexipay.test', password: PASSWORD },
-  { role: 'cashier', identifier: 'caissier@flexipay.test', password: PASSWORD },
-  { role: 'beneficiary', identifier: 'beneficiaire@flexipay.test', password: PASSWORD },
-  { role: 'firstLogin', identifier: 'premiere@flexipay.test', password: PASSWORD },
+  { role: 'company', identifier: 'biat@flexipay.test', password: PASSWORD },
+  { role: 'merchant', identifier: 'carrefour@flexipay.test', password: PASSWORD },
 ] as const;

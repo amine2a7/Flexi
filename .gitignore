@@ -41,3 +41,6 @@ coverage/
 
 # Visual captures (Playwright, local only: regenerate with e2e/captures.spec.ts)
 docs/design/captures/
+
+# Demo accounts with their passwords (local only, never committed)
+docs/demo/comptes-demo.xlsx
