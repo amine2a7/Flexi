@@ -97,18 +97,29 @@ function cors(env: Env) {
 }
 
 /**
+ * A Cloudflare quick tunnel of the demo (request of 2026-11-14): its address changes at each
+ * launch. Outside production only; the web relays /api on that same origin, so the cookies stay
+ * same-site (trycloudflare.com is a public suffix: another tunnel is another site) and the CSRF
+ * token is still required.
+ */
+const DEMO_TUNNEL_ORIGIN = /^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/;
+
+/**
  * CSRF, first control (contract §6): on an unsafe method, an Origin header must be exactly one of
- * the allowed origins; without Origin, a request carrying a FlexiPay cookie is refused.
+ * the allowed origins (or, outside production, a demo tunnel); without Origin, a request carrying
+ * a FlexiPay cookie is refused.
  */
 function originCheck(env: Env) {
   const allowed = new Set(env.webOrigins);
+  const isAllowed = (origin: string) =>
+    allowed.has(origin) || (env.NODE_ENV !== 'production' && DEMO_TUNNEL_ORIGIN.test(origin));
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!UNSAFE.has(req.method)) {
       next();
       return;
     }
     const origin = req.headers.origin;
-    if (origin !== undefined ? !allowed.has(origin) : hasFlexiPayCookie(req)) {
+    if (origin !== undefined ? !isAllowed(origin) : hasFlexiPayCookie(req)) {
       sendProblem(res, new ApiProblem(403, 'CSRF_TOKEN_INVALID'));
       return;
     }
