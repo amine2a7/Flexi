@@ -72,7 +72,13 @@ const ADMIN_ALL = [
   'messages.handle',
 ] as const;
 
-/** What Opérations (COMPLIANCE) and Finance both read (decision C of 2026-10-23). */
+/**
+ * Kept for the super-admin (request of 2026-11-14): the administrators' accounts and roles, and
+ * the requests to change the platform settings.
+ */
+const SUPER_ADMIN_ONLY: readonly Permission[] = ['users.adminRoles', 'settings.request'];
+
+/** What Finance reads (decision C of 2026-10-23). */
 const ADMIN_BACK_OFFICE_READ = [
   'dashboard.read',
   'accounts.read',
@@ -108,8 +114,8 @@ export type Permission =
  *   (CASHIER) = collect and the day's collections, nothing else. ACCOUNTANT is a former sub-role,
  *   no longer given (reading of the finances, no collect).
  * - Admin (decision C of 2026-10-23): SUPER_ADMIN = everything (admins, roles, statuses,
- *   settings), never an exception to the four eyes; Opérations (COMPLIANCE) = KYC and audit, reading
- *   of accounts, commissions, orders, settlements, balances, users; FINANCE = commissions and rates,
+ *   settings), never an exception to the four eyes; Opérations (COMPLIANCE, request of
+ *   2026-11-14) = the second administrator: everything but SUPER_ADMIN_ONLY; FINANCE = commissions and rates,
  *   credit orders, payouts, second validation, reading of accounts, transactions, balances, users,
  *   settings, audit; SUPPORT = reading of accounts, users, transactions, invitation resend and PIN
  *   unlock, contact messages; never balances.
@@ -117,15 +123,9 @@ export type Permission =
 const MATRIX: Record<Role, Partial<Record<SubRole | 'NONE', readonly Permission[]>>> = {
   ADMIN: {
     SUPER_ADMIN: ADMIN_ALL,
-    COMPLIANCE: [
-      ...ADMIN_BACK_OFFICE_READ,
-      'kyc.decide',
-      'kycDocuments.read',
-      'risk.read',
-      'disputes.read',
-      'disputes.manage',
-      'alerts.manage',
-    ],
+    // The second administrator (request of 2026-11-14): everything but the administrators'
+    // accounts and the platform settings; the four eyes still apply (never its own request).
+    COMPLIANCE: ADMIN_ALL.filter((permission) => !SUPER_ADMIN_ONLY.includes(permission)),
     FINANCE: [
       ...ADMIN_BACK_OFFICE_READ,
       'settings.read',

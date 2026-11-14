@@ -1,5 +1,5 @@
-// TEST-FIRST (decision C of 2026-10-23): matrix of the administrator sub-roles, including the user
-// management permissions that no route uses yet (stage 2).
+// TEST-FIRST (decision C of 2026-10-23, Opérations as the second administrator on 2026-11-14):
+// matrix of the administrator sub-roles.
 import { describe, expect, it } from 'vitest';
 import { permissionsOf } from '../../src/common/permissions.js';
 
@@ -7,15 +7,38 @@ const admin = (subRole: 'SUPER_ADMIN' | 'COMPLIANCE' | 'FINANCE' | 'SUPPORT') =>
   permissionsOf('ADMIN', subRole);
 
 describe('administrator sub-roles (decision C)', () => {
-  it('only the super-admin manages users, administrator roles and settings', () => {
+  it('only the super-admin manages administrator roles and asks for settings changes', () => {
     expect(admin('SUPER_ADMIN')).toEqual(
       expect.arrayContaining(['users.manage', 'users.adminRoles', 'settings.request']),
     );
     for (const subRole of ['COMPLIANCE', 'FINANCE', 'SUPPORT'] as const) {
-      expect(admin(subRole)).not.toContain('users.manage');
       expect(admin(subRole)).not.toContain('users.adminRoles');
       expect(admin(subRole)).not.toContain('settings.request');
     }
+    for (const subRole of ['FINANCE', 'SUPPORT'] as const)
+      expect(admin(subRole)).not.toContain('users.manage');
+  });
+
+  it('Opérations is the second administrator: everything else of the super-admin', () => {
+    const kept = ['users.adminRoles', 'settings.request'];
+    expect([...admin('COMPLIANCE')].sort()).toEqual(
+      admin('SUPER_ADMIN')
+        .filter((permission) => !kept.includes(permission))
+        .sort(),
+    );
+    expect(admin('COMPLIANCE')).toEqual(
+      expect.arrayContaining([
+        'companies.manage',
+        'merchants.manage',
+        'users.manage',
+        'approvals.decide',
+        'kyc.decide',
+        'orders.confirm',
+        'orders.validate',
+        'payouts.decide',
+        'commissions.request',
+      ]),
+    );
   });
 
   it('every administrator reads users; balances are hidden from support only', () => {
@@ -29,22 +52,19 @@ describe('administrator sub-roles (decision C)', () => {
     expect(admin('SUPPORT')).not.toContain('dashboard.read');
   });
 
-  it('support resends invitations and unlocks PINs; the others do not', () => {
+  it('support resends invitations and unlocks PINs; finance does not', () => {
     expect(admin('SUPPORT')).toContain('users.support');
     expect(admin('SUPER_ADMIN')).toContain('users.support');
-    expect(admin('COMPLIANCE')).not.toContain('users.support');
+    expect(admin('COMPLIANCE')).toContain('users.support');
     expect(admin('FINANCE')).not.toContain('users.support');
   });
 
-  it('money decisions belong to finance (and the super-admin), KYC to operations', () => {
+  it('money decisions belong to finance, operations and the super-admin; KYC never to finance', () => {
     const money = ['commissions.request', 'orders.confirm', 'orders.validate', 'payouts.decide'];
     expect(admin('FINANCE')).toEqual(expect.arrayContaining([...money, 'approvals.decide']));
-    expect(admin('COMPLIANCE')).toEqual(
-      expect.arrayContaining(['kyc.decide', 'kycDocuments.read']),
-    );
-    for (const permission of money) expect(admin('COMPLIANCE')).not.toContain(permission);
     expect(admin('FINANCE')).not.toContain('kyc.decide');
     expect(admin('FINANCE')).not.toContain('kycDocuments.read');
+    for (const permission of money) expect(admin('SUPPORT')).not.toContain(permission);
   });
 
   it('no administrator permission opens a company or merchant route', () => {
