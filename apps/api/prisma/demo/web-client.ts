@@ -37,12 +37,24 @@ export class WebClient {
       ...(this.csrfToken === undefined ? {} : { 'X-CSRF-Token': this.csrfToken }),
       ...(options.key === true ? { 'Idempotency-Key': randomUUID() } : {}),
     };
-    const response = await fetch(this.base + path, {
-      method,
-      headers,
-      ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
-      ...(options.form === undefined ? {} : { body: options.form }),
-    });
+    const send = () =>
+      fetch(this.base + path, {
+        method,
+        headers,
+        ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
+        ...(options.form === undefined ? {} : { body: options.form }),
+      });
+    let response = await send();
+    // The seed signs in many accounts from one address: on the rate limit (429, refused before
+    // anything is done) it waits for the window to reopen, then sends the same request again.
+    for (let attempt = 0; response.status === 429 && attempt < 3; attempt += 1) {
+      const wait = Number(
+        response.headers.get('retry-after') ?? response.headers.get('ratelimit-reset') ?? '60',
+      );
+      await response.text();
+      await new Promise((resolve) => setTimeout(resolve, (wait + 1) * 1000));
+      response = await send();
+    }
     for (const raw of response.headers.getSetCookie()) {
       const [pair = '', ...attributes] = raw.split(';').map((part) => part.trim());
       const index = pair.indexOf('=');
