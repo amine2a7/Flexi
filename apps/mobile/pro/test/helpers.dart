@@ -1,0 +1,83 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:fp_core/fp_core.dart';
+import 'package:fp_pro/app/app.dart';
+import 'package:fp_pro/app/dependencies.dart';
+import 'package:fp_pro/features/collect/presentation/collect_screen.dart';
+
+/// Lance l'app Pro (390 × 844, animations réduites, sans caméra) et se connecte.
+Future<ProviderContainer> launchPro(
+  WidgetTester tester, {
+  String email = 'sami@flexipay.test',
+}) async {
+  tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+  tester.view.devicePixelRatio = 3;
+  addTearDown(tester.view.reset);
+  tester.platformDispatcher.accessibilityFeaturesTestValue =
+      FakeAccessibilityFeatures(disableAnimations: true);
+  addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+
+  final container = ProviderContainer(
+    overrides: [
+      ...fakeDataOverrides(store: MemorySecureStore()),
+      cameraEnabledProvider.overrideWithValue(false),
+    ],
+  );
+  addTearDown(container.dispose);
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: container,
+      child: const FlexiPayProApp(),
+    ),
+  );
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byKey(const Key('pro-email')), email);
+  await tester.enterText(find.byKey(const Key('pro-password')), 'Flexi2026');
+  await tap(tester, find.text('Valider mon ticket'));
+  return container;
+}
+
+/// Fait défiler l'écran vers le bas jusqu'à construire l'élément (listes paresseuses).
+Future<void> reveal(WidgetTester tester, Finder finder) async {
+  if (finder.evaluate().isNotEmpty) return;
+  final vertical = find.byWidgetPredicate(
+    (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
+  );
+  if (vertical.evaluate().isEmpty) return;
+  await tester.scrollUntilVisible(finder, 200, scrollable: vertical.first);
+  await tester.pumpAndSettle();
+}
+
+Future<void> tap(WidgetTester tester, Finder finder) async {
+  await reveal(tester, finder);
+  await tester.ensureVisible(finder.first);
+  await tester.pumpAndSettle();
+  await tester.tap(finder.first);
+  await tester.pumpAndSettle();
+}
+
+Future<void> tapText(WidgetTester tester, String text) =>
+    tap(tester, find.text(text));
+
+Future<void> goTab(WidgetTester tester, String label) => tap(
+  tester,
+  find.descendant(of: find.byType(Scaffold).first, matching: find.text(label)),
+);
+
+/// Saisit le code client et le montant, choisit le type puis encaisse.
+Future<void> collect(
+  WidgetTester tester, {
+  required String code,
+  required String amount,
+}) async {
+  await tapText(tester, 'Saisir le code');
+  await tester.enterText(find.byKey(const Key('customer-code')), code);
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byKey(const Key('collect-amount')), amount);
+  await tester.pumpAndSettle();
+}
+
+extension Expectations on WidgetTester {
+  void seeText(String text) => expect(find.text(text), findsWidgets);
+}

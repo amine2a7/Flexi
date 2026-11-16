@@ -7,6 +7,9 @@ import 'app/dependencies.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
-    ProviderScope(overrides: fakeDataOverrides(), child: const FlexiPayProApp()),
+    ProviderScope(
+      overrides: fakeDataOverrides(),
+      child: const FlexiPayProApp(),
+    ),
   );
 }
