@@ -1,0 +1,32 @@
+name: fp_beneficiaire
+description: "FlexiPay"
+publish_to: 'none'
+version: 0.1.0+1
+
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_riverpod: ^3.5.0
+  fp_api:
+    path: ../packages/fp_api
+  fp_core:
+    path: ../packages/fp_core
+  fp_ui:
+    path: ../packages/fp_ui
+  go_router: ^18.1.4
+  intl: ^0.20.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

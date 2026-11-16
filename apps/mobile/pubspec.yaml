@@ -1,0 +1,43 @@
+name: flexipay_mobile
+description: Workspace des apps mobiles FlexiPay (Flutter, Melos).
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+
+workspace:
+  - beneficiaire
+  - pro
+  - packages/fp_core
+  - packages/fp_ui
+  - packages/fp_api
+
+dev_dependencies:
+  melos: ^8.10.1
+
+melos:
+  scripts:
+    generate:api:
+      description: Régénère packages/fp_api depuis docs/handoff/contracts/openapi.yaml (jamais à la main).
+      run: dart run tool/generate_api.dart
+    gen:l10n:
+      description: Régénère les traductions FR/AR/EN de fp_core.
+      exec: flutter gen-l10n
+      packageFilters:
+        scope: fp_core
+    analyze:
+      description: Analyse statique de tous les paquets (fp_api exclu, code généré).
+      exec: flutter analyze --no-fatal-infos
+      packageFilters:
+        ignore: fp_api
+    test:
+      description: Tests de widget et de navigation.
+      exec: flutter test
+      packageFilters:
+        dirExists: test
+        ignore: fp_api
+    format:
+      description: Formate le code Dart (fp_api exclu).
+      exec: dart format .
+      packageFilters:
+        ignore: fp_api

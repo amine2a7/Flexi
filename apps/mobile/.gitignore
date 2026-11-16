@@ -1,0 +1,8 @@
+# Workspace Flutter (pub workspace + Melos)
+.dart_tool/
+build/
+*.iml
+.idea/
+.widget_preview/
+**/android/.kotlin/
+devtools_options.yaml

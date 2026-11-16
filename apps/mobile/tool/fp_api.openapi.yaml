@@ -1,0 +1,21 @@
+# Génération du client Dart (dart-dio, built_value) depuis le contrat OpenAPI.
+# Lancer : melos run generate:api (depuis apps/mobile). Ne jamais éditer packages/fp_api à la main.
+generatorName: dart-dio
+inputSpec: ../../../docs/handoff/contracts/openapi.yaml
+outputDir: ../packages/fp_api
+additionalProperties:
+  pubName: fp_api
+  pubDescription: "Client FlexiPay généré depuis docs/handoff/contracts/openapi.yaml"
+  pubVersion: 0.15.0
+  pubAuthor: FlexiPay
+  pubHomepage: https://flexipay.tn
+  pubPublishTo: none
+  serializationLibrary: built_value
+globalProperties:
+  apiDocs: "false"
+  modelDocs: "false"
+  apiTests: "false"
+  modelTests: "false"
+# La valeur d'énumération « name » entre en conflit avec EnumClass.name (built_value).
+enumNameMappings:
+  name: fieldName
