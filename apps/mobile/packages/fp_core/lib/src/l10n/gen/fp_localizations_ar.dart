@@ -516,7 +516,7 @@ class FpL10nAr extends FpL10n {
   String get confirmTitle => 'تأكيد';
 
   @override
-  String cashierOf(Object city, Object name) {
+  String cashierOf(Object name, Object city) {
     return 'صندوق $name · $city';
   }
 
@@ -538,7 +538,7 @@ class FpL10nAr extends FpL10n {
   String get paidAmount => 'المبلغ المدفوع';
 
   @override
-  String cashierAt(Object date, Object name) {
+  String cashierAt(Object name, Object date) {
     return 'أمين الصندوق: $name · $date';
   }
 
@@ -707,7 +707,7 @@ class FpL10nAr extends FpL10n {
   String get familyAccounts => 'الحسابات العائلية';
 
   @override
-  String familyUsage(Object max, Object used) {
+  String familyUsage(Object used, Object max) {
     return '$used من $max';
   }
 
@@ -715,7 +715,7 @@ class FpL10nAr extends FpL10n {
   String get addMember => 'إضافة فرد';
 
   @override
-  String familyUntil(Object date, Object type) {
+  String familyUntil(Object type, Object date) {
     return '$type · حتى $date';
   }
 
@@ -754,11 +754,11 @@ class FpL10nAr extends FpL10n {
 
   @override
   String memberSummary(
+    Object name,
     Object cap,
+    Object type,
     Object date,
     Object limit,
-    Object name,
-    Object type,
   ) {
     return 'سيتمكّن $name من إنفاق **$cap يوميًا** في $type، حتى **$date**، في حدود **$limit**.';
   }
@@ -792,7 +792,7 @@ class FpL10nAr extends FpL10n {
   }
 
   @override
-  String todaySpent(Object cap, Object spent) {
+  String todaySpent(Object spent, Object cap) {
     return 'اليوم: **$spent / $cap**';
   }
 
@@ -893,7 +893,7 @@ class FpL10nAr extends FpL10n {
   }
 
   @override
-  String notifFamilyPaidBody(Object amount, Object left, Object merchant) {
+  String notifFamilyPaidBody(Object amount, Object merchant, Object left) {
     return '$amount لدى $merchant. يبقى له $left اليوم.';
   }
 
@@ -1096,7 +1096,7 @@ class FpL10nAr extends FpL10n {
   String get customerCode => 'رمز الحريف (6 أرقام)';
 
   @override
-  String customerRecognized(Object amount, Object type) {
+  String customerRecognized(Object type, Object amount) {
     return 'حريف معروف · $type $amount متاح';
   }
 
@@ -1115,7 +1115,7 @@ class FpL10nAr extends FpL10n {
   String get paymentRefused => 'دفع مرفوض';
 
   @override
-  String refusedFundsPro(Object amount, Object type) {
+  String refusedFundsPro(Object type, Object amount) {
     return 'رصيد $type غير كافٍ: ينقص $amount. لم يُخصم أي شيء.';
   }
 

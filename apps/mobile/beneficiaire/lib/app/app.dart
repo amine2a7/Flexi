@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fp_core/fp_core.dart';
+import 'package:fp_ui/fp_ui.dart';
 
-import 'router.dart';
+import 'app_router.dart';
 
 /// App bénéficiaire « FlexiPay ».
 class FlexiPayApp extends ConsumerWidget {
@@ -15,6 +16,7 @@ class FlexiPayApp extends ConsumerWidget {
     return MaterialApp.router(
       onGenerateTitle: (context) => FpL10n.of(context).appName,
       debugShowCheckedModeBanner: false,
+      theme: FpTheme.light(),
       locale: locale,
       supportedLocales: supportedAppLocales,
       localizationsDelegates: const [

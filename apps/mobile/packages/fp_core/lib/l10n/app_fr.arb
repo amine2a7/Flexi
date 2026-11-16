@@ -142,12 +142,24 @@
   "showTicketHint": "Montrez ce ticket au caissier. Vous confirmerez avec votre PIN.",
   "confirmTitle": "Confirmer",
   "cashierOf": "Caisse de {name} · {city}",
+  "@cashierOf": {
+    "placeholders": {
+      "name": {},
+      "city": {}
+    }
+  },
   "amountLabel": "Montant",
   "enterPinToPay": "Entrez votre PIN pour payer",
   "payAmount": "Payer {amount}",
   "seeRefusalExample": "Voir un exemple de refus",
   "paidAmount": "Montant payé",
   "cashierAt": "Caissier : {name} · {date}",
+  "@cashierAt": {
+    "placeholders": {
+      "name": {},
+      "date": {}
+    }
+  },
   "typeLabel": "Type",
   "remaining": "Reste",
   "reference": "Référence",
@@ -196,8 +208,20 @@
   "familyTitle": "Ma famille",
   "familyAccounts": "Comptes famille",
   "familyUsage": "{used} sur {max}",
+  "@familyUsage": {
+    "placeholders": {
+      "used": {},
+      "max": {}
+    }
+  },
   "addMember": "Ajouter un membre",
   "familyUntil": "{type} · jusqu’au {date}",
+  "@familyUntil": {
+    "placeholders": {
+      "type": {},
+      "date": {}
+    }
+  },
   "familyInfo": "Le crédit partagé sort de votre solde. Vous pouvez le reprendre à tout moment.",
   "firstNameLabel": "Prénom",
   "phoneOrEmail": "Téléphone ou e-mail",
@@ -209,12 +233,27 @@
   "increase": "Augmenter",
   "endDate": "Date de fin",
   "memberSummary": "{name} pourra dépenser **{cap} par jour** en {type}, jusqu’au **{date}**, dans la limite de **{limit}**.",
+  "@memberSummary": {
+    "placeholders": {
+      "name": {},
+      "cap": {},
+      "type": {},
+      "date": {},
+      "limit": {}
+    }
+  },
   "createMemberAccount": "{elide, select, yes{Créer le compte d’{name}} other{Créer le compte de {name}}}",
   "memberCreatedTitle": "{elide, select, yes{Compte d’{name} créé} other{Compte de {name} créé}}",
   "memberCreatedText": "Donnez-lui ce mot de passe. Il ne sera **plus jamais affiché** : {name} devra le changer à sa 1re connexion.",
   "passwordNoted": "J’ai noté le mot de passe",
   "memberBalance": "{elide, select, yes{Solde d’{name}} other{Solde de {name}}}",
   "todaySpent": "Aujourd’hui : **{spent} / {cap}**",
+  "@todaySpent": {
+    "placeholders": {
+      "spent": {},
+      "cap": {}
+    }
+  },
   "endShort": "Fin : {date}",
   "reclaimCredit": "Reprendre le crédit",
   "reclaimDetail": "{amount} reviennent sur votre solde",
@@ -239,6 +278,13 @@
   "notifPaymentApprovedBody": "{amount} chez {merchant} ({type}).",
   "notifFamilyPaid": "{name} a payé",
   "notifFamilyPaidBody": "{amount} chez {merchant}. Il lui reste {left} pour aujourd’hui.",
+  "@notifFamilyPaidBody": {
+    "placeholders": {
+      "amount": {},
+      "merchant": {},
+      "left": {}
+    }
+  },
   "notifCreditReceived": "Crédit reçu de {company}",
   "notifCreditReceivedBody": "{amount} : {details}.",
   "notifNewLogin": "Nouvelle connexion",
@@ -300,11 +346,23 @@
   "aimQr": "Visez le QR du client",
   "customerCode": "Code du client (6 chiffres)",
   "customerRecognized": "Client reconnu · {type} {amount} dispo",
+  "@customerRecognized": {
+    "placeholders": {
+      "type": {},
+      "amount": {}
+    }
+  },
   "collectAmount": "Encaisser {amount}",
   "paymentApproved": "Paiement approuvé",
   "customerConfirmed": "Le client a confirmé avec son PIN.",
   "paymentRefused": "Paiement refusé",
   "refusedFundsPro": "Solde {type} insuffisant : il manque {amount}. Rien n’a été débité.",
+  "@refusedFundsPro": {
+    "placeholders": {
+      "type": {},
+      "amount": {}
+    }
+  },
   "customerLabel": "Client",
   "timeLabel": "Heure",
   "newCollection": "Nouvel encaissement",

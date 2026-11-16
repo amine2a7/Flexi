@@ -514,7 +514,7 @@ class FpL10nEn extends FpL10n {
   String get confirmTitle => 'Confirm';
 
   @override
-  String cashierOf(Object city, Object name) {
+  String cashierOf(Object name, Object city) {
     return '$name\'s till · $city';
   }
 
@@ -536,7 +536,7 @@ class FpL10nEn extends FpL10n {
   String get paidAmount => 'Amount paid';
 
   @override
-  String cashierAt(Object date, Object name) {
+  String cashierAt(Object name, Object date) {
     return 'Cashier: $name · $date';
   }
 
@@ -706,7 +706,7 @@ class FpL10nEn extends FpL10n {
   String get familyAccounts => 'Family accounts';
 
   @override
-  String familyUsage(Object max, Object used) {
+  String familyUsage(Object used, Object max) {
     return '$used of $max';
   }
 
@@ -714,7 +714,7 @@ class FpL10nEn extends FpL10n {
   String get addMember => 'Add a member';
 
   @override
-  String familyUntil(Object date, Object type) {
+  String familyUntil(Object type, Object date) {
     return '$type · until $date';
   }
 
@@ -753,11 +753,11 @@ class FpL10nEn extends FpL10n {
 
   @override
   String memberSummary(
+    Object name,
     Object cap,
+    Object type,
     Object date,
     Object limit,
-    Object name,
-    Object type,
   ) {
     return '$name will be able to spend **$cap per day** on $type, until **$date**, up to **$limit**.';
   }
@@ -793,7 +793,7 @@ class FpL10nEn extends FpL10n {
   }
 
   @override
-  String todaySpent(Object cap, Object spent) {
+  String todaySpent(Object spent, Object cap) {
     return 'Today: **$spent / $cap**';
   }
 
@@ -896,7 +896,7 @@ class FpL10nEn extends FpL10n {
   }
 
   @override
-  String notifFamilyPaidBody(Object amount, Object left, Object merchant) {
+  String notifFamilyPaidBody(Object amount, Object merchant, Object left) {
     return '$amount at $merchant. $left left for today.';
   }
 
@@ -1100,7 +1100,7 @@ class FpL10nEn extends FpL10n {
   String get customerCode => 'Customer code (6 digits)';
 
   @override
-  String customerRecognized(Object amount, Object type) {
+  String customerRecognized(Object type, Object amount) {
     return 'Customer recognized · $type $amount available';
   }
 
@@ -1119,7 +1119,7 @@ class FpL10nEn extends FpL10n {
   String get paymentRefused => 'Payment declined';
 
   @override
-  String refusedFundsPro(Object amount, Object type) {
+  String refusedFundsPro(Object type, Object amount) {
     return 'Insufficient $type balance: $amount missing. Nothing was charged.';
   }
 

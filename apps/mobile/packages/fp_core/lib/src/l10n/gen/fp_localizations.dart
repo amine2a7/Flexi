@@ -949,7 +949,7 @@ abstract class FpL10n {
   ///
   /// In fr, this message translates to:
   /// **'Caisse de {name} · {city}'**
-  String cashierOf(Object city, Object name);
+  String cashierOf(Object name, Object city);
 
   /// No description provided for @amountLabel.
   ///
@@ -985,7 +985,7 @@ abstract class FpL10n {
   ///
   /// In fr, this message translates to:
   /// **'Caissier : {name} · {date}'**
-  String cashierAt(Object date, Object name);
+  String cashierAt(Object name, Object date);
 
   /// No description provided for @typeLabel.
   ///
@@ -1273,7 +1273,7 @@ abstract class FpL10n {
   ///
   /// In fr, this message translates to:
   /// **'{used} sur {max}'**
-  String familyUsage(Object max, Object used);
+  String familyUsage(Object used, Object max);
 
   /// No description provided for @addMember.
   ///
@@ -1285,7 +1285,7 @@ abstract class FpL10n {
   ///
   /// In fr, this message translates to:
   /// **'{type} · jusqu’au {date}'**
-  String familyUntil(Object date, Object type);
+  String familyUntil(Object type, Object date);
 
   /// No description provided for @familyInfo.
   ///
@@ -1352,11 +1352,11 @@ abstract class FpL10n {
   /// In fr, this message translates to:
   /// **'{name} pourra dépenser **{cap} par jour** en {type}, jusqu’au **{date}**, dans la limite de **{limit}**.'**
   String memberSummary(
+    Object name,
     Object cap,
+    Object type,
     Object date,
     Object limit,
-    Object name,
-    Object type,
   );
 
   /// No description provided for @createMemberAccount.
@@ -1393,7 +1393,7 @@ abstract class FpL10n {
   ///
   /// In fr, this message translates to:
   /// **'Aujourd’hui : **{spent} / {cap}**'**
-  String todaySpent(Object cap, Object spent);
+  String todaySpent(Object spent, Object cap);
 
   /// No description provided for @endShort.
   ///
@@ -1537,7 +1537,7 @@ abstract class FpL10n {
   ///
   /// In fr, this message translates to:
   /// **'{amount} chez {merchant}. Il lui reste {left} pour aujourd’hui.'**
-  String notifFamilyPaidBody(Object amount, Object left, Object merchant);
+  String notifFamilyPaidBody(Object amount, Object merchant, Object left);
 
   /// No description provided for @notifCreditReceived.
   ///
@@ -1903,7 +1903,7 @@ abstract class FpL10n {
   ///
   /// In fr, this message translates to:
   /// **'Client reconnu · {type} {amount} dispo'**
-  String customerRecognized(Object amount, Object type);
+  String customerRecognized(Object type, Object amount);
 
   /// No description provided for @collectAmount.
   ///
@@ -1933,7 +1933,7 @@ abstract class FpL10n {
   ///
   /// In fr, this message translates to:
   /// **'Solde {type} insuffisant : il manque {amount}. Rien n’a été débité.'**
-  String refusedFundsPro(Object amount, Object type);
+  String refusedFundsPro(Object type, Object amount);
 
   /// No description provided for @customerLabel.
   ///
