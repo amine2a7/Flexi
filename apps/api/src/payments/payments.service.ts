@@ -209,7 +209,8 @@ export class PaymentsService {
    * daily limit, FEFO lots, then one ledger transaction (one debit per lot, credit of the
    * merchant wallet of the same type). Exposes INSUFFICIENT_FUNDS / LIMIT_EXCEEDED to the payer.
    */
-  private async debit(
+  /** Shared with the till checkouts (M4). */
+  async debit(
     tx: Tx,
     payment: {
       employeeId: string;
@@ -240,7 +241,11 @@ export class PaymentsService {
     if (spent + payment.amount > limit) {
       const remaining = limit - spent;
       throw new ApiProblem(422, 'LIMIT_EXCEEDED', {
-        limitType: 'DAILY',
+        // The cap set by the holder of a family member, when it is the one that binds (contract).
+        limitType:
+          familyLimit !== null && familyLimit < setting.dailyLimitMillimes
+            ? 'FAMILY_MEMBER'
+            : 'DAILY',
         remainingMillimes: toMillimes(remaining > 0n ? remaining : 0n),
       });
     }
@@ -393,14 +398,14 @@ export class PaymentsService {
     });
   }
 
-  private async nextReference(tx: Tx): Promise<string> {
+  async nextReference(tx: Tx): Promise<string> {
     const [sequence] = await tx.$queryRaw<
       { value: bigint }[]
     >`SELECT nextval('payment_reference_seq') AS value`;
     return `PAY-${String(sequence?.value ?? 0n)}`;
   }
 
-  private async customerSnapshot(tx: Tx, employeeId: string) {
+  async customerSnapshot(tx: Tx, employeeId: string) {
     const employee = await tx.employee.findUniqueOrThrow({ where: { id: employeeId } });
     return {
       employee,
@@ -591,7 +596,7 @@ export class PaymentsService {
   }
 
   /** Receipt of an operation, with the balance of the type right after it. */
-  private async operationDetail(tx: Tx, prefixedId: string) {
+  async operationDetail(tx: Tx, prefixedId: string) {
     const employeeId = this.employeeId();
     const [row] = await this.operations(tx, employeeId, { id: prefixedId }, 0, 1);
     if (row === undefined) throw problems.notFound();

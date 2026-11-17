@@ -570,6 +570,11 @@ Class | Method | HTTP request | Description
 [*AuthApi*](doc/AuthApi.md) | [**getPasswordPolicy**](doc/AuthApi.md#getpasswordpolicy) | **GET** /v1/auth/password-policy | Règles de la politique de mot de passe (aide à la saisie)
 [*AuthApi*](doc/AuthApi.md) | [**login**](doc/AuthApi.md#login) | **POST** /v1/auth/login | Connexion par identifiant (e-mail ou téléphone) et mot de passe
 [*AuthApi*](doc/AuthApi.md) | [**logout**](doc/AuthApi.md#logout) | **POST** /v1/auth/logout | Déconnexion (révoque la session courante)
+[*AuthApi*](doc/AuthApi.md) | [**mobileChangePassword**](doc/AuthApi.md#mobilechangepassword) | **POST** /v1/mobile/auth/password/change | Choisir son mot de passe (première connexion) depuis l&#39;application mobile
+[*AuthApi*](doc/AuthApi.md) | [**mobileLogin**](doc/AuthApi.md#mobilelogin) | **POST** /v1/mobile/auth/login | Connexion depuis une application mobile (jetons dans la réponse, pas de cookie)
+[*AuthApi*](doc/AuthApi.md) | [**mobileLogout**](doc/AuthApi.md#mobilelogout) | **POST** /v1/mobile/auth/logout | Déconnexion de l&#39;application mobile (révoque les jetons de la session)
+[*AuthApi*](doc/AuthApi.md) | [**mobileRefresh**](doc/AuthApi.md#mobilerefresh) | **POST** /v1/mobile/auth/refresh | Renouveler les jetons (rotation, réutilisation &#x3D; révocation de toute la session)
+[*AuthApi*](doc/AuthApi.md) | [**mobileVerifyMfa**](doc/AuthApi.md#mobileverifymfa) | **POST** /v1/mobile/auth/mfa/verify | Résoudre le défi MFA depuis l&#39;application mobile
 [*AuthApi*](doc/AuthApi.md) | [**refreshSession**](doc/AuthApi.md#refreshsession) | **POST** /v1/auth/refresh | Renouvelle la session (rotation du jeton de rafraîchissement)
 [*AuthApi*](doc/AuthApi.md) | [**regenerateRecoveryCodes**](doc/AuthApi.md#regeneraterecoverycodes) | **POST** /v1/auth/mfa/recovery-codes | Régénère les 10 codes de secours (les anciens sont annulés)
 [*AuthApi*](doc/AuthApi.md) | [**requestPasswordReset**](doc/AuthApi.md#requestpasswordreset) | **POST** /v1/auth/password/forgot | Demande de réinitialisation du mot de passe
@@ -612,38 +617,53 @@ Class | Method | HTTP request | Description
 [*CompanyApi*](doc/CompanyApi.md) | [**suspendEmployee**](doc/CompanyApi.md#suspendemployee) | **POST** /v1/company/employees/{employeeId}/suspend | Suspendre un employé
 [*CompanyApi*](doc/CompanyApi.md) | [**updateAllocationTemplate**](doc/CompanyApi.md#updateallocationtemplate) | **PUT** /v1/company/allocation-templates/{templateId} | Modifier un modèle
 [*EmployeeApi*](doc/EmployeeApi.md) | [**changePin**](doc/EmployeeApi.md#changepin) | **POST** /v1/employee/pin | Changer mon code PIN de paiement
+[*EmployeeApi*](doc/EmployeeApi.md) | [**confirmCheckout**](doc/EmployeeApi.md#confirmcheckout) | **POST** /v1/employee/checkouts/{checkoutId}/confirm | Payer la demande de la caisse avec mon PIN
 [*EmployeeApi*](doc/EmployeeApi.md) | [**confirmPaymentRequest**](doc/EmployeeApi.md#confirmpaymentrequest) | **POST** /v1/employee/payment-requests/{requestId}/confirm | Confirmer une demande de paiement avec mon PIN
 [*EmployeeApi*](doc/EmployeeApi.md) | [**createFamilyMember**](doc/EmployeeApi.md#createfamilymember) | **POST** /v1/employee/family/members | Ajouter un membre (5 au plus ; identifiant et mot de passe temporaire affichés une fois)
 [*EmployeeApi*](doc/EmployeeApi.md) | [**createPaymentCode**](doc/EmployeeApi.md#createpaymentcode) | **POST** /v1/employee/payment-codes | Génère mon code de paiement (QR dynamique et code à 8 chiffres, 60 s, usage unique)
 [*EmployeeApi*](doc/EmployeeApi.md) | [**deleteFamilyMember**](doc/EmployeeApi.md#deletefamilymember) | **DELETE** /v1/employee/family/members/{memberId} | Supprimer un membre (son crédit revient d&#39;abord au bénéficiaire)
+[*EmployeeApi*](doc/EmployeeApi.md) | [**getCheckoutByCode**](doc/EmployeeApi.md#getcheckoutbycode) | **GET** /v1/employee/checkouts/code/{shortCode} | Demande en attente du code court affiché en caisse
+[*EmployeeApi*](doc/EmployeeApi.md) | [**getCheckoutBySticker**](doc/EmployeeApi.md#getcheckoutbysticker) | **GET** /v1/employee/checkouts/sticker/{publicId} | Demande en attente à la caisse de l&#39;autocollant lu (NFC, QR ou lien)
 [*EmployeeApi*](doc/EmployeeApi.md) | [**getEmployeeOperation**](doc/EmployeeApi.md#getemployeeoperation) | **GET** /v1/employee/operations/{operationId} | Détail d&#39;une opération (reçu)
 [*EmployeeApi*](doc/EmployeeApi.md) | [**getEmployeeProfile**](doc/EmployeeApi.md#getemployeeprofile) | **GET** /v1/employee/profile | Mon profil de bénéficiaire
 [*EmployeeApi*](doc/EmployeeApi.md) | [**getEmployeeWallet**](doc/EmployeeApi.md#getemployeewallet) | **GET** /v1/employee/wallet | Solde du bénéficiaire, par catégorie, avec les plafonds et les expirations
 [*EmployeeApi*](doc/EmployeeApi.md) | [**getFamily**](doc/EmployeeApi.md#getfamily) | **GET** /v1/employee/family | Ma famille (processus v2) : membres, solde par type, plafond et date de fin
+[*EmployeeApi*](doc/EmployeeApi.md) | [**listEmployeeNotifications**](doc/EmployeeApi.md#listemployeenotifications) | **GET** /v1/employee/notifications | Mes notifications (crédits reçus, paiements, paiements de ma famille), récentes d&#39;abord
 [*EmployeeApi*](doc/EmployeeApi.md) | [**listEmployeeOperations**](doc/EmployeeApi.md#listemployeeoperations) | **GET** /v1/employee/operations | Historique de mes opérations (paiements, crédits reçus, expirations)
 [*EmployeeApi*](doc/EmployeeApi.md) | [**listPaymentRequests**](doc/EmployeeApi.md#listpaymentrequests) | **GET** /v1/employee/payment-requests | Demandes de paiement en attente de ma confirmation
 [*EmployeeApi*](doc/EmployeeApi.md) | [**lookupMerchant**](doc/EmployeeApi.md#lookupmerchant) | **GET** /v1/employee/merchants/{merchantCode} | Commerçant correspondant à un code (QR scanné ou saisi), avant le paiement
 [*EmployeeApi*](doc/EmployeeApi.md) | [**payMerchant**](doc/EmployeeApi.md#paymerchant) | **POST** /v1/employee/payments | Payer un commerçant (code ou QR commerçant, montant, PIN)
+[*EmployeeApi*](doc/EmployeeApi.md) | [**readEmployeeNotifications**](doc/EmployeeApi.md#reademployeenotifications) | **POST** /v1/employee/notifications/read | Tout marquer comme lu
 [*EmployeeApi*](doc/EmployeeApi.md) | [**reclaimFamilyCredit**](doc/EmployeeApi.md#reclaimfamilycredit) | **POST** /v1/employee/family/members/{memberId}/reclaim | Reprendre le crédit d&#39;un membre (un type, ou tous si creditType est null)
 [*EmployeeApi*](doc/EmployeeApi.md) | [**refusePaymentRequest**](doc/EmployeeApi.md#refusepaymentrequest) | **POST** /v1/employee/payment-requests/{requestId}/refuse | Refuser une demande de paiement
 [*EmployeeApi*](doc/EmployeeApi.md) | [**transferToFamilyMember**](doc/EmployeeApi.md#transfertofamilymember) | **POST** /v1/employee/family/transfers | Transférer du crédit à un membre (même type, sans frais, plafond et date de fin facultatifs)
 [*MeApi*](doc/MeApi.md) | [**completeOnboardingTour**](doc/MeApi.md#completeonboardingtour) | **POST** /v1/me/onboarding-tour | Marque la visite guidée comme vue ou passée
 [*MeApi*](doc/MeApi.md) | [**getMe**](doc/MeApi.md#getme) | **GET** /v1/me | Profil de l&#39;utilisateur connecté (rôle, permissions, tenant)
+[*MerchantApi*](doc/MerchantApi.md) | [**assignCashierRegister**](doc/MerchantApi.md#assigncashierregister) | **PUT** /v1/merchant/cashiers/{userId}/register | Rattacher un caissier à une caisse (propriétaire)
+[*MerchantApi*](doc/MerchantApi.md) | [**cancelCheckout**](doc/MerchantApi.md#cancelcheckout) | **POST** /v1/merchant/checkouts/{checkoutId}/cancel | Annuler une demande encore en attente
 [*MerchantApi*](doc/MerchantApi.md) | [**cancelMerchantPayment**](doc/MerchantApi.md#cancelmerchantpayment) | **POST** /v1/merchant/payments/{paymentId}/cancel | Annuler un encaissement encore « Initié »
+[*MerchantApi*](doc/MerchantApi.md) | [**createCheckout**](doc/MerchantApi.md#createcheckout) | **POST** /v1/merchant/registers/{registerId}/checkouts | Demander un paiement à la caisse (montant, type) ; le client l&#39;approche et confirme
 [*MerchantApi*](doc/MerchantApi.md) | [**createPayoutQuote**](doc/MerchantApi.md#createpayoutquote) | **POST** /v1/merchant/payout-quotes | Simuler une demande de virement (brut → commission → net)
 [*MerchantApi*](doc/MerchantApi.md) | [**createPayoutRequest**](doc/MerchantApi.md#createpayoutrequest) | **POST** /v1/merchant/payouts | Demander un virement à partir d&#39;une simulation
+[*MerchantApi*](doc/MerchantApi.md) | [**createRegister**](doc/MerchantApi.md#createregister) | **POST** /v1/merchant/registers | Créer une caisse (propriétaire)
+[*MerchantApi*](doc/MerchantApi.md) | [**downloadRegisterStickerPdf**](doc/MerchantApi.md#downloadregisterstickerpdf) | **GET** /v1/merchant/registers/{registerId}/sticker/pdf | PDF imprimable 8 × 8 cm de l&#39;autocollant (QR du lien, nom du commerce et de la caisse)
+[*MerchantApi*](doc/MerchantApi.md) | [**getCheckoutByIdempotencyKey**](doc/MerchantApi.md#getcheckoutbyidempotencykey) | **GET** /v1/merchant/checkouts/by-idempotency-key/{key} | Statut d&#39;une demande par sa clé d&#39;idempotence (reprise après coupure réseau)
 [*MerchantApi*](doc/MerchantApi.md) | [**getMerchantDashboard**](doc/MerchantApi.md#getmerchantdashboard) | **GET** /v1/merchant/dashboard | Tableau de bord du commerçant
 [*MerchantApi*](doc/MerchantApi.md) | [**getMerchantPayment**](doc/MerchantApi.md#getmerchantpayment) | **GET** /v1/merchant/payments/{paymentId} | Détail d&#39;un encaissement (suivi de la confirmation, commission, règlement, historique)
 [*MerchantApi*](doc/MerchantApi.md) | [**getMerchantProfile**](doc/MerchantApi.md#getmerchantprofile) | **GET** /v1/merchant/profile | Mon commerce : coordonnées, profil de commission, points de vente, équipe
 [*MerchantApi*](doc/MerchantApi.md) | [**getPayoutCommissionInvoice**](doc/MerchantApi.md#getpayoutcommissioninvoice) | **GET** /v1/merchant/payouts/{payoutId}/invoice | Facture de commission du virement en PDF (tâche 10 ; 409 pour un virement rejeté)
 [*MerchantApi*](doc/MerchantApi.md) | [**getPayoutRequest**](doc/MerchantApi.md#getpayoutrequest) | **GET** /v1/merchant/payouts/{payoutId} | Détail d&#39;une demande de virement, avec son historique
+[*MerchantApi*](doc/MerchantApi.md) | [**getRegisterSticker**](doc/MerchantApi.md#getregistersticker) | **GET** /v1/merchant/registers/{registerId}/sticker | Lien NDEF signé à écrire sur l&#39;autocollant NFC de la caisse (propriétaire)
 [*MerchantApi*](doc/MerchantApi.md) | [**initiateMerchantPayment**](doc/MerchantApi.md#initiatemerchantpayment) | **POST** /v1/merchant/payments | Initier un encaissement par code client (DP n° 17)
 [*MerchantApi*](doc/MerchantApi.md) | [**listMerchantDocuments**](doc/MerchantApi.md#listmerchantdocuments) | **GET** /v1/merchant/documents | Factures de commission, relevés et attestations
 [*MerchantApi*](doc/MerchantApi.md) | [**listMerchantPayments**](doc/MerchantApi.md#listmerchantpayments) | **GET** /v1/merchant/payments | Historique des encaissements
 [*MerchantApi*](doc/MerchantApi.md) | [**listMerchantReceivables**](doc/MerchantApi.md#listmerchantreceivables) | **GET** /v1/merchant/receivables | Créances : paiements confirmés non encore réglés
 [*MerchantApi*](doc/MerchantApi.md) | [**listMerchantSettlements**](doc/MerchantApi.md#listmerchantsettlements) | **GET** /v1/merchant/settlements | Règlements reçus et prévus (J+2)
 [*MerchantApi*](doc/MerchantApi.md) | [**listPayoutRequests**](doc/MerchantApi.md#listpayoutrequests) | **GET** /v1/merchant/payouts | Demandes de virement
+[*MerchantApi*](doc/MerchantApi.md) | [**listRegisters**](doc/MerchantApi.md#listregisters) | **GET** /v1/merchant/registers | Caisses du commerce (le caissier ne voit que la sienne)
 [*MerchantApi*](doc/MerchantApi.md) | [**refundMerchantPayment**](doc/MerchantApi.md#refundmerchantpayment) | **POST** /v1/merchant/payments/{paymentId}/refund | Annuler un paiement confirmé dans le délai du paramétrage (24 h par défaut)
+[*MerchantApi*](doc/MerchantApi.md) | [**streamCheckoutEvents**](doc/MerchantApi.md#streamcheckoutevents) | **GET** /v1/merchant/registers/{registerId}/checkouts/events | Flux temps réel (SSE) des demandes de la caisse (payée, refusée, expirée)
+[*MerchantApi*](doc/MerchantApi.md) | [**updateRegister**](doc/MerchantApi.md#updateregister) | **PATCH** /v1/merchant/registers/{registerId} | Renommer, activer ou désactiver une caisse (propriétaire)
 [*PublicApi*](doc/PublicApi.md) | [**createContactMessage**](doc/PublicApi.md#createcontactmessage) | **POST** /v1/public/contact-messages | Envoie un message depuis la section « Nous contacter » de la page d&#39;accueil
 [*PublicApi*](doc/PublicApi.md) | [**getPlatformTerms**](doc/PublicApi.md#getplatformterms) | **GET** /v1/public/terms | Conditions de la plateforme affichées dans les textes des pages
 [*SystemApi*](doc/SystemApi.md) | [**getHealth**](doc/SystemApi.md#gethealth) | **GET** /health | Sonde de vivacité de l&#39;API
@@ -695,7 +715,15 @@ Class | Method | HTTP request | Description
  - [ApprovalType](doc/ApprovalType.md)
  - [AuditLogEntry](doc/AuditLogEntry.md)
  - [AuditLogPage](doc/AuditLogPage.md)
+ - [CashierRegisterAssignment](doc/CashierRegisterAssignment.md)
  - [CategoryBalance](doc/CategoryBalance.md)
+ - [Checkout](doc/Checkout.md)
+ - [CheckoutCreate](doc/CheckoutCreate.md)
+ - [CheckoutRefusal](doc/CheckoutRefusal.md)
+ - [CheckoutRefusalReason](doc/CheckoutRefusalReason.md)
+ - [CheckoutRefusedProblem](doc/CheckoutRefusedProblem.md)
+ - [CheckoutRefusedProblemAllOfDetails](doc/CheckoutRefusedProblemAllOfDetails.md)
+ - [CheckoutStatus](doc/CheckoutStatus.md)
  - [CommissionGrid](doc/CommissionGrid.md)
  - [CommissionGridChangeRequest](doc/CommissionGridChangeRequest.md)
  - [CommissionTier](doc/CommissionTier.md)
@@ -729,6 +757,7 @@ Class | Method | HTTP request | Description
  - [CreditTypeAmount](doc/CreditTypeAmount.md)
  - [CreditTypeSettings](doc/CreditTypeSettings.md)
  - [Currency](doc/Currency.md)
+ - [CustomerCheckout](doc/CustomerCheckout.md)
  - [CustomerSummary](doc/CustomerSummary.md)
  - [DecisionReason](doc/DecisionReason.md)
  - [Department](doc/Department.md)
@@ -755,6 +784,9 @@ Class | Method | HTTP request | Description
  - [EmployeeImportPreview](doc/EmployeeImportPreview.md)
  - [EmployeeImportRequest](doc/EmployeeImportRequest.md)
  - [EmployeeImportResult](doc/EmployeeImportResult.md)
+ - [EmployeeNotification](doc/EmployeeNotification.md)
+ - [EmployeeNotificationKind](doc/EmployeeNotificationKind.md)
+ - [EmployeeNotificationPage](doc/EmployeeNotificationPage.md)
  - [EmployeeOperation](doc/EmployeeOperation.md)
  - [EmployeeOperationDetail](doc/EmployeeOperationDetail.md)
  - [EmployeeOperationPage](doc/EmployeeOperationPage.md)
@@ -850,6 +882,11 @@ Class | Method | HTTP request | Description
  - [MfaVerifyRequest](doc/MfaVerifyRequest.md)
  - [MfaVerifyWithRecoveryCode](doc/MfaVerifyWithRecoveryCode.md)
  - [MfaVerifyWithTotp](doc/MfaVerifyWithTotp.md)
+ - [MobileLogin200Response](doc/MobileLogin200Response.md)
+ - [MobileLoginRequest](doc/MobileLoginRequest.md)
+ - [MobileMfaVerifyRequest](doc/MobileMfaVerifyRequest.md)
+ - [MobileRefreshRequest](doc/MobileRefreshRequest.md)
+ - [MobileSession](doc/MobileSession.md)
  - [MyKycFile](doc/MyKycFile.md)
  - [OrderStatus](doc/OrderStatus.md)
  - [OverviewAllocation](doc/OverviewAllocation.md)
@@ -902,6 +939,12 @@ Class | Method | HTTP request | Description
  - [Receivable](doc/Receivable.md)
  - [ReceivablePage](doc/ReceivablePage.md)
  - [RecoveryCodes](doc/RecoveryCodes.md)
+ - [Register](doc/Register.md)
+ - [RegisterCreate](doc/RegisterCreate.md)
+ - [RegisterList](doc/RegisterList.md)
+ - [RegisterStatus](doc/RegisterStatus.md)
+ - [RegisterSticker](doc/RegisterSticker.md)
+ - [RegisterUpdate](doc/RegisterUpdate.md)
  - [RenameDepartmentRequest](doc/RenameDepartmentRequest.md)
  - [RetryAfterDetails](doc/RetryAfterDetails.md)
  - [Role](doc/Role.md)

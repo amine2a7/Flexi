@@ -22,7 +22,7 @@ import { ApiProblem, problems, validationFailed } from '../common/problem.js';
 import { currentContext, principal } from '../common/request-context.js';
 import type { Role, SessionStep, User } from '../generated/prisma/client.js';
 import { brokenRules, dummyHash, hashSecret, verifySecret } from './password.js';
-import { type IssuedSession, SessionService } from './session.service.js';
+import { type IssuedSession, SessionService, type MobileDevice } from './session.service.js';
 import { matchStep, newSecretBase32, otpauthUri } from './totp.js';
 import { canSignIn } from '../common/account-lifecycle.js';
 
@@ -141,7 +141,7 @@ export class AuthService {
 
   // ---------------------------------------------------------------- sign-in
 
-  async login(identifier: string, password: string): Promise<LoginOutcome> {
+  async login(identifier: string, password: string, device?: MobileDevice): Promise<LoginOutcome> {
     const user = await this.db.system((tx) => this.findByIdentifier(tx, identifier));
     // Same cost whatever the account (contract §10): the hash is always verified first.
     const valid = await verifySecret(user?.passwordHash ?? (await dummyHash()), password);
@@ -201,7 +201,7 @@ export class AuthService {
           data: { pinFailures: 0, pinLockLevel: 0, pinRequiresReauth: false, pinLockedUntil: null },
         });
       }
-      const issued = await this.sessions.open(tx, user.id, user.role, step);
+      const issued = await this.sessions.open(tx, user.id, user.role, step, device);
       await this.audit.record(tx, 'auth.signIn', user.displayName, user.displayName);
       return { kind: 'session', issued };
     });
@@ -243,6 +243,7 @@ export class AuthService {
     challengeId: string,
     code: string | undefined,
     recoveryCode: string | undefined,
+    device?: MobileDevice,
   ): Promise<IssuedSession> {
     const found = await this.db.system((tx) =>
       tx.mfaChallenge.findUnique({ where: { id: challengeId }, include: { user: true } }),
@@ -279,7 +280,13 @@ export class AuthService {
           data: { pinFailures: 0, pinLockLevel: 0, pinRequiresReauth: false, pinLockedUntil: null },
         });
       }
-      const issued = await this.sessions.open(tx, user.id, user.role, this.nextStepAfterMfa(user));
+      const issued = await this.sessions.open(
+        tx,
+        user.id,
+        user.role,
+        this.nextStepAfterMfa(user),
+        device,
+      );
       await this.audit.record(tx, 'auth.signIn', user.displayName, user.displayName);
       return issued;
     });
@@ -586,10 +593,10 @@ export class AuthService {
 
   // ---------------------------------------------------------------- session lifecycle
 
-  async refresh(refreshToken: string | undefined): Promise<IssuedSession> {
+  async refresh(refreshToken: string | undefined, device?: MobileDevice): Promise<IssuedSession> {
     if (refreshToken === undefined || refreshToken === '') throw problems.unauthenticated();
     const outcome = await this.db.system(async (tx) => {
-      const found = await this.sessions.refresh(tx, refreshToken);
+      const found = await this.sessions.refresh(tx, refreshToken, device);
       if ('concurrent' in found) return 'CONCURRENT' as const;
       if ('reusedFamilyId' in found) {
         // Theft detection: the whole family is revoked, and this revocation is committed.
@@ -609,14 +616,18 @@ export class AuthService {
   }
 
   async logout(res: Response): Promise<void> {
-    const who = currentContext()?.principal;
-    if (who !== undefined) {
-      await this.db.system(async (tx) => {
-        await this.sessions.revoke(tx, who.sessionId);
-        await this.audit.record(tx, 'auth.signOut', who.displayName);
-      });
-    }
+    await this.revokeCurrent();
     this.sessions.clearCookies(res);
+  }
+
+  /** Revokes the session of the request (and its family): web and mobile sign-out. */
+  async revokeCurrent(): Promise<void> {
+    const who = currentContext()?.principal;
+    if (who === undefined) return;
+    await this.db.system(async (tx) => {
+      await this.sessions.revoke(tx, who.sessionId);
+      await this.audit.record(tx, 'auth.signOut', who.displayName);
+    });
   }
 
   async me(): Promise<Record<string, unknown>> {

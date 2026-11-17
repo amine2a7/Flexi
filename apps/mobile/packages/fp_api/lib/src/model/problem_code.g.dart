@@ -70,6 +70,7 @@ const ProblemCode _$QUOTE_EXPIRED = const ProblemCode._('QUOTE_EXPIRED');
 const ProblemCode _$CANCEL_WINDOW_OVER = const ProblemCode._(
   'CANCEL_WINDOW_OVER',
 );
+const ProblemCode _$CHECKOUT_REFUSED = const ProblemCode._('CHECKOUT_REFUSED');
 
 ProblemCode _$valueOf(String name) {
   switch (name) {
@@ -133,6 +134,8 @@ ProblemCode _$valueOf(String name) {
       return _$QUOTE_EXPIRED;
     case 'CANCEL_WINDOW_OVER':
       return _$CANCEL_WINDOW_OVER;
+    case 'CHECKOUT_REFUSED':
+      return _$CHECKOUT_REFUSED;
     default:
       throw ArgumentError(name);
   }
@@ -170,6 +173,7 @@ final BuiltSet<ProblemCode> _$values = BuiltSet<ProblemCode>(
     _$COMMISSION_GRID_MISSING,
     _$QUOTE_EXPIRED,
     _$CANCEL_WINDOW_OVER,
+    _$CHECKOUT_REFUSED,
   ],
 );
 
@@ -206,6 +210,7 @@ class _$ProblemCodeMeta {
   ProblemCode get COMMISSION_GRID_MISSING => _$COMMISSION_GRID_MISSING;
   ProblemCode get QUOTE_EXPIRED => _$QUOTE_EXPIRED;
   ProblemCode get CANCEL_WINDOW_OVER => _$CANCEL_WINDOW_OVER;
+  ProblemCode get CHECKOUT_REFUSED => _$CHECKOUT_REFUSED;
   ProblemCode valueOf(String name) => _$valueOf(name);
   BuiltSet<ProblemCode> get values => _$values;
 }
@@ -249,6 +254,7 @@ class _$ProblemCodeSerializer implements PrimitiveSerializer<ProblemCode> {
     'COMMISSION_GRID_MISSING': 'COMMISSION_GRID_MISSING',
     'QUOTE_EXPIRED': 'QUOTE_EXPIRED',
     'CANCEL_WINDOW_OVER': 'CANCEL_WINDOW_OVER',
+    'CHECKOUT_REFUSED': 'CHECKOUT_REFUSED',
   };
   static const Map<Object, String> _fromWire = const <Object, String>{
     'VALIDATION_FAILED': 'VALIDATION_FAILED',
@@ -281,6 +287,7 @@ class _$ProblemCodeSerializer implements PrimitiveSerializer<ProblemCode> {
     'COMMISSION_GRID_MISSING': 'COMMISSION_GRID_MISSING',
     'QUOTE_EXPIRED': 'QUOTE_EXPIRED',
     'CANCEL_WINDOW_OVER': 'CANCEL_WINDOW_OVER',
+    'CHECKOUT_REFUSED': 'CHECKOUT_REFUSED',
   };
 
   @override

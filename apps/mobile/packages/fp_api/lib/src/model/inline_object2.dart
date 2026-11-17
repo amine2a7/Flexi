@@ -3,10 +3,11 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:fp_api/src/model/checkout_refused_problem.dart';
 import 'package:fp_api/src/model/insufficient_funds_problem.dart';
 import 'package:fp_api/src/model/problem.dart';
-import 'package:fp_api/src/model/limit_exceeded_problem_all_of_details.dart';
 import 'package:fp_api/src/model/limit_exceeded_problem.dart';
+import 'package:fp_api/src/model/checkout_refused_problem_all_of_details.dart';
 import 'package:fp_api/src/model/problem_code.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
@@ -26,7 +27,7 @@ part 'inline_object2.g.dart';
 /// * [details] 
 @BuiltValue()
 abstract class InlineObject2 implements Built<InlineObject2, InlineObject2Builder> {
-  /// Any Of [InsufficientFundsProblem], [LimitExceededProblem], [Problem]
+  /// Any Of [CheckoutRefusedProblem], [InsufficientFundsProblem], [LimitExceededProblem], [Problem]
   AnyOf get anyOf;
 
   InlineObject2._();
@@ -72,7 +73,7 @@ class _$InlineObject2Serializer implements PrimitiveSerializer<InlineObject2> {
   }) {
     final result = InlineObject2Builder();
     Object? anyOfDataSrc;
-    final targetType = const FullType(AnyOf, [FullType(InsufficientFundsProblem), FullType(LimitExceededProblem), FullType(Problem), ]);
+    final targetType = const FullType(AnyOf, [FullType(InsufficientFundsProblem), FullType(LimitExceededProblem), FullType(CheckoutRefusedProblem), FullType(Problem), ]);
     anyOfDataSrc = serialized;
     result.anyOf = serializers.deserialize(anyOfDataSrc, specifiedType: targetType) as AnyOf;
     return result.build();

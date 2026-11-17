@@ -118,6 +118,24 @@ enum PaymentStatus {
 enum PaymentChannel {
   CUSTOMER_CODE
   MERCHANT_CODE
+  REGISTER_CHECKOUT
+}
+
+enum RegisterStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum CheckoutStatus {
+  PENDING
+  PAID
+  EXPIRED
+  CANCELLED
+}
+
+enum SessionChannel {
+  WEB
+  MOBILE
 }
 
 /// Legal form of a client (processus v2): drives the withholding tax rate.
@@ -362,6 +380,8 @@ model Merchant {
   commissionGrids CommissionGrid[]
   users           User[]
   pointsOfSale    PointOfSale[]
+  registers       Register[]
+  checkouts       Checkout[]
   payments        Payment[]
   payouts         PayoutRequest[]
   payoutQuotes    PayoutQuote[]
@@ -370,6 +390,76 @@ model Merchant {
   disputes        Dispute[]
 
   @@map("merchants")
+}
+
+/// Till of a merchant, with the public id of its NFC sticker (M4).
+model Register {
+  id         String         @id @default(uuid(7)) @db.Uuid
+  merchantId String         @map("merchant_id") @db.Uuid
+  name       String         @db.VarChar(60)
+  publicId   String         @unique @map("public_id") @db.VarChar(32)
+  status     RegisterStatus @default(ACTIVE)
+  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  merchant  Merchant   @relation(fields: [merchantId], references: [id])
+  cashiers  User[]
+  checkouts Checkout[]
+
+  @@index([merchantId], map: "registers_merchant_idx")
+  @@map("registers")
+}
+
+/// Payment request of a till (M4): open 120 s, paid by the customer who reads the sticker.
+model Checkout {
+  id                   String         @id @default(uuid(7)) @db.Uuid
+  merchantId           String         @map("merchant_id") @db.Uuid
+  registerId           String         @map("register_id") @db.Uuid
+  amountMillimes       BigInt         @map("amount_millimes")
+  creditType           CreditType     @map("credit_type")
+  shortCode            String         @map("short_code") @db.Char(4)
+  status               CheckoutStatus @default(PENDING)
+  idempotencyKey       String         @map("idempotency_key") @db.Uuid
+  createdBy            String         @map("created_by") @db.Uuid
+  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt            DateTime       @map("expires_at") @db.Timestamptz(3)
+  closedAt             DateTime?      @map("closed_at") @db.Timestamptz(3)
+  employeeId           String?        @map("employee_id") @db.Uuid
+  paymentId            String?        @unique(map: "checkouts_payment_key") @map("payment_id") @db.Uuid
+  customerFirstName    String?        @map("customer_first_name") @db.VarChar(60)
+  lastRefusalCode      String?        @map("last_refusal_code") @db.VarChar(40)
+  lastRefusalReason    String?        @map("last_refusal_reason") @db.VarChar(40)
+  lastRefusalFirstName String?        @map("last_refusal_first_name") @db.VarChar(60)
+  lastRefusalAt        DateTime?      @map("last_refusal_at") @db.Timestamptz(3)
+
+  merchant Merchant  @relation(fields: [merchantId], references: [id])
+  register Register  @relation(fields: [registerId], references: [id])
+  employee Employee? @relation(fields: [employeeId], references: [id])
+  payment  Payment?  @relation(fields: [paymentId], references: [id])
+
+  @@unique([merchantId, idempotencyKey], map: "checkouts_merchant_idempotency_key")
+  @@map("checkouts")
+}
+
+/// Event written in the same transaction as the business change, published after commit (M4).
+model OutboxEvent {
+  id          String    @id @db.Uuid
+  topic       String    @db.VarChar(60)
+  aggregateId String    @map("aggregate_id") @db.Uuid
+  payload     Json
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  publishedAt DateTime? @map("published_at") @db.Timestamptz(3)
+
+  @@map("outbox_events")
+}
+
+/// Notifications of a beneficiary read up to this instant (M4).
+model NotificationRead {
+  employeeId String   @id @map("employee_id") @db.Uuid
+  readUntil  DateTime @map("read_until") @db.Timestamptz(3)
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("notification_reads")
 }
 
 model PointOfSale {
@@ -410,16 +500,18 @@ model Employee {
   relationship      String?        @db.VarChar(20)
   createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  company      Company       @relation(fields: [companyId], references: [id])
-  department   Department?   @relation(fields: [departmentId], references: [id])
-  holder       Employee?     @relation("FamilyMembers", fields: [holderEmployeeId], references: [id])
-  members      Employee[]    @relation("FamilyMembers")
-  memberGrants FamilyGrant[] @relation("GrantMember")
-  holderGrants FamilyGrant[] @relation("GrantHolder")
-  user         User?
-  payments     Payment[]
-  paymentCodes PaymentCode[]
-  allocations  Allocation[]
+  company          Company           @relation(fields: [companyId], references: [id])
+  department       Department?       @relation(fields: [departmentId], references: [id])
+  holder           Employee?         @relation("FamilyMembers", fields: [holderEmployeeId], references: [id])
+  members          Employee[]        @relation("FamilyMembers")
+  memberGrants     FamilyGrant[]     @relation("GrantMember")
+  holderGrants     FamilyGrant[]     @relation("GrantHolder")
+  user             User?
+  payments         Payment[]
+  checkouts        Checkout[]
+  notificationRead NotificationRead?
+  paymentCodes     PaymentCode[]
+  allocations      Allocation[]
 
   @@unique([companyId, employeeNumber])
   @@index([companyId])
@@ -475,6 +567,9 @@ model User {
 
   company       Company?             @relation(fields: [companyId], references: [id])
   merchant      Merchant?            @relation(fields: [merchantId], references: [id])
+  /// Till of a cashier (M4).
+  registerId    String?              @map("register_id") @db.Uuid
+  register      Register?            @relation(fields: [registerId], references: [id])
   employee      Employee?            @relation(fields: [employeeId], references: [id])
   sessions      Session[]
   recoveryCodes RecoveryCode[]
@@ -502,18 +597,22 @@ model RecoveryCode {
 /// Web session. Tokens are random and stored as SHA-256 hashes; a refresh rotates the row inside
 /// its family, and the reuse of a rotated refresh token revokes the whole family.
 model Session {
-  id                String      @id @default(uuid(7)) @db.Uuid
-  familyId          String      @map("family_id") @db.Uuid
-  userId            String      @map("user_id") @db.Uuid
+  id                String         @id @default(uuid(7)) @db.Uuid
+  familyId          String         @map("family_id") @db.Uuid
+  userId            String         @map("user_id") @db.Uuid
   step              SessionStep
-  accessTokenHash   String      @unique @map("access_token_hash")
-  refreshTokenHash  String      @unique @map("refresh_token_hash")
-  createdAt         DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
-  lastSeenAt        DateTime    @default(now()) @map("last_seen_at") @db.Timestamptz(3)
-  absoluteExpiresAt DateTime    @map("absolute_expires_at") @db.Timestamptz(3)
-  restrictedUntil   DateTime?   @map("restricted_until") @db.Timestamptz(3)
-  rotatedAt         DateTime?   @map("rotated_at") @db.Timestamptz(3)
-  revokedAt         DateTime?   @map("revoked_at") @db.Timestamptz(3)
+  accessTokenHash   String         @unique @map("access_token_hash")
+  refreshTokenHash  String         @unique @map("refresh_token_hash")
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  lastSeenAt        DateTime       @default(now()) @map("last_seen_at") @db.Timestamptz(3)
+  absoluteExpiresAt DateTime       @map("absolute_expires_at") @db.Timestamptz(3)
+  restrictedUntil   DateTime?      @map("restricted_until") @db.Timestamptz(3)
+  rotatedAt         DateTime?      @map("rotated_at") @db.Timestamptz(3)
+  revokedAt         DateTime?      @map("revoked_at") @db.Timestamptz(3)
+  channel           SessionChannel @default(WEB)
+  deviceId          String?        @map("device_id") @db.VarChar(128)
+  /// Mobile only: the access token lives 15 min (the refresh token rotates).
+  accessExpiresAt   DateTime?      @map("access_expires_at") @db.Timestamptz(3)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -886,6 +985,7 @@ model Payment {
   merchant Merchant       @relation(fields: [merchantId], references: [id])
   employee Employee       @relation(fields: [employeeId], references: [id])
   events   PaymentEvent[]
+  checkout Checkout?
 
   dispute Dispute?
 

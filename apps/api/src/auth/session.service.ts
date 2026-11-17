@@ -27,10 +27,33 @@ const TOUCH_EVERY_MS = 30_000;
  */
 const CONCURRENT_REFRESH_MS = 30_000;
 
+/** Mobile session (M4): access token of 15 min, refresh token rotated until the deadline. */
+export const MOBILE_ACCESS_SECONDS = 15 * 60;
+/**
+ * Absolute deadline of a mobile session (provisional, 2026-11-17, to confirm): the daily quick
+ * sign-in by PIN needs a session longer than the 8 h of the web (DP n° 18).
+ */
+export const MOBILE_ABSOLUTE_DAYS = 30;
+
+/** Device of a mobile session (the app keeps its id in the Keychain / Keystore). */
+export interface MobileDevice {
+  readonly deviceId: string;
+}
+
 export interface IssuedSession {
   readonly session: Session;
   readonly accessToken: string;
   readonly refreshToken: string;
+}
+
+/** Session body of the mobile contract (`MobileSession`): tokens in the body, never cookies. */
+export interface MobileSessionBody {
+  nextStep: SessionStep;
+  accessToken: string;
+  refreshToken: string;
+  accessExpiresAt: string;
+  refreshExpiresAt: string;
+  restrictedUntil?: string;
 }
 
 export interface SessionResultBody {
@@ -58,16 +81,30 @@ export class SessionService {
     return token !== undefined && safeEqual(token, this.csrfToken(sessionId));
   }
 
-  /** Opens a new session (new family) for `userId` in state `step`. */
-  async open(tx: Tx, userId: string, role: Role, step: SessionStep): Promise<IssuedSession> {
+  /** Opens a new session (new family) for `userId` in state `step` (mobile with `device`). */
+  async open(
+    tx: Tx,
+    userId: string,
+    role: Role,
+    step: SessionStep,
+    device?: MobileDevice,
+  ): Promise<IssuedSession> {
     const now = Date.now();
+    const restrictedUntil =
+      step === 'PASSWORD_CHANGE' ? new Date(now + RESTRICTED_MINUTES * 60_000) : null;
     return this.insert(tx, {
       familyId: uuidv7(),
       userId,
       step,
-      absoluteExpiresAt: new Date(now + ABSOLUTE_HOURS[role] * 3_600_000),
-      restrictedUntil:
-        step === 'PASSWORD_CHANGE' ? new Date(now + RESTRICTED_MINUTES * 60_000) : null,
+      absoluteExpiresAt: new Date(
+        now +
+          (device === undefined
+            ? ABSOLUTE_HOURS[role] * 3_600_000
+            : MOBILE_ABSOLUTE_DAYS * 86_400_000),
+      ),
+      restrictedUntil,
+      channel: device === undefined ? 'WEB' : 'MOBILE',
+      deviceId: device?.deviceId ?? null,
     });
   }
 
@@ -87,22 +124,36 @@ export class SessionService {
     if (step === 'PASSWORD_CHANGE') {
       restrictedUntil = previous.restrictedUntil ?? new Date(now + RESTRICTED_MINUTES * 60_000);
     }
+    const mobile = previous.channel === 'MOBILE';
     const absolute =
       previous.step === 'NONE' || step !== 'NONE'
         ? previous.absoluteExpiresAt
-        : new Date(now + ABSOLUTE_HOURS[role] * 3_600_000);
+        : new Date(
+            now + (mobile ? MOBILE_ABSOLUTE_DAYS * 86_400_000 : ABSOLUTE_HOURS[role] * 3_600_000),
+          );
     return this.insert(tx, {
       familyId: previous.familyId,
       userId: previous.userId,
       step,
       absoluteExpiresAt: absolute,
       restrictedUntil,
+      channel: previous.channel,
+      deviceId: previous.deviceId,
     });
   }
 
   private async insert(
     tx: Tx,
-    data: Pick<Session, 'familyId' | 'userId' | 'step' | 'absoluteExpiresAt' | 'restrictedUntil'>,
+    data: Pick<
+      Session,
+      | 'familyId'
+      | 'userId'
+      | 'step'
+      | 'absoluteExpiresAt'
+      | 'restrictedUntil'
+      | 'channel'
+      | 'deviceId'
+    >,
   ): Promise<IssuedSession> {
     const accessToken = randomToken();
     const refreshToken = randomToken();
@@ -112,9 +163,26 @@ export class SessionService {
         id: uuidv7(),
         accessTokenHash: sha256(accessToken),
         refreshTokenHash: sha256(refreshToken),
+        accessExpiresAt:
+          data.channel === 'MOBILE' ? new Date(Date.now() + MOBILE_ACCESS_SECONDS * 1000) : null,
       },
     });
     return { session, accessToken, refreshToken };
+  }
+
+  /** Session body of the mobile contract (`MobileSession`). */
+  mobileResult(issued: IssuedSession): MobileSessionBody {
+    const { session } = issued;
+    return {
+      nextStep: session.step,
+      accessToken: issued.accessToken,
+      refreshToken: issued.refreshToken,
+      accessExpiresAt: (session.accessExpiresAt ?? session.absoluteExpiresAt).toISOString(),
+      refreshExpiresAt: (session.restrictedUntil ?? session.absoluteExpiresAt).toISOString(),
+      ...(session.restrictedUntil === null
+        ? {}
+        : { restrictedUntil: session.restrictedUntil.toISOString() }),
+    };
   }
 
   /** Session body of the contract (`SessionResult`). */
@@ -177,7 +245,12 @@ export class SessionService {
     if (session.restrictedUntil !== null && session.restrictedUntil.getTime() <= now) {
       throw problems.unauthenticated();
     }
-    if (now - session.lastSeenAt.getTime() > IDLE_TIMEOUT_SECONDS * 1000) {
+    if (session.channel === 'MOBILE') {
+      // Mobile: the access token lives 15 min; the app renews it with its refresh token.
+      if ((session.accessExpiresAt?.getTime() ?? 0) <= now) {
+        throw new ApiProblem(401, 'SESSION_EXPIRED');
+      }
+    } else if (now - session.lastSeenAt.getTime() > IDLE_TIMEOUT_SECONDS * 1000) {
       throw new ApiProblem(401, 'SESSION_EXPIRED');
     }
     if (now - session.lastSeenAt.getTime() > TOUCH_EVERY_MS) {
@@ -195,6 +268,8 @@ export class SessionService {
   async refresh(
     tx: Tx,
     refreshToken: string,
+    /** Mobile refresh: the device the session is bound to. Absent: web refresh (cookie). */
+    device?: MobileDevice,
   ): Promise<{ session: Session; role: Role } | { reusedFamilyId: string } | { concurrent: true }> {
     const hash = sha256(refreshToken);
     // Two tabs refreshing at once are served one after the other.
@@ -213,9 +288,18 @@ export class SessionService {
     });
     const now = Date.now();
     if (session === null) throw problems.unauthenticated();
+    const mobile = session.channel === 'MOBILE';
+    // A web token on the mobile route, or a mobile token on the web route: refused.
+    if (mobile !== (device !== undefined)) throw problems.unauthenticated();
+    // A mobile refresh token presented by another device: treated as a theft (whole session).
+    if (mobile && !safeEqual(session.deviceId ?? '', device?.deviceId ?? '')) {
+      return { reusedFamilyId: session.familyId };
+    }
     // Token rotated a moment ago by another tab of the same browser (cookies are shared): no new
     // token for it, no revocation either; the tab retries with the cookie the other one received.
+    // A mobile app has no other tab: a reuse there is a theft.
     if (
+      !mobile &&
       session.revokedAt === null &&
       session.rotatedAt !== null &&
       now - session.rotatedAt.getTime() <= CONCURRENT_REFRESH_MS
@@ -228,7 +312,7 @@ export class SessionService {
     const expired =
       session.absoluteExpiresAt.getTime() <= now ||
       (session.restrictedUntil !== null && session.restrictedUntil.getTime() <= now) ||
-      now - session.lastSeenAt.getTime() > IDLE_TIMEOUT_SECONDS * 1000 ||
+      (!mobile && now - session.lastSeenAt.getTime() > IDLE_TIMEOUT_SECONDS * 1000) ||
       !canSignIn(session.user, session.user.employee, new Date(now));
     if (expired) throw problems.unauthenticated();
     return { session, role: session.user.role };

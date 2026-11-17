@@ -53,7 +53,15 @@ import 'package:fp_api/src/model/approval_status.dart';
 import 'package:fp_api/src/model/approval_type.dart';
 import 'package:fp_api/src/model/audit_log_entry.dart';
 import 'package:fp_api/src/model/audit_log_page.dart';
+import 'package:fp_api/src/model/cashier_register_assignment.dart';
 import 'package:fp_api/src/model/category_balance.dart';
+import 'package:fp_api/src/model/checkout.dart';
+import 'package:fp_api/src/model/checkout_create.dart';
+import 'package:fp_api/src/model/checkout_refusal.dart';
+import 'package:fp_api/src/model/checkout_refusal_reason.dart';
+import 'package:fp_api/src/model/checkout_refused_problem.dart';
+import 'package:fp_api/src/model/checkout_refused_problem_all_of_details.dart';
+import 'package:fp_api/src/model/checkout_status.dart';
 import 'package:fp_api/src/model/commission_grid.dart';
 import 'package:fp_api/src/model/commission_grid_change_request.dart';
 import 'package:fp_api/src/model/commission_tier.dart';
@@ -87,6 +95,7 @@ import 'package:fp_api/src/model/credit_type.dart';
 import 'package:fp_api/src/model/credit_type_amount.dart';
 import 'package:fp_api/src/model/credit_type_settings.dart';
 import 'package:fp_api/src/model/currency.dart';
+import 'package:fp_api/src/model/customer_checkout.dart';
 import 'package:fp_api/src/model/customer_summary.dart';
 import 'package:fp_api/src/model/decision_reason.dart';
 import 'package:fp_api/src/model/department.dart';
@@ -113,6 +122,9 @@ import 'package:fp_api/src/model/employee_import_confirm.dart';
 import 'package:fp_api/src/model/employee_import_preview.dart';
 import 'package:fp_api/src/model/employee_import_request.dart';
 import 'package:fp_api/src/model/employee_import_result.dart';
+import 'package:fp_api/src/model/employee_notification.dart';
+import 'package:fp_api/src/model/employee_notification_kind.dart';
+import 'package:fp_api/src/model/employee_notification_page.dart';
 import 'package:fp_api/src/model/employee_operation.dart';
 import 'package:fp_api/src/model/employee_operation_detail.dart';
 import 'package:fp_api/src/model/employee_operation_page.dart';
@@ -208,6 +220,11 @@ import 'package:fp_api/src/model/mfa_re_enrollment_request.dart';
 import 'package:fp_api/src/model/mfa_verify_request.dart';
 import 'package:fp_api/src/model/mfa_verify_with_recovery_code.dart';
 import 'package:fp_api/src/model/mfa_verify_with_totp.dart';
+import 'package:fp_api/src/model/mobile_login200_response.dart';
+import 'package:fp_api/src/model/mobile_login_request.dart';
+import 'package:fp_api/src/model/mobile_mfa_verify_request.dart';
+import 'package:fp_api/src/model/mobile_refresh_request.dart';
+import 'package:fp_api/src/model/mobile_session.dart';
 import 'package:fp_api/src/model/my_kyc_file.dart';
 import 'package:fp_api/src/model/order_status.dart';
 import 'package:fp_api/src/model/overview_allocation.dart';
@@ -260,6 +277,12 @@ import 'package:fp_api/src/model/rate_limited_problem.dart';
 import 'package:fp_api/src/model/receivable.dart';
 import 'package:fp_api/src/model/receivable_page.dart';
 import 'package:fp_api/src/model/recovery_codes.dart';
+import 'package:fp_api/src/model/register.dart';
+import 'package:fp_api/src/model/register_create.dart';
+import 'package:fp_api/src/model/register_list.dart';
+import 'package:fp_api/src/model/register_status.dart';
+import 'package:fp_api/src/model/register_sticker.dart';
+import 'package:fp_api/src/model/register_update.dart';
 import 'package:fp_api/src/model/rename_department_request.dart';
 import 'package:fp_api/src/model/retry_after_details.dart';
 import 'package:fp_api/src/model/role.dart';
@@ -336,7 +359,15 @@ part 'serializers.g.dart';
   ApprovalType,
   AuditLogEntry,
   AuditLogPage,
+  CashierRegisterAssignment,
   CategoryBalance,
+  Checkout,
+  CheckoutCreate,
+  CheckoutRefusal,
+  CheckoutRefusalReason,
+  CheckoutRefusedProblem,
+  CheckoutRefusedProblemAllOfDetails,
+  CheckoutStatus,
   CommissionGrid,
   CommissionGridChangeRequest,
   CommissionTier,
@@ -370,6 +401,7 @@ part 'serializers.g.dart';
   CreditTypeAmount,
   CreditTypeSettings,
   Currency,
+  CustomerCheckout,
   CustomerSummary,
   DecisionReason,
   Department,
@@ -396,6 +428,9 @@ part 'serializers.g.dart';
   EmployeeImportPreview,
   EmployeeImportRequest,
   EmployeeImportResult,
+  EmployeeNotification,
+  EmployeeNotificationKind,
+  EmployeeNotificationPage,
   EmployeeOperation,
   EmployeeOperationDetail,
   EmployeeOperationPage,
@@ -491,6 +526,11 @@ part 'serializers.g.dart';
   MfaVerifyRequest,
   MfaVerifyWithRecoveryCode,
   MfaVerifyWithTotp,
+  MobileLogin200Response,
+  MobileLoginRequest,
+  MobileMfaVerifyRequest,
+  MobileRefreshRequest,
+  MobileSession,
   MyKycFile,
   OrderStatus,
   OverviewAllocation,
@@ -543,6 +583,12 @@ part 'serializers.g.dart';
   Receivable,
   ReceivablePage,
   RecoveryCodes,
+  Register,
+  RegisterCreate,
+  RegisterList,
+  RegisterStatus,
+  RegisterSticker,
+  RegisterUpdate,
   RenameDepartmentRequest,
   RetryAfterDetails,
   Role,
@@ -807,6 +853,10 @@ Serializers serializers = (_$serializers.toBuilder()
         () => ListBuilder<AdminPayoutRequest>(),
       )
       ..addBuilderFactory(
+        const FullType(BuiltList, [FullType(EmployeeNotification)]),
+        () => ListBuilder<EmployeeNotification>(),
+      )
+      ..addBuilderFactory(
         const FullType(BuiltList, [FullType(Dispute)]),
         () => ListBuilder<Dispute>(),
       )
@@ -833,6 +883,10 @@ Serializers serializers = (_$serializers.toBuilder()
       ..addBuilderFactory(
         const FullType(BuiltList, [FullType(ImportRow)]),
         () => ListBuilder<ImportRow>(),
+      )
+      ..addBuilderFactory(
+        const FullType(BuiltList, [FullType(Register)]),
+        () => ListBuilder<Register>(),
       )
       ..addBuilderFactory(
         const FullType(BuiltList, [FullType(OverviewEmployee)]),

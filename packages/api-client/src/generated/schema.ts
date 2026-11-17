@@ -2920,6 +2920,354 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/mobile/auth/login': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Connexion depuis une application mobile (jetons dans la réponse, pas de cookie)
+     * @description Mêmes règles que la connexion web (§10) : mot de passe Argon2id, compteur d'échecs, MFA pour
+     *     les commerçants, changement de mot de passe obligatoire à la première connexion
+     *     (`nextStep: PASSWORD_CHANGE`, session restreinte). La session est liée à `deviceId`.
+     *     Jeton d'accès valable 15 min ; jeton de renouvellement à usage unique (rotation).
+     */
+    post: operations['mobileLogin'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/mobile/auth/mfa/verify': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Résoudre le défi MFA depuis l'application mobile */
+    post: operations['mobileVerifyMfa'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/mobile/auth/password/change': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Choisir son mot de passe (première connexion) depuis l'application mobile */
+    post: operations['mobileChangePassword'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/mobile/auth/refresh': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Renouveler les jetons (rotation, réutilisation = révocation de toute la session) */
+    post: operations['mobileRefresh'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/mobile/auth/logout': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Déconnexion de l'application mobile (révoque les jetons de la session) */
+    post: operations['mobileLogout'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/notifications': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Mes notifications (crédits reçus, paiements, paiements de ma famille), récentes d'abord */
+    get: operations['listEmployeeNotifications'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/notifications/read': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Tout marquer comme lu */
+    post: operations['readEmployeeNotifications'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/merchant/registers': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Caisses du commerce (le caissier ne voit que la sienne) */
+    get: operations['listRegisters'];
+    put?: never;
+    /** Créer une caisse (propriétaire) */
+    post: operations['createRegister'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/merchant/registers/{registerId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Renommer, activer ou désactiver une caisse (propriétaire) */
+    patch: operations['updateRegister'];
+    trace?: never;
+  };
+  '/v1/merchant/registers/{registerId}/sticker': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lien NDEF signé à écrire sur l'autocollant NFC de la caisse (propriétaire) */
+    get: operations['getRegisterSticker'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/merchant/registers/{registerId}/sticker/pdf': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** PDF imprimable 8 × 8 cm de l'autocollant (QR du lien, nom du commerce et de la caisse) */
+    get: operations['downloadRegisterStickerPdf'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/merchant/cashiers/{userId}/register': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Rattacher un caissier à une caisse (propriétaire) */
+    put: operations['assignCashierRegister'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/merchant/registers/{registerId}/checkouts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Demander un paiement à la caisse (montant, type) ; le client l'approche et confirme
+     * @description Vérifie que le commerce est actif (KYC validé) et accepte le type. Une seule demande en
+     *     attente par caisse : la nouvelle annule la précédente. Expire après 120 s. Un code court à
+     *     4 chiffres est affiché en caisse. Aucun débit à ce stade.
+     */
+    post: operations['createCheckout'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/merchant/registers/{registerId}/checkouts/events': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Flux temps réel (SSE) des demandes de la caisse (payée, refusée, expirée)
+     * @description `text/event-stream`. Chaque événement `checkout` porte un objet `Checkout` en JSON
+     *     (`data:`). L'état courant est envoyé à l'ouverture. Commentaire `:keepalive` toutes les 20 s.
+     */
+    get: operations['streamCheckoutEvents'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/merchant/checkouts/by-idempotency-key/{key}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Statut d'une demande par sa clé d'idempotence (reprise après coupure réseau) */
+    get: operations['getCheckoutByIdempotencyKey'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/merchant/checkouts/{checkoutId}/cancel': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Annuler une demande encore en attente */
+    post: operations['cancelCheckout'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/checkouts/sticker/{publicId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Demande en attente à la caisse de l'autocollant lu (NFC, QR ou lien)
+     * @description La signature `s` du lien est vérifiée ; sinon `CHECKOUT_REFUSED` (`STICKER_INVALID`).
+     */
+    get: operations['getCheckoutBySticker'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/checkouts/code/{shortCode}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Demande en attente du code court affiché en caisse */
+    get: operations['getCheckoutByCode'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/checkouts/{checkoutId}/confirm': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Payer la demande de la caisse avec mon PIN
+     * @description Une seule transaction : verrou de la demande (encore en attente ?) puis du solde, solde,
+     *     plafond du jour et date de fin famille, deux écritures au grand livre, demande payée et
+     *     rattachée au client, événement outbox. Un 2e client reçoit `CHECKOUT_REFUSED`
+     *     (`ALREADY_PAID`).
+     */
+    post: operations['confirmCheckout'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3281,7 +3629,7 @@ export interface components {
      *     CASHIER `payments.collect`, `sales.readToday` (ventes du jour seulement), `shop.read` ;
      *     ACCOUNTANT lecture des finances. Administrateur : SUPER_ADMIN tout (seul à créer les
      *     comptes et à demander un changement de paramétrage ou de commission ; jamais d'exception
-     *     aux quatre yeux) ; COMPLIANCE (opérations) KYC et confirmation des commandes ; FINANCE
+     *     aux quatre yeux) ; COMPLIANCE (Opérations, second administrateur, 2026-11-14) tout sauf `users.adminRoles` et `settings.request` ; FINANCE
      *     validation des paiements, virements, seconde validation ;
      *     SUPPORT lecture et messages de contact.
      */
@@ -5418,7 +5766,8 @@ export interface components {
       | 'PIN_LOCKED'
       | 'COMMISSION_GRID_MISSING'
       | 'QUOTE_EXPIRED'
-      | 'CANCEL_WINDOW_OVER';
+      | 'CANCEL_WINDOW_OVER'
+      | 'CHECKOUT_REFUSED';
     /**
      * ProblemBase
      * @description Membres communs de toute erreur RFC 9457 (`application/problem+json`). Schéma de base
@@ -5742,6 +6091,195 @@ export interface components {
       code?: 'SERVICE_UNAVAILABLE';
       details?: components['schemas']['RetryAfterDetails'];
     };
+    /**
+     * DeviceId
+     * @description Identifiant de l'installation de l'application (généré par l'app, gardé dans le Keychain /
+     *     Keystore). La session mobile y est liée : un jeton présenté depuis un autre appareil est refusé.
+     */
+    DeviceId: string;
+    /** MobileLoginRequest */
+    MobileLoginRequest: {
+      identifier: string;
+      /** @description Jamais journalisé. */
+      password: string;
+      deviceId: components['schemas']['DeviceId'];
+    };
+    /** MobileMfaVerifyRequest */
+    MobileMfaVerifyRequest: {
+      /** Format: uuid */
+      challengeId: string;
+      code?: string;
+      recoveryCode?: string;
+      deviceId: components['schemas']['DeviceId'];
+    };
+    /** MobileRefreshRequest */
+    MobileRefreshRequest: {
+      /** @description Jeton de renouvellement à usage unique. Jamais journalisé. */
+      refreshToken: string;
+      deviceId: components['schemas']['DeviceId'];
+    };
+    /**
+     * MobileSession
+     * @description Session mobile : jetons à garder dans le Keychain / Keystore uniquement. Jeton d'accès 15 min
+     *     (`Authorization: Bearer`) ; jeton de renouvellement à usage unique : sa réutilisation révoque
+     *     toute la session. Déconnexion = révocation.
+     */
+    MobileSession: {
+      nextStep: components['schemas']['SessionNextStep'];
+      accessToken: string;
+      refreshToken: string;
+      accessExpiresAt: components['schemas']['Timestamp'];
+      refreshExpiresAt: components['schemas']['Timestamp'];
+      restrictedUntil?: components['schemas']['Timestamp'];
+    };
+    /**
+     * EmployeeNotificationKind
+     * @enum {string}
+     */
+    EmployeeNotificationKind:
+      'CREDIT_RECEIVED' | 'PAYMENT_APPROVED' | 'FAMILY_PAYMENT' | 'CREDIT_EXPIRING';
+    /**
+     * EmployeeNotification
+     * @description Notification ; le texte est construit par l'app à partir de clés i18n.
+     */
+    EmployeeNotification: {
+      id: string;
+      kind: components['schemas']['EmployeeNotificationKind'];
+      occurredAt: components['schemas']['Timestamp'];
+      unread: boolean;
+      amountMillimes?: components['schemas']['AmountMillimes'];
+      creditType?: components['schemas']['CreditType'];
+      /** @description Commerce, entreprise ou prénom du membre famille. */
+      counterpartyName?: string;
+    };
+    /** EmployeeNotificationPage */
+    EmployeeNotificationPage: {
+      data: components['schemas']['EmployeeNotification'][];
+      page: components['schemas']['PageInfo'];
+    };
+    /**
+     * RegisterStatus
+     * @enum {string}
+     */
+    RegisterStatus: 'ACTIVE' | 'DISABLED';
+    /**
+     * Register
+     * @description Caisse d'un commerce, avec l'identifiant public de son autocollant NFC.
+     */
+    Register: {
+      id: components['schemas']['Uuid'];
+      name: string;
+      status: components['schemas']['RegisterStatus'];
+      /** @description Aléatoire, non devinable (identifiant du lien de l'autocollant). */
+      publicId: string;
+      createdAt: components['schemas']['Timestamp'];
+    };
+    /** RegisterList */
+    RegisterList: {
+      data: components['schemas']['Register'][];
+    };
+    /** RegisterCreate */
+    RegisterCreate: {
+      name: string;
+    };
+    /** RegisterUpdate */
+    RegisterUpdate: {
+      name?: string;
+      status?: components['schemas']['RegisterStatus'];
+    };
+    /** RegisterSticker */
+    RegisterSticker: {
+      /**
+       * Format: uri
+       * @description Lien NDEF `https://pay.flexipay.tn/c/<publicId>?s=<signature>`, aussi imprimé en QR.
+       */
+      url: string;
+    };
+    /** CashierRegisterAssignment */
+    CashierRegisterAssignment: {
+      /** @description Caisse du caissier ; `null` pour le détacher. */
+      registerId: components['schemas']['Uuid'] | null;
+    };
+    /**
+     * CheckoutStatus
+     * @enum {string}
+     */
+    CheckoutStatus: 'PENDING' | 'PAID' | 'EXPIRED' | 'CANCELLED';
+    /** CheckoutCreate */
+    CheckoutCreate: {
+      amountMillimes: components['schemas']['PositiveAmountMillimes'];
+      creditType: components['schemas']['CreditType'];
+    };
+    /**
+     * Checkout
+     * @description Demande de paiement d'une caisse, vue par le commerce (jamais le solde du client).
+     */
+    Checkout: {
+      id: components['schemas']['Uuid'];
+      registerId: components['schemas']['Uuid'];
+      /** @description Code à 4 chiffres affiché en caisse, à taper par le client. */
+      shortCode: string;
+      amountMillimes: components['schemas']['PositiveAmountMillimes'];
+      creditType: components['schemas']['CreditType'];
+      status: components['schemas']['CheckoutStatus'];
+      createdAt: components['schemas']['Timestamp'];
+      expiresAt: components['schemas']['Timestamp'];
+      paidAt?: components['schemas']['Timestamp'];
+      /** @description Prénom du client, quand la demande est payée. */
+      customerFirstName?: string;
+      paymentReference?: string;
+      lastRefusal?: components['schemas']['CheckoutRefusal'];
+    };
+    /**
+     * CheckoutRefusal
+     * @description Dernier refus d'une confirmation par un client (la demande reste en attente, rien n'est
+     *     débité) : envoyé en temps réel à la caisse avec le prénom du client, jamais un montant ni
+     *     un solde.
+     */
+    CheckoutRefusal: {
+      /** @enum {string} */
+      code: 'INSUFFICIENT_FUNDS' | 'LIMIT_EXCEEDED' | 'CHECKOUT_REFUSED' | 'PAYMENT_DECLINED';
+      reason?: components['schemas']['CheckoutRefusalReason'];
+      customerFirstName: string;
+      occurredAt: components['schemas']['Timestamp'];
+    };
+    /**
+     * CustomerCheckout
+     * @description Demande vue par le client avant de confirmer avec son PIN.
+     */
+    CustomerCheckout: {
+      id: components['schemas']['Uuid'];
+      merchantName: string;
+      registerName: string;
+      city?: string;
+      amountMillimes: components['schemas']['PositiveAmountMillimes'];
+      creditType: components['schemas']['CreditType'];
+      expiresAt: components['schemas']['Timestamp'];
+    };
+    /**
+     * CheckoutRefusalReason
+     * @enum {string}
+     */
+    CheckoutRefusalReason:
+      | 'CREDIT_TYPE_NOT_ACCEPTED'
+      | 'MERCHANT_NOT_ACTIVE'
+      | 'CHECKOUT_EXPIRED'
+      | 'ALREADY_PAID'
+      | 'STICKER_INVALID'
+      | 'NO_PENDING_CHECKOUT';
+    /**
+     * CheckoutRefusedProblem
+     * @description Paiement à la caisse refusé, motif clair dans `details.reason`. Aucun montant débité.
+     *     Le solde insuffisant et le plafond (famille compris) restent `INSUFFICIENT_FUNDS` et
+     *     `LIMIT_EXCEEDED`.
+     */
+    CheckoutRefusedProblem: components['schemas']['ProblemBase'] & {
+      /** @constant */
+      code?: 'CHECKOUT_REFUSED';
+      details?: {
+        reason: components['schemas']['CheckoutRefusalReason'];
+      };
+    };
   };
   responses: {
     /**
@@ -5865,6 +6403,7 @@ export interface components {
         'application/problem+json':
           | components['schemas']['InsufficientFundsProblem']
           | components['schemas']['LimitExceededProblem']
+          | components['schemas']['CheckoutRefusedProblem']
           | components['schemas']['Problem'];
       };
     };
@@ -11629,6 +12168,613 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  mobileLogin: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MobileLoginRequest'];
+      };
+    };
+    responses: {
+      /** @description Session ouverte ou défi MFA. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json':
+            components['schemas']['MobileSession'] | components['schemas']['MfaChallengeResult'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  mobileVerifyMfa: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MobileMfaVerifyRequest'];
+      };
+    };
+    responses: {
+      /** @description Session ouverte. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MobileSession'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  mobileChangePassword: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PasswordChangeRequest'];
+      };
+    };
+    responses: {
+      /** @description Mot de passe changé, session renouvelée. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MobileSession'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      422: components['responses']['UnprocessableRule'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  mobileRefresh: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MobileRefreshRequest'];
+      };
+    };
+    responses: {
+      /** @description Nouveaux jetons ; l'ancien jeton de renouvellement est inutilisable. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MobileSession'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  mobileLogout: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Session révoquée. */
+      204: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components['responses']['Unauthorized'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  listEmployeeNotifications: {
+    parameters: {
+      query?: {
+        /** @description Nombre maximal d'éléments par page. */
+        limit?: components['parameters']['Limit'];
+        /** @description Curseur opaque renvoyé par `page.nextCursor`. Absent pour la première page. */
+        cursor?: components['parameters']['Cursor'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EmployeeNotificationPage'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  readEmployeeNotifications: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Notifications lues. */
+      204: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  listRegisters: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RegisterList'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  createRegister: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RegisterCreate'];
+      };
+    };
+    responses: {
+      /** @description Caisse créée, avec son identifiant public d'autocollant. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Register'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  updateRegister: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        registerId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RegisterUpdate'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Register'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getRegisterSticker: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        registerId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Lien `https://pay.flexipay.tn/c/<publicId>?s=<signature>` (HMAC serveur). */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RegisterSticker'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  downloadRegisterStickerPdf: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        registerId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Document PDF. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/pdf': string;
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  assignCashierRegister: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        userId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CashierRegisterAssignment'];
+      };
+    };
+    responses: {
+      /** @description Caissier rattaché (ou détaché avec `registerId` à null). */
+      204: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  createCheckout: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        registerId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CheckoutCreate'];
+      };
+    };
+    responses: {
+      /** @description Demande en attente du client. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Checkout'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      422: components['responses']['UnprocessableFinancial'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  streamCheckoutEvents: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        registerId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Flux d'événements. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'text/event-stream': string;
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getCheckoutByIdempotencyKey: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Checkout'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  cancelCheckout: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        checkoutId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Demande annulée. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Checkout'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getCheckoutBySticker: {
+    parameters: {
+      query: {
+        /** @description Signature HMAC du lien de l'autocollant. */
+        s: string;
+      };
+      header?: never;
+      path: {
+        publicId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Demande à confirmer. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CustomerCheckout'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      422: components['responses']['UnprocessableFinancial'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getCheckoutByCode: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        shortCode: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Demande à confirmer. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CustomerCheckout'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      422: components['responses']['UnprocessableFinancial'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  confirmCheckout: {
+    parameters: {
+      query?: never;
+      header: {
+        /**
+         * @description Clé d'idempotence, obligatoire sur toute opération financière (`x-financial: true`).
+         *     UUID généré une fois par intention de l'utilisateur et réutilisé pour chaque nouvel essai.
+         *     Voir la section 5 de la description.
+         * @example 0192f0c4-6a1e-7c3b-9d2e-5b7a1f0e4c21
+         */
+        'Idempotency-Key': components['parameters']['IdempotencyKey'];
+      };
+      path: {
+        checkoutId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PinConfirmation'];
+      };
+    };
+    responses: {
+      /** @description Paiement effectué ; reçu. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EmployeeOperationDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      /** @description `PIN_INVALID` (même réponse que la confirmation existante, securite S01). */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json':
+            components['schemas']['PinRefusedProblem'] | components['schemas']['Problem'];
+        };
+      };
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      422: components['responses']['UnprocessableFinancial'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
 }
 type FlattenedDeepRequired<T> = {
   [K in keyof T]-?: FlattenedDeepRequired<
@@ -11861,6 +13007,7 @@ export const problemCodeValues: ReadonlyArray<
   'COMMISSION_GRID_MISSING',
   'QUOTE_EXPIRED',
   'CANCEL_WINDOW_OVER',
+  'CHECKOUT_REFUSED',
 ];
 export const userStatusValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['UserStatus']
@@ -11919,6 +13066,28 @@ export const fieldErrorInValues: ReadonlyArray<
 export const limitTypeValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['LimitType']
 > = ['TRANSACTION', 'DAILY', 'MONTHLY', 'FAMILY_MEMBER'];
+export const employeeNotificationKindValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['EmployeeNotificationKind']
+> = ['CREDIT_RECEIVED', 'PAYMENT_APPROVED', 'FAMILY_PAYMENT', 'CREDIT_EXPIRING'];
+export const registerStatusValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['RegisterStatus']
+> = ['ACTIVE', 'DISABLED'];
+export const checkoutStatusValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['CheckoutStatus']
+> = ['PENDING', 'PAID', 'EXPIRED', 'CANCELLED'];
+export const checkoutRefusalCodeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['CheckoutRefusal']['code']
+> = ['INSUFFICIENT_FUNDS', 'LIMIT_EXCEEDED', 'CHECKOUT_REFUSED', 'PAYMENT_DECLINED'];
+export const checkoutRefusalReasonValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['CheckoutRefusalReason']
+> = [
+  'CREDIT_TYPE_NOT_ACCEPTED',
+  'MERCHANT_NOT_ACTIVE',
+  'CHECKOUT_EXPIRED',
+  'ALREADY_PAID',
+  'STICKER_INVALID',
+  'NO_PENDING_CHECKOUT',
+];
 export const componentsParametersClientChannelValues: ReadonlyArray<
   FlattenedDeepRequired<components>['parameters']['ClientChannel']
 > = ['web'];

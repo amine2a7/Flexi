@@ -153,14 +153,41 @@ interface Bucket {
  * Rate limiting per IP and route (in memory: one API process in local development; Redis will
  * hold the counters when the API runs on several instances). Headers on every response.
  */
-function rateLimit() {
+/**
+ * Stricter limits per minute and IP (M4): sign-in, PIN, till requests and their confirmation. The
+ * 4-digit code of a till can only be tried a few times (guessing it is useless without the PIN).
+ */
+const ROUTE_LIMITS: readonly { name: string; pattern: RegExp; limit: number }[] = [
+  { name: 'auth', pattern: /^\/v1\/(mobile\/)?auth\//, limit: 30 },
+  { name: 'public', pattern: /^\/v1\/public\//, limit: 30 },
+  { name: 'checkout-code', pattern: /^\/v1\/employee\/checkouts\/code\//, limit: 12 },
+  { name: 'checkout-sticker', pattern: /^\/v1\/employee\/checkouts\/sticker\//, limit: 30 },
+  {
+    name: 'pin',
+    pattern:
+      /^\/v1\/employee\/(pin$|checkouts\/[^/]+\/confirm$|payment-requests\/[^/]+\/confirm$|payments$)/,
+    limit: 30,
+  },
+  { name: 'checkout-create', pattern: /^\/v1\/merchant\/registers\/[^/]+\/checkouts$/, limit: 60 },
+];
+
+function rateLimit(env: Env) {
   const buckets = new Map<string, Bucket>();
   const WINDOW_MS = 60_000;
+  // Integration tests drive many requests from 127.0.0.1 in a few seconds.
+  const factor = env.NODE_ENV === 'test' ? 10 : 1;
   return (req: Request, res: Response, next: NextFunction): void => {
-    const sensitive = req.path.startsWith('/v1/auth/') || req.path.startsWith('/v1/public/');
-    const limit = sensitive ? 30 : 600;
+    const route = ROUTE_LIMITS.find((entry) => entry.pattern.test(req.path));
+    // Sign-in and public pages are counted per path (unchanged); the others per group.
+    const bucketName =
+      route === undefined
+        ? 'api'
+        : route.name === 'auth' || route.name === 'public'
+          ? req.path
+          : route.name;
+    const limit = (route?.limit ?? 600) * factor;
     const now = Date.now();
-    const key = `${req.socket.remoteAddress ?? 'unknown'}|${sensitive ? req.path : 'api'}`;
+    const key = `${req.socket.remoteAddress ?? 'unknown'}|${bucketName}`;
     let bucket = buckets.get(key);
     if (bucket === undefined || bucket.resetAt <= now) {
       bucket = { count: 0, resetAt: now + WINDOW_MS };
@@ -235,7 +262,7 @@ export function httpPipeline(env: Env) {
     context,
     securityHeaders(env),
     cors(env),
-    rateLimit(),
+    rateLimit(env),
     originCheck(env),
     mediaType,
     jsonBody(),

@@ -10,6 +10,8 @@ Future<void> main() async {
   await _run('npx', [
     '--yes',
     '@openapitools/openapi-generator-cli@2',
+    '--openapitools',
+    '${toolDir.path}/openapitools.json',
     'generate',
     '-c',
     'fp_api.openapi.yaml',

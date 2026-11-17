@@ -72,6 +72,8 @@ class ProblemCode extends EnumClass {
   static const ProblemCode QUOTE_EXPIRED = _$QUOTE_EXPIRED;
   @BuiltValueEnumConst(wireName: r'CANCEL_WINDOW_OVER')
   static const ProblemCode CANCEL_WINDOW_OVER = _$CANCEL_WINDOW_OVER;
+  @BuiltValueEnumConst(wireName: r'CHECKOUT_REFUSED')
+  static const ProblemCode CHECKOUT_REFUSED = _$CHECKOUT_REFUSED;
 
   static Serializer<ProblemCode> get serializer => _$problemCodeSerializer;
 

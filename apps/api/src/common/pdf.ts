@@ -18,7 +18,7 @@ const PAGE_HEIGHT = 842;
 const MARGIN = 56;
 
 /** WinAnsi bytes of a text, PDF string escapes included; characters outside it become « ? ». */
-function pdfString(text: string): string {
+export function pdfString(text: string): string {
   let out = '';
   for (const char of text.normalize('NFC')) {
     const code = char.codePointAt(0) ?? 63;

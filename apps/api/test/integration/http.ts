@@ -23,6 +23,14 @@ export class WebClient {
     return this.cookies.get(name)?.value;
   }
 
+  /** `Cookie` header the browser would send to `path` (Server-Sent Events opened with fetch). */
+  cookieHeader(path: string): string {
+    return [...this.cookies.entries()]
+      .filter(([, cookie]) => path.startsWith(cookie.path))
+      .map(([name, cookie]) => `${name}=${cookie.value}`)
+      .join('; ');
+  }
+
   async call(
     method: string,
     path: string,

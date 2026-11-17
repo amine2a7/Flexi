@@ -53,7 +53,16 @@ Serializers _$serializers =
           ..add(ApprovalType.serializer)
           ..add(AuditLogEntry.serializer)
           ..add(AuditLogPage.serializer)
+          ..add(CashierRegisterAssignment.serializer)
           ..add(CategoryBalance.serializer)
+          ..add(Checkout.serializer)
+          ..add(CheckoutCreate.serializer)
+          ..add(CheckoutRefusal.serializer)
+          ..add(CheckoutRefusalCodeEnum.serializer)
+          ..add(CheckoutRefusalReason.serializer)
+          ..add(CheckoutRefusedProblem.serializer)
+          ..add(CheckoutRefusedProblemAllOfDetails.serializer)
+          ..add(CheckoutStatus.serializer)
           ..add(CommissionGrid.serializer)
           ..add(CommissionGridChangeRequest.serializer)
           ..add(CommissionTier.serializer)
@@ -87,6 +96,7 @@ Serializers _$serializers =
           ..add(CreditTypeAmount.serializer)
           ..add(CreditTypeSettings.serializer)
           ..add(Currency.serializer)
+          ..add(CustomerCheckout.serializer)
           ..add(CustomerSummary.serializer)
           ..add(DecisionReason.serializer)
           ..add(Department.serializer)
@@ -114,6 +124,9 @@ Serializers _$serializers =
           ..add(EmployeeImportPreview.serializer)
           ..add(EmployeeImportRequest.serializer)
           ..add(EmployeeImportResult.serializer)
+          ..add(EmployeeNotification.serializer)
+          ..add(EmployeeNotificationKind.serializer)
+          ..add(EmployeeNotificationPage.serializer)
           ..add(EmployeeOperation.serializer)
           ..add(EmployeeOperationDetail.serializer)
           ..add(EmployeeOperationPage.serializer)
@@ -217,6 +230,11 @@ Serializers _$serializers =
           ..add(MfaVerifyRequest.serializer)
           ..add(MfaVerifyWithRecoveryCode.serializer)
           ..add(MfaVerifyWithTotp.serializer)
+          ..add(MobileLogin200Response.serializer)
+          ..add(MobileLoginRequest.serializer)
+          ..add(MobileMfaVerifyRequest.serializer)
+          ..add(MobileRefreshRequest.serializer)
+          ..add(MobileSession.serializer)
           ..add(MyKycFile.serializer)
           ..add(OrderStatus.serializer)
           ..add(OverviewAllocation.serializer)
@@ -268,6 +286,12 @@ Serializers _$serializers =
           ..add(Receivable.serializer)
           ..add(ReceivablePage.serializer)
           ..add(RecoveryCodes.serializer)
+          ..add(Register.serializer)
+          ..add(RegisterCreate.serializer)
+          ..add(RegisterList.serializer)
+          ..add(RegisterStatus.serializer)
+          ..add(RegisterSticker.serializer)
+          ..add(RegisterUpdate.serializer)
           ..add(RenameDepartmentRequest.serializer)
           ..add(RetryAfterDetails.serializer)
           ..add(Role.serializer)
@@ -517,6 +541,12 @@ Serializers _$serializers =
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
+              const FullType(EmployeeNotification),
+            ]),
+            () => ListBuilder<EmployeeNotification>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [
               const FullType(EmployeeOperation),
             ]),
             () => ListBuilder<EmployeeOperation>(),
@@ -682,6 +712,10 @@ Serializers _$serializers =
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(Receivable)]),
             () => ListBuilder<Receivable>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(Register)]),
+            () => ListBuilder<Register>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(Settlement)]),

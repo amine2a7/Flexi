@@ -6876,6 +6876,664 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
+  # ---------------------------------------------------------------- Application mobile (M4)
+  /v1/mobile/auth/login:
+    post:
+      tags: [auth]
+      operationId: mobileLogin
+      summary: Connexion depuis une application mobile (jetons dans la réponse, pas de cookie)
+      description: |
+        Mêmes règles que la connexion web (§10) : mot de passe Argon2id, compteur d'échecs, MFA pour
+        les commerçants, changement de mot de passe obligatoire à la première connexion
+        (`nextStep: PASSWORD_CHANGE`, session restreinte). La session est liée à `deviceId`.
+        Jeton d'accès valable 15 min ; jeton de renouvellement à usage unique (rotation).
+      security: []
+      x-public: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileLoginRequest'
+      responses:
+        '200':
+          description: Session ouverte ou défi MFA.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/MobileSession'
+                  - $ref: '#/components/schemas/MfaChallengeResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/mobile/auth/mfa/verify:
+    post:
+      tags: [auth]
+      operationId: mobileVerifyMfa
+      summary: Résoudre le défi MFA depuis l'application mobile
+      security: []
+      x-public: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileMfaVerifyRequest'
+      responses:
+        '200':
+          description: Session ouverte.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/mobile/auth/password/change:
+    post:
+      tags: [auth]
+      operationId: mobileChangePassword
+      summary: Choisir son mot de passe (première connexion) depuis l'application mobile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+      responses:
+        '200':
+          description: Mot de passe changé, session renouvelée.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableRule'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/mobile/auth/refresh:
+    post:
+      tags: [auth]
+      operationId: mobileRefresh
+      summary: Renouveler les jetons (rotation, réutilisation = révocation de toute la session)
+      security: []
+      x-public: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileRefreshRequest'
+      responses:
+        '200':
+          description: Nouveaux jetons ; l'ancien jeton de renouvellement est inutilisable.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/mobile/auth/logout:
+    post:
+      tags: [auth]
+      operationId: mobileLogout
+      summary: Déconnexion de l'application mobile (révoque les jetons de la session)
+      responses:
+        '204':
+          description: Session révoquée.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/notifications:
+    get:
+      tags: [employee]
+      operationId: listEmployeeNotifications
+      summary: Mes notifications (crédits reçus, paiements, paiements de ma famille), récentes d'abord
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeNotificationPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/notifications/read:
+    post:
+      tags: [employee]
+      operationId: readEmployeeNotifications
+      summary: Tout marquer comme lu
+      responses:
+        '204':
+          description: Notifications lues.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/merchant/registers:
+    get:
+      tags: [merchant]
+      operationId: listRegisters
+      summary: Caisses du commerce (le caissier ne voit que la sienne)
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [merchant]
+      operationId: createRegister
+      summary: Créer une caisse (propriétaire)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterCreate'
+      responses:
+        '201':
+          description: Caisse créée, avec son identifiant public d'autocollant.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Register'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/merchant/registers/{registerId}:
+    patch:
+      tags: [merchant]
+      operationId: updateRegister
+      summary: Renommer, activer ou désactiver une caisse (propriétaire)
+      parameters:
+        - name: registerId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUpdate'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Register'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/merchant/registers/{registerId}/sticker:
+    get:
+      tags: [merchant]
+      operationId: getRegisterSticker
+      summary: Lien NDEF signé à écrire sur l'autocollant NFC de la caisse (propriétaire)
+      parameters:
+        - name: registerId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Lien `https://pay.flexipay.tn/c/<publicId>?s=<signature>` (HMAC serveur).
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterSticker'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/merchant/registers/{registerId}/sticker/pdf:
+    get:
+      tags: [merchant]
+      operationId: downloadRegisterStickerPdf
+      summary: PDF imprimable 8 × 8 cm de l'autocollant (QR du lien, nom du commerce et de la caisse)
+      parameters:
+        - name: registerId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Document PDF.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/merchant/cashiers/{userId}/register:
+    put:
+      tags: [merchant]
+      operationId: assignCashierRegister
+      summary: Rattacher un caissier à une caisse (propriétaire)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CashierRegisterAssignment'
+      responses:
+        '204':
+          description: 'Caissier rattaché (ou détaché avec `registerId` à null).'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/merchant/registers/{registerId}/checkouts:
+    post:
+      tags: [merchant]
+      operationId: createCheckout
+      summary: Demander un paiement à la caisse (montant, type) ; le client l'approche et confirme
+      description: |
+        Vérifie que le commerce est actif (KYC validé) et accepte le type. Une seule demande en
+        attente par caisse : la nouvelle annule la précédente. Expire après 120 s. Un code court à
+        4 chiffres est affiché en caisse. Aucun débit à ce stade.
+      x-financial: true
+      parameters:
+        - name: registerId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutCreate'
+      responses:
+        '201':
+          description: Demande en attente du client.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Checkout'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableFinancial'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/merchant/registers/{registerId}/checkouts/events:
+    get:
+      tags: [merchant]
+      operationId: streamCheckoutEvents
+      summary: Flux temps réel (SSE) des demandes de la caisse (payée, refusée, expirée)
+      description: |
+        `text/event-stream`. Chaque événement `checkout` porte un objet `Checkout` en JSON
+        (`data:`). L'état courant est envoyé à l'ouverture. Commentaire `:keepalive` toutes les 20 s.
+      parameters:
+        - name: registerId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Flux d'événements.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/merchant/checkouts/by-idempotency-key/{key}:
+    get:
+      tags: [merchant]
+      operationId: getCheckoutByIdempotencyKey
+      summary: Statut d'une demande par sa clé d'idempotence (reprise après coupure réseau)
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Checkout'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/merchant/checkouts/{checkoutId}/cancel:
+    post:
+      tags: [merchant]
+      operationId: cancelCheckout
+      summary: Annuler une demande encore en attente
+      parameters:
+        - name: checkoutId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Demande annulée.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Checkout'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/checkouts/sticker/{publicId}:
+    get:
+      tags: [employee]
+      operationId: getCheckoutBySticker
+      summary: Demande en attente à la caisse de l'autocollant lu (NFC, QR ou lien)
+      description: La signature `s` du lien est vérifiée ; sinon `CHECKOUT_REFUSED` (`STICKER_INVALID`).
+      parameters:
+        - name: publicId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Za-z0-9_-]{16,32}$'
+        - name: s
+          in: query
+          required: true
+          description: Signature HMAC du lien de l'autocollant.
+          schema:
+            type: string
+            pattern: '^[A-Za-z0-9_-]{16,64}$'
+      responses:
+        '200':
+          description: Demande à confirmer.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerCheckout'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableFinancial'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/checkouts/code/{shortCode}:
+    get:
+      tags: [employee]
+      operationId: getCheckoutByCode
+      summary: Demande en attente du code court affiché en caisse
+      parameters:
+        - name: shortCode
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{4}$'
+      responses:
+        '200':
+          description: Demande à confirmer.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerCheckout'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableFinancial'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/checkouts/{checkoutId}/confirm:
+    post:
+      tags: [employee]
+      operationId: confirmCheckout
+      summary: Payer la demande de la caisse avec mon PIN
+      description: |
+        Une seule transaction : verrou de la demande (encore en attente ?) puis du solde, solde,
+        plafond du jour et date de fin famille, deux écritures au grand livre, demande payée et
+        rattachée au client, événement outbox. Un 2e client reçoit `CHECKOUT_REFUSED`
+        (`ALREADY_PAID`).
+      x-financial: true
+      parameters:
+        - name: checkoutId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinConfirmation'
+      responses:
+        '200':
+          description: Paiement effectué ; reçu.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeOperationDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: '`PIN_INVALID` (même réponse que la confirmation existante, securite S01).'
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/PinRefusedProblem'
+                  - $ref: '#/components/schemas/Problem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableFinancial'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
 components:
   securitySchemes:
     cookieAuth:
@@ -11739,6 +12397,7 @@ components:
         - COMMISSION_GRID_MISSING
         - QUOTE_EXPIRED
         - CANCEL_WINDOW_OVER
+        - CHECKOUT_REFUSED
     ProblemBase:
       title: ProblemBase
       description: |
@@ -12321,6 +12980,326 @@ components:
               const: SERVICE_UNAVAILABLE
             details:
               $ref: '#/components/schemas/RetryAfterDetails'
+    DeviceId:
+      title: DeviceId
+      description: |
+        Identifiant de l'installation de l'application (généré par l'app, gardé dans le Keychain /
+        Keystore). La session mobile y est liée : un jeton présenté depuis un autre appareil est refusé.
+      type: string
+      pattern: '^[A-Za-z0-9_-]{16,128}$'
+    MobileLoginRequest:
+      title: MobileLoginRequest
+      type: object
+      additionalProperties: false
+      required: [identifier, password, deviceId]
+      properties:
+        identifier:
+          type: string
+          minLength: 1
+          maxLength: 254
+        password:
+          description: Jamais journalisé.
+          type: string
+          minLength: 1
+          maxLength: 256
+        deviceId:
+          $ref: '#/components/schemas/DeviceId'
+    MobileMfaVerifyRequest:
+      title: MobileMfaVerifyRequest
+      type: object
+      additionalProperties: false
+      required: [challengeId, deviceId]
+      properties:
+        challengeId:
+          type: string
+          format: uuid
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+        recoveryCode:
+          type: string
+          pattern: '^[A-HJ-NP-Z2-9]{10}$'
+        deviceId:
+          $ref: '#/components/schemas/DeviceId'
+    MobileRefreshRequest:
+      title: MobileRefreshRequest
+      type: object
+      additionalProperties: false
+      required: [refreshToken, deviceId]
+      properties:
+        refreshToken:
+          description: Jeton de renouvellement à usage unique. Jamais journalisé.
+          type: string
+          pattern: '^[A-Za-z0-9_-]{20,256}$'
+        deviceId:
+          $ref: '#/components/schemas/DeviceId'
+    MobileSession:
+      title: MobileSession
+      description: |
+        Session mobile : jetons à garder dans le Keychain / Keystore uniquement. Jeton d'accès 15 min
+        (`Authorization: Bearer`) ; jeton de renouvellement à usage unique : sa réutilisation révoque
+        toute la session. Déconnexion = révocation.
+      type: object
+      additionalProperties: false
+      required: [nextStep, accessToken, refreshToken, accessExpiresAt, refreshExpiresAt]
+      properties:
+        nextStep:
+          $ref: '#/components/schemas/SessionNextStep'
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        accessExpiresAt:
+          $ref: '#/components/schemas/Timestamp'
+        refreshExpiresAt:
+          $ref: '#/components/schemas/Timestamp'
+        restrictedUntil:
+          $ref: '#/components/schemas/Timestamp'
+    EmployeeNotificationKind:
+      title: EmployeeNotificationKind
+      type: string
+      enum: [CREDIT_RECEIVED, PAYMENT_APPROVED, FAMILY_PAYMENT, CREDIT_EXPIRING]
+    EmployeeNotification:
+      title: EmployeeNotification
+      description: Notification ; le texte est construit par l'app à partir de clés i18n.
+      type: object
+      additionalProperties: false
+      required: [id, kind, occurredAt, unread]
+      properties:
+        id:
+          type: string
+          maxLength: 64
+        kind:
+          $ref: '#/components/schemas/EmployeeNotificationKind'
+        occurredAt:
+          $ref: '#/components/schemas/Timestamp'
+        unread:
+          type: boolean
+        amountMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        creditType:
+          $ref: '#/components/schemas/CreditType'
+        counterpartyName:
+          description: Commerce, entreprise ou prénom du membre famille.
+          type: string
+          maxLength: 160
+    EmployeeNotificationPage:
+      title: EmployeeNotificationPage
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/EmployeeNotification'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    RegisterStatus:
+      title: RegisterStatus
+      type: string
+      enum: [ACTIVE, DISABLED]
+    Register:
+      title: Register
+      description: Caisse d'un commerce, avec l'identifiant public de son autocollant NFC.
+      type: object
+      additionalProperties: false
+      required: [id, name, status, publicId, createdAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 60
+        status:
+          $ref: '#/components/schemas/RegisterStatus'
+        publicId:
+          description: Aléatoire, non devinable (identifiant du lien de l'autocollant).
+          type: string
+          pattern: '^[A-Za-z0-9_-]{16,32}$'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+    RegisterList:
+      title: RegisterList
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          maxItems: 200
+          items:
+            $ref: '#/components/schemas/Register'
+    RegisterCreate:
+      title: RegisterCreate
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 60
+    RegisterUpdate:
+      title: RegisterUpdate
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 60
+        status:
+          $ref: '#/components/schemas/RegisterStatus'
+    RegisterSticker:
+      title: RegisterSticker
+      type: object
+      additionalProperties: false
+      required: [url]
+      properties:
+        url:
+          description: Lien NDEF `https://pay.flexipay.tn/c/<publicId>?s=<signature>`, aussi imprimé en QR.
+          type: string
+          format: uri
+          maxLength: 200
+    CashierRegisterAssignment:
+      title: CashierRegisterAssignment
+      type: object
+      additionalProperties: false
+      required: [registerId]
+      properties:
+        registerId:
+          description: Caisse du caissier ; `null` pour le détacher.
+          oneOf:
+            - $ref: '#/components/schemas/Uuid'
+            - type: 'null'
+    CheckoutStatus:
+      title: CheckoutStatus
+      type: string
+      enum: [PENDING, PAID, EXPIRED, CANCELLED]
+    CheckoutCreate:
+      title: CheckoutCreate
+      type: object
+      additionalProperties: false
+      required: [amountMillimes, creditType]
+      properties:
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        creditType:
+          $ref: '#/components/schemas/CreditType'
+    Checkout:
+      title: Checkout
+      description: Demande de paiement d'une caisse, vue par le commerce (jamais le solde du client).
+      type: object
+      additionalProperties: false
+      required: [id, registerId, shortCode, amountMillimes, creditType, status, createdAt, expiresAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        registerId:
+          $ref: '#/components/schemas/Uuid'
+        shortCode:
+          description: Code à 4 chiffres affiché en caisse, à taper par le client.
+          type: string
+          pattern: '^[0-9]{4}$'
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        creditType:
+          $ref: '#/components/schemas/CreditType'
+        status:
+          $ref: '#/components/schemas/CheckoutStatus'
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
+        paidAt:
+          $ref: '#/components/schemas/Timestamp'
+        customerFirstName:
+          description: Prénom du client, quand la demande est payée.
+          type: string
+          maxLength: 80
+        paymentReference:
+          type: string
+          maxLength: 40
+        lastRefusal:
+          $ref: '#/components/schemas/CheckoutRefusal'
+    CheckoutRefusal:
+      title: CheckoutRefusal
+      description: |
+        Dernier refus d'une confirmation par un client (la demande reste en attente, rien n'est
+        débité) : envoyé en temps réel à la caisse avec le prénom du client, jamais un montant ni
+        un solde.
+      type: object
+      additionalProperties: false
+      required: [code, customerFirstName, occurredAt]
+      properties:
+        code:
+          type: string
+          enum: [INSUFFICIENT_FUNDS, LIMIT_EXCEEDED, CHECKOUT_REFUSED, PAYMENT_DECLINED]
+        reason:
+          $ref: '#/components/schemas/CheckoutRefusalReason'
+        customerFirstName:
+          type: string
+          maxLength: 80
+        occurredAt:
+          $ref: '#/components/schemas/Timestamp'
+    CustomerCheckout:
+      title: CustomerCheckout
+      description: Demande vue par le client avant de confirmer avec son PIN.
+      type: object
+      additionalProperties: false
+      required: [id, merchantName, registerName, amountMillimes, creditType, expiresAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        merchantName:
+          type: string
+          maxLength: 160
+        registerName:
+          type: string
+          maxLength: 60
+        city:
+          type: string
+          maxLength: 80
+        amountMillimes:
+          $ref: '#/components/schemas/PositiveAmountMillimes'
+        creditType:
+          $ref: '#/components/schemas/CreditType'
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
+    CheckoutRefusalReason:
+      title: CheckoutRefusalReason
+      type: string
+      enum:
+        - CREDIT_TYPE_NOT_ACCEPTED
+        - MERCHANT_NOT_ACTIVE
+        - CHECKOUT_EXPIRED
+        - ALREADY_PAID
+        - STICKER_INVALID
+        - NO_PENDING_CHECKOUT
+    CheckoutRefusedProblem:
+      title: CheckoutRefusedProblem
+      unevaluatedProperties: false
+      description: |
+        Paiement à la caisse refusé, motif clair dans `details.reason`. Aucun montant débité.
+        Le solde insuffisant et le plafond (famille compris) restent `INSUFFICIENT_FUNDS` et
+        `LIMIT_EXCEEDED`.
+      allOf:
+        - $ref: '#/components/schemas/ProblemBase'
+        - type: object
+          properties:
+            code:
+              const: CHECKOUT_REFUSED
+            details:
+              type: object
+              additionalProperties: false
+              required: [reason]
+              properties:
+                reason:
+                  $ref: '#/components/schemas/CheckoutRefusalReason'
   responses:
     SessionEstablished:
       description: |
@@ -12551,6 +13530,7 @@ components:
             anyOf:
               - $ref: '#/components/schemas/InsufficientFundsProblem'
               - $ref: '#/components/schemas/LimitExceededProblem'
+              - $ref: '#/components/schemas/CheckoutRefusedProblem'
               - $ref: '#/components/schemas/Problem'
           examples:
             insufficientFunds:

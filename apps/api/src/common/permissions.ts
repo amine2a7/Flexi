@@ -34,6 +34,8 @@ const MERCHANT_OWNER = [
   'shop.read',
   'kyc.submit',
   'team.manage',
+  // Tills and their NFC stickers (M4): the owner only.
+  'registers.manage',
 ] as const;
 
 // Admin permissions never reuse a company or merchant name: a tenant route must stay unreachable
