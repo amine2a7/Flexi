@@ -278,7 +278,9 @@ describe('till checkout (NFC sticker)', () => {
       code: 'CHECKOUT_REFUSED',
       details: { reason: 'ALREADY_PAID' },
     });
-    const balances = [await balance(first.employee.id), await balance(second.employee.id)].sort();
+    const balances = [await balance(first.employee.id), await balance(second.employee.id)].sort(
+      (x, y) => (x < y ? -1 : x > y ? 1 : 0),
+    );
     expect(balances).toEqual([70_000n, 100_000n]);
   });
 
@@ -494,7 +496,13 @@ describe('access control (M4)', () => {
     expect(
       (await cashier.call('GET', `/v1/merchant/registers/${at(registers, 0).id}/sticker`)).status,
     ).toBe(403);
-    expect((await cashier.call('GET', '/v1/merchant/payout-quotes')).status).toBe(403);
+    expect(
+      (
+        await cashier.call('POST', '/v1/merchant/payout-quotes', {
+          body: { creditType: 'FOOD', grossMillimes: 1_000 },
+        })
+      ).status,
+    ).toBe(403);
     expect((await cashier.call('GET', '/v1/admin/merchants')).status).toBe(403);
     // Its own till only.
     const list = await cashier.call('GET', '/v1/merchant/registers');
@@ -514,7 +522,7 @@ describe('access control (M4)', () => {
     const list = await ownerA.call('GET', '/v1/company/employees');
     expect(JSON.stringify(list.body)).not.toContain(employeeB.id);
     const suspend = await ownerA.call('POST', `/v1/company/employees/${employeeB.id}/suspend`, {
-      body: { reason: 'test' },
+      body: { reason: 'Contrôle d’accès entre entreprises' },
     });
     expect([403, 404]).toContain(suspend.status);
 

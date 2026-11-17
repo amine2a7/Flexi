@@ -74,7 +74,9 @@ export class WebClient {
       else this.cookies.set(name, { value, path: pathAttribute?.slice(5) ?? '/' });
     }
     const text = await response.text();
-    const body = text === '' ? {} : (JSON.parse(text) as Record<string, unknown>);
+    // Binary or text answers (PDF, CSV) are not JSON: only their status and headers are checked.
+    const json = response.headers.get('content-type')?.includes('json') ?? false;
+    const body = text === '' || !json ? {} : (JSON.parse(text) as Record<string, unknown>);
     if (typeof body.csrfToken === 'string') this.csrfToken = body.csrfToken;
     return { status: response.status, body, headers: response.headers };
   }
