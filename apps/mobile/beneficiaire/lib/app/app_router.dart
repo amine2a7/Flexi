@@ -79,7 +79,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.help, builder: (_, _) => const HelpScreen()),
       GoRoute(
         path: Routes.catalog,
-        builder: (_, _) => const FpCatalogPage(demoPanel: DemoPanel()),
+        builder: (_, _) => FpCatalogPage(
+          demoPanel: ref.read(appConfigProvider).demo
+              ? const DemoPanel()
+              : null,
+        ),
       ),
       ShellRoute(
         builder: (context, state, child) =>

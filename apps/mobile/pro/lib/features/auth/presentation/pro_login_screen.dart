@@ -17,7 +17,7 @@ class ProLoginScreen extends ConsumerStatefulWidget {
 
 class _ProLoginScreenState extends ConsumerState<ProLoginScreen> {
   late final _email = TextEditingController(
-    text: ref.read(appConfigProvider).useFakeData ? 'sami@flexipay.test' : '',
+    text: ref.read(appConfigProvider).demo ? 'sami@flexipay.test' : '',
   );
   final _password = TextEditingController();
   bool _busy = false;

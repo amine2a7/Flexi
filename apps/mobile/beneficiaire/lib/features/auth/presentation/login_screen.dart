@@ -16,9 +16,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   late final _email = TextEditingController(
-    text: ref.read(appConfigProvider).useFakeData
-        ? 'yasmine@flexipay.test'
-        : '',
+    text: ref.read(appConfigProvider).demo ? 'yasmine@flexipay.test' : '',
   );
   final _password = TextEditingController();
   bool _obscure = true;

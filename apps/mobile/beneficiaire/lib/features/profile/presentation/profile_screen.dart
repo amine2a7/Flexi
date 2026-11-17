@@ -94,11 +94,12 @@ class ProfileScreen extends ConsumerWidget {
             children: [
               Text(l10n.theme, style: FpText.body(weight: FontWeight.w600)),
               const SizedBox(height: FpSpace.x10),
+              // Sombre et Système masqués tant qu'il n'existe pas de palette sombre.
               SegmentedChoice(
                 label: l10n.theme,
-                options: [l10n.themeLight, l10n.themeDark, l10n.themeSystem],
-                selected: prefs.theme,
-                onSelected: (i) => setPrefs(prefs.copyWith(theme: i)),
+                options: [l10n.themeLight],
+                selected: 0,
+                onSelected: (_) {},
               ),
               const SizedBox(height: FpSpace.x16),
               Text(l10n.language, style: FpText.body(weight: FontWeight.w600)),

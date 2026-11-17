@@ -35,6 +35,9 @@ Future<ProviderContainer> launchApp(
   final container = ProviderContainer(
     overrides: [
       ...fakeDataOverrides(store: store),
+      appConfigProvider.overrideWithValue(
+        const AppConfig(apiBaseUrl: '', demo: true),
+      ),
       biometricServiceProvider.overrideWithValue(FakeBiometrics()),
     ],
   );

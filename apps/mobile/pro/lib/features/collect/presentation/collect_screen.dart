@@ -115,7 +115,7 @@ class _CollectScreenState extends ConsumerState<CollectScreen> {
             caption: l10n.aimQr,
             camera: ref.watch(cameraEnabledProvider),
             onCode: _lookup,
-            onSimulate: ref.watch(appConfigProvider).useFakeData
+            onSimulate: ref.watch(appConfigProvider).demo
                 ? () => _lookup('482913')
                 : null,
           )

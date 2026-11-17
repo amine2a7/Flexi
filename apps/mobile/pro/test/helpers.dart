@@ -21,6 +21,9 @@ Future<ProviderContainer> launchPro(
   final container = ProviderContainer(
     overrides: [
       ...fakeDataOverrides(store: MemorySecureStore()),
+      appConfigProvider.overrideWithValue(
+        const AppConfig(apiBaseUrl: '', demo: true),
+      ),
       cameraEnabledProvider.overrideWithValue(false),
     ],
   );

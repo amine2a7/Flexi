@@ -151,7 +151,7 @@ class _ConfirmPinScreenState extends ConsumerState<ConfirmPinScreen> {
           label: l10n.payAmount(amount),
           onPressed: _pin.length == 4 && !_busy ? _pay : null,
         ),
-        if (ref.watch(appConfigProvider).useFakeData)
+        if (ref.watch(appConfigProvider).demo)
           Center(
             child: FpLink(
               label: l10n.seeRefusalExample,
