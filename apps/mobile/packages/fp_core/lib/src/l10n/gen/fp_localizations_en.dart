@@ -1404,4 +1404,7 @@ class FpL10nEn extends FpL10n {
 
   @override
   String get catalogNextCustomer => 'Next customer';
+
+  @override
+  String get registerStickerPdf => 'Download the sticker (PDF)';
 }

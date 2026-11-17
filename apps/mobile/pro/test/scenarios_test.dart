@@ -142,6 +142,11 @@ void main() {
     await tapText(tester, 'Mes caisses');
     tester.seeText('Drive');
     tester.seeText('Désactivée');
+    // L'autocollant imprimable (PDF) de chaque caisse active.
+    await tapText(tester, "Télécharger l'autocollant (PDF) · Caisse 2");
+    final pdf = sharer.shared['autocollant-Caisse 2.pdf'];
+    expect(String.fromCharCodes(pdf!.take(8)), '%PDF-1.4');
+    expect(find.text("Télécharger l'autocollant (PDF) · Drive"), findsNothing);
     await tapText(tester, 'Caisse 1');
 
     tester.seeText("Approchez l'autocollant NFC du téléphone");

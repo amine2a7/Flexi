@@ -5,6 +5,7 @@ import {
   Building2,
   ChartColumn,
   LifeBuoy,
+  Nfc,
   CalendarCheck,
   ClipboardCheck,
   CreditCard,
@@ -80,6 +81,7 @@ export const NAVIGATION: Partial<Record<Role, readonly NavEntry[]>> = {
     ]),
     group('account', UserRound, [
       { href: '/commercant/mon-commerce', labelKey: 'nav.merchant.shop', icon: Store },
+      { href: '/commercant/caisses', labelKey: 'nav.merchant.registers', icon: Nfc },
       { href: '/commercant/utilisateurs', labelKey: 'nav.merchant.users', icon: UserCog },
       { href: '/commercant/dossier', labelKey: 'nav.merchant.kyc', icon: FileSearch },
       { href: '/commercant/parametres', labelKey: 'nav.merchant.settings', icon: Settings },

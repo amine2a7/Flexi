@@ -6,7 +6,7 @@ import { hmac, randomToken, safeEqual, sha256, uuidv7 } from '../common/crypto.j
 import { DbService, type Tx } from '../common/db.service.js';
 import { ACCESS_COOKIE, REFRESH_COOKIE } from '../common/http.js';
 import { ApiProblem, problems } from '../common/problem.js';
-import type { Role, Session, SessionStep } from '../generated/prisma/client.js';
+import type { Role, Session, SessionStep, SubRole } from '../generated/prisma/client.js';
 import { canSignIn } from '../common/account-lifecycle.js';
 
 /** Session durations (DP n° 18): 15 min idle; 4 h absolute (admin), 8 h otherwise. */
@@ -30,10 +30,18 @@ const CONCURRENT_REFRESH_MS = 30_000;
 /** Mobile session (M4): access token of 15 min, refresh token rotated until the deadline. */
 export const MOBILE_ACCESS_SECONDS = 15 * 60;
 /**
- * Absolute deadline of a mobile session (provisional, 2026-11-17, to confirm): the daily quick
- * sign-in by PIN needs a session longer than the 8 h of the web (DP n° 18).
+ * Absolute deadline of a mobile session (request of 2026-11-17): beneficiary (employee, family
+ * member) and shop owner 30 days, the daily quick sign-in by PIN; cashier 12 h, one working day
+ * on a shared till. Any other account on the app Pro gets the short one.
  */
-export const MOBILE_ABSOLUTE_DAYS = 30;
+const MOBILE_LONG_MS = 30 * 86_400_000;
+const MOBILE_SHORT_MS = 12 * 3_600_000;
+
+export function mobileLifetimeMs(role: Role, subRole: SubRole | null): number {
+  if (role === 'EMPLOYEE' || role === 'FAMILY_MEMBER') return MOBILE_LONG_MS;
+  if (role === 'MERCHANT' && subRole === 'OWNER') return MOBILE_LONG_MS;
+  return MOBILE_SHORT_MS;
+}
 
 /** Device of a mobile session (the app keeps its id in the Keychain / Keystore). */
 export interface MobileDevice {
@@ -86,6 +94,7 @@ export class SessionService {
     tx: Tx,
     userId: string,
     role: Role,
+    subRole: SubRole | null,
     step: SessionStep,
     device?: MobileDevice,
   ): Promise<IssuedSession> {
@@ -100,7 +109,7 @@ export class SessionService {
         now +
           (device === undefined
             ? ABSOLUTE_HOURS[role] * 3_600_000
-            : MOBILE_ABSOLUTE_DAYS * 86_400_000),
+            : mobileLifetimeMs(role, subRole)),
       ),
       restrictedUntil,
       channel: device === undefined ? 'WEB' : 'MOBILE',
@@ -116,6 +125,7 @@ export class SessionService {
     tx: Tx,
     previous: Session,
     role: Role,
+    subRole: SubRole | null,
     step: SessionStep = previous.step,
   ): Promise<IssuedSession> {
     await tx.session.update({ where: { id: previous.id }, data: { rotatedAt: new Date() } });
@@ -129,7 +139,7 @@ export class SessionService {
       previous.step === 'NONE' || step !== 'NONE'
         ? previous.absoluteExpiresAt
         : new Date(
-            now + (mobile ? MOBILE_ABSOLUTE_DAYS * 86_400_000 : ABSOLUTE_HOURS[role] * 3_600_000),
+            now + (mobile ? mobileLifetimeMs(role, subRole) : ABSOLUTE_HOURS[role] * 3_600_000),
           );
     return this.insert(tx, {
       familyId: previous.familyId,
@@ -270,7 +280,11 @@ export class SessionService {
     refreshToken: string,
     /** Mobile refresh: the device the session is bound to. Absent: web refresh (cookie). */
     device?: MobileDevice,
-  ): Promise<{ session: Session; role: Role } | { reusedFamilyId: string } | { concurrent: true }> {
+  ): Promise<
+    | { session: Session; role: Role; subRole: SubRole | null }
+    | { reusedFamilyId: string }
+    | { concurrent: true }
+  > {
     const hash = sha256(refreshToken);
     // Two tabs refreshing at once are served one after the other.
     await tx.$queryRaw`SELECT id FROM sessions WHERE refresh_token_hash = ${hash} FOR UPDATE`;
@@ -280,6 +294,7 @@ export class SessionService {
         user: {
           select: {
             role: true,
+            subRole: true,
             status: true,
             employee: { select: { status: true, graceUntil: true } },
           },
@@ -315,7 +330,7 @@ export class SessionService {
       (!mobile && now - session.lastSeenAt.getTime() > IDLE_TIMEOUT_SECONDS * 1000) ||
       !canSignIn(session.user, session.user.employee, new Date(now));
     if (expired) throw problems.unauthenticated();
-    return { session, role: session.user.role };
+    return { session, role: session.user.role, subRole: session.user.subRole };
   }
 
   async revoke(tx: Tx, sessionId: string): Promise<void> {

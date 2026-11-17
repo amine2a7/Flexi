@@ -385,5 +385,6 @@
   "stickerWriteFailed": "Could not write. Try again with a blank NFC sticker.",
   "registerDisabled": "Disabled",
   "myRegister": "My till",
-  "catalogNextCustomer": "Next customer"
+  "catalogNextCustomer": "Next customer",
+  "registerStickerPdf": "Download the sticker (PDF)"
 }

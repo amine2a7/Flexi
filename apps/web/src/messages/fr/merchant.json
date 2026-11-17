@@ -248,5 +248,14 @@
     "typesDescription": "Encaissements du mois en cours.",
     "emptyTitle": "Pas encore de statistiques",
     "emptyMessage": "Elles apparaîtront après vos premiers encaissements."
+  },
+  "registers": {
+    "title": "Caisses",
+    "description": "Vos caisses et leur autocollant NFC. Imprimez l'autocollant (8 × 8 cm) et collez-le près de la caisse.",
+    "name": "Caisse",
+    "status": "Statut",
+    "sticker": "Autocollant",
+    "download": "Télécharger l'autocollant (PDF)",
+    "empty": "Aucune caisse pour le moment."
   }
 }

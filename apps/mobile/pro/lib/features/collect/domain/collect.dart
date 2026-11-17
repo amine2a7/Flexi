@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fp_core/fp_core.dart';
 
@@ -109,6 +111,9 @@ abstract interface class CollectRepository {
 
   /// Lien signé par le serveur, à écrire sur l'autocollant de la caisse.
   Future<String> stickerUrl(String registerId);
+
+  /// Autocollant imprimable de la caisse (PDF 8 × 8 cm produit par le serveur).
+  Future<Uint8List> stickerPdf(String registerId);
 }
 
 final collectRepositoryProvider = Provider<CollectRepository>(

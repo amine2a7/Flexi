@@ -85,7 +85,7 @@ export function TeamUsers({
       cell: (row) => (
         <span dir="auto">
           {row.displayName}
-          {row.id === me.id ? <span className="text-text-muted"> · {t('you')}</span> : null}
+          {row.id === me.id ? <span className="text-text-muted">{` · ${t('you')}`}</span> : null}
         </span>
       ),
     },

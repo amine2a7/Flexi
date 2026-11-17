@@ -201,7 +201,7 @@ export class AuthService {
           data: { pinFailures: 0, pinLockLevel: 0, pinRequiresReauth: false, pinLockedUntil: null },
         });
       }
-      const issued = await this.sessions.open(tx, user.id, user.role, step, device);
+      const issued = await this.sessions.open(tx, user.id, user.role, user.subRole, step, device);
       await this.audit.record(tx, 'auth.signIn', user.displayName, user.displayName);
       return { kind: 'session', issued };
     });
@@ -284,6 +284,7 @@ export class AuthService {
         tx,
         user.id,
         user.role,
+        user.subRole,
         this.nextStepAfterMfa(user),
         device,
       );
@@ -394,7 +395,7 @@ export class AuthService {
       });
       const recoveryCodes = await this.newRecoveryCodes(tx, user.id);
       const session = await tx.session.findUniqueOrThrow({ where: { id: who.sessionId } });
-      const issued = await this.sessions.renew(tx, session, user.role, 'NONE');
+      const issued = await this.sessions.renew(tx, session, user.role, user.subRole, 'NONE');
       await this.audit.record(tx, 'auth.mfaEnrolled', user.displayName);
       return { issued, recoveryCodes };
     });
@@ -474,7 +475,7 @@ export class AuthService {
       // Every other session of the account is closed (DP n° 12).
       await this.sessions.revokeOthers(tx, user.id, session.familyId);
       const step: SessionStep = this.needsEnrolment(updated) ? 'MFA_ENROLL' : 'NONE';
-      const issued = await this.sessions.renew(tx, session, user.role, step);
+      const issued = await this.sessions.renew(tx, session, user.role, user.subRole, step);
       await this.audit.record(tx, 'auth.passwordChanged', user.displayName);
       return issued;
     });
@@ -607,7 +608,7 @@ export class AuthService {
         await this.audit.record(tx, 'auth.refreshReused', found.reusedFamilyId, 'Système');
         return undefined;
       }
-      return this.sessions.renew(tx, found.session, found.role);
+      return this.sessions.renew(tx, found.session, found.role, found.subRole);
     });
     if (outcome === undefined) throw problems.unauthenticated();
     // Another tab renewed the session a moment ago: retry with its cookie (contract §6).

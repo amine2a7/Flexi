@@ -80,12 +80,18 @@ describe('scénario complet tracé (processus v2)', () => {
     expect(created.status).toBe(201);
     expect(created.body.credentials).toBeDefined();
     const companyId = String(created.body.id);
-    // 2-3. Ahmed signs in and files RNE, tax card, CIN and RIB.
+    // 2-3. Ahmed signs in and files RNE, tax card, CIN (front and back) and RIB.
     const ahmed = await signedIn(
       base,
       await createUser(db, env, 'COMPANY', { companyId }, 'Ahmed'),
     );
-    for (const type of ['REGISTRY_EXTRACT', 'TAX_CERTIFICATE', 'MANAGER_ID', 'BANK_DETAILS'])
+    for (const type of [
+      'REGISTRY_EXTRACT',
+      'TAX_CERTIFICATE',
+      'MANAGER_ID_FRONT',
+      'MANAGER_ID_BACK',
+      'BANK_DETAILS',
+    ])
       expect(
         (
           await ahmed.call('POST', '/v1/account/kyc/documents', {

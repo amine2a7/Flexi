@@ -20,7 +20,7 @@ describe('administrator sub-roles (decision C)', () => {
   });
 
   it('Opérations is the second administrator: everything else of the super-admin', () => {
-    const kept = ['users.adminRoles', 'settings.request'];
+    const kept = ['users.adminRoles', 'settings.request', 'users.manage', 'users.support'];
     expect([...admin('COMPLIANCE')].sort()).toEqual(
       admin('SUPER_ADMIN')
         .filter((permission) => !kept.includes(permission))
@@ -30,7 +30,6 @@ describe('administrator sub-roles (decision C)', () => {
       expect.arrayContaining([
         'companies.manage',
         'merchants.manage',
-        'users.manage',
         'approvals.decide',
         'kyc.decide',
         'orders.confirm',
@@ -52,11 +51,15 @@ describe('administrator sub-roles (decision C)', () => {
     expect(admin('SUPPORT')).not.toContain('dashboard.read');
   });
 
-  it('support resends invitations and unlocks PINs; finance does not', () => {
-    expect(admin('SUPPORT')).toContain('users.support');
-    expect(admin('SUPER_ADMIN')).toContain('users.support');
-    expect(admin('COMPLIANCE')).toContain('users.support');
-    expect(admin('FINANCE')).not.toContain('users.support');
+  // Request of 2026-11-17: Opérations, Finance and Support only read the users.
+  it('only the super-admin changes a user (invitations and PINs included)', () => {
+    expect(admin('SUPER_ADMIN')).toEqual(expect.arrayContaining(['users.manage', 'users.support']));
+    for (const subRole of ['COMPLIANCE', 'FINANCE', 'SUPPORT'] as const) {
+      expect(admin(subRole)).toContain('users.read');
+      expect(admin(subRole)).not.toContain('users.manage');
+      expect(admin(subRole)).not.toContain('users.support');
+      expect(admin(subRole)).not.toContain('users.adminRoles');
+    }
   });
 
   it('money decisions belong to finance, operations and the super-admin; KYC never to finance', () => {

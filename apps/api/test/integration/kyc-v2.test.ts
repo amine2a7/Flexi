@@ -37,7 +37,7 @@ function document(type: string, file: Buffer = PNG, name = 'piece.png'): FormDat
 }
 
 describe('KYC file filed by the client', () => {
-  it('files 4 documents, gets a correction, files again, is validated, then orders', async () => {
+  it('files 5 documents (CIN front and back), gets a correction, files again, is validated, then orders', async () => {
     const operations = await signedIn(
       base,
       await createUser(db, env, 'ADMIN', {}, 'Amine O.', 'SUPER_ADMIN'),
@@ -65,6 +65,7 @@ describe('KYC file filed by the client', () => {
       'MISSING',
       'MISSING',
       'MISSING',
+      'MISSING',
     ]);
     // Before the validation, no order (clear refusal).
     const early = await owner.call('POST', '/v1/company/order-quotes', {
@@ -75,15 +76,21 @@ describe('KYC file filed by the client', () => {
 
     // Another format, or more than 5 MB: refused.
     const text = await owner.call('POST', '/v1/account/kyc/documents', {
-      form: document('MANAGER_ID', Buffer.from('hello'), 'cin.txt'),
+      form: document('MANAGER_ID_FRONT', Buffer.from('hello'), 'cin.txt'),
     });
     expect(text.status).toBe(415);
     const heavy = await owner.call('POST', '/v1/account/kyc/documents', {
-      form: document('MANAGER_ID', Buffer.concat([PNG, Buffer.alloc(5 * 1024 * 1024)])),
+      form: document('MANAGER_ID_FRONT', Buffer.concat([PNG, Buffer.alloc(5 * 1024 * 1024)])),
     });
     expect(heavy.status).toBe(413);
 
-    for (const type of ['REGISTRY_EXTRACT', 'TAX_CERTIFICATE', 'MANAGER_ID', 'BANK_DETAILS'])
+    for (const type of [
+      'REGISTRY_EXTRACT',
+      'TAX_CERTIFICATE',
+      'MANAGER_ID_FRONT',
+      'MANAGER_ID_BACK',
+      'BANK_DETAILS',
+    ])
       expect(
         (await owner.call('POST', '/v1/account/kyc/documents', { form: document(type) })).status,
       ).toBe(201);
@@ -95,10 +102,12 @@ describe('KYC file filed by the client', () => {
     const fileId = String((await owner.call('GET', '/v1/account/kyc')).body.id);
     const file = await compliance.call('GET', `/v1/admin/kyc-files/${fileId}`);
     const pieces = file.body.pieces as { type: string; documentId: string }[];
-    const managerId = pieces.find((piece) => piece.type === 'MANAGER_ID')?.documentId ?? '';
+    const managerId = pieces.find((piece) => piece.type === 'MANAGER_ID_BACK')?.documentId ?? '';
     const asked = await compliance.call('POST', `/v1/admin/kyc-files/${fileId}/corrections`, {
       body: {
-        corrections: [{ documentId: managerId, reason: 'CIN illisible, merci de la redéposer.' }],
+        corrections: [
+          { documentId: managerId, reason: 'Verso de la CIN illisible, merci de le redéposer.' },
+        ],
       },
     });
     expect(asked.status).toBe(200);
@@ -110,14 +119,14 @@ describe('KYC file filed by the client', () => {
     expect(mine.body.documents).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          type: 'MANAGER_ID',
+          type: 'MANAGER_ID_BACK',
           status: 'TO_CORRECT',
-          correctionReason: 'CIN illisible, merci de la redéposer.',
+          correctionReason: 'Verso de la CIN illisible, merci de le redéposer.',
         }),
       ]),
     );
     expect(
-      (await owner.call('POST', '/v1/account/kyc/documents', { form: document('MANAGER_ID') }))
+      (await owner.call('POST', '/v1/account/kyc/documents', { form: document('MANAGER_ID_BACK') }))
         .status,
     ).toBe(201);
     const approved = await compliance.call('POST', `/v1/admin/kyc-files/${fileId}/approve`);

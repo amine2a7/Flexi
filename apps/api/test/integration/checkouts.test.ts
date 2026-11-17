@@ -12,7 +12,7 @@ const { DbService } = await import('../../src/common/db.service.js');
 const { LedgerService, accounts } = await import('../../src/ledger/ledger.service.js');
 const { hashSecret } = await import('../../src/auth/password.js');
 const { encryptSecret } = await import('../../src/common/crypto.js');
-const { newSecretBase32 } = await import('../../src/auth/totp.js');
+const { codeAt, currentStep, newSecretBase32 } = await import('../../src/auth/totp.js');
 const {
   PASSWORD,
   createCompany,
@@ -615,6 +615,67 @@ describe('mobile session (M4)', () => {
       (await post('/v1/mobile/auth/refresh', { refreshToken: third.refreshToken, deviceId }))
         .status,
     ).toBe(401);
+  });
+
+  /** A shop account signs in on the app Pro: password, then the TOTP code, on the device. */
+  async function proLogin(user: { email: string; secret: string }, deviceId: string) {
+    const login = await post('/v1/mobile/auth/login', {
+      identifier: user.email,
+      password: PASSWORD,
+      deviceId,
+    });
+    expect(login.status).toBe(200);
+    const verified = await post('/v1/mobile/auth/mfa/verify', {
+      challengeId: login.body.challengeId,
+      code: codeAt(user.secret, currentStep()),
+      deviceId,
+    });
+    expect(verified.status).toBe(200);
+    return verified.body;
+  }
+
+  const DAY = 86_400_000;
+  const lifetime = (session: Record<string, unknown>) =>
+    Date.parse(String(session.refreshExpiresAt)) - Date.now();
+
+  // TEST-FIRST (request of 2026-11-17): beneficiary 30 days, cashier 12 h, shop owner 30 days;
+  // the rotation never moves the deadline.
+  it('session lifetime by account: beneficiary 30 days, cashier 12 h, shop owner 30 days', async () => {
+    const company = await createCompany(db);
+    const employee = await createEmployee(db, company.id);
+    const beneficiary = await createUser(db, env, 'EMPLOYEE', { employeeId: employee.id });
+    await db.system((tx) =>
+      tx.user.update({ where: { id: beneficiary.id }, data: { mfaSecretEnc: null } }),
+    );
+    const deviceId = `device-${randomUUID()}`;
+    const mine = await mobileLogin(beneficiary.email, deviceId);
+    expect(lifetime(mine)).toBeGreaterThan(30 * DAY - 60_000);
+    expect(lifetime(mine)).toBeLessThanOrEqual(30 * DAY);
+
+    const merchant = await createMerchant(['RESTAURATION']);
+    const owner = await createUser(db, env, 'MERCHANT', { merchantId: merchant.id }, 'Patron');
+    const ownerSession = await proLogin(owner, `pro-${randomUUID()}`);
+    expect(lifetime(ownerSession)).toBeGreaterThan(30 * DAY - 60_000);
+    expect(lifetime(ownerSession)).toBeLessThanOrEqual(30 * DAY);
+
+    const cashier = await createUser(
+      db,
+      env,
+      'MERCHANT',
+      { merchantId: merchant.id },
+      'Sami C.',
+      'CASHIER',
+    );
+    const till = `till-${randomUUID()}`;
+    const cashierSession = await proLogin(cashier, till);
+    expect(lifetime(cashierSession)).toBeGreaterThan(12 * 3_600_000 - 60_000);
+    expect(lifetime(cashierSession)).toBeLessThanOrEqual(12 * 3_600_000);
+    const rotated = await post('/v1/mobile/auth/refresh', {
+      refreshToken: cashierSession.refreshToken,
+      deviceId: till,
+    });
+    expect(rotated.status).toBe(200);
+    expect(rotated.body.refreshExpiresAt).toBe(cashierSession.refreshExpiresAt);
   });
 
   it('first sign-in: the password change is required before anything else', async () => {

@@ -4,7 +4,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fp_core/fp_core.dart';
 import 'package:fp_pro/app/app.dart';
 import 'package:fp_pro/app/dependencies.dart';
+
+import 'dart:typed_data';
+
+import 'package:fp_pro/features/registers/data/pdf_sharer.dart';
 import 'package:fp_pro/features/registers/data/sticker_writer.dart';
+
+/// Feuille de partage simulée : garde les PDF remis au téléphone.
+class RecordingSharer implements PdfSharer {
+  final shared = <String, Uint8List>{};
+
+  @override
+  Future<void> share(Uint8List bytes, {required String fileName}) async =>
+      shared[fileName] = bytes;
+}
+
+final sharer = RecordingSharer();
 
 /// Téléphone sans NFC : l'écriture de l'autocollant est simulée par un appui (démo).
 class NoNfcWriter implements StickerWriter {
@@ -37,6 +52,7 @@ Future<ProviderContainer> launchPro(
         const AppConfig(apiBaseUrl: '', demo: true),
       ),
       stickerWriterProvider.overrideWithValue(NoNfcWriter()),
+      pdfSharerProvider.overrideWithValue(sharer),
     ],
   );
   addTearDown(container.dispose);

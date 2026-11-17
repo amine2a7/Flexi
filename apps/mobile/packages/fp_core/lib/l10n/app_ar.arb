@@ -385,5 +385,6 @@
   "stickerWriteFailed": "تعذّرت الكتابة. أعد المحاولة بملصق NFC فارغ.",
   "registerDisabled": "معطّل",
   "myRegister": "صندوقي",
-  "catalogNextCustomer": "الحريف التالي"
+  "catalogNextCustomer": "الحريف التالي",
+  "registerStickerPdf": "تنزيل الملصق (PDF)"
 }

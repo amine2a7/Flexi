@@ -1398,4 +1398,7 @@ class FpL10nAr extends FpL10n {
 
   @override
   String get catalogNextCustomer => 'الحريف التالي';
+
+  @override
+  String get registerStickerPdf => 'تنزيل الملصق (PDF)';
 }

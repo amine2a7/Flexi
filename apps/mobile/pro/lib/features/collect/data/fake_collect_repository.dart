@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:fp_core/fp_core.dart';
 
@@ -137,4 +139,20 @@ class FakeCollectRepository implements CollectRepository {
     publicId: 'demo-register-$registerId',
     signature: 'demo-signature-demo',
   ).uri.toString();
+
+  /// PDF de démonstration d'une page vide de 8 × 8 cm (le vrai vient de l'API).
+  @override
+  Future<Uint8List> stickerPdf(String registerId) async => Uint8List.fromList(
+    latin1.encode(
+      [
+        '%PDF-1.4',
+        '1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj',
+        '2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj',
+        '3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 226.77 226.77]>>endobj',
+        'trailer<</Root 1 0 R>>',
+        '%%EOF',
+        '',
+      ].join('\n'),
+    ),
+  );
 }

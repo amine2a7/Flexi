@@ -108,7 +108,7 @@ describe('commission, VAT and stamp duty of an order (decisions of 2026-11-03)',
     const id = String(created.body.id);
     await admin.call('POST', `/v1/admin/credit-orders/${id}/confirm`);
     await owner.call('POST', `/v1/company/orders/${id}/transfer-declarations`, {
-      form: declaration('10605000'),
+      form: declaration('10600000'),
       headers: key(),
     });
     const validated = await admin.call('POST', `/v1/admin/credit-orders/${id}/validate`, {
@@ -122,8 +122,8 @@ describe('commission, VAT and stamp duty of an order (decisions of 2026-11-03)',
       { code: 'REVENUE_TRANSFER_FEES', direction: 'C', amount: 4_000 },
       { code: 'STAMP_DUTY', direction: 'C', amount: 1_000 },
       { code: 'VAT_COLLECTED', direction: 'C', amount: 95_000 },
-      { code: 'WITHHOLDING_TAX', direction: 'C', amount: 5_000 },
     ]);
+    // Frais TTC 595,000 <= 1 000 TND: no withholding (rule of 2026-11-13).
     // The invoice in PDF details every line (task 10).
     const invoices = await owner.call('GET', '/v1/company/invoices');
     const invoice = (invoices.body.data as { id: string; number: string }[])[0];
@@ -138,7 +138,7 @@ describe('commission, VAT and stamp duty of an order (decisions of 2026-11-03)',
       'Commission FlexiPay \\(5 %\\)',
       'TVA sur la commission \\(19 %\\)',
       'Timbre fiscal',
-      '10 605,000 TND',
+      '10 600,000 TND',
     ])
       expect(text).toContain(expected);
   });

@@ -9,7 +9,7 @@ import 'package:built_value/serializer.dart';
 
 part 'mobile_session.g.dart';
 
-/// Session mobile : jetons à garder dans le Keychain / Keystore uniquement. Jeton d'accès 15 min (`Authorization: Bearer`) ; jeton de renouvellement à usage unique : sa réutilisation révoque toute la session. Déconnexion = révocation. 
+/// Session mobile : jetons à garder dans le Keychain / Keystore uniquement. Jeton d'accès 15 min (`Authorization: Bearer`) ; jeton de renouvellement à usage unique : sa réutilisation révoque toute la session. Déconnexion = révocation. Échéance absolue (`refreshExpiresAt`), jamais repoussée par le renouvellement : bénéficiaire et propriétaire commerçant 30 jours, caissier 12 heures. 
 ///
 /// Properties:
 /// * [nextStep] 

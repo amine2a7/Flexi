@@ -168,8 +168,9 @@ describe('administrator: users', () => {
     expect(wrong.status).toBe(400);
   });
 
-  it('support resends an invitation and unlocks a PIN, the employee is told', async () => {
+  it('only the super-admin resends an invitation or unlocks a PIN; support only reads (2026-11-17)', async () => {
     const support = await admin('SUPPORT');
+    const superAdmin = await admin('SUPER_ADMIN');
     const { employee, user } = await employeeAccount();
     await db.system((tx) =>
       tx.employee.update({
@@ -179,36 +180,34 @@ describe('administrator: users', () => {
     );
     const before = await support.client.call('GET', `/v1/admin/users/${user.id}`);
     expect(before.body.pinLocked).toBe(true);
-    const unlocked = await support.client.call('POST', `/v1/admin/users/${user.id}/unlock-pin`);
+    // Support, Finance and Opérations only read the users.
+    for (const action of ['unlock-pin', 'reset-invitation'])
+      expect(
+        (await support.client.call('POST', `/v1/admin/users/${user.id}/${action}`)).status,
+      ).toBe(403);
+    const suspend = await support.client.call('POST', `/v1/admin/users/${user.id}/suspend`, {
+      body: REASON,
+    });
+    expect(suspend.status).toBe(403);
+    const unlocked = await superAdmin.client.call('POST', `/v1/admin/users/${user.id}/unlock-pin`);
     expect(unlocked.status).toBe(200);
     expect(unlocked.body.pinLocked).toBe(false);
     const hashBefore = (
       await db.system((tx) => tx.user.findUniqueOrThrow({ where: { id: user.id } }))
     ).passwordHash;
-    const resent = await support.client.call('POST', `/v1/admin/users/${user.id}/reset-invitation`);
-    expect(resent.status).toBe(200);
-    expect(JSON.stringify(resent.body)).not.toMatch(/password|secret|token/i);
-    const after = await db.system((tx) => tx.user.findUniqueOrThrow({ where: { id: user.id } }));
-    expect(after.passwordHash).not.toBe(hashBefore);
-    expect(after.mustChangePassword).toBe(true);
-    expect(after.tempPasswordExpiresAt?.getTime() ?? 0).toBeGreaterThan(Date.now());
-    // Support never suspends.
-    const suspend = await support.client.call('POST', `/v1/admin/users/${user.id}/suspend`, {
-      body: REASON,
-    });
-    expect(suspend.status).toBe(403);
-    // Processus v2: an administrator who manages accounts sees the new password, once; the
-    // previous one stops working.
-    const superAdmin = await admin('SUPER_ADMIN');
+    // Processus v2: the administrator sees the new password, once; the previous one stops working.
     const generated = await superAdmin.client.call(
       'POST',
       `/v1/admin/users/${user.id}/reset-invitation`,
     );
+    expect(generated.status).toBe(200);
     const credentials = generated.body.credentials as { email: string; temporaryPassword: string };
     expect(credentials.email).toBe(user.email);
     const stored = await db.system((tx) => tx.user.findUniqueOrThrow({ where: { id: user.id } }));
     expect(await verifySecret(stored.passwordHash, credentials.temporaryPassword)).toBe(true);
-    expect(stored.passwordHash).not.toBe(after.passwordHash);
+    expect(stored.passwordHash).not.toBe(hashBefore);
+    expect(stored.mustChangePassword).toBe(true);
+    expect(stored.tempPasswordExpiresAt?.getTime() ?? 0).toBeGreaterThan(Date.now());
   });
 });
 
@@ -314,8 +313,9 @@ describe('company: employees', () => {
 });
 
 describe('support limits (securite S2-02, S2-03)', () => {
-  it('never resets an administrator nor itself; unlocking a PIN closes the sessions', async () => {
+  it('support never resets anyone; unlocking a PIN closes the sessions', async () => {
     const support = await admin('SUPPORT');
+    const superAdmin = await admin('SUPER_ADMIN');
     const other = await admin('FINANCE');
     expect(
       (await support.client.call('POST', `/v1/admin/users/${other.user.id}/reset-invitation`))
@@ -332,6 +332,9 @@ describe('support limits (securite S2-02, S2-03)', () => {
     );
     expect(
       (await support.client.call('POST', `/v1/admin/users/${user.id}/unlock-pin`)).status,
+    ).toBe(403);
+    expect(
+      (await superAdmin.client.call('POST', `/v1/admin/users/${user.id}/unlock-pin`)).status,
     ).toBe(200);
     expect((await spender.call('GET', '/v1/me')).status).toBe(401);
   });

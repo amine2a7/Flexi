@@ -248,5 +248,14 @@
     "typesDescription": "Collections of the current month.",
     "emptyTitle": "No statistics yet",
     "emptyMessage": "They will appear after your first collections."
+  },
+  "registers": {
+    "title": "Tills",
+    "description": "Your tills and their NFC sticker. Print the sticker (8 × 8 cm) and put it next to the till.",
+    "name": "Till",
+    "status": "Status",
+    "sticker": "Sticker",
+    "download": "Download the sticker (PDF)",
+    "empty": "No till yet."
   }
 }

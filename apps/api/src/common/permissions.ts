@@ -75,10 +75,16 @@ const ADMIN_ALL = [
 ] as const;
 
 /**
- * Kept for the super-admin (request of 2026-11-14): the administrators' accounts and roles, and
- * the requests to change the platform settings.
+ * Kept for the super-admin (requests of 2026-11-14 and 2026-11-17): the administrators' accounts
+ * and roles, the requests to change the platform settings, and every change to a user account
+ * (Opérations, Finance and Support only read the users).
  */
-const SUPER_ADMIN_ONLY: readonly Permission[] = ['users.adminRoles', 'settings.request'];
+const SUPER_ADMIN_ONLY: readonly Permission[] = [
+  'users.adminRoles',
+  'settings.request',
+  'users.manage',
+  'users.support',
+];
 
 /** What Finance reads (decision C of 2026-10-23). */
 const ADMIN_BACK_OFFICE_READ = [
@@ -119,14 +125,14 @@ export type Permission =
  *   settings), never an exception to the four eyes; Opérations (COMPLIANCE, request of
  *   2026-11-14) = the second administrator: everything but SUPER_ADMIN_ONLY; FINANCE = commissions and rates,
  *   credit orders, payouts, second validation, reading of accounts, transactions, balances, users,
- *   settings, audit; SUPPORT = reading of accounts, users, transactions, invitation resend and PIN
- *   unlock, contact messages; never balances.
+ *   settings, audit; SUPPORT = reading of accounts, users, transactions, contact messages; never
+ *   balances. Opérations, Finance and Support only READ the users (request of 2026-11-17).
  */
 const MATRIX: Record<Role, Partial<Record<SubRole | 'NONE', readonly Permission[]>>> = {
   ADMIN: {
     SUPER_ADMIN: ADMIN_ALL,
     // The second administrator (request of 2026-11-14): everything but the administrators'
-    // accounts and the platform settings; the four eyes still apply (never its own request).
+    // accounts, the platform settings and the changes to user accounts; the four eyes still apply.
     COMPLIANCE: ADMIN_ALL.filter((permission) => !SUPER_ADMIN_ONLY.includes(permission)),
     FINANCE: [
       ...ADMIN_BACK_OFFICE_READ,
@@ -142,7 +148,6 @@ const MATRIX: Record<Role, Partial<Record<SubRole | 'NONE', readonly Permission[
       'accounts.read',
       'transactions.read',
       'users.read',
-      'users.support',
       'messages.read',
       'messages.handle',
     ],

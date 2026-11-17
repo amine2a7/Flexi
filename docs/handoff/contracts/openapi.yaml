@@ -8201,13 +8201,15 @@ components:
         utilisateurs RH et Finance) ; MANAGER (RH) `balances.read`, `employees.read`,
         `employees.manage`, `credits.allocate` ; FINANCE `balances.read`, `orders.read`,
         `orders.create`, `orders.declareTransfer`, `fundingAccount.read`, `invoices.read`.
-        Commerçant : OWNER (Propriétaire) tout, dont `team.manage` (ses caissiers) ;
+        Commerçant : OWNER (Propriétaire) tout, dont `team.manage` (ses caissiers) et
+        `registers.manage` (caisses et autocollants) ;
         CASHIER `payments.collect`, `sales.readToday` (ventes du jour seulement), `shop.read` ;
         ACCOUNTANT lecture des finances. Administrateur : SUPER_ADMIN tout (seul à créer les
         comptes et à demander un changement de paramétrage ou de commission ; jamais d'exception
-        aux quatre yeux) ; COMPLIANCE (Opérations, second administrateur, 2026-11-14) tout sauf `users.adminRoles` et `settings.request` ; FINANCE
-        validation des paiements, virements, seconde validation ;
-        SUPPORT lecture et messages de contact.
+        aux quatre yeux) ; COMPLIANCE (Opérations, second administrateur, 2026-11-14) tout sauf
+        `users.adminRoles`, `settings.request`, `users.manage` et `users.support` ; FINANCE
+        validation des paiements, virements, seconde validation ; SUPPORT lecture et messages de
+        contact. Opérations, Finance et Support ne font que lire les utilisateurs (2026-11-17).
       type: string
       pattern: '^[a-z][A-Za-z]*\.[a-z][A-Za-z]*$'
       maxLength: 64
@@ -13038,7 +13040,9 @@ components:
       description: |
         Session mobile : jetons à garder dans le Keychain / Keystore uniquement. Jeton d'accès 15 min
         (`Authorization: Bearer`) ; jeton de renouvellement à usage unique : sa réutilisation révoque
-        toute la session. Déconnexion = révocation.
+        toute la session. Déconnexion = révocation. Échéance absolue (`refreshExpiresAt`), jamais
+        repoussée par le renouvellement : bénéficiaire et propriétaire commerçant 30 jours, caissier
+        12 heures.
       type: object
       additionalProperties: false
       required: [nextStep, accessToken, refreshToken, accessExpiresAt, refreshExpiresAt]

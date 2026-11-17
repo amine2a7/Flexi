@@ -437,5 +437,6 @@
   "stickerWriteFailed": "Écriture impossible. Réessayez avec un autocollant NFC vierge.",
   "registerDisabled": "Désactivée",
   "myRegister": "Ma caisse",
-  "catalogNextCustomer": "Prochain client"
+  "catalogNextCustomer": "Prochain client",
+  "registerStickerPdf": "Télécharger l'autocollant (PDF)"
 }

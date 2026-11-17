@@ -2420,6 +2420,12 @@ abstract class FpL10n {
   /// In fr, this message translates to:
   /// **'Prochain client'**
   String get catalogNextCustomer;
+
+  /// No description provided for @registerStickerPdf.
+  ///
+  /// In fr, this message translates to:
+  /// **'Télécharger l\'autocollant (PDF)'**
+  String get registerStickerPdf;
 }
 
 class _FpL10nDelegate extends LocalizationsDelegate<FpL10n> {

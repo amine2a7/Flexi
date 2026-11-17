@@ -7,10 +7,21 @@ import 'package:go_router/go_router.dart';
 import '../../../app/routes.dart';
 import '../../../shared/pro_providers.dart';
 import '../../collect/domain/collect.dart';
+import '../data/pdf_sharer.dart';
 
-/// Mes caisses (propriétaire) : chaque caisse active reçoit son autocollant NFC.
+/// Mes caisses (propriétaire) : chaque caisse active reçoit son autocollant NFC, et son
+/// autocollant imprimable (PDF 8 × 8 cm) se télécharge d'ici.
 class RegistersScreen extends ConsumerWidget {
   const RegistersScreen({super.key});
+
+  Future<void> _download(WidgetRef ref, TillRegister register) async {
+    final bytes = await ref
+        .read(collectRepositoryProvider)
+        .stickerPdf(register.id);
+    await ref
+        .read(pdfSharerProvider)
+        .share(bytes, fileName: 'autocollant-${register.name}.pdf');
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -40,6 +51,13 @@ class RegistersScreen extends ConsumerWidget {
               ),
           ],
         ),
+        for (final r in registers.where((r) => r.active))
+          FpButton(
+            label: '${l10n.registerStickerPdf} · ${r.name}',
+            icon: FpIcons.arrowDown,
+            variant: FpButtonVariant.secondary,
+            onPressed: () => _download(ref, r),
+          ),
       ],
     );
   }

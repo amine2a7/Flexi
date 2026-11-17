@@ -1417,4 +1417,7 @@ class FpL10nFr extends FpL10n {
 
   @override
   String get catalogNextCustomer => 'Prochain client';
+
+  @override
+  String get registerStickerPdf => 'Télécharger l\'autocollant (PDF)';
 }

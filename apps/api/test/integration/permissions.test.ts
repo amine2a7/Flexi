@@ -309,23 +309,28 @@ describe('admin sub-roles (Super-admin, Opérations COMPLIANCE, Finance, Support
     ]);
   });
 
-  it('operations handle KYC and read the rest, never orders, payouts, commissions nor settings', async () => {
+  it('operations is the second administrator, but only reads the users and never changes the settings', async () => {
     const operations = await adminUser('COMPLIANCE');
     await refused(operations, [
-      ['POST', '/v1/admin/companies', companyBody],
-      ['POST', `/v1/admin/credit-orders/${ID}/confirm`],
-      ['POST', `/v1/admin/credit-orders/${ID}/validate`],
-      ['POST', `/v1/admin/payout-requests/${ID}/approve`],
-      ['POST', `/v1/admin/approvals/${ID}/approve`],
-      ['POST', '/v1/admin/commission-grids/change-requests', gridBody],
-      ['GET', '/v1/admin/settings'],
       ['PUT', '/v1/admin/settings', {}],
+      ['POST', '/v1/admin/users', {}],
+      ['POST', `/v1/admin/users/${ID}/suspend`, { reason: 'Contrôle des droits' }],
+      ['POST', `/v1/admin/users/${ID}/role`, {}],
+      ['POST', `/v1/admin/users/${ID}/unlock-pin`],
+      ['POST', `/v1/admin/users/${ID}/reset-invitation`],
+      ['PATCH', `/v1/admin/users/${ID}`, {}],
+      ['POST', `/v1/admin/companies/${ID}/users`, {}],
+      ['POST', `/v1/admin/merchants/${ID}/users`, {}],
     ]);
     await allowed(operations, [
+      ['GET', '/v1/admin/users'],
       ['GET', '/v1/admin/audit-logs'],
-      ['GET', '/v1/admin/transactions'],
+      ['GET', '/v1/admin/settings'],
       ['GET', '/v1/admin/credit-orders'],
       ['GET', '/v1/admin/settlements'],
+      ['POST', '/v1/admin/companies', companyBody],
+      ['POST', `/v1/admin/credit-orders/${ID}/confirm`],
+      ['POST', `/v1/admin/payout-requests/${ID}/approve`],
       ['POST', `/v1/admin/kyc-files/${ID}/approve`],
     ]);
   });
