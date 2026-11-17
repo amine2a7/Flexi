@@ -22,7 +22,9 @@ dependencies:
     path: ../packages/fp_ui
   go_router: ^18.1.4
   intl: ^0.20.3
-  mobile_scanner: ^7.5.0
+  nfc_manager: ^4.4.0
+  nfc_manager_ndef: ^1.1.0
+  ndef_record: ^1.5.0
 
 dev_dependencies:
   flutter_test:

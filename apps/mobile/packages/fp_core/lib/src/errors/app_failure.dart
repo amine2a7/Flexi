@@ -38,6 +38,18 @@ enum RefusalReason {
   typeNotAccepted,
   insufficientFunds,
   merchantInactive,
+
+  /// Un autre client a déjà payé cette demande de caisse.
+  alreadyPaid,
+
+  /// Lien d'autocollant faux ou d'une caisse désactivée.
+  stickerInvalid,
+
+  /// Aucune demande en attente à cette caisse (ou code inconnu).
+  noPendingCheckout,
+
+  /// Plafond du jour fixé par le titulaire d'un compte famille.
+  familyLimit,
   codeExpired,
 }
 

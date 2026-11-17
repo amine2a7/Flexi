@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NFCReaderUsageDescription</key>
+	<string>FlexiPay lit l'autocollant de la caisse pour afficher le montant à payer.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>FlexiPay utilise la caméra pour scanner le QR de l'autocollant de la caisse.</string>
+	<key>FlutterDeepLinkingEnabled</key>
+	<true/>
 	<key>NSFaceIDUsageDescription</key>
 	<string>FlexiPay utilise Face ID pour vous connecter sans saisir votre PIN.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>

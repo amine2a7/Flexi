@@ -4,6 +4,8 @@ import 'package:fp_core/fp_core.dart';
 import 'package:fp_ui/fp_ui.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_router.dart';
+import '../../../app/pending_link.dart';
 import '../../../app/routes.dart';
 
 /// Connexion de tous les jours : PIN ou empreinte.
@@ -27,6 +29,15 @@ class _QuickPinScreenState extends ConsumerState<QuickPinScreen> {
     }
   }
 
+  /// Accueil, puis le lien d'autocollant ouvert pendant que l'app était verrouillée.
+  void _enterApp() {
+    context.go(Routes.home);
+    final link = ref.read(pendingLinkProvider.notifier).take();
+    if (link == null) return;
+    final router = ref.read(routerProvider);
+    WidgetsBinding.instance.addPostFrameCallback((_) => router.push(link));
+  }
+
   Future<void> _enter() async {
     setState(() => _busy = true);
     final pin = _pin;
@@ -38,7 +49,7 @@ class _QuickPinScreenState extends ConsumerState<QuickPinScreen> {
     setState(() => _busy = false);
     switch (failure) {
       case null:
-        context.go(Routes.home);
+        _enterApp();
       case AccountLockedFailure():
         context.go(Routes.locked);
       case PinRefusedFailure(:final remainingAttempts):
@@ -56,7 +67,7 @@ class _QuickPinScreenState extends ConsumerState<QuickPinScreen> {
     if (!ok || !mounted) return;
     if (await ref.read(authControllerProvider.notifier).unlockWithDevice() &&
         mounted) {
-      context.go(Routes.home);
+      _enterApp();
     }
   }
 

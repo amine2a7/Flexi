@@ -10,6 +10,14 @@ final acceptedTypesProvider = FutureProvider<List<CreditType>>(
   (ref) => ref.watch(collectRepositoryProvider).acceptedTypes(),
 );
 
+final myRegisterProvider = FutureProvider<TillRegister?>(
+  (ref) => ref.watch(collectRepositoryProvider).myRegister(),
+);
+
+final registersProvider = FutureProvider<List<TillRegister>>(
+  (ref) => ref.watch(collectRepositoryProvider).registers(),
+);
+
 final daySummaryProvider = FutureProvider<DaySummary>(
   (ref) => ref.watch(dayRepositoryProvider).today(),
 );

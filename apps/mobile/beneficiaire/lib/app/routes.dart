@@ -19,9 +19,14 @@ abstract final class Routes {
 
   static String credit(String type) => '/home/credit/$type';
   static const pay = '/pay';
+  static const payScan = '/pay/scan';
+  static const payCode = '/pay/code';
   static const payConfirm = '/pay/confirm';
   static const payApproved = '/pay/approved';
   static const payRefused = '/pay/refused';
+
+  /// Lien de l'autocollant NFC / QR d'une caisse : `https://pay.flexipay.tn/c/<publicId>?s=…`.
+  static const stickerPrefix = '/c/';
   static String receipt(String id) => '/receipt/$id';
   static const notifications = '/notifications';
   static const family = '/family';

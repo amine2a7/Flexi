@@ -223,11 +223,16 @@ class _CollectionRow extends StatelessWidget {
         : [c.customerName, ?c.organization].join(' · ');
     void open() => context.push(
       ProRoutes.result,
-      extra: CollectResult(
-        approved: c.approved,
+      extra: TillCheckout(
+        id: c.id,
+        registerName: '',
         amount: c.amount,
-        customerName: name,
         type: c.type,
+        shortCode: '',
+        validity: Duration.zero,
+        status: c.approved ? CheckoutStatus.paid : CheckoutStatus.refused,
+        customerFirstName: name,
+        refusal: c.refusal,
         cashier: c.cashierName,
         time: c.time,
       ),
@@ -240,7 +245,8 @@ class _CollectionRow extends StatelessWidget {
           icon: FpIcons.close,
         ),
         title: l10n.refusedTag(c.customerName),
-        subtitle: '${l10n.refusedFundsTitle} · $time',
+        subtitle:
+            '${c.refusal == RefusalReason.familyLimit ? l10n.refusedFamilyTitle : l10n.refusedFundsTitle} · $time',
         trailing: ListRow.amount(
           Tnd.format(0, currency: null),
           color: FpColors.muted,

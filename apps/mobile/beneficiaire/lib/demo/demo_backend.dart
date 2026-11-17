@@ -9,13 +9,19 @@ import '../features/wallet/domain/wallet.dart';
 /// Comptes de démonstration (e-mail de connexion).
 enum DemoAccount { yasmine, omar, adam }
 
-/// Réponse que le faux serveur donnera au prochain scan du caissier.
+/// Réponse que le faux serveur donnera à la prochaine lecture d'autocollant ou confirmation.
 enum DemoPaymentOutcome {
   auto,
+  typeNotAccepted,
   insufficientFunds,
   merchantInactive,
   codeExpired,
+  alreadyPaid,
+  stickerInvalid,
 }
+
+/// Code court de la demande de démonstration affichée « en caisse ».
+const demoShortCode = '4827';
 
 /// Faux serveur en mémoire : il remplace l'API tant qu'elle n'est pas branchée.
 ///

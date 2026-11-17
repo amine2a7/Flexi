@@ -76,7 +76,10 @@ enum FpIcons {
     '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7M12 17h.01"/>',
   ),
   ban('<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>'),
-  search('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>');
+  search('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>'),
+  nfc(
+    '<path d="M6 8.5a5 5 0 0 1 0 7M9.5 6a8.5 8.5 0 0 1 0 12M13 3.5a12 12 0 0 1 0 17"/><rect x="15" y="5" width="6" height="14" rx="1.5"/>',
+  );
 
   const FpIcons(this.body);
 

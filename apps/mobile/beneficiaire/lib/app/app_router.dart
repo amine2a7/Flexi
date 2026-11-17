@@ -25,10 +25,14 @@ import '../features/notifications/presentation/notifications_screen.dart';
 import '../features/payment/domain/payment.dart';
 import '../features/payment/presentation/approved_screen.dart';
 import '../features/payment/presentation/confirm_pin_screen.dart';
+import '../features/payment/presentation/code_screen.dart';
 import '../features/payment/presentation/pay_screen.dart';
 import '../features/payment/presentation/refused_screen.dart';
+import '../features/payment/presentation/scan_screen.dart';
+import '../features/payment/presentation/sticker_link_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
 import '../features/wallet/presentation/credit_screen.dart';
+import 'pending_link.dart';
 import 'routes.dart';
 
 /// Rafraîchit le routeur quand la session change (verrouillage, déconnexion).
@@ -47,6 +51,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       final path = state.uri.path;
       final unlocked = ref.read(authControllerProvider).unlocked;
       if (unlocked || Routes.public.contains(path)) return null;
+      if (path.startsWith(Routes.stickerPrefix)) {
+        ref.read(pendingLinkProvider.notifier).keep(state.uri.toString());
+      }
       return ref.read(authControllerProvider).session == null
           ? Routes.login
           : Routes.unlock;
@@ -110,19 +117,22 @@ final routerProvider = Provider<GoRouter>((ref) {
           type: CreditType.values.byName(state.pathParameters['type']!),
         ),
       ),
+      GoRoute(path: Routes.pay, builder: (_, _) => const PayScreen()),
+      GoRoute(path: Routes.payScan, builder: (_, _) => const ScanScreen()),
+      GoRoute(path: Routes.payCode, builder: (_, _) => const CodeScreen()),
       GoRoute(
-        path: Routes.pay,
-        builder: (_, state) {
-          final t = state.uri.queryParameters['type'];
-          return PayScreen(
-            initialType: t == null ? null : CreditType.values.asNameMap()[t],
-          );
-        },
+        path: '${Routes.stickerPrefix}:publicId',
+        builder: (_, state) => StickerLinkScreen(
+          link: StickerLink(
+            publicId: state.pathParameters['publicId']!,
+            signature: state.uri.queryParameters['s'] ?? '',
+          ),
+        ),
       ),
       GoRoute(
         path: Routes.payConfirm,
         builder: (_, state) =>
-            ConfirmPinScreen(request: state.extra! as PaymentRequest),
+            ConfirmPinScreen(checkout: state.extra! as PendingCheckout),
       ),
       GoRoute(
         path: Routes.payApproved,
@@ -185,7 +195,7 @@ class _TabShell extends StatelessWidget {
           tab(FpIcons.clock, l10n.navHistory, Routes.history),
           tab(FpIcons.user, l10n.navProfile, Routes.profile),
         ],
-        centerIcon: FpIcons.qr,
+        centerIcon: FpIcons.nfc,
         centerLabel: l10n.navPay,
         onCenter: () => context.push(Routes.pay),
       ),

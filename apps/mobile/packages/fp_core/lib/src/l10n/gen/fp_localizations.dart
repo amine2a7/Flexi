@@ -897,59 +897,11 @@ abstract class FpL10n {
   /// **'Type de crédit'**
   String get creditTypeLabel;
 
-  /// No description provided for @myPaymentCode.
-  ///
-  /// In fr, this message translates to:
-  /// **'Mon code de paiement'**
-  String get myPaymentCode;
-
-  /// No description provided for @ticketOf.
-  ///
-  /// In fr, this message translates to:
-  /// **'Ticket {type}'**
-  String ticketOf(Object type);
-
-  /// No description provided for @qrLabel.
-  ///
-  /// In fr, this message translates to:
-  /// **'QR code de paiement'**
-  String get qrLabel;
-
-  /// No description provided for @orGiveCode.
-  ///
-  /// In fr, this message translates to:
-  /// **'ou donnez ce code'**
-  String get orGiveCode;
-
-  /// No description provided for @codeRenews.
-  ///
-  /// In fr, this message translates to:
-  /// **'Le code change toutes les 60 secondes'**
-  String get codeRenews;
-
-  /// No description provided for @cashierScanned.
-  ///
-  /// In fr, this message translates to:
-  /// **'Le caissier a scanné'**
-  String get cashierScanned;
-
-  /// No description provided for @showTicketHint.
-  ///
-  /// In fr, this message translates to:
-  /// **'Montrez ce ticket au caissier. Vous confirmerez avec votre PIN.'**
-  String get showTicketHint;
-
   /// No description provided for @confirmTitle.
   ///
   /// In fr, this message translates to:
   /// **'Confirmer'**
   String get confirmTitle;
-
-  /// No description provided for @cashierOf.
-  ///
-  /// In fr, this message translates to:
-  /// **'Caisse de {name} · {city}'**
-  String cashierOf(Object name, Object city);
 
   /// No description provided for @amountLabel.
   ///
@@ -1059,12 +1011,6 @@ abstract class FpL10n {
   /// **'Ici vous pouvez payer avec {types}.'**
   String refusedTypeTip(Object types);
 
-  /// No description provided for @refusedTypeAction.
-  ///
-  /// In fr, this message translates to:
-  /// **'Payer avec {type}'**
-  String refusedTypeAction(Object type);
-
   /// No description provided for @refusedFundsTitle.
   ///
   /// In fr, this message translates to:
@@ -1082,12 +1028,6 @@ abstract class FpL10n {
   /// In fr, this message translates to:
   /// **'Demandez au caissier d’encaisser {amount} et réglez le reste autrement.'**
   String refusedFundsTip(Object amount);
-
-  /// No description provided for @refusedFundsAction.
-  ///
-  /// In fr, this message translates to:
-  /// **'Réessayer avec {amount}'**
-  String refusedFundsAction(Object amount);
 
   /// No description provided for @refusedMerchantTitle.
   ///
@@ -1116,26 +1056,20 @@ abstract class FpL10n {
   /// No description provided for @refusedExpiredTitle.
   ///
   /// In fr, this message translates to:
-  /// **'Code expiré'**
+  /// **'Demande expirée'**
   String get refusedExpiredTitle;
 
   /// No description provided for @refusedExpiredMessage.
   ///
   /// In fr, this message translates to:
-  /// **'Ce code n’est plus valable. Un nouveau code est prêt.'**
+  /// **'La demande de la caisse n\'est plus valable.'**
   String get refusedExpiredMessage;
 
   /// No description provided for @refusedExpiredTip.
   ///
   /// In fr, this message translates to:
-  /// **'Chaque code ne sert qu’une fois et change toutes les 60 secondes.'**
+  /// **'Une demande reste valable 2 minutes. Demandez au caissier de la renvoyer.'**
   String get refusedExpiredTip;
-
-  /// No description provided for @refusedExpiredAction.
-  ///
-  /// In fr, this message translates to:
-  /// **'Afficher un nouveau code'**
-  String get refusedExpiredAction;
 
   /// No description provided for @merchantLabel.
   ///
@@ -1863,12 +1797,6 @@ abstract class FpL10n {
   /// **'Encaisser'**
   String get collectTitle;
 
-  /// No description provided for @modeLabel.
-  ///
-  /// In fr, this message translates to:
-  /// **'Mode'**
-  String get modeLabel;
-
   /// No description provided for @scanQr.
   ///
   /// In fr, this message translates to:
@@ -1880,36 +1808,6 @@ abstract class FpL10n {
   /// In fr, this message translates to:
   /// **'Saisir le code'**
   String get enterCode;
-
-  /// No description provided for @cameraViewfinder.
-  ///
-  /// In fr, this message translates to:
-  /// **'Viseur de la caméra'**
-  String get cameraViewfinder;
-
-  /// No description provided for @aimQr.
-  ///
-  /// In fr, this message translates to:
-  /// **'Visez le QR du client'**
-  String get aimQr;
-
-  /// No description provided for @customerCode.
-  ///
-  /// In fr, this message translates to:
-  /// **'Code du client (6 chiffres)'**
-  String get customerCode;
-
-  /// No description provided for @customerRecognized.
-  ///
-  /// In fr, this message translates to:
-  /// **'Client reconnu · {type} {amount} dispo'**
-  String customerRecognized(Object type, Object amount);
-
-  /// No description provided for @collectAmount.
-  ///
-  /// In fr, this message translates to:
-  /// **'Encaisser {amount}'**
-  String collectAmount(Object amount);
 
   /// No description provided for @paymentApproved.
   ///
@@ -2270,6 +2168,258 @@ abstract class FpL10n {
   /// In fr, this message translates to:
   /// **'Simuler la perte de réseau'**
   String get catalogOffline;
+
+  /// No description provided for @payNfcTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Approchez votre téléphone de l\'autocollant FlexiPay'**
+  String get payNfcTitle;
+
+  /// No description provided for @payNfcHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le montant s\'affiche ensuite : vous confirmez avec votre PIN.'**
+  String get payNfcHint;
+
+  /// No description provided for @payNfcUnavailable.
+  ///
+  /// In fr, this message translates to:
+  /// **'NFC indisponible sur ce téléphone : scannez le QR ou tapez le code de la caisse.'**
+  String get payNfcUnavailable;
+
+  /// No description provided for @payScanQr.
+  ///
+  /// In fr, this message translates to:
+  /// **'Scanner le QR'**
+  String get payScanQr;
+
+  /// No description provided for @payTypeCode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Taper le code de la caisse'**
+  String get payTypeCode;
+
+  /// No description provided for @payScanTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Scannez le QR de l\'autocollant'**
+  String get payScanTitle;
+
+  /// No description provided for @payCodeTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Code de la caisse'**
+  String get payCodeTitle;
+
+  /// No description provided for @payCodeHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'4 chiffres affichés à la caisse'**
+  String get payCodeHint;
+
+  /// No description provided for @payStickerRead.
+  ///
+  /// In fr, this message translates to:
+  /// **'Autocollant lu'**
+  String get payStickerRead;
+
+  /// No description provided for @registerAtCity.
+  ///
+  /// In fr, this message translates to:
+  /// **'{register} · {city}'**
+  String registerAtCity(Object register, Object city);
+
+  /// No description provided for @refusedPaidTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déjà payée'**
+  String get refusedPaidTitle;
+
+  /// No description provided for @refusedPaidMessage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un autre client a déjà payé cette demande.'**
+  String get refusedPaidMessage;
+
+  /// No description provided for @refusedStickerTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Autocollant invalide'**
+  String get refusedStickerTitle;
+
+  /// No description provided for @refusedStickerMessage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cet autocollant n\'est pas reconnu par FlexiPay.'**
+  String get refusedStickerMessage;
+
+  /// No description provided for @refusedNoPendingTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune demande en caisse'**
+  String get refusedNoPendingTitle;
+
+  /// No description provided for @refusedNoPendingMessage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Demandez au caissier de saisir le montant, puis réessayez.'**
+  String get refusedNoPendingMessage;
+
+  /// No description provided for @refusedFamilyTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Plafond du jour atteint'**
+  String get refusedFamilyTitle;
+
+  /// No description provided for @refusedFamilyMessage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Il vous reste {amount} pour aujourd\'hui.'**
+  String refusedFamilyMessage(Object amount);
+
+  /// No description provided for @refusedTryAgain.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réessayer'**
+  String get refusedTryAgain;
+
+  /// No description provided for @refusedNothingDebited.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun montant n\'a été débité.'**
+  String get refusedNothingDebited;
+
+  /// No description provided for @requestPayment.
+  ///
+  /// In fr, this message translates to:
+  /// **'Demander {amount}'**
+  String requestPayment(Object amount);
+
+  /// No description provided for @waitingCustomer.
+  ///
+  /// In fr, this message translates to:
+  /// **'En attente du client…'**
+  String get waitingCustomer;
+
+  /// No description provided for @waitingHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le client approche son téléphone de l\'autocollant, scanne le QR ou tape ce code.'**
+  String get waitingHint;
+
+  /// No description provided for @shortCodeLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Code de la caisse'**
+  String get shortCodeLabel;
+
+  /// No description provided for @cancelRequest.
+  ///
+  /// In fr, this message translates to:
+  /// **'Annuler la demande'**
+  String get cancelRequest;
+
+  /// No description provided for @requestExpiredTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Demande expirée'**
+  String get requestExpiredTitle;
+
+  /// No description provided for @requestCancelledTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Demande annulée'**
+  String get requestCancelledTitle;
+
+  /// No description provided for @newRequest.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouvelle demande'**
+  String get newRequest;
+
+  /// No description provided for @paidByCustomer.
+  ///
+  /// In fr, this message translates to:
+  /// **'Payé par {name}'**
+  String paidByCustomer(Object name);
+
+  /// No description provided for @refusedForCustomer.
+  ///
+  /// In fr, this message translates to:
+  /// **'Refusé pour {name}'**
+  String refusedForCustomer(Object name);
+
+  /// No description provided for @tillRefusalFunds.
+  ///
+  /// In fr, this message translates to:
+  /// **'Solde insuffisant. Rien n\'a été débité.'**
+  String get tillRefusalFunds;
+
+  /// No description provided for @tillRefusalLimit.
+  ///
+  /// In fr, this message translates to:
+  /// **'Plafond du jour atteint. Rien n\'a été débité.'**
+  String get tillRefusalLimit;
+
+  /// No description provided for @tillRefusalOther.
+  ///
+  /// In fr, this message translates to:
+  /// **'Paiement refusé. Rien n\'a été débité.'**
+  String get tillRefusalOther;
+
+  /// No description provided for @registersTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes caisses'**
+  String get registersTitle;
+
+  /// No description provided for @registerSticker.
+  ///
+  /// In fr, this message translates to:
+  /// **'Associer un autocollant'**
+  String get registerSticker;
+
+  /// No description provided for @stickerApproach.
+  ///
+  /// In fr, this message translates to:
+  /// **'Approchez l\'autocollant NFC du téléphone'**
+  String get stickerApproach;
+
+  /// No description provided for @stickerApproachHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le lien de {register} y sera écrit.'**
+  String stickerApproachHint(Object register);
+
+  /// No description provided for @stickerWritten.
+  ///
+  /// In fr, this message translates to:
+  /// **'Autocollant associé à {register}'**
+  String stickerWritten(Object register);
+
+  /// No description provided for @stickerWriteFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Écriture impossible. Réessayez avec un autocollant NFC vierge.'**
+  String get stickerWriteFailed;
+
+  /// No description provided for @registerDisabled.
+  ///
+  /// In fr, this message translates to:
+  /// **'Désactivée'**
+  String get registerDisabled;
+
+  /// No description provided for @myRegister.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ma caisse'**
+  String get myRegister;
+
+  /// No description provided for @catalogNextCustomer.
+  ///
+  /// In fr, this message translates to:
+  /// **'Prochain client'**
+  String get catalogNextCustomer;
 }
 
 class _FpL10nDelegate extends LocalizationsDelegate<FpL10n> {

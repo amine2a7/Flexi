@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fp_core/fp_core.dart';
 import 'package:fp_ui/fp_ui.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../app/routes.dart';
 import '../../../shared/pro_header.dart';
 import '../../../shared/pro_providers.dart';
 import '../domain/team.dart';
@@ -100,6 +102,12 @@ class TeamScreen extends ConsumerWidget {
             ),
             builder: (_) => const _NewCashierSheet(),
           ),
+        ),
+        FpButton(
+          label: l10n.registersTitle,
+          icon: FpIcons.nfc,
+          variant: FpButtonVariant.secondary,
+          onPressed: () => context.push(ProRoutes.registers),
         ),
       ],
     );

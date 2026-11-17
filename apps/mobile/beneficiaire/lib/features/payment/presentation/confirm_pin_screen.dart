@@ -8,11 +8,12 @@ import '../../../app/routes.dart';
 import '../../../shared/data_providers.dart';
 import '../domain/payment.dart';
 
-/// Confirmation du paiement par PIN (vérifié par le serveur, jamais stocké).
+/// Confirmation de la demande de la caisse (commerce, montant, type) par PIN, vérifié par
+/// le serveur et jamais stocké.
 class ConfirmPinScreen extends ConsumerStatefulWidget {
-  const ConfirmPinScreen({super.key, required this.request});
+  const ConfirmPinScreen({super.key, required this.checkout});
 
-  final PaymentRequest request;
+  final PendingCheckout checkout;
 
   @override
   ConsumerState<ConfirmPinScreen> createState() => _ConfirmPinScreenState();
@@ -32,7 +33,7 @@ class _ConfirmPinScreenState extends ConsumerState<ConfirmPinScreen> {
     try {
       final receipt = await ref
           .read(paymentRepositoryProvider)
-          .confirm(widget.request, pin);
+          .confirm(widget.checkout, pin);
       refreshMoney(ref);
       if (mounted) context.go(Routes.payApproved, extra: receipt);
     } on PaymentRefusedException catch (e) {
@@ -54,7 +55,7 @@ class _ConfirmPinScreenState extends ConsumerState<ConfirmPinScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = FpL10n.of(context);
-    final r = widget.request;
+    final r = widget.checkout;
     final amount = Tnd.format(r.amount, currency: l10n.currency);
     return FpScreen(
       gap: FpSpace.x14,
@@ -82,7 +83,7 @@ class _ConfirmPinScreenState extends ConsumerState<ConfirmPinScreen> {
                           style: FpText.body(size: 16, weight: FontWeight.w700),
                         ),
                         Text(
-                          l10n.cashierOf(r.cashier, r.city),
+                          l10n.registerAtCity(r.registerName, r.city),
                           style: FpText.body(size: 13, color: FpColors.muted),
                         ),
                       ],

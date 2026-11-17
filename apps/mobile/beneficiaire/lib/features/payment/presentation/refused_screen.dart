@@ -19,30 +19,36 @@ class RefusedScreen extends ConsumerWidget {
     final l10n = FpL10n.of(context);
     final r = refusal;
     String money(int m) => Tnd.format(m, currency: l10n.currency);
+    String typeLabel(CreditType? t) => t?.label(l10n) ?? '';
+    final merchant = r.merchantName ?? '';
     final accepted = r.acceptedTypes.map((t) => t.label(l10n)).toList();
-    final firstAccepted = r.acceptedTypes.first;
+    void retry() => context.go(Routes.pay);
     final (title, message, tip, action, onAction) = switch (r.reason) {
       RefusalReason.typeNotAccepted => (
         l10n.refusedTypeTitle,
-        l10n.refusedTypeMessage(r.merchantName, r.balanceType.label(l10n)),
-        l10n.refusedTypeTip(joinOr(l10n, accepted)),
-        l10n.refusedTypeAction(firstAccepted.label(l10n)),
-        () => context.go('${Routes.pay}?type=${firstAccepted.name}'),
+        l10n.refusedTypeMessage(merchant, typeLabel(r.balanceType)),
+        accepted.isEmpty
+            ? l10n.refusedNothingDebited
+            : l10n.refusedTypeTip(joinOr(l10n, accepted)),
+        l10n.refusedTryAgain,
+        retry,
       ),
       RefusalReason.insufficientFunds => (
         l10n.refusedFundsTitle,
         l10n.refusedFundsMessage(
           money(r.missing ?? 0),
-          r.balanceType.label(l10n),
+          typeLabel(r.balanceType),
         ),
-        l10n.refusedFundsTip(money(r.balance)),
-        l10n.refusedFundsAction(Tnd.format(r.balance, currency: null)),
-        () => context.go('${Routes.pay}?type=${r.balanceType.name}'),
+        l10n.refusedFundsTip(money(r.balance ?? 0)),
+        l10n.refusedTryAgain,
+        retry,
       ),
       RefusalReason.merchantInactive => (
         l10n.refusedMerchantTitle,
-        l10n.refusedMerchantMessage(r.merchantName),
-        l10n.refusedMerchantTip(r.balanceType.label(l10n)),
+        l10n.refusedMerchantMessage(merchant),
+        r.balanceType == null
+            ? l10n.refusedNothingDebited
+            : l10n.refusedMerchantTip(typeLabel(r.balanceType)),
         l10n.refusedMerchantAction,
         () => context.go(Routes.discover),
       ),
@@ -50,10 +56,49 @@ class RefusedScreen extends ConsumerWidget {
         l10n.refusedExpiredTitle,
         l10n.refusedExpiredMessage,
         l10n.refusedExpiredTip,
-        l10n.refusedExpiredAction,
-        () => context.go('${Routes.pay}?type=${r.balanceType.name}'),
+        l10n.refusedTryAgain,
+        retry,
+      ),
+      RefusalReason.alreadyPaid => (
+        l10n.refusedPaidTitle,
+        l10n.refusedPaidMessage,
+        l10n.refusedNothingDebited,
+        l10n.refusedTryAgain,
+        retry,
+      ),
+      RefusalReason.stickerInvalid => (
+        l10n.refusedStickerTitle,
+        l10n.refusedStickerMessage,
+        l10n.refusedNothingDebited,
+        l10n.refusedTryAgain,
+        retry,
+      ),
+      RefusalReason.noPendingCheckout => (
+        l10n.refusedNoPendingTitle,
+        l10n.refusedNoPendingMessage,
+        l10n.refusedNothingDebited,
+        l10n.refusedTryAgain,
+        retry,
+      ),
+      RefusalReason.familyLimit => (
+        l10n.refusedFamilyTitle,
+        l10n.refusedFamilyMessage(money(r.missing ?? 0)),
+        l10n.refusedNothingDebited,
+        l10n.refusedTryAgain,
+        retry,
       ),
     };
+    final details = <Widget>[
+      if (r.merchantName != null)
+        DetailLine(label: l10n.merchantLabel, value: merchant),
+      if (r.requested case final requested?)
+        DetailLine(label: l10n.requestedAmount, value: money(requested)),
+      if ((r.balanceType, r.balance) case (final type?, final balance?))
+        DetailLine(
+          label: l10n.yourBalance,
+          value: '${type.label(l10n)} ${money(balance)}',
+        ),
+    ];
     return FpScreen(
       top: FpSpace.x20,
       gap: FpSpace.x22,
@@ -114,20 +159,14 @@ class RefusedScreen extends ConsumerWidget {
           child: FpCard(
             child: Column(
               children: [
-                DetailLine(label: l10n.merchantLabel, value: r.merchantName),
-                const SizedBox(height: FpSpace.x12),
-                DetailLine(
-                  label: l10n.requestedAmount,
-                  value: money(r.requested),
-                ),
-                const SizedBox(height: FpSpace.x12),
-                DetailLine(
-                  label: l10n.yourBalance,
-                  value: '${r.balanceType.label(l10n)} ${money(r.balance)}',
-                ),
-                const SizedBox(height: FpSpace.x12),
-                Container(height: 1, color: FpColors.divider),
-                const SizedBox(height: FpSpace.x12),
+                for (final d in details) ...[
+                  d,
+                  const SizedBox(height: FpSpace.x12),
+                ],
+                if (details.isNotEmpty) ...[
+                  Container(height: 1, color: FpColors.divider),
+                  const SizedBox(height: FpSpace.x12),
+                ],
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

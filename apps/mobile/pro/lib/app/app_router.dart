@@ -4,13 +4,17 @@ import 'package:fp_core/fp_core.dart';
 import 'package:fp_ui/fp_ui.dart';
 import 'package:go_router/go_router.dart';
 
+import '../demo/pro_demo_panel.dart';
 import '../features/auth/presentation/pro_login_screen.dart';
 import '../features/collect/domain/collect.dart';
 import '../features/collect/presentation/collect_screen.dart';
 import '../features/collect/presentation/result_screen.dart';
+import '../features/collect/presentation/waiting_screen.dart';
 import '../features/day/presentation/day_screen.dart';
 import '../features/payouts/presentation/balance_screen.dart';
 import '../features/payouts/presentation/payouts_screen.dart';
+import '../features/registers/presentation/registers_screen.dart';
+import '../features/registers/presentation/sticker_screen.dart';
 import '../features/team/presentation/team_screen.dart';
 import 'routes.dart';
 
@@ -40,12 +44,30 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: ProRoutes.login, builder: (_, _) => const ProLoginScreen()),
       GoRoute(
         path: ProRoutes.catalog,
-        builder: (_, _) => const FpCatalogPage(),
+        builder: (_, _) => FpCatalogPage(
+          demoPanel: ref.read(appConfigProvider).demo
+              ? const ProDemoPanel()
+              : null,
+        ),
       ),
       GoRoute(
         path: ProRoutes.result,
         builder: (_, state) =>
-            ResultScreen(result: state.extra! as CollectResult),
+            ResultScreen(result: state.extra! as TillCheckout),
+      ),
+      GoRoute(
+        path: ProRoutes.waiting,
+        builder: (_, state) =>
+            WaitingScreen(checkout: state.extra! as TillCheckout),
+      ),
+      GoRoute(
+        path: ProRoutes.registers,
+        builder: (_, _) => const RegistersScreen(),
+      ),
+      GoRoute(
+        path: ProRoutes.sticker,
+        builder: (_, state) =>
+            StickerScreen(register: state.extra! as TillRegister),
       ),
       ShellRoute(
         builder: (context, state, child) =>

@@ -7,18 +7,19 @@ import 'package:intl/intl.dart';
 import '../../../app/routes.dart';
 import '../domain/collect.dart';
 
-/// Résultat d'un encaissement : tampon APPROUVÉ ou REFUSÉ et détail.
+/// Résultat reçu en temps réel : tampon APPROUVÉ ou REFUSÉ, prénom du client et détail.
 class ResultScreen extends StatelessWidget {
   const ResultScreen({super.key, required this.result});
 
-  final CollectResult result;
+  final TillCheckout result;
 
   @override
   Widget build(BuildContext context) {
     final l10n = FpL10n.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     final r = result;
-    final ok = r.approved;
+    final ok = r.status == CheckoutStatus.paid;
+    final name = r.customerFirstName ?? '';
     return FpScreen(
       gap: FpSpace.x20,
       children: [
@@ -56,16 +57,26 @@ class ResultScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: FpSpace.x6),
+              Text(
+                ok ? l10n.paidByCustomer(name) : l10n.refusedForCustomer(name),
+                style: FpText.body(size: 16, weight: FontWeight.w600),
+              ),
               const SizedBox(height: FpSpace.x8),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 300),
                 child: Text(
-                  ok
-                      ? l10n.customerConfirmed
-                      : l10n.refusedFundsPro(
-                          r.type.label(l10n),
-                          Tnd.format(r.missing ?? 0, currency: l10n.currency),
-                        ),
+                  switch (r.refusal) {
+                    _ when ok => l10n.customerConfirmed,
+                    RefusalReason.insufficientFunds when r.missing != null =>
+                      l10n.refusedFundsPro(
+                        r.type.label(l10n),
+                        Tnd.format(r.missing!, currency: l10n.currency),
+                      ),
+                    RefusalReason.insufficientFunds => l10n.tillRefusalFunds,
+                    RefusalReason.familyLimit => l10n.tillRefusalLimit,
+                    _ => l10n.tillRefusalOther,
+                  },
                   textAlign: TextAlign.center,
                   style: FpText.body(color: FpColors.muted, height: 1.5),
                 ),
@@ -82,11 +93,11 @@ class ResultScreen extends StatelessWidget {
                 bold: true,
               ),
               const SizedBox(height: FpSpace.x12),
-              DetailLine(label: l10n.customerLabel, value: r.customerName),
+              DetailLine(label: l10n.customerLabel, value: name),
               const SizedBox(height: FpSpace.x12),
               DetailLine(label: l10n.typeLabel, value: r.type.label(l10n)),
               const SizedBox(height: FpSpace.x12),
-              DetailLine(label: l10n.cashierLabel, value: r.cashier),
+              DetailLine(label: l10n.cashierLabel, value: r.cashier ?? ''),
               if (r.reference != null) ...[
                 const SizedBox(height: FpSpace.x12),
                 DetailLine(label: l10n.reference, value: r.reference!),
@@ -94,7 +105,9 @@ class ResultScreen extends StatelessWidget {
               const SizedBox(height: FpSpace.x12),
               DetailLine(
                 label: l10n.timeLabel,
-                value: DateFormat.Hm(locale).format(r.time),
+                value: r.time == null
+                    ? ''
+                    : DateFormat.Hm(locale).format(r.time!),
               ),
             ],
           ),
@@ -102,7 +115,7 @@ class ResultScreen extends StatelessWidget {
         const Spacer(),
         FpButton(
           label: l10n.newCollection,
-          icon: FpIcons.scan,
+          icon: FpIcons.nfc,
           onPressed: () => context.go(ProRoutes.collect),
         ),
         FpButton(

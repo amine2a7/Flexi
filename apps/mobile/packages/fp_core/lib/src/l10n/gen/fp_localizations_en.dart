@@ -487,36 +487,7 @@ class FpL10nEn extends FpL10n {
   String get creditTypeLabel => 'Credit type';
 
   @override
-  String get myPaymentCode => 'My payment code';
-
-  @override
-  String ticketOf(Object type) {
-    return '$type ticket';
-  }
-
-  @override
-  String get qrLabel => 'Payment QR code';
-
-  @override
-  String get orGiveCode => 'or give this code';
-
-  @override
-  String get codeRenews => 'The code changes every 60 seconds';
-
-  @override
-  String get cashierScanned => 'The cashier has scanned';
-
-  @override
-  String get showTicketHint =>
-      'Show this ticket to the cashier. You will confirm with your PIN.';
-
-  @override
   String get confirmTitle => 'Confirm';
-
-  @override
-  String cashierOf(Object name, Object city) {
-    return '$name\'s till · $city';
-  }
 
   @override
   String get amountLabel => 'Amount';
@@ -583,11 +554,6 @@ class FpL10nEn extends FpL10n {
   }
 
   @override
-  String refusedTypeAction(Object type) {
-    return 'Pay with $type';
-  }
-
-  @override
   String get refusedFundsTitle => 'Insufficient balance';
 
   @override
@@ -598,11 +564,6 @@ class FpL10nEn extends FpL10n {
   @override
   String refusedFundsTip(Object amount) {
     return 'Ask the cashier to collect $amount and pay the rest another way.';
-  }
-
-  @override
-  String refusedFundsAction(Object amount) {
-    return 'Retry with $amount';
   }
 
   @override
@@ -622,18 +583,14 @@ class FpL10nEn extends FpL10n {
   String get refusedMerchantAction => 'See accepted merchants';
 
   @override
-  String get refusedExpiredTitle => 'Code expired';
+  String get refusedExpiredTitle => 'Request expired';
 
   @override
-  String get refusedExpiredMessage =>
-      'This code is no longer valid. A new code is ready.';
+  String get refusedExpiredMessage => 'The till\'s request is no longer valid.';
 
   @override
   String get refusedExpiredTip =>
-      'Each code works only once and changes every 60 seconds.';
-
-  @override
-  String get refusedExpiredAction => 'Show a new code';
+      'A request stays valid for 2 minutes. Ask the cashier to send it again.';
 
   @override
   String get merchantLabel => 'Merchant';
@@ -1082,32 +1039,10 @@ class FpL10nEn extends FpL10n {
   String get collectTitle => 'Collect';
 
   @override
-  String get modeLabel => 'Mode';
-
-  @override
   String get scanQr => 'Scan the QR';
 
   @override
   String get enterCode => 'Enter the code';
-
-  @override
-  String get cameraViewfinder => 'Camera viewfinder';
-
-  @override
-  String get aimQr => 'Aim at the customer\'s QR';
-
-  @override
-  String get customerCode => 'Customer code (6 digits)';
-
-  @override
-  String customerRecognized(Object type, Object amount) {
-    return 'Customer recognized · $type $amount available';
-  }
-
-  @override
-  String collectAmount(Object amount) {
-    return 'Collect $amount';
-  }
 
   @override
   String get paymentApproved => 'Payment approved';
@@ -1322,4 +1257,151 @@ class FpL10nEn extends FpL10n {
 
   @override
   String get catalogOffline => 'Simulate network loss';
+
+  @override
+  String get payNfcTitle => 'Hold your phone near the FlexiPay sticker';
+
+  @override
+  String get payNfcHint =>
+      'The amount then appears: you confirm with your PIN.';
+
+  @override
+  String get payNfcUnavailable =>
+      'NFC is not available on this phone: scan the QR or type the till code.';
+
+  @override
+  String get payScanQr => 'Scan the QR';
+
+  @override
+  String get payTypeCode => 'Type the till code';
+
+  @override
+  String get payScanTitle => 'Scan the QR on the sticker';
+
+  @override
+  String get payCodeTitle => 'Till code';
+
+  @override
+  String get payCodeHint => '4 digits shown at the till';
+
+  @override
+  String get payStickerRead => 'Sticker read';
+
+  @override
+  String registerAtCity(Object register, Object city) {
+    return '$register · $city';
+  }
+
+  @override
+  String get refusedPaidTitle => 'Already paid';
+
+  @override
+  String get refusedPaidMessage =>
+      'Another customer has already paid this request.';
+
+  @override
+  String get refusedStickerTitle => 'Invalid sticker';
+
+  @override
+  String get refusedStickerMessage =>
+      'This sticker is not recognized by FlexiPay.';
+
+  @override
+  String get refusedNoPendingTitle => 'No request at the till';
+
+  @override
+  String get refusedNoPendingMessage =>
+      'Ask the cashier to enter the amount, then try again.';
+
+  @override
+  String get refusedFamilyTitle => 'Daily limit reached';
+
+  @override
+  String refusedFamilyMessage(Object amount) {
+    return 'You have $amount left for today.';
+  }
+
+  @override
+  String get refusedTryAgain => 'Try again';
+
+  @override
+  String get refusedNothingDebited => 'Nothing was charged.';
+
+  @override
+  String requestPayment(Object amount) {
+    return 'Request $amount';
+  }
+
+  @override
+  String get waitingCustomer => 'Waiting for the customer…';
+
+  @override
+  String get waitingHint =>
+      'The customer holds their phone near the sticker, scans the QR or types this code.';
+
+  @override
+  String get shortCodeLabel => 'Till code';
+
+  @override
+  String get cancelRequest => 'Cancel the request';
+
+  @override
+  String get requestExpiredTitle => 'Request expired';
+
+  @override
+  String get requestCancelledTitle => 'Request cancelled';
+
+  @override
+  String get newRequest => 'New request';
+
+  @override
+  String paidByCustomer(Object name) {
+    return 'Paid by $name';
+  }
+
+  @override
+  String refusedForCustomer(Object name) {
+    return 'Declined for $name';
+  }
+
+  @override
+  String get tillRefusalFunds => 'Insufficient balance. Nothing was charged.';
+
+  @override
+  String get tillRefusalLimit => 'Daily limit reached. Nothing was charged.';
+
+  @override
+  String get tillRefusalOther => 'Payment declined. Nothing was charged.';
+
+  @override
+  String get registersTitle => 'My tills';
+
+  @override
+  String get registerSticker => 'Pair a sticker';
+
+  @override
+  String get stickerApproach => 'Hold the NFC sticker near the phone';
+
+  @override
+  String stickerApproachHint(Object register) {
+    return 'The link of $register will be written on it.';
+  }
+
+  @override
+  String stickerWritten(Object register) {
+    return 'Sticker paired with $register';
+  }
+
+  @override
+  String get stickerWriteFailed =>
+      'Could not write. Try again with a blank NFC sticker.';
+
+  @override
+  String get registerDisabled => 'Disabled';
+
+  @override
+  String get myRegister => 'My till';
+
+  @override
+  String get catalogNextCustomer => 'Next customer';
 }

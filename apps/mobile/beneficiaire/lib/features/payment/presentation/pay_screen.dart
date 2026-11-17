@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,226 +7,224 @@ import 'package:fp_ui/fp_ui.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/routes.dart';
-import '../../../shared/data_providers.dart';
-import '../domain/payment.dart';
+import '../data/nfc_reader.dart';
+import 'checkout_opener.dart';
 
-/// Payer : choix du crédit, QR et code à 6 chiffres renouvelés toutes les 60 s.
+/// Payer : le client approche son téléphone de l'autocollant NFC de la caisse, ou scanne
+/// le QR imprimé, ou tape le code à 4 chiffres affiché en caisse.
 class PayScreen extends ConsumerStatefulWidget {
-  const PayScreen({super.key, this.initialType});
-
-  final CreditType? initialType;
+  const PayScreen({super.key});
 
   @override
   ConsumerState<PayScreen> createState() => _PayScreenState();
 }
 
 class _PayScreenState extends ConsumerState<PayScreen> {
-  CreditType? _type;
-  CreditType? _requestedFor;
-  PaymentCode? _code;
-  int _left = 60;
-  Timer? _timer;
+  /// `null` tant que la disponibilité du NFC n'est pas connue.
+  bool? _nfc;
   bool _busy = false;
+  late final StickerReader _reader = ref.read(stickerReaderProvider);
+
+  /// Autocollant simulé des builds de démonstration (émulateur sans NFC).
+  static const _demoLink = StickerLink(
+    publicId: 'demo-register-r-1',
+    signature: 'demo-signature-demo',
+  );
 
   @override
   void initState() {
     super.initState();
-    _type = widget.initialType;
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+    _listen();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _reader.stop();
     super.dispose();
   }
 
-  void _tick() {
-    if (!mounted || _code == null) return;
-    if (_left <= 1) {
-      _renew();
-    } else {
-      setState(() => _left--);
-    }
+  Future<void> _listen() async {
+    final available = await _reader.isAvailable();
+    if (!mounted) return;
+    setState(() => _nfc = available);
+    if (!available) return;
+    await _reader.start(
+      iosMessage: FpL10n.of(context).payNfcTitle,
+      onLink: _read,
+    );
   }
 
-  Future<void> _renew() async {
-    final type = _type;
-    if (type == null) return;
-    try {
-      final code = await ref.read(paymentRepositoryProvider).createCode(type);
-      if (mounted) {
-        setState(() {
-          _code = code;
-          _left = code.validity.inSeconds;
-        });
-      }
-    } on NetworkFailure {
-      _offline();
-    }
-  }
-
-  void _offline() {
-    ref.read(connectivityProvider.notifier).setOnline(false);
-    if (mounted) context.go(Routes.home);
-  }
-
-  Future<void> _scanned() async {
-    final code = _code;
-    if (code == null) return;
+  Future<void> _read(StickerLink link) async {
+    if (_busy || !mounted) return;
     setState(() => _busy = true);
-    try {
-      final request = await ref
-          .read(paymentRepositoryProvider)
-          .pendingRequest(code);
-      if (mounted) context.push(Routes.payConfirm, extra: request);
-    } on PaymentRefusedException catch (e) {
-      if (mounted) context.push(Routes.payRefused, extra: e.refusal);
-    } on NetworkFailure {
-      _offline();
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
+    await _reader.stop();
+    if (!mounted) return;
+    await openCheckout(context, ref, (repo) => repo.bySticker(link));
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (_nfc ?? false) _listen();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = FpL10n.of(context);
-    final credits = ref.watch(walletProvider).value?.credits ?? const [];
-    if (_type == null && credits.isNotEmpty) _type = credits.first.type;
-    if (_type != null && _requestedFor != _type) {
-      _requestedFor = _type;
-      Future.microtask(_renew);
-    }
-    final type = _type;
-    final code = _code?.type == type ? (_code?.code ?? '') : '';
-    final shown = code.length == 6
-        ? '${code.substring(0, 3)} ${code.substring(3)}'
-        : code;
+    final demo = ref.watch(appConfigProvider).demo;
+    final card = FpCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: FpSpace.x22,
+        vertical: FpSpace.x28,
+      ),
+      child: Column(
+        children: [
+          _NfcPulse(active: !_busy),
+          const SizedBox(height: FpSpace.x22),
+          Text(
+            _busy ? l10n.payStickerRead : l10n.payNfcTitle,
+            textAlign: TextAlign.center,
+            style: FpText.body(
+              size: 18,
+              weight: FontWeight.w700,
+              color: FpColors.navy,
+            ),
+          ),
+          const SizedBox(height: FpSpace.x8),
+          Text(
+            l10n.payNfcHint,
+            textAlign: TextAlign.center,
+            style: FpText.body(size: 14, color: FpColors.muted, height: 1.5),
+          ),
+        ],
+      ),
+    );
     return FpScreen(
       children: [
         ScreenHeader(title: l10n.payTitle, onBack: () => context.pop()),
-        Semantics(
-          label: l10n.creditTypeLabel,
-          container: true,
-          child: Row(
-            children: [
-              for (final (i, c) in credits.indexed) ...[
-                if (i > 0) const SizedBox(width: FpSpace.x10),
-                Expanded(
-                  child: TypeOption(
-                    label: c.type.label(l10n),
-                    color: c.type.color,
-                    selected: c.type == type,
-                    onTap: () => setState(() => _type = c.type),
-                    amount: Directionality(
-                      textDirection: TextDirection.ltr,
-                      child: Text(
-                        Tnd.format(c.balance, currency: l10n.currency),
-                        style: FpText.display(size: 18),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
+        FpRise(
+          child: demo
+              ? FpPressable(
+                  semanticLabel: l10n.payNfcTitle,
+                  onTap: () => _read(_demoLink),
+                  child: card,
+                )
+              : Semantics(container: true, liveRegion: true, child: card),
         ),
-        if (type != null)
-          FpRise(
-            child: Semantics(
-              label: l10n.myPaymentCode,
-              container: true,
-              child: TicketCard(
-                padding: FpSpace.x22,
-                top: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: type.color,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: FpSpace.x8),
-                        Text(
-                          l10n.ticketOf(type.label(l10n)).toUpperCase(),
-                          style: FpText.caps().copyWith(letterSpacing: 1.2),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: FpSpace.x16),
-                    if (code.isNotEmpty)
-                      PaymentQr(
-                        data: 'flexipay:$code',
-                        semanticLabel: l10n.qrLabel,
-                      ),
-                    const SizedBox(height: FpSpace.x16),
-                    Text(l10n.orGiveCode, style: FpText.small),
-                    const SizedBox(height: FpSpace.x2),
-                    Directionality(
-                      textDirection: TextDirection.ltr,
-                      child: Text(
-                        shown,
-                        style: FpText.display(
-                          size: 44,
-                          color: FpColors.navy,
-                          letterSpacing: 0.12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                bottom: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: FpProgressBar(
-                            value: _left / 60,
-                            color: _left <= 10
-                                ? FpColors.danger
-                                : FpColors.green,
-                            height: 8,
-                            animate: true,
-                          ),
-                        ),
-                        const SizedBox(width: FpSpace.x12),
-                        SizedBox(
-                          width: 52,
-                          child: Directionality(
-                            textDirection: TextDirection.ltr,
-                            child: Text(
-                              '0:${_left.toString().padLeft(2, '0')}',
-                              textAlign: TextAlign.right,
-                              style: FpText.display(size: 20),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: FpSpace.x16),
-                    Text(l10n.codeRenews, style: FpText.small),
-                  ],
-                ),
-              ),
-            ),
+        if (_nfc == false)
+          InfoBanner(
+            text: l10n.payNfcUnavailable,
+            icon: FpIcons.info,
+            tint: FpColors.warningTint,
+            iconColor: FpColors.warningIcon,
           ),
+        const Spacer(),
         FpButton(
-          label: l10n.cashierScanned,
-          onPressed: code.isEmpty || _busy ? null : _scanned,
+          label: l10n.payScanQr,
+          icon: FpIcons.scan,
+          variant: FpButtonVariant.secondary,
+          onPressed: _busy ? null : () => context.push(Routes.payScan),
         ),
-        Text(
-          l10n.showTicketHint,
-          textAlign: TextAlign.center,
-          style: FpText.body(size: 13, color: FpColors.muted),
+        FpButton(
+          label: l10n.payTypeCode,
+          variant: FpButtonVariant.secondary,
+          onPressed: _busy ? null : () => context.push(Routes.payCode),
         ),
       ],
+    );
+  }
+}
+
+/// Ondes qui invitent à approcher le téléphone (immobiles si les animations sont réduites).
+class _NfcPulse extends StatefulWidget {
+  const _NfcPulse({required this.active});
+
+  final bool active;
+
+  @override
+  State<_NfcPulse> createState() => _NfcPulseState();
+}
+
+class _NfcPulseState extends State<_NfcPulse>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1800),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(_NfcPulse old) {
+    super.didUpdateWidget(old);
+    _sync();
+  }
+
+  void _sync() {
+    final animate = widget.active && !MediaQuery.disableAnimationsOf(context);
+    if (animate && !_c.isAnimating) {
+      _c.repeat();
+    } else if (!animate && _c.isAnimating) {
+      _c.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const size = 168.0;
+    const core = 88.0;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: AnimatedBuilder(
+        animation: _c,
+        builder: (context, _) => Stack(
+          alignment: Alignment.center,
+          children: [
+            for (var i = 0; i < 3; i++)
+              Builder(
+                builder: (context) {
+                  final t = (_c.value + i / 3) % 1;
+                  final d = core + (size - core) * t;
+                  return Container(
+                    width: d,
+                    height: d,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: FpColors.green.withValues(
+                          alpha: math.max(0, 0.45 * (1 - t)),
+                        ),
+                        width: 2,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            Container(
+              width: core,
+              height: core,
+              decoration: const BoxDecoration(
+                color: FpColors.greenTint,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: const FpIcon(
+                FpIcons.nfc,
+                size: 40,
+                color: FpColors.greenDark,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

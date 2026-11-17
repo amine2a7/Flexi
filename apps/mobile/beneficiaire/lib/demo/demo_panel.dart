@@ -22,9 +22,12 @@ class _DemoPanelState extends ConsumerState<DemoPanel> {
     final online = ref.watch(connectivityProvider);
     final outcomes = {
       DemoPaymentOutcome.auto: l10n.paymentApproved,
+      DemoPaymentOutcome.typeNotAccepted: l10n.refusedTypeTitle,
       DemoPaymentOutcome.insufficientFunds: l10n.refusedFundsTitle,
       DemoPaymentOutcome.merchantInactive: l10n.refusedMerchantTitle,
       DemoPaymentOutcome.codeExpired: l10n.refusedExpiredTitle,
+      DemoPaymentOutcome.alreadyPaid: l10n.refusedPaidTitle,
+      DemoPaymentOutcome.stickerInvalid: l10n.refusedStickerTitle,
     };
     return FpCard(
       child: Column(
@@ -48,7 +51,7 @@ class _DemoPanelState extends ConsumerState<DemoPanel> {
           ),
           const SizedBox(height: FpSpace.x16),
           Text(
-            l10n.cashierScanned,
+            l10n.payStickerRead,
             style: FpText.body(weight: FontWeight.w600),
           ),
           const SizedBox(height: FpSpace.x10),

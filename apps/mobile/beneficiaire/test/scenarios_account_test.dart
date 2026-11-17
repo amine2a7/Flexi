@@ -4,6 +4,7 @@ import 'package:fp_beneficiaire/demo/demo_backend.dart';
 import 'package:fp_core/fp_core.dart';
 
 import 'helpers.dart';
+import 'scenarios_payment_test.dart' show nfcTitle;
 
 void main() {
   testWidgets('S9 · Voir un crédit et où l’utiliser', (tester) async {
@@ -76,7 +77,8 @@ void main() {
     tester.seeText('15 / 20 TND');
 
     await tapText(tester, 'Payer');
-    await tapText(tester, 'Le caissier a scanné');
+    await tapText(tester, nfcTitle);
+    tester.seeText('Caisse 1 · La Marsa');
     await typePin(tester, '1234');
     await tapText(tester, 'Payer 15,000 TND');
 

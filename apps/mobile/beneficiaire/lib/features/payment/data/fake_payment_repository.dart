@@ -3,46 +3,68 @@ import 'package:fp_core/fp_core.dart';
 import '../../../demo/demo_backend.dart';
 import '../domain/payment.dart';
 
-/// Paiement de démonstration : rejoue les transactions du prototype
-/// (Carrefour 57,500 pour Yasmine, 15,000 pour Adam) et les 4 motifs de refus.
+/// Paiement de démonstration (autocollant NFC de la caisse) : rejoue les transactions du
+/// prototype (Carrefour 57,500 pour Yasmine, 15,000 pour Adam) et les motifs de refus.
 class FakePaymentRepository implements PaymentRepository {
-  FakePaymentRepository(this._backend, this._online);
+  FakePaymentRepository(this._backend, this._online, this._now);
 
   final DemoBackend _backend;
   final bool Function() _online;
+  final DateTime Function() _now;
 
-  static final _food5750 = Tnd.dinars(57) + 500;
+  static final _carrefour = DemoBackend.merchants.first;
+  static final _ennour = DemoBackend.merchants[1];
 
-  @override
-  Future<PaymentCode> createCode(CreditType type) async {
+  void _checkNetwork() {
     if (!_online()) throw const NetworkFailure();
-    return PaymentCode(
-      code: '482913',
-      type: type,
-      validity: const Duration(seconds: 60),
+  }
+
+  /// Demande « en caisse » selon le compte et la réponse de démonstration choisie.
+  PendingCheckout _pending() {
+    final now = _now();
+    if (_backend.nextOutcome == DemoPaymentOutcome.insufficientFunds) {
+      return PendingCheckout(
+        id: 'co-ennour',
+        merchantId: _ennour.id,
+        merchantName: _ennour.name,
+        registerName: 'Caisse 1',
+        city: _ennour.city,
+        amount: Tnd.dinars(50),
+        type: CreditType.fuel,
+        expiresAt: now.add(const Duration(seconds: 120)),
+      );
+    }
+    final adam = _backend.account == DemoAccount.adam;
+    final fuel = _backend.nextOutcome == DemoPaymentOutcome.typeNotAccepted;
+    return PendingCheckout(
+      id: 'co-carrefour',
+      merchantId: _carrefour.id,
+      merchantName: _carrefour.name,
+      registerName: 'Caisse 1',
+      city: _carrefour.city,
+      amount: adam
+          ? Tnd.dinars(15)
+          : fuel
+          ? Tnd.dinars(10)
+          : Tnd.dinars(57) + 500,
+      type: fuel ? CreditType.fuel : CreditType.food,
+      expiresAt: now.add(const Duration(seconds: 120)),
     );
   }
 
-  @override
-  Future<PaymentRequest> pendingRequest(PaymentCode code) async {
-    if (!_online()) throw const NetworkFailure();
-    final outcome = _backend.nextOutcome;
+  Never _refuse(PaymentRefusal refusal) {
     _backend.nextOutcome = DemoPaymentOutcome.auto;
-    switch (outcome) {
-      case DemoPaymentOutcome.insufficientFunds:
-        throw PaymentRefusedException(
-          PaymentRefusal(
-            reason: RefusalReason.insufficientFunds,
-            merchantName: 'Station Ennour',
-            requested: Tnd.dinars(50),
-            balanceType: CreditType.fuel,
-            balance: Tnd.dinars(40),
-            missing: Tnd.dinars(10),
-            acceptedTypes: const [CreditType.fuel],
-          ),
-        );
+    throw PaymentRefusedException(refusal);
+  }
+
+  @override
+  Future<PendingCheckout> bySticker(StickerLink link) async {
+    _checkNetwork();
+    switch (_backend.nextOutcome) {
+      case DemoPaymentOutcome.stickerInvalid:
+        _refuse(const PaymentRefusal(reason: RefusalReason.stickerInvalid));
       case DemoPaymentOutcome.merchantInactive:
-        throw PaymentRefusedException(
+        _refuse(
           PaymentRefusal(
             reason: RefusalReason.merchantInactive,
             merchantName: 'Boutique Yasmina',
@@ -52,56 +74,84 @@ class FakePaymentRepository implements PaymentRepository {
             acceptedTypes: const [CreditType.clothing],
           ),
         );
-      case DemoPaymentOutcome.codeExpired:
-        throw PaymentRefusedException(
+      case DemoPaymentOutcome.alreadyPaid:
+        _refuse(
           PaymentRefusal(
-            reason: RefusalReason.codeExpired,
-            merchantName: 'Carrefour',
-            requested: _food5750,
-            balanceType: CreditType.food,
-            balance: Tnd.dinars(200),
-            acceptedTypes: _carrefour.acceptedTypes,
+            reason: RefusalReason.alreadyPaid,
+            merchantName: _carrefour.name,
           ),
         );
-      case DemoPaymentOutcome.auto:
-        break;
+      default:
+        return _pending();
     }
-    if (!_carrefour.acceptedTypes.contains(code.type)) {
-      throw PaymentRefusedException(
-        PaymentRefusal(
-          reason: RefusalReason.typeNotAccepted,
-          merchantName: _carrefour.name,
-          requested: Tnd.dinars(10),
-          balanceType: code.type,
-          balance: Tnd.dinars(40),
-          acceptedTypes: _carrefour.acceptedTypes,
-        ),
-      );
+  }
+
+  @override
+  Future<PendingCheckout> byCode(String shortCode) async {
+    _checkNetwork();
+    if (shortCode != demoShortCode) {
+      _refuse(const PaymentRefusal(reason: RefusalReason.noPendingCheckout));
     }
-    final adam = _backend.account == DemoAccount.adam;
-    return PaymentRequest(
-      id: 'pr-1',
-      merchantId: _carrefour.id,
-      merchantName: _carrefour.name,
-      cashier: 'Sami',
-      city: _carrefour.city,
-      amount: adam ? Tnd.dinars(15) : _food5750,
-      type: code.type,
+    return bySticker(
+      const StickerLink(
+        publicId: 'demo-register-r-1',
+        signature: 'demo-signature-demo',
+      ),
     );
   }
 
   @override
-  Future<PaymentReceipt> confirm(PaymentRequest request, String pin) async {
-    if (!_online()) throw const NetworkFailure();
+  Future<PaymentReceipt> confirm(PendingCheckout checkout, String pin) async {
+    _checkNetwork();
     if (pin == DemoBackend.refusedDemoPin) throw const PinRefusedFailure(2);
+    switch (_backend.nextOutcome) {
+      case DemoPaymentOutcome.typeNotAccepted:
+        _refuse(
+          PaymentRefusal(
+            reason: RefusalReason.typeNotAccepted,
+            merchantName: checkout.merchantName,
+            requested: checkout.amount,
+            balanceType: checkout.type,
+            balance: Tnd.dinars(40),
+            acceptedTypes: _carrefour.acceptedTypes,
+          ),
+        );
+      case DemoPaymentOutcome.codeExpired:
+        _refuse(
+          PaymentRefusal(
+            reason: RefusalReason.codeExpired,
+            merchantName: checkout.merchantName,
+            requested: checkout.amount,
+          ),
+        );
+      default:
+        break;
+    }
+    // Vérification de démonstration : le solde du type couvre-t-il la demande ?
+    final credit = _backend.credits
+        .where((c) => c.type == checkout.type)
+        .firstOrNull;
+    final balance = credit?.balance ?? 0;
+    if (_backend.account != DemoAccount.adam && checkout.amount > balance) {
+      _refuse(
+        PaymentRefusal(
+          reason: RefusalReason.insufficientFunds,
+          merchantName: checkout.merchantName,
+          requested: checkout.amount,
+          balanceType: checkout.type,
+          balance: balance,
+          missing: checkout.amount - balance,
+        ),
+      );
+    }
     final adam = _backend.account == DemoAccount.adam;
     return PaymentReceipt(
       operationId: adam ? 'op-adam-carrefour' : 'op-carrefour',
-      merchantId: request.merchantId,
-      merchantName: request.merchantName,
-      cashier: request.cashier,
-      amount: request.amount,
-      type: request.type,
+      merchantId: checkout.merchantId,
+      merchantName: checkout.merchantName,
+      cashier: 'Sami',
+      amount: checkout.amount,
+      type: checkout.type,
       remaining: adam ? Tnd.dinars(35) : Tnd.dinars(142) + 500,
       reference: adam ? 'TX-7F3A44' : 'TX-7F3A21',
       paidBy: adam ? 'Adam' : 'Yasmine',
@@ -110,6 +160,4 @@ class FakePaymentRepository implements PaymentRepository {
           : DateTime(2026, 11, 14, 12, 41),
     );
   }
-
-  static final _carrefour = DemoBackend.merchants.first;
 }

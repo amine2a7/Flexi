@@ -149,9 +149,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             kind: _kind(l10n, m.kind),
             distance:
                 '${NumberFormat('0.0', locale).format(m.distanceMeters / 1000)} km',
-            onTap: () => context.push(
-              '${Routes.pay}?type=${m.acceptedTypes.first.name}',
-            ),
+            onTap: () => context.push(Routes.pay),
           ),
       ],
     );

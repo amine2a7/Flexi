@@ -4,9 +4,21 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fp_core/fp_core.dart';
 import 'package:fp_pro/app/app.dart';
 import 'package:fp_pro/app/dependencies.dart';
-import 'package:fp_pro/features/collect/presentation/collect_screen.dart';
+import 'package:fp_pro/features/registers/data/sticker_writer.dart';
 
-/// Lance l'app Pro (390 × 844, animations réduites, sans caméra) et se connecte.
+/// Téléphone sans NFC : l'écriture de l'autocollant est simulée par un appui (démo).
+class NoNfcWriter implements StickerWriter {
+  @override
+  Future<bool> isAvailable() async => false;
+
+  @override
+  Future<bool> write(String url, {required String iosMessage}) async => false;
+
+  @override
+  Future<void> stop() async {}
+}
+
+/// Lance l'app Pro (390 × 844, animations réduites, sans NFC) et se connecte.
 Future<ProviderContainer> launchPro(
   WidgetTester tester, {
   String email = 'sami@flexipay.test',
@@ -24,7 +36,7 @@ Future<ProviderContainer> launchPro(
       appConfigProvider.overrideWithValue(
         const AppConfig(apiBaseUrl: '', demo: true),
       ),
-      cameraEnabledProvider.overrideWithValue(false),
+      stickerWriterProvider.overrideWithValue(NoNfcWriter()),
     ],
   );
   addTearDown(container.dispose);
@@ -68,16 +80,16 @@ Future<void> goTab(WidgetTester tester, String label) => tap(
   find.descendant(of: find.byType(Scaffold).first, matching: find.text(label)),
 );
 
-/// Saisit le code client et le montant, choisit le type puis encaisse.
-Future<void> collect(
-  WidgetTester tester, {
-  required String code,
-  required String amount,
-}) async {
-  await tapText(tester, 'Saisir le code');
-  await tester.enterText(find.byKey(const Key('customer-code')), code);
-  await tester.pumpAndSettle();
+/// Saisit le montant puis envoie la demande à la caisse.
+Future<void> request(WidgetTester tester, {required String amount}) async {
   await tester.enterText(find.byKey(const Key('collect-amount')), amount);
+  await tester.pumpAndSettle();
+  await tapText(tester, 'Demander $amount TND');
+}
+
+/// Laisse le client de démonstration approcher son téléphone et taper son PIN.
+Future<void> customerPays(WidgetTester tester) async {
+  await tester.pump(const Duration(seconds: 3));
   await tester.pumpAndSettle();
 }
 

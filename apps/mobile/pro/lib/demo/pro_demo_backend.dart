@@ -8,6 +8,30 @@ import '../features/team/domain/team.dart';
 
 enum ProDemoAccount { sami, carrefour }
 
+/// Clients de démonstration : solde disponible du type Restauration, prénom affiché en caisse.
+enum ProDemoCustomer {
+  yasmine('Yasmine', 'Y', 142500),
+  omar('Omar', 'O', 50000),
+  adam('Adam', 'A', 5000, family: true),
+
+  /// Personne ne paie : la demande expire au bout de 120 s.
+  nobody('', '', 0);
+
+  const ProDemoCustomer(
+    this.firstName,
+    this.initial,
+    this.available, {
+    this.family = false,
+  });
+
+  final String firstName;
+  final String initial;
+
+  /// Millimes ; pour Adam, le reste du plafond du jour.
+  final int available;
+  final bool family;
+}
+
 /// Faux serveur du commerce Carrefour (La Marsa). Aucun mot de passe n'y est conservé.
 class ProDemoBackend {
   ProDemoBackend() {
@@ -33,23 +57,15 @@ class ProDemoBackend {
 
   String nextId(String prefix) => '$prefix-${_ids++}';
 
-  /// Codes clients reconnus par le faux serveur.
-  final customers = <String, Customer>{
-    '482913': Customer(
-      displayName: 'Yasmine B.',
-      initial: 'Y',
-      organization: 'BIAT',
-      availableType: CreditType.food,
-      available: Tnd.dinars(142) + 500,
-    ),
-    '731406': Customer(
-      displayName: 'Omar',
-      initial: 'O',
-      organization: 'BIAT',
-      availableType: CreditType.food,
-      available: Tnd.dinars(50),
-    ),
-  };
+  /// Client qui lira la prochaine demande de la caisse (réglable dans le catalogue).
+  ProDemoCustomer nextCustomer = ProDemoCustomer.yasmine;
+
+  /// Caisses du commerce ; Sami est rattaché à la Caisse 1.
+  final registers = const [
+    TillRegister(id: 'r-1', name: 'Caisse 1', active: true),
+    TillRegister(id: 'r-2', name: 'Caisse 2', active: true),
+    TillRegister(id: 'r-3', name: 'Drive', active: false),
+  ];
 
   void _seed() {
     collections = [

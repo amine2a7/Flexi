@@ -4,7 +4,23 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fp_beneficiaire/app/app.dart';
 import 'package:fp_beneficiaire/app/dependencies.dart';
 import 'package:fp_beneficiaire/demo/demo_backend.dart';
+import 'package:fp_beneficiaire/features/payment/data/nfc_reader.dart';
 import 'package:fp_core/fp_core.dart';
+
+/// Téléphone sans NFC : l'autocollant est simulé en touchant la carte (build de démo).
+class NoNfc implements StickerReader {
+  @override
+  Future<bool> isAvailable() async => false;
+
+  @override
+  Future<void> start({
+    required String iosMessage,
+    required void Function(StickerLink) onLink,
+  }) async {}
+
+  @override
+  Future<void> stop() async {}
+}
 
 class FakeBiometrics implements BiometricService {
   @override
@@ -39,6 +55,8 @@ Future<ProviderContainer> launchApp(
         const AppConfig(apiBaseUrl: '', demo: true),
       ),
       biometricServiceProvider.overrideWithValue(FakeBiometrics()),
+      stickerReaderProvider.overrideWithValue(NoNfc()),
+      qrCameraEnabledProvider.overrideWithValue(false),
     ],
   );
   addTearDown(container.dispose);

@@ -490,36 +490,7 @@ class FpL10nFr extends FpL10n {
   String get creditTypeLabel => 'Type de crédit';
 
   @override
-  String get myPaymentCode => 'Mon code de paiement';
-
-  @override
-  String ticketOf(Object type) {
-    return 'Ticket $type';
-  }
-
-  @override
-  String get qrLabel => 'QR code de paiement';
-
-  @override
-  String get orGiveCode => 'ou donnez ce code';
-
-  @override
-  String get codeRenews => 'Le code change toutes les 60 secondes';
-
-  @override
-  String get cashierScanned => 'Le caissier a scanné';
-
-  @override
-  String get showTicketHint =>
-      'Montrez ce ticket au caissier. Vous confirmerez avec votre PIN.';
-
-  @override
   String get confirmTitle => 'Confirmer';
-
-  @override
-  String cashierOf(Object name, Object city) {
-    return 'Caisse de $name · $city';
-  }
 
   @override
   String get amountLabel => 'Montant';
@@ -586,11 +557,6 @@ class FpL10nFr extends FpL10n {
   }
 
   @override
-  String refusedTypeAction(Object type) {
-    return 'Payer avec $type';
-  }
-
-  @override
   String get refusedFundsTitle => 'Solde insuffisant';
 
   @override
@@ -601,11 +567,6 @@ class FpL10nFr extends FpL10n {
   @override
   String refusedFundsTip(Object amount) {
     return 'Demandez au caissier d’encaisser $amount et réglez le reste autrement.';
-  }
-
-  @override
-  String refusedFundsAction(Object amount) {
-    return 'Réessayer avec $amount';
   }
 
   @override
@@ -625,18 +586,15 @@ class FpL10nFr extends FpL10n {
   String get refusedMerchantAction => 'Voir les commerces acceptés';
 
   @override
-  String get refusedExpiredTitle => 'Code expiré';
+  String get refusedExpiredTitle => 'Demande expirée';
 
   @override
   String get refusedExpiredMessage =>
-      'Ce code n’est plus valable. Un nouveau code est prêt.';
+      'La demande de la caisse n\'est plus valable.';
 
   @override
   String get refusedExpiredTip =>
-      'Chaque code ne sert qu’une fois et change toutes les 60 secondes.';
-
-  @override
-  String get refusedExpiredAction => 'Afficher un nouveau code';
+      'Une demande reste valable 2 minutes. Demandez au caissier de la renvoyer.';
 
   @override
   String get merchantLabel => 'Commerce';
@@ -1092,32 +1050,10 @@ class FpL10nFr extends FpL10n {
   String get collectTitle => 'Encaisser';
 
   @override
-  String get modeLabel => 'Mode';
-
-  @override
   String get scanQr => 'Scanner le QR';
 
   @override
   String get enterCode => 'Saisir le code';
-
-  @override
-  String get cameraViewfinder => 'Viseur de la caméra';
-
-  @override
-  String get aimQr => 'Visez le QR du client';
-
-  @override
-  String get customerCode => 'Code du client (6 chiffres)';
-
-  @override
-  String customerRecognized(Object type, Object amount) {
-    return 'Client reconnu · $type $amount dispo';
-  }
-
-  @override
-  String collectAmount(Object amount) {
-    return 'Encaisser $amount';
-  }
 
   @override
   String get paymentApproved => 'Paiement approuvé';
@@ -1333,4 +1269,152 @@ class FpL10nFr extends FpL10n {
 
   @override
   String get catalogOffline => 'Simuler la perte de réseau';
+
+  @override
+  String get payNfcTitle =>
+      'Approchez votre téléphone de l\'autocollant FlexiPay';
+
+  @override
+  String get payNfcHint =>
+      'Le montant s\'affiche ensuite : vous confirmez avec votre PIN.';
+
+  @override
+  String get payNfcUnavailable =>
+      'NFC indisponible sur ce téléphone : scannez le QR ou tapez le code de la caisse.';
+
+  @override
+  String get payScanQr => 'Scanner le QR';
+
+  @override
+  String get payTypeCode => 'Taper le code de la caisse';
+
+  @override
+  String get payScanTitle => 'Scannez le QR de l\'autocollant';
+
+  @override
+  String get payCodeTitle => 'Code de la caisse';
+
+  @override
+  String get payCodeHint => '4 chiffres affichés à la caisse';
+
+  @override
+  String get payStickerRead => 'Autocollant lu';
+
+  @override
+  String registerAtCity(Object register, Object city) {
+    return '$register · $city';
+  }
+
+  @override
+  String get refusedPaidTitle => 'Déjà payée';
+
+  @override
+  String get refusedPaidMessage => 'Un autre client a déjà payé cette demande.';
+
+  @override
+  String get refusedStickerTitle => 'Autocollant invalide';
+
+  @override
+  String get refusedStickerMessage =>
+      'Cet autocollant n\'est pas reconnu par FlexiPay.';
+
+  @override
+  String get refusedNoPendingTitle => 'Aucune demande en caisse';
+
+  @override
+  String get refusedNoPendingMessage =>
+      'Demandez au caissier de saisir le montant, puis réessayez.';
+
+  @override
+  String get refusedFamilyTitle => 'Plafond du jour atteint';
+
+  @override
+  String refusedFamilyMessage(Object amount) {
+    return 'Il vous reste $amount pour aujourd\'hui.';
+  }
+
+  @override
+  String get refusedTryAgain => 'Réessayer';
+
+  @override
+  String get refusedNothingDebited => 'Aucun montant n\'a été débité.';
+
+  @override
+  String requestPayment(Object amount) {
+    return 'Demander $amount';
+  }
+
+  @override
+  String get waitingCustomer => 'En attente du client…';
+
+  @override
+  String get waitingHint =>
+      'Le client approche son téléphone de l\'autocollant, scanne le QR ou tape ce code.';
+
+  @override
+  String get shortCodeLabel => 'Code de la caisse';
+
+  @override
+  String get cancelRequest => 'Annuler la demande';
+
+  @override
+  String get requestExpiredTitle => 'Demande expirée';
+
+  @override
+  String get requestCancelledTitle => 'Demande annulée';
+
+  @override
+  String get newRequest => 'Nouvelle demande';
+
+  @override
+  String paidByCustomer(Object name) {
+    return 'Payé par $name';
+  }
+
+  @override
+  String refusedForCustomer(Object name) {
+    return 'Refusé pour $name';
+  }
+
+  @override
+  String get tillRefusalFunds => 'Solde insuffisant. Rien n\'a été débité.';
+
+  @override
+  String get tillRefusalLimit =>
+      'Plafond du jour atteint. Rien n\'a été débité.';
+
+  @override
+  String get tillRefusalOther => 'Paiement refusé. Rien n\'a été débité.';
+
+  @override
+  String get registersTitle => 'Mes caisses';
+
+  @override
+  String get registerSticker => 'Associer un autocollant';
+
+  @override
+  String get stickerApproach => 'Approchez l\'autocollant NFC du téléphone';
+
+  @override
+  String stickerApproachHint(Object register) {
+    return 'Le lien de $register y sera écrit.';
+  }
+
+  @override
+  String stickerWritten(Object register) {
+    return 'Autocollant associé à $register';
+  }
+
+  @override
+  String get stickerWriteFailed =>
+      'Écriture impossible. Réessayez avec un autocollant NFC vierge.';
+
+  @override
+  String get registerDisabled => 'Désactivée';
+
+  @override
+  String get myRegister => 'Ma caisse';
+
+  @override
+  String get catalogNextCustomer => 'Prochain client';
 }

@@ -11,6 +11,7 @@ export 'src/errors/app_failure.dart';
 export 'src/l10n/gen/fp_localizations.dart';
 export 'src/l10n/locale_controller.dart';
 export 'src/money/tnd.dart';
+export 'src/nfc/sticker_link.dart';
 export 'src/network/api_client.dart';
 export 'src/network/connectivity.dart';
 export 'src/storage/secure_store.dart';

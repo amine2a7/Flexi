@@ -184,7 +184,7 @@ class CreditScreen extends ConsumerWidget {
         FpButton(
           label: l10n.payWith(typeLabel),
           icon: FpIcons.qr,
-          onPressed: () => context.push('${Routes.pay}?type=${type.name}'),
+          onPressed: () => context.push(Routes.pay),
         ),
       ],
     );

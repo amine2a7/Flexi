@@ -489,36 +489,7 @@ class FpL10nAr extends FpL10n {
   String get creditTypeLabel => 'نوع الرصيد';
 
   @override
-  String get myPaymentCode => 'رمز الدفع الخاص بي';
-
-  @override
-  String ticketOf(Object type) {
-    return 'تذكرة $type';
-  }
-
-  @override
-  String get qrLabel => 'رمز QR للدفع';
-
-  @override
-  String get orGiveCode => 'أو أعطِ هذا الرمز';
-
-  @override
-  String get codeRenews => 'يتغيّر الرمز كل 60 ثانية';
-
-  @override
-  String get cashierScanned => 'مسح أمين الصندوق الرمز';
-
-  @override
-  String get showTicketHint =>
-      'أظهر هذه التذكرة لأمين الصندوق. ستؤكّد برمزك السري.';
-
-  @override
   String get confirmTitle => 'تأكيد';
-
-  @override
-  String cashierOf(Object name, Object city) {
-    return 'صندوق $name · $city';
-  }
 
   @override
   String get amountLabel => 'المبلغ';
@@ -585,11 +556,6 @@ class FpL10nAr extends FpL10n {
   }
 
   @override
-  String refusedTypeAction(Object type) {
-    return 'ادفع بـ$type';
-  }
-
-  @override
   String get refusedFundsTitle => 'رصيد غير كافٍ';
 
   @override
@@ -600,11 +566,6 @@ class FpL10nAr extends FpL10n {
   @override
   String refusedFundsTip(Object amount) {
     return 'اطلب من أمين الصندوق تحصيل $amount وادفع الباقي بطريقة أخرى.';
-  }
-
-  @override
-  String refusedFundsAction(Object amount) {
-    return 'أعد المحاولة بـ$amount';
   }
 
   @override
@@ -624,17 +585,14 @@ class FpL10nAr extends FpL10n {
   String get refusedMerchantAction => 'عرض المحلات المقبولة';
 
   @override
-  String get refusedExpiredTitle => 'انتهت صلاحية الرمز';
+  String get refusedExpiredTitle => 'انتهت صلاحية الطلب';
 
   @override
-  String get refusedExpiredMessage => 'هذا الرمز لم يعد صالحًا. رمز جديد جاهز.';
+  String get refusedExpiredMessage => 'طلب الصندوق لم يعد صالحًا.';
 
   @override
   String get refusedExpiredTip =>
-      'كل رمز يُستعمل مرة واحدة ويتغيّر كل 60 ثانية.';
-
-  @override
-  String get refusedExpiredAction => 'عرض رمز جديد';
+      'يبقى الطلب صالحًا لمدة دقيقتين. اطلب من أمين الصندوق إعادة إرساله.';
 
   @override
   String get merchantLabel => 'المحل';
@@ -1078,32 +1036,10 @@ class FpL10nAr extends FpL10n {
   String get collectTitle => 'تحصيل';
 
   @override
-  String get modeLabel => 'الطريقة';
-
-  @override
   String get scanQr => 'مسح رمز QR';
 
   @override
   String get enterCode => 'إدخال الرمز';
-
-  @override
-  String get cameraViewfinder => 'عدسة الكاميرا';
-
-  @override
-  String get aimQr => 'وجّه الكاميرا نحو رمز QR الحريف';
-
-  @override
-  String get customerCode => 'رمز الحريف (6 أرقام)';
-
-  @override
-  String customerRecognized(Object type, Object amount) {
-    return 'حريف معروف · $type $amount متاح';
-  }
-
-  @override
-  String collectAmount(Object amount) {
-    return 'تحصيل $amount';
-  }
 
   @override
   String get paymentApproved => 'دفع مقبول';
@@ -1318,4 +1254,148 @@ class FpL10nAr extends FpL10n {
 
   @override
   String get catalogOffline => 'محاكاة انقطاع الشبكة';
+
+  @override
+  String get payNfcTitle => 'قرّب هاتفك من ملصق FlexiPay';
+
+  @override
+  String get payNfcHint => 'يظهر المبلغ بعد ذلك: تؤكّد برمزك السري.';
+
+  @override
+  String get payNfcUnavailable =>
+      'NFC غير متاح على هذا الهاتف: امسح رمز QR أو اكتب رمز الصندوق.';
+
+  @override
+  String get payScanQr => 'مسح رمز QR';
+
+  @override
+  String get payTypeCode => 'كتابة رمز الصندوق';
+
+  @override
+  String get payScanTitle => 'امسح رمز QR على الملصق';
+
+  @override
+  String get payCodeTitle => 'رمز الصندوق';
+
+  @override
+  String get payCodeHint => '4 أرقام معروضة على الصندوق';
+
+  @override
+  String get payStickerRead => 'تمت قراءة الملصق';
+
+  @override
+  String registerAtCity(Object register, Object city) {
+    return '$register · $city';
+  }
+
+  @override
+  String get refusedPaidTitle => 'مدفوعة مسبقًا';
+
+  @override
+  String get refusedPaidMessage => 'دفع حريف آخر هذا الطلب مسبقًا.';
+
+  @override
+  String get refusedStickerTitle => 'ملصق غير صالح';
+
+  @override
+  String get refusedStickerMessage => 'هذا الملصق غير معروف لدى FlexiPay.';
+
+  @override
+  String get refusedNoPendingTitle => 'لا يوجد طلب على الصندوق';
+
+  @override
+  String get refusedNoPendingMessage =>
+      'اطلب من أمين الصندوق إدخال المبلغ ثم أعد المحاولة.';
+
+  @override
+  String get refusedFamilyTitle => 'تم بلوغ سقف اليوم';
+
+  @override
+  String refusedFamilyMessage(Object amount) {
+    return 'يبقى لك $amount اليوم.';
+  }
+
+  @override
+  String get refusedTryAgain => 'أعد المحاولة';
+
+  @override
+  String get refusedNothingDebited => 'لم يُخصم أي مبلغ.';
+
+  @override
+  String requestPayment(Object amount) {
+    return 'طلب $amount';
+  }
+
+  @override
+  String get waitingCustomer => 'في انتظار الحريف…';
+
+  @override
+  String get waitingHint =>
+      'يقرّب الحريف هاتفه من الملصق أو يمسح رمز QR أو يكتب هذا الرمز.';
+
+  @override
+  String get shortCodeLabel => 'رمز الصندوق';
+
+  @override
+  String get cancelRequest => 'إلغاء الطلب';
+
+  @override
+  String get requestExpiredTitle => 'انتهت صلاحية الطلب';
+
+  @override
+  String get requestCancelledTitle => 'أُلغي الطلب';
+
+  @override
+  String get newRequest => 'طلب جديد';
+
+  @override
+  String paidByCustomer(Object name) {
+    return 'دفعه $name';
+  }
+
+  @override
+  String refusedForCustomer(Object name) {
+    return 'مرفوض لـ$name';
+  }
+
+  @override
+  String get tillRefusalFunds => 'رصيد غير كافٍ. لم يُخصم أي شيء.';
+
+  @override
+  String get tillRefusalLimit => 'تم بلوغ سقف اليوم. لم يُخصم أي شيء.';
+
+  @override
+  String get tillRefusalOther => 'تم رفض الدفع. لم يُخصم أي شيء.';
+
+  @override
+  String get registersTitle => 'صناديقي';
+
+  @override
+  String get registerSticker => 'ربط ملصق';
+
+  @override
+  String get stickerApproach => 'قرّب ملصق NFC من الهاتف';
+
+  @override
+  String stickerApproachHint(Object register) {
+    return 'سيُكتب عليه رابط $register.';
+  }
+
+  @override
+  String stickerWritten(Object register) {
+    return 'تم ربط الملصق بـ$register';
+  }
+
+  @override
+  String get stickerWriteFailed =>
+      'تعذّرت الكتابة. أعد المحاولة بملصق NFC فارغ.';
+
+  @override
+  String get registerDisabled => 'معطّل';
+
+  @override
+  String get myRegister => 'صندوقي';
+
+  @override
+  String get catalogNextCustomer => 'الحريف التالي';
 }

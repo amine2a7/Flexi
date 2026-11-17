@@ -38,6 +38,7 @@ List<Override> fakeDataOverrides({SecureStore? store}) => [
     (ref) => FakePaymentRepository(
       ref.watch(demoBackendProvider),
       () => ref.read(connectivityProvider),
+      ref.watch(clockProvider),
     ),
   ),
   familyRepositoryProvider.overrideWith(
