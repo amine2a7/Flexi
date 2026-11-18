@@ -8,6 +8,7 @@ import 'package:fp_api/src/model/kyc_document.dart';
 import 'package:fp_api/src/model/kyc_status.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:fp_api/src/model/kyc_piece.dart';
+import 'package:fp_api/src/model/kyc_identifiers.dart';
 import 'package:fp_api/src/model/kyc_account_type.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
@@ -17,6 +18,8 @@ part 'kyc_file.g.dart';
 /// KycFile
 ///
 /// Properties:
+/// * [maskedIdentifiers] 
+/// * [identifiers] - Les mêmes en clair, pour Opérations seulement (contrôle face aux pièces).
 /// * [pieces] - Les quatre pièces avec leur statut (MISSING = à déposer).
 /// * [id] - Identifiant opaque de ressource.
 /// * [accountType] 
@@ -31,6 +34,13 @@ part 'kyc_file.g.dart';
 /// * [history] 
 @BuiltValue()
 abstract class KycFile implements Built<KycFile, KycFileBuilder> {
+  @BuiltValueField(wireName: r'maskedIdentifiers')
+  KycIdentifiers? get maskedIdentifiers;
+
+  /// Les mêmes en clair, pour Opérations seulement (contrôle face aux pièces).
+  @BuiltValueField(wireName: r'identifiers')
+  KycIdentifiers? get identifiers;
+
   /// Les quatre pièces avec leur statut (MISSING = à déposer).
   @BuiltValueField(wireName: r'pieces')
   BuiltList<KycPiece>? get pieces;
@@ -96,6 +106,20 @@ class _$KycFileSerializer implements PrimitiveSerializer<KycFile> {
     KycFile object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.maskedIdentifiers != null) {
+      yield r'maskedIdentifiers';
+      yield serializers.serialize(
+        object.maskedIdentifiers,
+        specifiedType: const FullType(KycIdentifiers),
+      );
+    }
+    if (object.identifiers != null) {
+      yield r'identifiers';
+      yield serializers.serialize(
+        object.identifiers,
+        specifiedType: const FullType(KycIdentifiers),
+      );
+    }
     if (object.pieces != null) {
       yield r'pieces';
       yield serializers.serialize(
@@ -183,6 +207,22 @@ class _$KycFileSerializer implements PrimitiveSerializer<KycFile> {
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'maskedIdentifiers':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(KycIdentifiers),
+          ) as KycIdentifiers?;
+          if (valueDes == null) continue;
+          result.maskedIdentifiers.replace(valueDes);
+          break;
+        case r'identifiers':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(KycIdentifiers),
+          ) as KycIdentifiers?;
+          if (valueDes == null) continue;
+          result.identifiers.replace(valueDes);
+          break;
         case r'pieces':
           final valueDes = serializers.deserialize(
             value,

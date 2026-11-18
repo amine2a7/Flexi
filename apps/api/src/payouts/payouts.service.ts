@@ -88,7 +88,8 @@ function adminPayout(payout: PayoutRow, pii: PiiService) {
     ...payoutBody(payout),
     merchantId: payout.merchantId,
     merchantName: payout.merchant.name,
-    iban: pii.open(payout.iban),
+    // The last 4 digits only (SEC-1): the bank file alone carries the IBAN in clear.
+    iban: pii.maskedIban(payout.iban),
     ...(payout.batch === null
       ? {}
       : { batchId: payout.batch.id, batchReference: payout.batch.reference }),

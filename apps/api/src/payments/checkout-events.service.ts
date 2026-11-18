@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger, type OnModuleDestroy } from '@nestjs/common
 import pg from 'pg';
 import { ENV } from '../config/env.provider.js';
 import type { Env } from '../config/env.js';
-import { PG_SESSION_OPTIONS } from '../config/database-urls.js';
+import { PG_SESSION_OPTIONS, pgSsl } from '../config/database-urls.js';
 import type { Tx } from '../common/db.service.js';
 
 /** PostgreSQL channel of the till events (pg_notify is delivered at COMMIT only). */
@@ -50,6 +50,7 @@ export class CheckoutEvents implements OnModuleDestroy {
       const client = new pg.Client({
         connectionString: this.env.databaseUrl,
         options: PG_SESSION_OPTIONS,
+        ssl: pgSsl(this.env),
       });
       client.on('notification', (message) => {
         const [registerId, checkoutId] = (message.payload ?? '').split(':');

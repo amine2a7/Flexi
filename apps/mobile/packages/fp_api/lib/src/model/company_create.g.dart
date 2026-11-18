@@ -8,6 +8,10 @@ part of 'company_create.dart';
 
 class _$CompanyCreate extends CompanyCreate {
   @override
+  final String? nationalId;
+  @override
+  final String? taxId;
+  @override
   final LegalForm legalForm;
   @override
   final String name;
@@ -24,6 +28,8 @@ class _$CompanyCreate extends CompanyCreate {
       (CompanyCreateBuilder()..update(updates))._build();
 
   _$CompanyCreate._({
+    this.nationalId,
+    this.taxId,
     required this.legalForm,
     required this.name,
     required this.city,
@@ -42,6 +48,8 @@ class _$CompanyCreate extends CompanyCreate {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is CompanyCreate &&
+        nationalId == other.nationalId &&
+        taxId == other.taxId &&
         legalForm == other.legalForm &&
         name == other.name &&
         city == other.city &&
@@ -53,6 +61,8 @@ class _$CompanyCreate extends CompanyCreate {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, nationalId.hashCode);
+    _$hash = $jc(_$hash, taxId.hashCode);
     _$hash = $jc(_$hash, legalForm.hashCode);
     _$hash = $jc(_$hash, name.hashCode);
     _$hash = $jc(_$hash, city.hashCode);
@@ -66,6 +76,8 @@ class _$CompanyCreate extends CompanyCreate {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'CompanyCreate')
+          ..add('nationalId', nationalId)
+          ..add('taxId', taxId)
           ..add('legalForm', legalForm)
           ..add('name', name)
           ..add('city', city)
@@ -79,6 +91,14 @@ class _$CompanyCreate extends CompanyCreate {
 class CompanyCreateBuilder
     implements Builder<CompanyCreate, CompanyCreateBuilder> {
   _$CompanyCreate? _$v;
+
+  String? _nationalId;
+  String? get nationalId => _$this._nationalId;
+  set nationalId(String? nationalId) => _$this._nationalId = nationalId;
+
+  String? _taxId;
+  String? get taxId => _$this._taxId;
+  set taxId(String? taxId) => _$this._taxId = taxId;
 
   LegalForm? _legalForm;
   LegalForm? get legalForm => _$this._legalForm;
@@ -113,6 +133,8 @@ class CompanyCreateBuilder
   CompanyCreateBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _nationalId = $v.nationalId;
+      _taxId = $v.taxId;
       _legalForm = $v.legalForm;
       _name = $v.name;
       _city = $v.city;
@@ -143,6 +165,8 @@ class CompanyCreateBuilder
       _$result =
           _$v ??
           _$CompanyCreate._(
+            nationalId: nationalId,
+            taxId: taxId,
             legalForm: BuiltValueNullFieldError.checkNotNull(
               legalForm,
               r'CompanyCreate',

@@ -55,6 +55,11 @@ export class ProblemFilter implements ExceptionFilter {
     }
     // Lock / statement timeout or serialization failure under load: retryable, nothing written.
     const pgCode = (error as { code?: unknown; meta?: { code?: unknown } }).meta?.code;
+    // A unique index refused the row (two requests at the same time, e.g. the same CIN by its
+    // blind index): a conflict, never a server error.
+    if ((error as { code?: unknown }).code === 'P2002' || pgCode === '23505') {
+      return new ApiProblem(409, 'RESOURCE_STATE_CONFLICT');
+    }
     if (pgCode === '40001' || pgCode === '55P03' || pgCode === '57014') {
       return new ApiProblem(
         503,

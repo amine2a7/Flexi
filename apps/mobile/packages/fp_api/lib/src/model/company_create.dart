@@ -14,6 +14,8 @@ part 'company_create.g.dart';
 /// CompanyCreate
 ///
 /// Properties:
+/// * [nationalId] - N° de CIN (8 chiffres), chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`).
+/// * [taxId] - Matricule fiscal, chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`).
 /// * [legalForm] 
 /// * [name] 
 /// * [city] 
@@ -22,6 +24,14 @@ part 'company_create.g.dart';
 /// * [commissionGrid] - Grille de commission saisie à la création (étape 2, fenêtre « Commission »).
 @BuiltValue()
 abstract class CompanyCreate implements Built<CompanyCreate, CompanyCreateBuilder> {
+  /// N° de CIN (8 chiffres), chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`).
+  @BuiltValueField(wireName: r'nationalId')
+  String? get nationalId;
+
+  /// Matricule fiscal, chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`).
+  @BuiltValueField(wireName: r'taxId')
+  String? get taxId;
+
   @BuiltValueField(wireName: r'legalForm')
   LegalForm get legalForm;
   // enum legalFormEnum {  PP_CIN,  PP_MF,  PM_MF,  };
@@ -66,6 +76,20 @@ class _$CompanyCreateSerializer implements PrimitiveSerializer<CompanyCreate> {
     CompanyCreate object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.nationalId != null) {
+      yield r'nationalId';
+      yield serializers.serialize(
+        object.nationalId,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.taxId != null) {
+      yield r'taxId';
+      yield serializers.serialize(
+        object.taxId,
+        specifiedType: const FullType(String),
+      );
+    }
     yield r'legalForm';
     yield serializers.serialize(
       object.legalForm,
@@ -119,6 +143,22 @@ class _$CompanyCreateSerializer implements PrimitiveSerializer<CompanyCreate> {
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'nationalId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.nationalId = valueDes;
+          break;
+        case r'taxId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.taxId = valueDes;
+          break;
         case r'legalForm':
           final valueDes = serializers.deserialize(
             value,

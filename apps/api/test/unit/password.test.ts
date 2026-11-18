@@ -1,5 +1,12 @@
+import { randomBytes } from 'node:crypto';
+import { hash } from '@node-rs/argon2';
 import { describe, expect, it } from 'vitest';
-import { brokenRules, hashSecret, verifySecret } from '../../src/auth/password.js';
+
+// Pepper of this test run only (never a real key).
+process.env.PASSWORD_PEPPER ??= randomBytes(32).toString('base64');
+const { brokenRules, hashSecret, needsRehash, verifySecret } = await import(
+  '../../src/auth/password.js'
+);
 
 describe('password policy (DP 9)', () => {
   it('accepts a long password unrelated to the identifier', async () => {
@@ -34,5 +41,24 @@ describe('password policy (DP 9)', () => {
     expect(await verifySecret(hash, 'Rose-des-sables-2026')).toBe(true);
     expect(await verifySecret(hash, 'rose-des-sables-2026')).toBe(false);
     expect(await verifySecret('not a hash', 'x')).toBe(false);
+  });
+
+  // SEC-1: 64 MiB, 3 passes and a pepper; a hash of the former parameters is still verified and
+  // marked to be replaced at the next good sign-in.
+  it('uses 64 MiB, 3 passes and the pepper; former hashes are verified then replaced', async () => {
+    const current = await hashSecret('Rose-des-sables-2026');
+    expect(current.startsWith('$argon2id$v=19$m=65536,t=3,p=1$')).toBe(true);
+    expect(needsRehash(current)).toBe(false);
+    // Without the pepper, the hash does not verify.
+    const withoutPepper = await hash('Rose-des-sables-2026', {
+      memoryCost: 65_536,
+      timeCost: 3,
+      parallelism: 1,
+    });
+    expect(await verifySecret(withoutPepper, 'Rose-des-sables-2026')).toBe(false);
+    const former = await hash('1234', { memoryCost: 19_456, timeCost: 2, parallelism: 1 });
+    expect(needsRehash(former)).toBe(true);
+    expect(await verifySecret(former, '1234')).toBe(true);
+    expect(await verifySecret(former, '4321')).toBe(false);
   });
 });

@@ -56,6 +56,7 @@ import 'package:fp_api/src/model/inline_object.dart';
 import 'package:fp_api/src/model/inline_object1.dart';
 import 'package:fp_api/src/model/kyc_account_type.dart';
 import 'package:fp_api/src/model/kyc_corrections.dart';
+import 'package:fp_api/src/model/kyc_document_link.dart';
 import 'package:fp_api/src/model/kyc_file.dart';
 import 'package:fp_api/src/model/kyc_file_page.dart';
 import 'package:fp_api/src/model/kyc_status.dart';
@@ -2576,12 +2577,14 @@ class AdminApi {
     );
   }
 
-  /// Pièce d&#39;un dossier KYC
-  /// Fichier tel que déposé (JPG, PNG ou PDF), servi avec son type d&#39;origine, &#x60;Content-Disposition: attachment&#x60; et &#x60;X-Content-Type-Options: nosniff&#x60;. 
+  /// Pièce d&#39;un dossier KYC (par lien signé)
+  /// Fichier tel que déposé (JPG, PNG ou PDF), servi avec son type d&#39;origine, &#x60;Content-Disposition: attachment&#x60; et &#x60;X-Content-Type-Options: nosniff&#x60;. Seulement par le lien signé (&#x60;expires&#x60;, &#x60;signature&#x60;) de &#x60;.../link&#x60; : expiré, ou demandé par un autre administrateur, &#x60;403 FORBIDDEN&#x60; (SEC-1). 
   ///
   /// Parameters:
   /// * [fileId] 
   /// * [documentId] 
+  /// * [expires] 
+  /// * [signature] 
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2594,6 +2597,8 @@ class AdminApi {
   Future<Response<Uint8List>> getKycDocument({ 
     required String fileId,
     required String documentId,
+    required int expires,
+    required String signature,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2631,9 +2636,15 @@ class AdminApi {
       validateStatus: validateStatus,
     );
 
+    final _queryParameters = <String, dynamic>{
+      r'expires': encodeQueryParameter(_serializers, expires, const FullType(int)),
+      r'signature': encodeQueryParameter(_serializers, signature, const FullType(String)),
+    };
+
     final _response = await _dio.request<Object>(
       _path,
       options: _options,
+      queryParameters: _queryParameters,
       cancelToken: cancelToken,
       onSendProgress: onSendProgress,
       onReceiveProgress: onReceiveProgress,
@@ -2656,6 +2667,99 @@ class AdminApi {
     }
 
     return Response<Uint8List>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// Lien signé vers une pièce KYC (5 minutes)
+  /// Lien valable 5 minutes, pour l&#39;administrateur connecté qui le demande seulement (SEC-1). Permission &#x60;kycDocuments.read&#x60;. Tracé dans l&#39;audit. 
+  ///
+  /// Parameters:
+  /// * [fileId] 
+  /// * [documentId] 
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [KycDocumentLink] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<KycDocumentLink>> getKycDocumentLink({ 
+    required String fileId,
+    required String documentId,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/v1/admin/kyc-files/{fileId}/documents/{documentId}/link'.replaceAll('{' r'fileId' '}', encodeQueryParameter(_serializers, fileId, const FullType(String)).toString()).replaceAll('{' r'documentId' '}', encodeQueryParameter(_serializers, documentId, const FullType(String)).toString());
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'apiKey',
+            'name': 'csrfToken',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
+          },{
+            'type': 'apiKey',
+            'name': 'cookieAuth',
+            'keyName': '__Host-fp_at',
+            'where': '',
+          },{
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearerAuth',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    KycDocumentLink? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(KycDocumentLink),
+      ) as KycDocumentLink;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<KycDocumentLink>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

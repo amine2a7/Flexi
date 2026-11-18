@@ -399,6 +399,9 @@ export class LedgerService {
     lotMismatches: string[];
     holdMismatches: string[];
     taxMismatches: string[];
+    /** Ledger lines and audit entries whose hash link is broken (SEC-1). */
+    ledgerChainBreaks: string[];
+    auditChainBreaks: string[];
     totalDebits: bigint;
     totalCredits: bigint;
   }> {
@@ -484,17 +487,26 @@ export class LedgerService {
       taxMismatches.push(accounts.withholdingCredit().code);
     if ((await this.balance(tx, accounts.transferFees())) !== (documents?.transfer ?? 0n))
       taxMismatches.push(accounts.transferFees().code);
+    // SEC-1: the hash chains are recomputed (a line changed by hand breaks its link).
+    const ledgerChainBreaks = await tx.$queryRaw<{ id: bigint }[]>`
+      SELECT id FROM ledger_chain_breaks() AS id ORDER BY id LIMIT 100`;
+    const auditChainBreaks = await tx.$queryRaw<{ id: string }[]>`
+      SELECT id::text AS id FROM audit_chain_breaks() AS id ORDER BY id LIMIT 100`;
     return {
       ok:
         mismatches.length === 0 &&
         lotMismatches.length === 0 &&
         holdMismatches.length === 0 &&
         taxMismatches.length === 0 &&
+        ledgerChainBreaks.length === 0 &&
+        auditChainBreaks.length === 0 &&
         totalDebits === totalCredits,
       mismatches: mismatches.map((row) => row.code),
       lotMismatches: lotMismatches.map((row) => row.code),
       holdMismatches: holdMismatches.map((row) => row.code),
       taxMismatches,
+      ledgerChainBreaks: ledgerChainBreaks.map((row) => String(row.id)),
+      auditChainBreaks: auditChainBreaks.map((row) => row.id),
       totalDebits,
       totalCredits,
     };

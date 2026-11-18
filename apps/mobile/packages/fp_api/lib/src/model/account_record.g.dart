@@ -66,6 +66,10 @@ class _$AccountRecordKindEnumSerializer
 
 class _$AccountRecord extends AccountRecord {
   @override
+  final String? maskedNationalId;
+  @override
+  final String? maskedTaxId;
+  @override
   final String id;
   @override
   final AccountRecordKindEnum kind;
@@ -102,6 +106,8 @@ class _$AccountRecord extends AccountRecord {
       (AccountRecordBuilder()..update(updates))._build();
 
   _$AccountRecord._({
+    this.maskedNationalId,
+    this.maskedTaxId,
     required this.id,
     required this.kind,
     required this.name,
@@ -130,6 +136,8 @@ class _$AccountRecord extends AccountRecord {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is AccountRecord &&
+        maskedNationalId == other.maskedNationalId &&
+        maskedTaxId == other.maskedTaxId &&
         id == other.id &&
         kind == other.kind &&
         name == other.name &&
@@ -151,6 +159,8 @@ class _$AccountRecord extends AccountRecord {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, maskedNationalId.hashCode);
+    _$hash = $jc(_$hash, maskedTaxId.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, kind.hashCode);
     _$hash = $jc(_$hash, name.hashCode);
@@ -174,6 +184,8 @@ class _$AccountRecord extends AccountRecord {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'AccountRecord')
+          ..add('maskedNationalId', maskedNationalId)
+          ..add('maskedTaxId', maskedTaxId)
           ..add('id', id)
           ..add('kind', kind)
           ..add('name', name)
@@ -197,6 +209,15 @@ class _$AccountRecord extends AccountRecord {
 class AccountRecordBuilder
     implements Builder<AccountRecord, AccountRecordBuilder> {
   _$AccountRecord? _$v;
+
+  String? _maskedNationalId;
+  String? get maskedNationalId => _$this._maskedNationalId;
+  set maskedNationalId(String? maskedNationalId) =>
+      _$this._maskedNationalId = maskedNationalId;
+
+  String? _maskedTaxId;
+  String? get maskedTaxId => _$this._maskedTaxId;
+  set maskedTaxId(String? maskedTaxId) => _$this._maskedTaxId = maskedTaxId;
 
   String? _id;
   String? get id => _$this._id;
@@ -275,6 +296,8 @@ class AccountRecordBuilder
   AccountRecordBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _maskedNationalId = $v.maskedNationalId;
+      _maskedTaxId = $v.maskedTaxId;
       _id = $v.id;
       _kind = $v.kind;
       _name = $v.name;
@@ -315,6 +338,8 @@ class AccountRecordBuilder
       _$result =
           _$v ??
           _$AccountRecord._(
+            maskedNationalId: maskedNationalId,
+            maskedTaxId: maskedTaxId,
             id: BuiltValueNullFieldError.checkNotNull(
               id,
               r'AccountRecord',

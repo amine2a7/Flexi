@@ -18,6 +18,8 @@ part 'account_record.g.dart';
 /// Fiche d'une entreprise ou d'un commerçant (décision du 2026-11-03).
 ///
 /// Properties:
+/// * [maskedNationalId] - N° de CIN masqué (4 derniers chiffres, SEC-1), `null` s'il n'est pas saisi.
+/// * [maskedTaxId] - Matricule fiscal masqué (4 derniers caractères, SEC-1), `null` s'il n'est pas saisi.
 /// * [id] - Identifiant opaque de ressource.
 /// * [kind] 
 /// * [name] 
@@ -36,6 +38,14 @@ part 'account_record.g.dart';
 /// * [createdAt] - Horodatage RFC 3339 en UTC, suffixe `Z`, précision milliseconde.
 @BuiltValue()
 abstract class AccountRecord implements Built<AccountRecord, AccountRecordBuilder> {
+  /// N° de CIN masqué (4 derniers chiffres, SEC-1), `null` s'il n'est pas saisi.
+  @BuiltValueField(wireName: r'maskedNationalId')
+  String? get maskedNationalId;
+
+  /// Matricule fiscal masqué (4 derniers caractères, SEC-1), `null` s'il n'est pas saisi.
+  @BuiltValueField(wireName: r'maskedTaxId')
+  String? get maskedTaxId;
+
   /// Identifiant opaque de ressource.
   @BuiltValueField(wireName: r'id')
   String get id;
@@ -119,6 +129,20 @@ class _$AccountRecordSerializer implements PrimitiveSerializer<AccountRecord> {
     AccountRecord object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.maskedNationalId != null) {
+      yield r'maskedNationalId';
+      yield serializers.serialize(
+        object.maskedNationalId,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
+    if (object.maskedTaxId != null) {
+      yield r'maskedTaxId';
+      yield serializers.serialize(
+        object.maskedTaxId,
+        specifiedType: const FullType.nullable(String),
+      );
+    }
     yield r'id';
     yield serializers.serialize(
       object.id,
@@ -228,6 +252,22 @@ class _$AccountRecordSerializer implements PrimitiveSerializer<AccountRecord> {
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'maskedNationalId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.maskedNationalId = valueDes;
+          break;
+        case r'maskedTaxId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.maskedTaxId = valueDes;
+          break;
         case r'id':
           final valueDes = serializers.deserialize(
             value,

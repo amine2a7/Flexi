@@ -334,7 +334,10 @@ describe('reset code by SMS (securite S06)', () => {
       await db.system((tx) =>
         tx.user.update({
           where: { email },
-          data: { phone: sealPii(dataKey, phone), phoneHash: phoneIndex(dataKey, phone) },
+          data: {
+            phone: sealPii(dataKey, phone),
+            phoneHash: phoneIndex(Buffer.from(env.BLIND_INDEX_KEY, 'base64'), phone),
+          },
         }),
       )
     ).id;

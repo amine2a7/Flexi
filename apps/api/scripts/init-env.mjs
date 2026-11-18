@@ -74,6 +74,15 @@ const defaults = {
   WEB_ORIGINS: 'http://localhost:3001',
   SESSION_SECRET: secret(),
   DATA_ENCRYPTION_KEY: secret(),
+  // SEC-1: one role per use, one key per use (different in every environment).
+  MIGRATE_DB_PASSWORD: password(),
+  WORKER_DB_PASSWORD: password(),
+  REPORT_DB_PASSWORD: password(),
+  DB_SSL: 'disable',
+  DATA_MASTER_KEY: secret(),
+  BLIND_INDEX_KEY: secret(),
+  PASSWORD_PEPPER: secret(),
+  FILE_LINK_SECRET: secret(),
   UPLOAD_DIR: 'var/uploads',
   // Development only (refused in production): the demo accounts accept this MFA code.
   DEMO_FIXED_MFA_CODE: '123456',

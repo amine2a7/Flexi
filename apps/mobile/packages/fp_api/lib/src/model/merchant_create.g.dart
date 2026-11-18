@@ -8,6 +8,10 @@ part of 'merchant_create.dart';
 
 class _$MerchantCreate extends MerchantCreate {
   @override
+  final String? nationalId;
+  @override
+  final String? taxId;
+  @override
   final LegalForm legalForm;
   @override
   final BuiltSet<CreditType> acceptedCreditTypes;
@@ -28,6 +32,8 @@ class _$MerchantCreate extends MerchantCreate {
       (MerchantCreateBuilder()..update(updates))._build();
 
   _$MerchantCreate._({
+    this.nationalId,
+    this.taxId,
     required this.legalForm,
     required this.acceptedCreditTypes,
     required this.name,
@@ -48,6 +54,8 @@ class _$MerchantCreate extends MerchantCreate {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is MerchantCreate &&
+        nationalId == other.nationalId &&
+        taxId == other.taxId &&
         legalForm == other.legalForm &&
         acceptedCreditTypes == other.acceptedCreditTypes &&
         name == other.name &&
@@ -61,6 +69,8 @@ class _$MerchantCreate extends MerchantCreate {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, nationalId.hashCode);
+    _$hash = $jc(_$hash, taxId.hashCode);
     _$hash = $jc(_$hash, legalForm.hashCode);
     _$hash = $jc(_$hash, acceptedCreditTypes.hashCode);
     _$hash = $jc(_$hash, name.hashCode);
@@ -76,6 +86,8 @@ class _$MerchantCreate extends MerchantCreate {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'MerchantCreate')
+          ..add('nationalId', nationalId)
+          ..add('taxId', taxId)
           ..add('legalForm', legalForm)
           ..add('acceptedCreditTypes', acceptedCreditTypes)
           ..add('name', name)
@@ -91,6 +103,14 @@ class _$MerchantCreate extends MerchantCreate {
 class MerchantCreateBuilder
     implements Builder<MerchantCreate, MerchantCreateBuilder> {
   _$MerchantCreate? _$v;
+
+  String? _nationalId;
+  String? get nationalId => _$this._nationalId;
+  set nationalId(String? nationalId) => _$this._nationalId = nationalId;
+
+  String? _taxId;
+  String? get taxId => _$this._taxId;
+  set taxId(String? taxId) => _$this._taxId = taxId;
 
   LegalForm? _legalForm;
   LegalForm? get legalForm => _$this._legalForm;
@@ -135,6 +155,8 @@ class MerchantCreateBuilder
   MerchantCreateBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _nationalId = $v.nationalId;
+      _taxId = $v.taxId;
       _legalForm = $v.legalForm;
       _acceptedCreditTypes = $v.acceptedCreditTypes.toBuilder();
       _name = $v.name;
@@ -167,6 +189,8 @@ class MerchantCreateBuilder
       _$result =
           _$v ??
           _$MerchantCreate._(
+            nationalId: nationalId,
+            taxId: taxId,
             legalForm: BuiltValueNullFieldError.checkNotNull(
               legalForm,
               r'MerchantCreate',

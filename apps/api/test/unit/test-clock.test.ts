@@ -43,11 +43,23 @@ describe('test clock', () => {
       NODE_ENV: 'production',
       PG_ADMIN_URL: 'postgresql://localhost/postgres',
       APP_DB_PASSWORD: 'x'.repeat(16),
-      SESSION_SECRET: Buffer.alloc(32).toString('base64'),
-      DATA_ENCRYPTION_KEY: Buffer.alloc(32).toString('base64'),
+      MIGRATE_DB_PASSWORD: 'y'.repeat(16),
+      DB_SSL: 'verify-full',
+      SESSION_SECRET: Buffer.alloc(32, 1).toString('base64'),
+      DATA_ENCRYPTION_KEY: Buffer.alloc(32, 2).toString('base64'),
+      DATA_MASTER_KEY: Buffer.alloc(32, 3).toString('base64'),
+      BLIND_INDEX_KEY: Buffer.alloc(32, 4).toString('base64'),
+      PASSWORD_PEPPER: Buffer.alloc(32, 5).toString('base64'),
+      FILE_LINK_SECRET: Buffer.alloc(32, 6).toString('base64'),
       WEB_ORIGINS: 'https://app.flexipay.tn',
     };
+    expect(() => loadEnv(base)).not.toThrow();
     expect(() => loadEnv({ ...base, TEST_CLOCK: '1' })).toThrow(/TEST_CLOCK/);
+    // SEC-1: TLS to the database, one key per use.
+    expect(() => loadEnv({ ...base, DB_SSL: 'disable' })).toThrow(/DB_SSL/);
+    expect(() => loadEnv({ ...base, PASSWORD_PEPPER: base.SESSION_SECRET })).toThrow(
+      /PASSWORD_PEPPER must differ from SESSION_SECRET/,
+    );
   });
 
   it('answers only the local test runner: loopback, not relayed, no Origin, test header', () => {

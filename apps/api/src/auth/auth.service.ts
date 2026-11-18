@@ -21,7 +21,7 @@ import { DbService, type Tx } from '../common/db.service.js';
 import { ApiProblem, problems, validationFailed } from '../common/problem.js';
 import { currentContext, principal } from '../common/request-context.js';
 import type { Role, SessionStep, User } from '../generated/prisma/client.js';
-import { brokenRules, dummyHash, hashSecret, verifySecret } from './password.js';
+import { brokenRules, dummyHash, hashSecret, needsRehash, verifySecret } from './password.js';
 import { type IssuedSession, SessionService, type MobileDevice } from './session.service.js';
 import { matchStep, newSecretBase32, otpauthUri } from './totp.js';
 import { canSignIn } from '../common/account-lifecycle.js';
@@ -166,9 +166,14 @@ export class AuthService {
           )
         : null;
     if (!canSignIn(user, employee, new Date()) || tempExpired) throw problems.invalidCredentials();
+    // A hash of the former parameters (no pepper) is replaced now that the password is known.
+    const rehashed = needsRehash(user.passwordHash) ? await hashSecret(password) : null;
 
     return this.db.system(async (tx): Promise<LoginOutcome> => {
       await this.clearFailures(tx, user);
+      if (rehashed !== null) {
+        await tx.user.update({ where: { id: user.id }, data: { passwordHash: rehashed } });
+      }
       if (user.mfaSecretEnc !== null) {
         // Validity of the sign-in code: settings of the super-admin (5 min by default).
         const { otpValidityMinutes } = await tx.platformSettings.findUniqueOrThrow({

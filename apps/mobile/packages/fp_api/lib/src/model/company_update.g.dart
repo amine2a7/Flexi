@@ -8,6 +8,10 @@ part of 'company_update.dart';
 
 class _$CompanyUpdate extends CompanyUpdate {
   @override
+  final String? nationalId;
+  @override
+  final String? taxId;
+  @override
   final String? name;
   @override
   final String? city;
@@ -21,8 +25,15 @@ class _$CompanyUpdate extends CompanyUpdate {
   factory _$CompanyUpdate([void Function(CompanyUpdateBuilder)? updates]) =>
       (CompanyUpdateBuilder()..update(updates))._build();
 
-  _$CompanyUpdate._({this.name, this.city, this.phone, this.email, this.reason})
-    : super._();
+  _$CompanyUpdate._({
+    this.nationalId,
+    this.taxId,
+    this.name,
+    this.city,
+    this.phone,
+    this.email,
+    this.reason,
+  }) : super._();
   @override
   CompanyUpdate rebuild(void Function(CompanyUpdateBuilder) updates) =>
       (toBuilder()..update(updates)).build();
@@ -34,6 +45,8 @@ class _$CompanyUpdate extends CompanyUpdate {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is CompanyUpdate &&
+        nationalId == other.nationalId &&
+        taxId == other.taxId &&
         name == other.name &&
         city == other.city &&
         phone == other.phone &&
@@ -44,6 +57,8 @@ class _$CompanyUpdate extends CompanyUpdate {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, nationalId.hashCode);
+    _$hash = $jc(_$hash, taxId.hashCode);
     _$hash = $jc(_$hash, name.hashCode);
     _$hash = $jc(_$hash, city.hashCode);
     _$hash = $jc(_$hash, phone.hashCode);
@@ -56,6 +71,8 @@ class _$CompanyUpdate extends CompanyUpdate {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'CompanyUpdate')
+          ..add('nationalId', nationalId)
+          ..add('taxId', taxId)
           ..add('name', name)
           ..add('city', city)
           ..add('phone', phone)
@@ -68,6 +85,14 @@ class _$CompanyUpdate extends CompanyUpdate {
 class CompanyUpdateBuilder
     implements Builder<CompanyUpdate, CompanyUpdateBuilder> {
   _$CompanyUpdate? _$v;
+
+  String? _nationalId;
+  String? get nationalId => _$this._nationalId;
+  set nationalId(String? nationalId) => _$this._nationalId = nationalId;
+
+  String? _taxId;
+  String? get taxId => _$this._taxId;
+  set taxId(String? taxId) => _$this._taxId = taxId;
 
   String? _name;
   String? get name => _$this._name;
@@ -96,6 +121,8 @@ class CompanyUpdateBuilder
   CompanyUpdateBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _nationalId = $v.nationalId;
+      _taxId = $v.taxId;
       _name = $v.name;
       _city = $v.city;
       _phone = $v.phone;
@@ -123,6 +150,8 @@ class CompanyUpdateBuilder
     final _$result =
         _$v ??
         _$CompanyUpdate._(
+          nationalId: nationalId,
+          taxId: taxId,
           name: name,
           city: city,
           phone: phone,

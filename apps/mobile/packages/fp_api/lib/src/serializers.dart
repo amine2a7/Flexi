@@ -177,12 +177,14 @@ import 'package:fp_api/src/model/kyc_account_type.dart';
 import 'package:fp_api/src/model/kyc_corrections.dart';
 import 'package:fp_api/src/model/kyc_corrections_corrections_inner.dart';
 import 'package:fp_api/src/model/kyc_document.dart';
+import 'package:fp_api/src/model/kyc_document_link.dart';
 import 'package:fp_api/src/model/kyc_document_status.dart';
 import 'package:fp_api/src/model/kyc_document_type.dart';
 import 'package:fp_api/src/model/kyc_event.dart';
 import 'package:fp_api/src/model/kyc_file.dart';
 import 'package:fp_api/src/model/kyc_file_page.dart';
 import 'package:fp_api/src/model/kyc_file_summary.dart';
+import 'package:fp_api/src/model/kyc_identifiers.dart';
 import 'package:fp_api/src/model/kyc_piece.dart';
 import 'package:fp_api/src/model/kyc_status.dart';
 import 'package:fp_api/src/model/legal_form.dart';
@@ -483,12 +485,14 @@ part 'serializers.g.dart';
   KycCorrections,
   KycCorrectionsCorrectionsInner,
   KycDocument,
+  KycDocumentLink,
   KycDocumentStatus,
   KycDocumentType,
   KycEvent,
   KycFile,
   KycFilePage,
   KycFileSummary,
+  KycIdentifiers,
   KycPiece,
   KycStatus,
   LegalForm,

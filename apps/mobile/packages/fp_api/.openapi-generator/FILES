@@ -184,12 +184,14 @@ lib/src/model/kyc_account_type.dart
 lib/src/model/kyc_corrections.dart
 lib/src/model/kyc_corrections_corrections_inner.dart
 lib/src/model/kyc_document.dart
+lib/src/model/kyc_document_link.dart
 lib/src/model/kyc_document_status.dart
 lib/src/model/kyc_document_type.dart
 lib/src/model/kyc_event.dart
 lib/src/model/kyc_file.dart
 lib/src/model/kyc_file_page.dart
 lib/src/model/kyc_file_summary.dart
+lib/src/model/kyc_identifiers.dart
 lib/src/model/kyc_piece.dart
 lib/src/model/kyc_status.dart
 lib/src/model/legal_form.dart

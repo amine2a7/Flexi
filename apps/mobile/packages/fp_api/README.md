@@ -518,7 +518,8 @@ Class | Method | HTTP request | Description
 [*AdminApi*](doc/AdminApi.md) | [**getCompanyRecord**](doc/AdminApi.md#getcompanyrecord) | **GET** /v1/admin/companies/{companyId}/record | Fiche de l&#39;entreprise (contact, grille, historique, demandes en attente)
 [*AdminApi*](doc/AdminApi.md) | [**getContactMessage**](doc/AdminApi.md#getcontactmessage) | **GET** /v1/admin/contact-messages/{messageId} | Détail d&#39;un message
 [*AdminApi*](doc/AdminApi.md) | [**getDispute**](doc/AdminApi.md#getdispute) | **GET** /v1/admin/disputes/{disputeId} | Dossier d&#39;un litige (instruction, notes)
-[*AdminApi*](doc/AdminApi.md) | [**getKycDocument**](doc/AdminApi.md#getkycdocument) | **GET** /v1/admin/kyc-files/{fileId}/documents/{documentId} | Pièce d&#39;un dossier KYC
+[*AdminApi*](doc/AdminApi.md) | [**getKycDocument**](doc/AdminApi.md#getkycdocument) | **GET** /v1/admin/kyc-files/{fileId}/documents/{documentId} | Pièce d&#39;un dossier KYC (par lien signé)
+[*AdminApi*](doc/AdminApi.md) | [**getKycDocumentLink**](doc/AdminApi.md#getkycdocumentlink) | **GET** /v1/admin/kyc-files/{fileId}/documents/{documentId}/link | Lien signé vers une pièce KYC (5 minutes)
 [*AdminApi*](doc/AdminApi.md) | [**getKycFile**](doc/AdminApi.md#getkycfile) | **GET** /v1/admin/kyc-files/{fileId} | Dossier KYC avec ses pièces et son historique
 [*AdminApi*](doc/AdminApi.md) | [**getMerchantAccount**](doc/AdminApi.md#getmerchantaccount) | **GET** /v1/admin/merchants/{merchantId} | Fiche d&#39;un commerçant
 [*AdminApi*](doc/AdminApi.md) | [**getMerchantOverview**](doc/AdminApi.md#getmerchantoverview) | **GET** /v1/admin/merchants/{merchantId}/overview | Fiche complète du commerçant : onglets Utilisateurs, Ventes, Virements, Dossier KYC
@@ -839,12 +840,14 @@ Class | Method | HTTP request | Description
  - [KycCorrections](doc/KycCorrections.md)
  - [KycCorrectionsCorrectionsInner](doc/KycCorrectionsCorrectionsInner.md)
  - [KycDocument](doc/KycDocument.md)
+ - [KycDocumentLink](doc/KycDocumentLink.md)
  - [KycDocumentStatus](doc/KycDocumentStatus.md)
  - [KycDocumentType](doc/KycDocumentType.md)
  - [KycEvent](doc/KycEvent.md)
  - [KycFile](doc/KycFile.md)
  - [KycFilePage](doc/KycFilePage.md)
  - [KycFileSummary](doc/KycFileSummary.md)
+ - [KycIdentifiers](doc/KycIdentifiers.md)
  - [KycPiece](doc/KycPiece.md)
  - [KycStatus](doc/KycStatus.md)
  - [LegalForm](doc/LegalForm.md)

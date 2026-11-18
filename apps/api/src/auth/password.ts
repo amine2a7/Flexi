@@ -1,19 +1,45 @@
 import { hash, verify, type Algorithm } from '@node-rs/argon2';
 
-/** Argon2id parameters (OWASP 2024 baseline), versioned in the hash string itself. */
+/**
+ * Argon2id of passwords, PINs and temporary passwords (SEC-1): 64 MiB, 3 passes, with a pepper
+ * (Argon2 secret key) read from PASSWORD_PEPPER, never stored with the hashes. The parameters are
+ * written in the hash itself: a hash of the former parameters (19 MiB, 2 passes, no pepper) is
+ * still verified, then replaced at the next successful sign-in (`needsRehash`).
+ */
 // `Algorithm` is a const enum (not importable as a value here): 2 = Argon2id.
-const ARGON2 = { algorithm: 2 as Algorithm, memoryCost: 19_456, timeCost: 2, parallelism: 1 };
+const ARGON2 = { algorithm: 2 as Algorithm, memoryCost: 65_536, timeCost: 3, parallelism: 1 };
+const CURRENT_PREFIX = '$argon2id$v=19$m=65536,t=3,p=1$';
 
 export const MIN_LENGTH = 12;
 export const MAX_LENGTH = 128;
 
+let cachedPepper: Buffer | undefined;
+/** Pepper of the environment (base64, 32 bytes at least); its absence stops the API. */
+function pepper(): Buffer {
+  if (cachedPepper !== undefined) return cachedPepper;
+  const raw = process.env.PASSWORD_PEPPER ?? '';
+  const key = Buffer.from(raw, 'base64');
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(raw) || key.length < 32) {
+    throw new Error('PASSWORD_PEPPER is missing or shorter than 32 bytes');
+  }
+  cachedPepper = key;
+  return key;
+}
+
 export async function hashSecret(secret: string): Promise<string> {
-  return hash(secret, ARGON2);
+  return hash(secret, { ...ARGON2, secret: pepper() });
+}
+
+/** True for a hash of the former parameters (no pepper): replace it after a good verification. */
+export function needsRehash(stored: string): boolean {
+  return !stored.startsWith(CURRENT_PREFIX);
 }
 
 export async function verifySecret(stored: string, secret: string): Promise<boolean> {
   try {
-    return await verify(stored, secret);
+    return needsRehash(stored)
+      ? await verify(stored, secret)
+      : await verify(stored, secret, { secret: pepper() });
   } catch {
     return false;
   }

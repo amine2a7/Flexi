@@ -6,7 +6,8 @@ import { documentsByType, KYC_DOCUMENT_TYPES, requiredDocuments } from '../kyc/k
 import { AuditService } from '../common/audit.service.js';
 import { FourEyesService } from '../common/four-eyes.service.js';
 import { DisputesService } from '../risk/disputes.service.js';
-import { uuidv7 } from '../common/crypto.js';
+import { hmac, safeEqual, uuidv7 } from '../common/crypto.js';
+import { KEYS, type Keys } from '../config/env.provider.js';
 import { DbService, type Tx } from '../common/db.service.js';
 import { toMillimes } from '../common/money.js';
 import { Paginator, type Page } from '../common/pagination.js';
@@ -63,7 +64,16 @@ interface LegalFormChangePayload {
 }
 
 /** Editable fields of a record (decision of 2026-11-03); the grid and the RIB go through four eyes. */
-export interface AccountUpdate {
+/** Validity of a signed link to a KYC piece (SEC-1). */
+const KYC_LINK_SECONDS = 5 * 60;
+
+/** Identifiers of a client (SEC-1): sealed, unique by blind index, shown masked. */
+export interface Identifiers {
+  nationalId?: string | undefined;
+  taxId?: string | undefined;
+}
+
+export interface AccountUpdate extends Identifiers {
   name?: string | undefined;
   city?: string | undefined;
   phone?: string | undefined;
@@ -182,6 +192,7 @@ export class AdminService {
     @Inject(DisputesService) private readonly disputes: DisputesService,
     @Inject(PiiService) private readonly pii: PiiService,
     @Inject(InvitationService) private readonly invitations: InvitationService,
+    @Inject(KEYS) private readonly keys: Keys,
   ) {}
 
   private period(request: { createdFrom?: Date; createdTo?: Date }, field = 'createdAt') {
@@ -308,6 +319,8 @@ export class AdminService {
     email: string;
     commissionGrid: CommissionTier[];
     acceptedCreditTypes: CreditType[];
+    nationalId?: string | undefined;
+    taxId?: string | undefined;
   }) {
     const id = uuidv7();
     // The owner's sign-in account and invitation come with the shop (decision of 2026-10-14).
@@ -341,6 +354,7 @@ export class AdminService {
           paymentCode,
           status: 'PENDING_KYC',
           createdBy: principal().userId,
+          ...(await this.identifiers(tx, 'merchants', input, id)),
         },
       });
       // The grid is entered at creation (step 2): no shop without a grid (decision 2026-11-04).
@@ -418,6 +432,8 @@ export class AdminService {
     phone: string;
     email: string;
     commissionGrid: CommissionTier[];
+    nationalId?: string | undefined;
+    taxId?: string | undefined;
   }) {
     const id = uuidv7();
     const invitations = await this.invitations.prepare([
@@ -443,6 +459,7 @@ export class AdminService {
           email: input.email.toLowerCase(),
           status: 'PENDING_KYC',
           legalForm: input.legalForm,
+          ...(await this.identifiers(tx, 'companies', input, id)),
         },
       });
       await this.invitations.create(tx, invitations);
@@ -614,6 +631,9 @@ export class AdminService {
         email: found.email,
         // The phone is personal data: shown to the administrators who may change it only.
         phone: manage ? this.pii.open(found.phone) : null,
+        // CIN number and tax id: the last 4 characters only (SEC-1).
+        maskedNationalId: this.pii.maskedNullable(found.nationalId),
+        maskedTaxId: this.pii.maskedNullable(found.taxId),
         ...(merchant === null
           ? {}
           : {
@@ -660,7 +680,7 @@ export class AdminService {
             });
         if (same !== null) throw problems.conflict();
       }
-      const data: Record<string, string> = {};
+      const data: Record<string, string | null> = {};
       const fields: string[] = [];
       const take = (field: string, next: string | undefined, current: string) => {
         if (next !== undefined && next !== current) {
@@ -686,6 +706,24 @@ export class AdminService {
       };
       for (const [field, value] of Object.entries(changed))
         if (value !== undefined) data[field] = value;
+      // Identifiers: compared in clear, stored sealed with their blind index; the history names
+      // the field, never the value.
+      const identifiers: Identifiers = {};
+      if (
+        input.nationalId !== undefined &&
+        input.nationalId !== this.pii.openNullable(found.nationalId)
+      ) {
+        identifiers.nationalId = input.nationalId;
+        fields.push('nationalId');
+      }
+      if (input.taxId !== undefined && input.taxId !== this.pii.openNullable(found.taxId)) {
+        identifiers.taxId = input.taxId;
+        fields.push('taxId');
+      }
+      Object.assign(
+        data,
+        await this.identifiers(tx, isCompany ? 'companies' : 'merchants', identifiers, id),
+      );
       if (fields.length === 0) return;
       if (isCompany) await tx.company.update({ where: { id }, data });
       else await tx.merchant.update({ where: { id }, data });
@@ -880,7 +918,8 @@ export class AdminService {
         const payload = approval.payload as unknown as IbanChangePayload;
         await tx.merchant.update({
           where: { id: payload.owner.merchantId },
-          data: { iban: payload.iban },
+          // Blind index kept with the sealed IBAN (search without decrypting, SEC-1).
+          data: { iban: payload.iban, ibanIndex: this.pii.ibanIndex(this.pii.open(payload.iban)) },
         });
         await this.recordChange(tx, payload.owner, ['iban'], approval.reason);
       } else if (approval.type === 'LEGAL_FORM_CHANGE') {
@@ -1154,8 +1193,8 @@ export class AdminService {
   // ---------------------------------------------------------------- KYC
 
   private kycInclude = {
-    merchant: { select: { name: true, city: true } },
-    company: { select: { name: true, city: true } },
+    merchant: { select: { name: true, city: true, nationalId: true, taxId: true, iban: true } },
+    company: { select: { name: true, city: true, nationalId: true, taxId: true } },
     documents: { where: { replacedAt: null }, orderBy: { uploadedAt: 'asc' } },
     events: { orderBy: { occurredAt: 'asc' } },
   } as const satisfies Prisma.KycFileInclude;
@@ -1194,6 +1233,7 @@ export class AdminService {
       })),
       // Each of the four documents with its status (MISSING = « à déposer »).
       pieces: documentsByType(file.documents, required),
+      ...this.kycIdentifiers(file),
       ...(file.rejectionReason === null ? {} : { rejectionReason: file.rejectionReason }),
       history: file.events.map((event) => ({
         action: event.action,
@@ -1201,6 +1241,30 @@ export class AdminService {
         actorName: event.actorName,
         ...(event.reason === null ? {} : { reason: event.reason }),
       })),
+    };
+  }
+
+  /**
+   * CIN number, tax id and RIB of the client (SEC-1): the last 4 characters for every
+   * administrator; in clear for Opérations only, which checks them against the pieces.
+   */
+  private kycIdentifiers(file: Prisma.KycFileGetPayload<{ include: AdminService['kycInclude'] }>) {
+    const owner = file.merchant ?? file.company;
+    const iban = file.merchant?.iban ?? null;
+    const maskedIdentifiers = {
+      nationalId: this.pii.maskedNullable(owner?.nationalId ?? null),
+      taxId: this.pii.maskedNullable(owner?.taxId ?? null),
+      iban: this.pii.maskedNullable(iban),
+    };
+    const who = principal();
+    if (who.subRole !== 'COMPLIANCE') return { maskedIdentifiers };
+    return {
+      maskedIdentifiers,
+      identifiers: {
+        nationalId: this.pii.openNullable(owner?.nationalId ?? null),
+        taxId: this.pii.openNullable(owner?.taxId ?? null),
+        iban: this.pii.openNullable(iban),
+      },
     };
   }
 
@@ -1243,6 +1307,43 @@ export class AdminService {
     });
   }
 
+  /**
+   * Sealed identifiers and their blind indexes (SEC-1). A CIN or a tax id already used by another
+   * client of the same kind is refused (409, IDENTIFIER_IN_USE), found by its index only.
+   */
+  private async identifiers(
+    tx: Tx,
+    table: 'companies' | 'merchants',
+    input: Identifiers,
+    id: string,
+  ): Promise<Record<string, string>> {
+    const data: Record<string, string> = {};
+    const entries = [
+      ['nationalId', input.nationalId, this.pii.nationalIdIndex.bind(this.pii)],
+      ['taxId', input.taxId, this.pii.taxIdIndex.bind(this.pii)],
+    ] as const;
+    for (const [field, value, index] of entries) {
+      if (value === undefined) continue;
+      const blind = index(value);
+      const where =
+        field === 'nationalId'
+          ? { nationalIdIndex: blind, id: { not: id } }
+          : { taxIdIndex: blind, id: { not: id } };
+      const taken =
+        table === 'companies'
+          ? await tx.company.findFirst({ where, select: { id: true } })
+          : await tx.merchant.findFirst({ where, select: { id: true } });
+      if (taken !== null)
+        throw new ApiProblem(409, 'RESOURCE_STATE_CONFLICT', {
+          reason: 'IDENTIFIER_IN_USE',
+          field,
+        });
+      data[field] = this.pii.seal(value);
+      data[`${field}Index`] = blind;
+    }
+    return data;
+  }
+
   async kycFile(id: string) {
     return this.db.user(async (tx) => {
       const file = await tx.kycFile.findUnique({ where: { id }, include: this.kycInclude });
@@ -1251,10 +1352,40 @@ export class AdminService {
     });
   }
 
+  /** Signed link to a piece, valid 5 minutes, for the administrator who asks (audited). */
+  async kycDocumentLink(fileId: string, documentId: string) {
+    const who = principal();
+    await this.db.user(async (tx) => {
+      const document = await tx.kycDocument.findFirst({ where: { id: documentId, fileId } });
+      if (document === null) throw problems.notFound();
+      await this.audit.record(tx, 'kyc.documentLink', `dossier ${fileId}`);
+    });
+    const expires = Math.floor(Date.now() / 1000) + KYC_LINK_SECONDS;
+    const signature = this.linkSignature(fileId, documentId, who.userId, expires);
+    return {
+      url: `/v1/admin/kyc-files/${fileId}/documents/${documentId}?expires=${String(expires)}&signature=${signature}`,
+      expires,
+      signature,
+      expiresAt: new Date(expires * 1000).toISOString(),
+    };
+  }
+
+  private linkSignature(fileId: string, documentId: string, userId: string, expires: number) {
+    return hmac(
+      this.keys.fileLink,
+      `kyc-document|${fileId}|${documentId}|${userId}|${String(expires)}`,
+    );
+  }
+
   async kycDocument(
     fileId: string,
     documentId: string,
+    link: { expires: number; signature: string },
   ): Promise<{ data: Buffer; contentType: string; fileName: string }> {
+    // Expired, signed for another administrator or for another piece: refused before any read.
+    const expected = this.linkSignature(fileId, documentId, principal().userId, link.expires);
+    if (link.expires * 1000 < Date.now() || !safeEqual(expected, link.signature))
+      throw new ApiProblem(403, 'FORBIDDEN');
     const document = await this.db.user((tx) =>
       tx.kycDocument.findFirst({ where: { id: documentId, fileId } }),
     );

@@ -8,6 +8,10 @@ part of 'kyc_file.dart';
 
 class _$KycFile extends KycFile {
   @override
+  final KycIdentifiers? maskedIdentifiers;
+  @override
+  final KycIdentifiers? identifiers;
+  @override
   final BuiltList<KycPiece>? pieces;
   @override
   final String id;
@@ -36,6 +40,8 @@ class _$KycFile extends KycFile {
       (KycFileBuilder()..update(updates))._build();
 
   _$KycFile._({
+    this.maskedIdentifiers,
+    this.identifiers,
     this.pieces,
     required this.id,
     required this.accountType,
@@ -60,6 +66,8 @@ class _$KycFile extends KycFile {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is KycFile &&
+        maskedIdentifiers == other.maskedIdentifiers &&
+        identifiers == other.identifiers &&
         pieces == other.pieces &&
         id == other.id &&
         accountType == other.accountType &&
@@ -77,6 +85,8 @@ class _$KycFile extends KycFile {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, maskedIdentifiers.hashCode);
+    _$hash = $jc(_$hash, identifiers.hashCode);
     _$hash = $jc(_$hash, pieces.hashCode);
     _$hash = $jc(_$hash, id.hashCode);
     _$hash = $jc(_$hash, accountType.hashCode);
@@ -96,6 +106,8 @@ class _$KycFile extends KycFile {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'KycFile')
+          ..add('maskedIdentifiers', maskedIdentifiers)
+          ..add('identifiers', identifiers)
           ..add('pieces', pieces)
           ..add('id', id)
           ..add('accountType', accountType)
@@ -114,6 +126,18 @@ class _$KycFile extends KycFile {
 
 class KycFileBuilder implements Builder<KycFile, KycFileBuilder> {
   _$KycFile? _$v;
+
+  KycIdentifiersBuilder? _maskedIdentifiers;
+  KycIdentifiersBuilder get maskedIdentifiers =>
+      _$this._maskedIdentifiers ??= KycIdentifiersBuilder();
+  set maskedIdentifiers(KycIdentifiersBuilder? maskedIdentifiers) =>
+      _$this._maskedIdentifiers = maskedIdentifiers;
+
+  KycIdentifiersBuilder? _identifiers;
+  KycIdentifiersBuilder get identifiers =>
+      _$this._identifiers ??= KycIdentifiersBuilder();
+  set identifiers(KycIdentifiersBuilder? identifiers) =>
+      _$this._identifiers = identifiers;
 
   ListBuilder<KycPiece>? _pieces;
   ListBuilder<KycPiece> get pieces =>
@@ -177,6 +201,8 @@ class KycFileBuilder implements Builder<KycFile, KycFileBuilder> {
   KycFileBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _maskedIdentifiers = $v.maskedIdentifiers?.toBuilder();
+      _identifiers = $v.identifiers?.toBuilder();
       _pieces = $v.pieces?.toBuilder();
       _id = $v.id;
       _accountType = $v.accountType;
@@ -213,6 +239,8 @@ class KycFileBuilder implements Builder<KycFile, KycFileBuilder> {
       _$result =
           _$v ??
           _$KycFile._(
+            maskedIdentifiers: _maskedIdentifiers?.build(),
+            identifiers: _identifiers?.build(),
             pieces: _pieces?.build(),
             id: BuiltValueNullFieldError.checkNotNull(id, r'KycFile', 'id'),
             accountType: BuiltValueNullFieldError.checkNotNull(
@@ -257,6 +285,10 @@ class KycFileBuilder implements Builder<KycFile, KycFileBuilder> {
     } catch (_) {
       late String _$failedField;
       try {
+        _$failedField = 'maskedIdentifiers';
+        _maskedIdentifiers?.build();
+        _$failedField = 'identifiers';
+        _identifiers?.build();
         _$failedField = 'pieces';
         _pieces?.build();
 

@@ -5293,14 +5293,14 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
-  /v1/admin/kyc-files/{fileId}/documents/{documentId}:
+  /v1/admin/kyc-files/{fileId}/documents/{documentId}/link:
     get:
       tags: [admin]
-      operationId: getKycDocument
-      summary: Pièce d'un dossier KYC
+      operationId: getKycDocumentLink
+      summary: Lien signé vers une pièce KYC (5 minutes)
       description: |
-        Fichier tel que déposé (JPG, PNG ou PDF), servi avec son type d'origine,
-        `Content-Disposition: attachment` et `X-Content-Type-Options: nosniff`.
+        Lien valable 5 minutes, pour l'administrateur connecté qui le demande seulement (SEC-1).
+        Permission `kycDocuments.read`. Tracé dans l'audit.
       parameters:
         - name: fileId
           in: path
@@ -5312,6 +5312,58 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Le lien signé.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KycDocumentLink'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/kyc-files/{fileId}/documents/{documentId}:
+    get:
+      tags: [admin]
+      operationId: getKycDocument
+      summary: Pièce d'un dossier KYC (par lien signé)
+      description: |
+        Fichier tel que déposé (JPG, PNG ou PDF), servi avec son type d'origine,
+        `Content-Disposition: attachment` et `X-Content-Type-Options: nosniff`. Seulement par le lien
+        signé (`expires`, `signature`) de `.../link` : expiré, ou demandé par un autre
+        administrateur, `403 FORBIDDEN` (SEC-1).
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+        - name: expires
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+        - name: signature
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Za-z0-9_-]{43}$'
       responses:
         '200':
           description: Le fichier.
@@ -9370,6 +9422,18 @@ components:
       additionalProperties: false
       required: [id, kind, name, city, status, legalForm, email, phone, commissionGrid, gridVersions, history, requests, createdAt]
       properties:
+        maskedNationalId:
+          description: N° de CIN masqué (4 derniers chiffres, SEC-1), `null` s'il n'est pas saisi.
+          oneOf:
+            - type: string
+              maxLength: 16
+            - type: 'null'
+        maskedTaxId:
+          description: Matricule fiscal masqué (4 derniers caractères, SEC-1), `null` s'il n'est pas saisi.
+          oneOf:
+            - type: string
+              maxLength: 16
+            - type: 'null'
         id:
           $ref: '#/components/schemas/Uuid'
         kind:
@@ -9455,6 +9519,14 @@ components:
       type: object
       additionalProperties: false
       properties:
+        nationalId:
+          description: N° de CIN (8 chiffres), chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`).
+          type: string
+          pattern: '^[0-9]{8}$'
+        taxId:
+          description: Matricule fiscal, chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`).
+          type: string
+          pattern: '^[0-9]{7}[A-Z](/[A-Z]/[A-Z]/[0-9]{3})?$'
         name:
           type: string
           minLength: 1
@@ -9484,6 +9556,14 @@ components:
       type: object
       additionalProperties: false
       properties:
+        nationalId:
+          description: N° de CIN (8 chiffres), chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`).
+          type: string
+          pattern: '^[0-9]{8}$'
+        taxId:
+          description: Matricule fiscal, chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`).
+          type: string
+          pattern: '^[0-9]{7}[A-Z](/[A-Z]/[A-Z]/[0-9]{3})?$'
         name:
           type: string
           minLength: 1
@@ -11417,6 +11497,14 @@ components:
       additionalProperties: false
       required: [legalForm, name, category, acceptedCreditTypes, city, phone, email, commissionGrid]
       properties:
+        nationalId:
+          description: N° de CIN (8 chiffres), chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`).
+          type: string
+          pattern: '^[0-9]{8}$'
+        taxId:
+          description: Matricule fiscal, chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`).
+          type: string
+          pattern: '^[0-9]{7}[A-Z](/[A-Z]/[A-Z]/[0-9]{3})?$'
         legalForm:
           $ref: '#/components/schemas/LegalForm'
         acceptedCreditTypes:
@@ -11503,6 +11591,14 @@ components:
       additionalProperties: false
       required: [legalForm, name, city, phone, email, commissionGrid]
       properties:
+        nationalId:
+          description: N° de CIN (8 chiffres), chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`).
+          type: string
+          pattern: '^[0-9]{8}$'
+        taxId:
+          description: Matricule fiscal, chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`).
+          type: string
+          pattern: '^[0-9]{7}[A-Z](/[A-Z]/[A-Z]/[0-9]{3})?$'
         legalForm:
           $ref: '#/components/schemas/LegalForm'
         name:
@@ -11911,12 +12007,59 @@ components:
           format: int32
           minimum: 0
           maximum: 50
+    KycIdentifiers:
+      title: KycIdentifiers
+      description: N° de CIN, matricule fiscal et RIB du client ; masqués (4 derniers caractères) sauf pour Opérations (SEC-1).
+      type: object
+      additionalProperties: false
+      required: [nationalId, taxId, iban]
+      properties:
+        nationalId:
+          oneOf:
+            - type: string
+              maxLength: 40
+            - type: 'null'
+        taxId:
+          oneOf:
+            - type: string
+              maxLength: 40
+            - type: 'null'
+        iban:
+          oneOf:
+            - type: string
+              maxLength: 40
+            - type: 'null'
+    KycDocumentLink:
+      title: KycDocumentLink
+      description: Lien signé vers une pièce KYC, valable 5 minutes, pour l'administrateur qui l'a demandé (SEC-1).
+      type: object
+      additionalProperties: false
+      required: [url, expires, signature, expiresAt]
+      properties:
+        url:
+          type: string
+          maxLength: 300
+        expires:
+          description: Échéance (secondes Unix), à repasser dans `expires`.
+          type: integer
+          format: int64
+          minimum: 1
+        signature:
+          type: string
+          pattern: '^[A-Za-z0-9_-]{43}$'
+        expiresAt:
+          $ref: '#/components/schemas/Timestamp'
     KycFile:
       title: KycFile
       type: object
       additionalProperties: false
       required: [id, accountType, accountId, accountName, city, status, submittedAt, documentsCount, documents, history]
       properties:
+        maskedIdentifiers:
+          $ref: '#/components/schemas/KycIdentifiers'
+        identifiers:
+          description: Les mêmes en clair, pour Opérations seulement (contrôle face aux pièces).
+          $ref: '#/components/schemas/KycIdentifiers'
         pieces:
           description: Les quatre pièces avec leur statut (MISSING = à déposer).
           type: array
@@ -12025,8 +12168,9 @@ components:
         payment:
           $ref: '#/components/schemas/PayoutPayment'
         iban:
+          description: RIB masqué (4 derniers chiffres, SEC-1) ; le fichier de la banque seul porte le RIB en clair.
           type: string
-          pattern: '^TN[0-9]{22}$'
+          maxLength: 40
         batchId:
           description: Lot de règlement qui contient le virement validé.
           $ref: '#/components/schemas/Uuid'
@@ -12086,8 +12230,9 @@ components:
         payment:
           $ref: '#/components/schemas/PayoutPayment'
         iban:
+          description: RIB masqué (4 derniers chiffres, SEC-1) ; le fichier de la banque seul porte le RIB en clair.
           type: string
-          pattern: '^TN[0-9]{22}$'
+          maxLength: 40
         batchId:
           $ref: '#/components/schemas/Uuid'
         batchReference:

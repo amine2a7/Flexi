@@ -277,6 +277,12 @@ model Company {
   legalForm             LegalForm     @default(PM_MF) @map("legal_form")
   /// Family accounts allowed for its employees (processus v2, on by default).
   familyAccountsEnabled Boolean       @default(true) @map("family_accounts_enabled")
+  /// CIN number of the manager (PP), sealed (AES-256-GCM, data key) + blind index (SEC-1).
+  nationalId            String?       @map("national_id")
+  nationalIdIndex       String?       @map("national_id_index") @db.Char(64)
+  /// Tax id (matricule fiscal), sealed + blind index (SEC-1).
+  taxId                 String?       @map("tax_id")
+  taxIdIndex            String?       @map("tax_id_index") @db.Char(64)
   createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
 
   users               User[]
@@ -373,6 +379,14 @@ model Merchant {
   paymentCode         String           @unique @map("payment_code") @db.Char(6)
   /// Bank account for payouts (TN + 22 digits). Masked everywhere except the admin payout control.
   iban                String? // encrypted (AES-256-GCM)
+  /// Blind index of the IBAN (HMAC-SHA256, SEC-1): search without decrypting.
+  ibanIndex           String?          @map("iban_index") @db.Char(64)
+  /// CIN number (PP_CIN), sealed + blind index (SEC-1).
+  nationalId          String?          @map("national_id")
+  nationalIdIndex     String?          @map("national_id_index") @db.Char(64)
+  /// Tax id (matricule fiscal), sealed + blind index (SEC-1).
+  taxId               String?          @map("tax_id")
+  taxIdIndex          String?          @map("tax_id_index") @db.Char(64)
   /// Administrator who created the merchant: never the approver of its payouts (QY-03 b).
   createdBy           String?          @map("created_by") @db.Uuid
   createdAt           DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)

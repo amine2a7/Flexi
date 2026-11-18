@@ -367,7 +367,8 @@ describe('payout and settlement', () => {
       headers: key(),
     });
     expect(approved.body).toMatchObject({ status: 'CHECKED', merchantName: merchant.name });
-    expect(String(approved.body.iban)).toMatch(/^TN\d{22}$/);
+    // SEC-1: the last 4 digits only, even for the administrator who checks the payout.
+    expect(String(approved.body.iban)).toMatch(/^•••• \d{4}$/);
 
     // The batch date comes: the settlement job executes it.
     const owner = await ownerClient();

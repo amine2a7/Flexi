@@ -8,7 +8,7 @@ import { AuthGuard } from './auth.guard.js';
 import { DbService } from './db.service.js';
 import { FourEyesService } from './four-eyes.service.js';
 import { IdempotencyService } from './idempotency.service.js';
-import { PiiService } from './pii.js';
+import { keyringProvider, PiiService } from './pii.js';
 import { OutboxService } from './outbox.service.js';
 import { Paginator } from './pagination.js';
 import { ProblemFilter } from './problem.filter.js';
@@ -22,6 +22,7 @@ import type { Env } from '../config/env.js';
     envProvider(),
     keysProvider,
     DbService,
+    keyringProvider,
     SessionService,
     AuditService,
     IdempotencyService,

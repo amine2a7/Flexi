@@ -32,7 +32,7 @@ part 'admin_payout_request.g.dart';
 /// * [netMillimes] - Montant en **millimes** (1 TND = 1 000). Entier, jamais décimal ni chaîne. Devise : TND. Exemple : 45,000 TND = 45000. Les champs de ce type sont suffixés `Millimes`. 
 /// * [requestedAt] - Horodatage RFC 3339 en UTC, suffixe `Z`, précision milliseconde.
 /// * [payment] 
-/// * [iban] 
+/// * [iban] - RIB masqué (4 derniers chiffres, SEC-1) ; le fichier de la banque seul porte le RIB en clair.
 /// * [batchId] - Lot de règlement qui contient le virement validé.
 /// * [batchReference] 
 @BuiltValue()
@@ -106,6 +106,7 @@ abstract class AdminPayoutRequest implements Built<AdminPayoutRequest, AdminPayo
   @BuiltValueField(wireName: r'payment')
   PayoutPayment? get payment;
 
+  /// RIB masqué (4 derniers chiffres, SEC-1) ; le fichier de la banque seul porte le RIB en clair.
   @BuiltValueField(wireName: r'iban')
   String get iban;
 

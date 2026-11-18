@@ -67,6 +67,9 @@ export class JobsService implements OnApplicationBootstrap, OnApplicationShutdow
     const result = await this.db.system((tx) => this.ledger.reconcile(tx));
     if (result.ok) return true;
     const accountsInError = [
+      // A broken hash link first: it names the line, never its content (SEC-1).
+      ...result.ledgerChainBreaks.slice(0, 5).map((id) => `chaîne grand livre #${id}`),
+      ...result.auditChainBreaks.slice(0, 5).map((id) => `chaîne audit ${id}`),
       ...result.mismatches,
       ...result.lotMismatches,
       ...result.holdMismatches,

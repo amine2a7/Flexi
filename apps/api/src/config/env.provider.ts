@@ -14,6 +14,8 @@ export const KEYS = Symbol('KEYS');
 export interface Keys {
   readonly session: Buffer;
   readonly data: Buffer;
+  /** Signature of the links to the KYC pieces (SEC-1). */
+  readonly fileLink: Buffer;
 }
 
 export const keysProvider: Provider = {
@@ -22,5 +24,6 @@ export const keysProvider: Provider = {
   useFactory: (env: Env): Keys => ({
     session: Buffer.from(env.SESSION_SECRET, 'base64'),
     data: Buffer.from(env.DATA_ENCRYPTION_KEY, 'base64'),
+    fileLink: Buffer.from(env.FILE_LINK_SECRET, 'base64'),
   }),
 };

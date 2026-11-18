@@ -8,6 +8,10 @@ part of 'merchant_update.dart';
 
 class _$MerchantUpdate extends MerchantUpdate {
   @override
+  final String? nationalId;
+  @override
+  final String? taxId;
+  @override
   final String? name;
   @override
   final MerchantCategory? category;
@@ -26,6 +30,8 @@ class _$MerchantUpdate extends MerchantUpdate {
       (MerchantUpdateBuilder()..update(updates))._build();
 
   _$MerchantUpdate._({
+    this.nationalId,
+    this.taxId,
     this.name,
     this.category,
     this.city,
@@ -45,6 +51,8 @@ class _$MerchantUpdate extends MerchantUpdate {
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
     return other is MerchantUpdate &&
+        nationalId == other.nationalId &&
+        taxId == other.taxId &&
         name == other.name &&
         category == other.category &&
         city == other.city &&
@@ -57,6 +65,8 @@ class _$MerchantUpdate extends MerchantUpdate {
   @override
   int get hashCode {
     var _$hash = 0;
+    _$hash = $jc(_$hash, nationalId.hashCode);
+    _$hash = $jc(_$hash, taxId.hashCode);
     _$hash = $jc(_$hash, name.hashCode);
     _$hash = $jc(_$hash, category.hashCode);
     _$hash = $jc(_$hash, city.hashCode);
@@ -71,6 +81,8 @@ class _$MerchantUpdate extends MerchantUpdate {
   @override
   String toString() {
     return (newBuiltValueToStringHelper(r'MerchantUpdate')
+          ..add('nationalId', nationalId)
+          ..add('taxId', taxId)
           ..add('name', name)
           ..add('category', category)
           ..add('city', city)
@@ -85,6 +97,14 @@ class _$MerchantUpdate extends MerchantUpdate {
 class MerchantUpdateBuilder
     implements Builder<MerchantUpdate, MerchantUpdateBuilder> {
   _$MerchantUpdate? _$v;
+
+  String? _nationalId;
+  String? get nationalId => _$this._nationalId;
+  set nationalId(String? nationalId) => _$this._nationalId = nationalId;
+
+  String? _taxId;
+  String? get taxId => _$this._taxId;
+  set taxId(String? taxId) => _$this._taxId = taxId;
 
   String? _name;
   String? get name => _$this._name;
@@ -121,6 +141,8 @@ class MerchantUpdateBuilder
   MerchantUpdateBuilder get _$this {
     final $v = _$v;
     if ($v != null) {
+      _nationalId = $v.nationalId;
+      _taxId = $v.taxId;
       _name = $v.name;
       _category = $v.category;
       _city = $v.city;
@@ -150,6 +172,8 @@ class MerchantUpdateBuilder
     final _$result =
         _$v ??
         _$MerchantUpdate._(
+          nationalId: nationalId,
+          taxId: taxId,
           name: name,
           category: category,
           city: city,

@@ -14,7 +14,8 @@ const dataKey = () => Buffer.from(process.env.DATA_ENCRYPTION_KEY ?? '', 'base64
 /** A phone or an IBAN as the API stores it (encrypted, securite B5-S11). */
 export const sealed = (value: string) => sealPii(dataKey(), value);
 /** Lookup index of a user phone (users.phone_hash). */
-export const phoneKey = (phone: string) => phoneIndex(dataKey(), phone);
+export const phoneKey = (phone: string) =>
+  phoneIndex(Buffer.from(process.env.BLIND_INDEX_KEY ?? '', 'base64'), phone);
 
 /** One-line commission grid (default rate) for a shop or a company created in a test. */
 export const oneLineGrid = (rateBps = 200) => ({

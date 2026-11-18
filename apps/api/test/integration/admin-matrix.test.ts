@@ -66,6 +66,7 @@ const EXPECTED: Record<string, Sub[]> = {
   'AdminController.kycFiles': BACK_OFFICE,
   'AdminController.kycFile': BACK_OFFICE,
   'AdminController.kycDocument': OPS,
+  'AdminController.kycDocumentLink': OPS,
   'AdminController.approveKyc': OPS,
   'AdminController.rejectKyc': OPS,
   'AdminController.requestKycCorrections': OPS,

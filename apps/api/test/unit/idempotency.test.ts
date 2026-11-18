@@ -18,6 +18,7 @@ describe('idempotency fingerprint', () => {
   const service = new IdempotencyService({} as DbService, {
     session: randomBytes(32),
     data: randomBytes(32),
+    fileLink: randomBytes(32),
   });
 
   it('is keyed by a server secret: no PIN can be found from it by trying the 10 000 values', () => {

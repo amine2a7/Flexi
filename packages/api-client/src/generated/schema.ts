@@ -2239,6 +2239,27 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/admin/kyc-files/{fileId}/documents/{documentId}/link': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Lien signé vers une pièce KYC (5 minutes)
+     * @description Lien valable 5 minutes, pour l'administrateur connecté qui le demande seulement (SEC-1).
+     *     Permission `kycDocuments.read`. Tracé dans l'audit.
+     */
+    get: operations['getKycDocumentLink'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/admin/kyc-files/{fileId}/documents/{documentId}': {
     parameters: {
       query?: never;
@@ -2247,9 +2268,11 @@ export interface paths {
       cookie?: never;
     };
     /**
-     * Pièce d'un dossier KYC
+     * Pièce d'un dossier KYC (par lien signé)
      * @description Fichier tel que déposé (JPG, PNG ou PDF), servi avec son type d'origine,
-     *     `Content-Disposition: attachment` et `X-Content-Type-Options: nosniff`.
+     *     `Content-Disposition: attachment` et `X-Content-Type-Options: nosniff`. Seulement par le lien
+     *     signé (`expires`, `signature`) de `.../link` : expiré, ou demandé par un autre
+     *     administrateur, `403 FORBIDDEN` (SEC-1).
      */
     get: operations['getKycDocument'];
     put?: never;
@@ -4284,6 +4307,10 @@ export interface components {
      * @description Fiche d'une entreprise ou d'un commerçant (décision du 2026-11-03).
      */
     AccountRecord: {
+      /** @description N° de CIN masqué (4 derniers chiffres, SEC-1), `null` s'il n'est pas saisi. */
+      maskedNationalId?: string | null;
+      /** @description Matricule fiscal masqué (4 derniers caractères, SEC-1), `null` s'il n'est pas saisi. */
+      maskedTaxId?: string | null;
       id: components['schemas']['Uuid'];
       /** @enum {string} */
       kind: 'COMPANY' | 'MERCHANT';
@@ -4319,6 +4346,10 @@ export interface components {
     };
     /** MerchantUpdate */
     MerchantUpdate: {
+      /** @description N° de CIN (8 chiffres), chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`). */
+      nationalId?: string;
+      /** @description Matricule fiscal, chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`). */
+      taxId?: string;
       name?: string;
       category?: components['schemas']['MerchantCategory'];
       city?: string;
@@ -4331,6 +4362,10 @@ export interface components {
     };
     /** CompanyUpdate */
     CompanyUpdate: {
+      /** @description N° de CIN (8 chiffres), chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`). */
+      nationalId?: string;
+      /** @description Matricule fiscal, chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`). */
+      taxId?: string;
       name?: string;
       city?: string;
       phone?: components['schemas']['PhoneNumber'];
@@ -5240,6 +5275,10 @@ export interface components {
     };
     /** MerchantCreate */
     MerchantCreate: {
+      /** @description N° de CIN (8 chiffres), chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`). */
+      nationalId?: string;
+      /** @description Matricule fiscal, chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`). */
+      taxId?: string;
       legalForm: components['schemas']['LegalForm'];
       /** @description Types de crédit acceptés par le commerçant. */
       acceptedCreditTypes: components['schemas']['CreditType'][];
@@ -5280,6 +5319,10 @@ export interface components {
     };
     /** CompanyCreate */
     CompanyCreate: {
+      /** @description N° de CIN (8 chiffres), chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`). */
+      nationalId?: string;
+      /** @description Matricule fiscal, chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`). */
+      taxId?: string;
       legalForm: components['schemas']['LegalForm'];
       name: string;
       city: string;
@@ -5507,8 +5550,34 @@ export interface components {
       /** Format: int32 */
       documentsCount: number;
     };
+    /**
+     * KycIdentifiers
+     * @description N° de CIN, matricule fiscal et RIB du client ; masqués (4 derniers caractères) sauf pour Opérations (SEC-1).
+     */
+    KycIdentifiers: {
+      nationalId: string | null;
+      taxId: string | null;
+      iban: string | null;
+    };
+    /**
+     * KycDocumentLink
+     * @description Lien signé vers une pièce KYC, valable 5 minutes, pour l'administrateur qui l'a demandé (SEC-1).
+     */
+    KycDocumentLink: {
+      url: string;
+      /**
+       * Format: int64
+       * @description Échéance (secondes Unix), à repasser dans `expires`.
+       */
+      expires: number;
+      signature: string;
+      expiresAt: components['schemas']['Timestamp'];
+    };
     /** KycFile */
     KycFile: {
+      maskedIdentifiers?: components['schemas']['KycIdentifiers'];
+      /** @description Les mêmes en clair, pour Opérations seulement (contrôle face aux pièces). */
+      identifiers?: components['schemas']['KycIdentifiers'];
       /** @description Les quatre pièces avec leur statut (MISSING = à déposer). */
       pieces?: components['schemas']['KycPiece'][];
       id: components['schemas']['Uuid'];
@@ -5558,6 +5627,7 @@ export interface components {
       netMillimes: components['schemas']['AmountMillimes'];
       requestedAt: components['schemas']['Timestamp'];
       payment?: components['schemas']['PayoutPayment'];
+      /** @description RIB masqué (4 derniers chiffres, SEC-1) ; le fichier de la banque seul porte le RIB en clair. */
       iban: string;
       /** @description Lot de règlement qui contient le virement validé. */
       batchId?: components['schemas']['Uuid'];
@@ -5589,6 +5659,7 @@ export interface components {
       netMillimes: components['schemas']['AmountMillimes'];
       requestedAt: components['schemas']['Timestamp'];
       payment?: components['schemas']['PayoutPayment'];
+      /** @description RIB masqué (4 derniers chiffres, SEC-1) ; le fichier de la banque seul porte le RIB en clair. */
       iban: string;
       batchId?: components['schemas']['Uuid'];
       batchReference?: string;
@@ -10792,9 +10863,40 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
-  getKycDocument: {
+  getKycDocumentLink: {
     parameters: {
       query?: never;
+      header?: never;
+      path: {
+        fileId: components['schemas']['Uuid'];
+        documentId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Le lien signé. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['KycDocumentLink'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getKycDocument: {
+    parameters: {
+      query: {
+        expires: number;
+        signature: string;
+      };
       header?: never;
       path: {
         fileId: components['schemas']['Uuid'];

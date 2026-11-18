@@ -11,6 +11,8 @@ part 'company_update.g.dart';
 /// CompanyUpdate
 ///
 /// Properties:
+/// * [nationalId] - N° de CIN (8 chiffres), chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`).
+/// * [taxId] - Matricule fiscal, chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`).
 /// * [name] 
 /// * [city] 
 /// * [phone] - Numéro tunisien au format E.164.
@@ -18,6 +20,14 @@ part 'company_update.g.dart';
 /// * [reason] - Motif (historique), facultatif.
 @BuiltValue()
 abstract class CompanyUpdate implements Built<CompanyUpdate, CompanyUpdateBuilder> {
+  /// N° de CIN (8 chiffres), chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`).
+  @BuiltValueField(wireName: r'nationalId')
+  String? get nationalId;
+
+  /// Matricule fiscal, chiffré au repos ; unique (index aveugle), sinon `409 RESOURCE_STATE_CONFLICT` (`IDENTIFIER_IN_USE`).
+  @BuiltValueField(wireName: r'taxId')
+  String? get taxId;
+
   @BuiltValueField(wireName: r'name')
   String? get name;
 
@@ -58,6 +68,20 @@ class _$CompanyUpdateSerializer implements PrimitiveSerializer<CompanyUpdate> {
     CompanyUpdate object, {
     FullType specifiedType = FullType.unspecified,
   }) sync* {
+    if (object.nationalId != null) {
+      yield r'nationalId';
+      yield serializers.serialize(
+        object.nationalId,
+        specifiedType: const FullType(String),
+      );
+    }
+    if (object.taxId != null) {
+      yield r'taxId';
+      yield serializers.serialize(
+        object.taxId,
+        specifiedType: const FullType(String),
+      );
+    }
     if (object.name != null) {
       yield r'name';
       yield serializers.serialize(
@@ -116,6 +140,22 @@ class _$CompanyUpdateSerializer implements PrimitiveSerializer<CompanyUpdate> {
       final key = serializedList[i] as String;
       final value = serializedList[i + 1];
       switch (key) {
+        case r'nationalId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.nationalId = valueDes;
+          break;
+        case r'taxId':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(String),
+          ) as String?;
+          if (valueDes == null) continue;
+          result.taxId = valueDes;
+          break;
         case r'name':
           final valueDes = serializers.deserialize(
             value,

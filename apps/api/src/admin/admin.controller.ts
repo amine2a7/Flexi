@@ -121,6 +121,20 @@ const settingsBody = z.strictObject({
   reason,
 });
 
+/** CIN number (8 digits) and tax id (matricule fiscal), optional (SEC-1). */
+const identifierFields = {
+  nationalId: z
+    .string()
+    .regex(/^[0-9]{8}$/)
+    .optional(),
+  taxId: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[0-9]{7}[A-Z](\/[A-Z]\/[A-Z]\/[0-9]{3})?$/)
+    .optional(),
+};
+
 @Roles('ADMIN')
 @Controller('v1/admin')
 export class AdminController {
@@ -161,6 +175,7 @@ export class AdminController {
           email,
           commissionGrid: commissionGridSchema,
           acceptedCreditTypes: types,
+          ...identifierFields,
         }),
         body,
       ),
@@ -213,6 +228,7 @@ export class AdminController {
         address: z.string().trim().max(200).optional(),
         phone: phoneNumber.optional(),
         email: email.optional(),
+        ...identifierFields,
         reason: reason.optional(),
       }),
       body,
@@ -269,6 +285,7 @@ export class AdminController {
         city: city.optional(),
         phone: phoneNumber.optional(),
         email: email.optional(),
+        ...identifierFields,
         reason: reason.optional(),
       }),
       body,
@@ -299,6 +316,7 @@ export class AdminController {
           phone: phoneNumber,
           email,
           commissionGrid: commissionGridSchema,
+          ...identifierFields,
         }),
         body,
       ),
@@ -430,16 +448,34 @@ export class AdminController {
     return this.admin.kycFile(pathId('fileId', fileId));
   }
 
+  /** Signed link to a KYC piece (SEC-1): 5 minutes, for the administrator who asked only. */
+  @Can('kycDocuments.read')
+  @Get('kyc-files/:fileId/documents/:documentId/link')
+  kycDocumentLink(@Param('fileId') fileId: string, @Param('documentId') documentId: string) {
+    return this.admin.kycDocumentLink(pathId('fileId', fileId), pathId('documentId', documentId));
+  }
+
+  /** The piece itself, reached only through its signed link (expired or foreign: 403). */
   @Can('kycDocuments.read')
   @Get('kyc-files/:fileId/documents/:documentId')
   async kycDocument(
     @Param('fileId') fileId: string,
     @Param('documentId') documentId: string,
+    @Query() query: Record<string, unknown>,
     @Res() res: Response,
   ): Promise<void> {
+    const link = parse(
+      z.strictObject({
+        expires: z.coerce.number().int().positive(),
+        signature: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+      }),
+      query,
+      'query',
+    );
     const file = await this.admin.kycDocument(
       pathId('fileId', fileId),
       pathId('documentId', documentId),
+      link,
     );
     sendFile(res, file.data, file.contentType, file.fileName);
   }

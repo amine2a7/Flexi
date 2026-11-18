@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module.js';
 import { httpPipeline } from './common/http.js';
+import { RedactingLogger } from './common/redacting-logger.js';
 import { installTestClock, testClockHandler, testReconcileHandler } from './common/test-clock.js';
 import { JobsService } from './jobs/jobs.service.js';
 import type { Env } from './config/env.js';
@@ -12,7 +13,8 @@ export async function createApp(env: Env, logs = true): Promise<NestExpressAppli
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     // Body parsing, CORS and security headers are done by httpPipeline (contract §6 and §8).
     bodyParser: false,
-    logger: logs ? ['error', 'warn', 'log'] : ['error'],
+    // Every line is masked before it is written (SEC-1): no secret nor identifier in the logs.
+    logger: new RedactingLogger({ logLevels: logs ? ['error', 'warn', 'log'] : ['error'] }),
   });
   app.disable('x-powered-by');
   app.set('trust proxy', false);

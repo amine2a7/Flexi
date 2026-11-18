@@ -14,11 +14,31 @@ const schema = z.object({
   WEB_ORIGINS: z.string().default('http://localhost:3001'),
   PG_ADMIN_URL: z.string().min(1),
   DB_NAME: z.string().default('flexipay'),
+  /** Password of `fp_app`, the only role the API connects with (RLS applies, no DDL). */
   APP_DB_PASSWORD: z.string().min(16),
+  /** Password of `fp_migrate`, owner of the schema: migrations and data scripts only. */
+  MIGRATE_DB_PASSWORD: z.string().min(16),
+  /** Passwords of `fp_worker` (outbox only) and `fp_report` (read only): set by db:setup. */
+  WORKER_DB_PASSWORD: z.string().min(16).optional(),
+  REPORT_DB_PASSWORD: z.string().min(16).optional(),
+  /** TLS to PostgreSQL: `verify-full` required in production (CA of the server in DB_SSL_CA_FILE). */
+  DB_SSL: z.enum(['disable', 'require', 'verify-full']).default('disable'),
+  DB_SSL_CA_FILE: z.string().optional(),
   /** HMAC key of the CSRF tokens (contract §6). */
   SESSION_SECRET: base64Key,
-  /** AES-256-GCM key of the TOTP secrets at rest. */
+  /** AES-256-GCM key of the TOTP secrets at rest, and of the personal data sealed before SEC-1. */
   DATA_ENCRYPTION_KEY: base64Key,
+  /**
+   * Master key (KEK) that wraps the data keys of the personal data (CIN, RIB, tax id, phones):
+   * an environment variable for now, a key vault later. Never stored in the database.
+   */
+  DATA_MASTER_KEY: base64Key,
+  /** HMAC-SHA256 key of the blind indexes (search and uniqueness without decrypting). */
+  BLIND_INDEX_KEY: base64Key,
+  /** Pepper of the Argon2id hashes (passwords, PINs, temporary passwords). */
+  PASSWORD_PEPPER: base64Key,
+  /** HMAC key of the signed links of the KYC pieces (5 minutes, one administrator). */
+  FILE_LINK_SECRET: base64Key,
   /** Local file storage (KYC pieces, transfer proofs), outside Git. */
   UPLOAD_DIR: z.string().default('var/uploads'),
   /**
@@ -64,6 +84,29 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   if (env.NODE_ENV === 'production' && env.TEST_CLOCK === '1') {
     throw new Error('TEST_CLOCK is forbidden in production');
   }
+  if (env.NODE_ENV === 'production' && env.DB_SSL !== 'verify-full') {
+    throw new Error('DB_SSL must be verify-full in production');
+  }
+  // One key, one use: the same value reused for two purposes is refused (names only, no value).
+  const keys = [
+    'SESSION_SECRET',
+    'DATA_ENCRYPTION_KEY',
+    'DATA_MASTER_KEY',
+    'BLIND_INDEX_KEY',
+    'PASSWORD_PEPPER',
+    'FILE_LINK_SECRET',
+  ] as const;
+  const seen = new Map<string, string>();
+  for (const name of keys) {
+    const other = seen.get(env[name]);
+    if (other !== undefined) throw new Error(`${name} must differ from ${other}`);
+    seen.set(env[name], name);
+  }
+  const uploadDir = resolve(env.UPLOAD_DIR);
+  // Uploaded pieces never live under a folder served by a web server.
+  if (/[\\/](public|static|www|\.next)([\\/]|$)/i.test(uploadDir)) {
+    throw new Error('UPLOAD_DIR must stay outside any web folder');
+  }
   const webOrigins = env.WEB_ORIGINS.split(',')
     .map((origin) => origin.trim())
     .filter((origin) => origin !== '');
@@ -76,6 +119,6 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     ...env,
     databaseUrl: databaseUrls(source).appUrl,
     webOrigins,
-    uploadDir: resolve(env.UPLOAD_DIR),
+    uploadDir,
   };
 }

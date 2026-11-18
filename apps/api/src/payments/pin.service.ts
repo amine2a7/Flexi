@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { AuditService } from '../common/audit.service.js';
 import { DbService } from '../common/db.service.js';
 import { ApiProblem } from '../common/problem.js';
-import { hashSecret, verifySecret } from '../auth/password.js';
+import { hashSecret, needsRehash, verifySecret } from '../auth/password.js';
 import { SessionService } from '../auth/session.service.js';
 
 /**
@@ -63,8 +63,11 @@ export class PinService {
     );
     if (reserved === undefined) throw await this.refusal(employeeId);
     if (await verifySecret(reserved.pin_hash, pin)) {
+      // A hash of the former parameters (no pepper) is replaced now that the PIN is known.
+      const rehashed = needsRehash(reserved.pin_hash) ? await hashSecret(pin) : null;
       await this.db.system(
-        (tx) => tx.$executeRaw`UPDATE employees SET pin_failures = 0, pin_lock_level = 0
+        (tx) => tx.$executeRaw`UPDATE employees SET pin_failures = 0, pin_lock_level = 0,
+            pin_hash = coalesce(${rehashed}, pin_hash)
           WHERE id = ${employeeId}::uuid`,
       );
       return;

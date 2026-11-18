@@ -282,14 +282,21 @@ function KycDocumentView({
   onCorrect?: () => void;
 }) {
   const t = useTranslations('admin.kyc');
-  const load = useCallback(
-    () =>
-      getApi().GET('/v1/admin/kyc-files/{fileId}/documents/{documentId}', {
-        params: { path: { fileId, documentId: document.id } },
-        parseAs: 'blob',
-      }),
-    [fileId, document.id],
-  );
+  // SEC-1: the piece is served only through a signed link (5 minutes, this administrator).
+  const load = useCallback(async () => {
+    const path = { fileId, documentId: document.id };
+    const link = await getApi().GET('/v1/admin/kyc-files/{fileId}/documents/{documentId}/link', {
+      params: { path },
+    });
+    if (link.data === undefined) return { data: undefined, error: link.error };
+    return getApi().GET('/v1/admin/kyc-files/{fileId}/documents/{documentId}', {
+      params: {
+        path,
+        query: { expires: link.data.expires, signature: link.data.signature },
+      },
+      parseAs: 'blob',
+    });
+  }, [fileId, document.id]);
   const title = t(`documentTypes.${document.type}`);
   return (
     <section className="flex flex-col gap-3 rounded-card-desktop border border-border p-4">

@@ -1,7 +1,7 @@
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient, type Prisma } from '../generated/prisma/client.js';
-import { PG_SESSION_OPTIONS } from '../config/database-urls.js';
+import { PG_SESSION_OPTIONS, pgSsl } from '../config/database-urls.js';
 import { ENV } from '../config/env.provider.js';
 import type { Env } from '../config/env.js';
 import { currentContext, type Principal } from './request-context.js';
@@ -41,7 +41,8 @@ export async function asService<T>(tx: Tx, fn: () => Promise<T>): Promise<T> {
   const [previous] = await tx.$queryRaw<
     { role: string | null }[]
   >`SELECT current_setting('app.role', true) AS role`;
-  const restore = () => tx.$executeRaw`SELECT set_config('app.role', ${previous?.role ?? ''}, true)`;
+  const restore = () =>
+    tx.$executeRaw`SELECT set_config('app.role', ${previous?.role ?? ''}, true)`;
   await tx.$executeRaw`SELECT set_config('app.role', 'SYSTEM', true)`;
   let result: T;
   try {
@@ -61,7 +62,11 @@ export class DbService implements OnModuleDestroy {
 
   constructor(@Inject(ENV) env: Env) {
     this.prisma = new PrismaClient({
-      adapter: new PrismaPg({ connectionString: env.databaseUrl, options: PG_SESSION_OPTIONS }),
+      adapter: new PrismaPg({
+        connectionString: env.databaseUrl,
+        options: PG_SESSION_OPTIONS,
+        ssl: pgSsl(env),
+      }),
     });
   }
 
