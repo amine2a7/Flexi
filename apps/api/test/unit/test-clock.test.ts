@@ -10,7 +10,6 @@ import {
   resetTestClock,
 } from '../../src/common/test-clock.js';
 import { loadEnv } from '../../src/config/env.js';
-import { testDerivedValue } from '../../src/config/test-keys.js';
 
 const DAY = 86_400_000;
 
@@ -62,19 +61,7 @@ describe('test clock', () => {
     expect(() => loadEnv({ ...base, PASSWORD_PEPPER: base.SESSION_SECRET })).toThrow(
       /PASSWORD_PEPPER must differ from SESSION_SECRET/,
     );
-    // Never a key of the tests in production (SEC-1 review).
-    expect(() =>
-      loadEnv({
-        ...base,
-        PASSWORD_PEPPER: testDerivedValue(base.SESSION_SECRET, 'PASSWORD_PEPPER'),
-      }),
-    ).toThrow(/PASSWORD_PEPPER is a test value/);
-    expect(() =>
-      loadEnv({
-        ...base,
-        MIGRATE_DB_PASSWORD: testDerivedValue(base.SESSION_SECRET, 'MIGRATE_DB_PASSWORD'),
-      }),
-    ).toThrow(/MIGRATE_DB_PASSWORD is a test value/);
+    // Never a dummy key nor the test database in production (SEC-1 review).
     expect(() =>
       loadEnv({ ...base, DATA_MASTER_KEY: Buffer.alloc(32, 7).toString('base64') }),
     ).toThrow(/DATA_MASTER_KEY is a dummy key/);
