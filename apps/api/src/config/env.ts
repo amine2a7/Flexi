@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 import { z } from 'zod';
 import { databaseUrls } from './database-urls.js';
+import { TEST_DERIVED_NAMES, testDerivedValue } from './test-keys.js';
 
 const base64Key = z
   .string()
@@ -101,6 +102,19 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     const other = seen.get(env[name]);
     if (other !== undefined) throw new Error(`${name} must differ from ${other}`);
     seen.set(env[name], name);
+  }
+  if (env.NODE_ENV === 'production') {
+    // Never a key of the tests in production: neither the values the tests derive, nor a dummy
+    // key made of one repeated byte, nor the test database.
+    for (const name of TEST_DERIVED_NAMES) {
+      if (source[name] !== undefined && source[name] === testDerivedValue(env.SESSION_SECRET, name))
+        throw new Error(`${name} is a test value, refused in production`);
+    }
+    for (const name of keys) {
+      if (new Set(Buffer.from(env[name], 'base64')).size === 1)
+        throw new Error(`${name} is a dummy key, refused in production`);
+    }
+    if (env.DB_NAME.endsWith('_test')) throw new Error('DB_NAME is a test database');
   }
   const uploadDir = resolve(env.UPLOAD_DIR);
   // Uploaded pieces never live under a folder served by a web server.

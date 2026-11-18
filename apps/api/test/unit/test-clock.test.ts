@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 // The test clock of the end-to-end journey (request of 2026-11-12): days move forward for the
 // whole API process, only when TEST_CLOCK=1, never in production.
 import { afterEach, describe, expect, it } from 'vitest';
@@ -9,6 +10,7 @@ import {
   resetTestClock,
 } from '../../src/common/test-clock.js';
 import { loadEnv } from '../../src/config/env.js';
+import { testDerivedValue } from '../../src/config/test-keys.js';
 
 const DAY = 86_400_000;
 
@@ -45,12 +47,12 @@ describe('test clock', () => {
       APP_DB_PASSWORD: 'x'.repeat(16),
       MIGRATE_DB_PASSWORD: 'y'.repeat(16),
       DB_SSL: 'verify-full',
-      SESSION_SECRET: Buffer.alloc(32, 1).toString('base64'),
-      DATA_ENCRYPTION_KEY: Buffer.alloc(32, 2).toString('base64'),
-      DATA_MASTER_KEY: Buffer.alloc(32, 3).toString('base64'),
-      BLIND_INDEX_KEY: Buffer.alloc(32, 4).toString('base64'),
-      PASSWORD_PEPPER: Buffer.alloc(32, 5).toString('base64'),
-      FILE_LINK_SECRET: Buffer.alloc(32, 6).toString('base64'),
+      SESSION_SECRET: randomBytes(32).toString('base64'),
+      DATA_ENCRYPTION_KEY: randomBytes(32).toString('base64'),
+      DATA_MASTER_KEY: randomBytes(32).toString('base64'),
+      BLIND_INDEX_KEY: randomBytes(32).toString('base64'),
+      PASSWORD_PEPPER: randomBytes(32).toString('base64'),
+      FILE_LINK_SECRET: randomBytes(32).toString('base64'),
       WEB_ORIGINS: 'https://app.flexipay.tn',
     };
     expect(() => loadEnv(base)).not.toThrow();
@@ -59,6 +61,28 @@ describe('test clock', () => {
     expect(() => loadEnv({ ...base, DB_SSL: 'disable' })).toThrow(/DB_SSL/);
     expect(() => loadEnv({ ...base, PASSWORD_PEPPER: base.SESSION_SECRET })).toThrow(
       /PASSWORD_PEPPER must differ from SESSION_SECRET/,
+    );
+    // Never a key of the tests in production (SEC-1 review).
+    expect(() =>
+      loadEnv({
+        ...base,
+        PASSWORD_PEPPER: testDerivedValue(base.SESSION_SECRET, 'PASSWORD_PEPPER'),
+      }),
+    ).toThrow(/PASSWORD_PEPPER is a test value/);
+    expect(() =>
+      loadEnv({
+        ...base,
+        MIGRATE_DB_PASSWORD: testDerivedValue(base.SESSION_SECRET, 'MIGRATE_DB_PASSWORD'),
+      }),
+    ).toThrow(/MIGRATE_DB_PASSWORD is a test value/);
+    expect(() =>
+      loadEnv({ ...base, DATA_MASTER_KEY: Buffer.alloc(32, 7).toString('base64') }),
+    ).toThrow(/DATA_MASTER_KEY is a dummy key/);
+    expect(() => loadEnv({ ...base, DB_NAME: 'flexipay_test' })).toThrow(/test database/);
+    // A missing or short key stops the start-up.
+    expect(() => loadEnv({ ...base, DATA_MASTER_KEY: undefined })).toThrow(/DATA_MASTER_KEY/);
+    expect(() => loadEnv({ ...base, BLIND_INDEX_KEY: randomBytes(16).toString('base64') })).toThrow(
+      /BLIND_INDEX_KEY/,
     );
   });
 
