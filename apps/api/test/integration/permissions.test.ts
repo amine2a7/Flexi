@@ -9,8 +9,16 @@ loadTestEnv();
 const { loadEnv } = await import('../../src/config/env.js');
 const { createApp } = await import('../../src/app.factory.js');
 const { DbService } = await import('../../src/common/db.service.js');
-const { createCompany, createEmployee, createUser, sealed, seedSettings, signedIn, oneLineGrid } =
-  await import('./fixtures.js');
+const {
+  createCompany,
+  createEmployee,
+  createUser,
+  sealed,
+  seedSettings,
+  signedIn,
+  oneLineGrid,
+  quoted,
+} = await import('./fixtures.js');
 
 type SubRole =
   | 'SUPER_ADMIN'
@@ -170,7 +178,10 @@ describe('company sub-roles (Propriétaire OWNER, RH MANAGER, Finance FINANCE)',
 
   it('a user of company A never reads an order of company B', async () => {
     const b = await companyUser('OWNER');
-    const created = await b.call('POST', '/v1/company/orders', { body: order, headers: key() });
+    const created = await b.call('POST', '/v1/company/orders', {
+      body: await quoted(b, order.lines),
+      headers: key(),
+    });
     expect(created.status).toBe(201);
     const a = await companyUser('OWNER');
     const read = await a.call('GET', `/v1/company/orders/${String(created.body.id)}`);

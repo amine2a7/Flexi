@@ -231,7 +231,8 @@
     "emptyTitle": "Aucune facture",
     "pdf": "PDF",
     "download": "Télécharger",
-    "creditNote": "Avoir {number}"
+    "creditNote": "Avoir {number}",
+    "back": "Retour aux factures"
   },
   "reporting": {
     "title": "Reporting",

@@ -1159,12 +1159,44 @@ export class AdminService {
     });
   }
 
-  async auditLogs(query: Record<string, unknown>, filters: { q?: string }): Promise<Page<unknown>> {
+  /**
+   * Audit log; with a client (W-FIN, « Audit » tab of a record): what its users did or what was
+   * done to them, and the entries that name the client.
+   */
+  async auditLogs(
+    query: Record<string, unknown>,
+    filters: { q?: string; clientType?: 'COMPANY' | 'MERCHANT'; clientId?: string },
+  ): Promise<Page<unknown>> {
     const request = this.paginator.request(query, filters);
     return this.db.user(async (tx) => {
+      let client: Prisma.AuditLogWhereInput = {};
+      if (filters.clientId !== undefined) {
+        const id = filters.clientId;
+        const owner =
+          filters.clientType === 'MERCHANT'
+            ? await tx.merchant.findUnique({ where: { id }, select: { name: true } })
+            : await tx.company.findUnique({ where: { id }, select: { name: true } });
+        if (owner === null) throw problems.notFound();
+        const users = await tx.user.findMany({
+          where: filters.clientType === 'MERCHANT' ? { merchantId: id } : { companyId: id },
+          select: { id: true },
+          take: 5_000,
+        });
+        const ids = users.map((u) => u.id);
+        client = {
+          OR: [
+            { actorUserId: { in: ids } },
+            { subjectId: { in: ids } },
+            { target: { contains: owner.name, mode: 'insensitive' } },
+          ],
+        };
+      }
       const where: Prisma.AuditLogWhereInput = {
-        ...textSearch(filters.q, ['actorName', 'action', 'target']),
-        ...this.period(request, 'occurredAt'),
+        AND: [
+          textSearch(filters.q, ['actorName', 'action', 'target']),
+          client,
+          this.period(request, 'occurredAt'),
+        ],
       };
       const rows = await tx.auditLog.findMany({
         where,

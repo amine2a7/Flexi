@@ -79,5 +79,22 @@
     "PP_CIN": "شخص طبيعي (بطاقة تعريف)",
     "PP_MF": "شخص طبيعي بمعرف جبائي",
     "PM_MF": "شخص معنوي بمعرف جبائي"
+  },
+  "invoice": {
+    "title": "الفاتورة {number}",
+    "order": "الطلب {reference}",
+    "download": "تنزيل PDF",
+    "company": "المؤسسة",
+    "issuedAt": "تاريخ الإصدار",
+    "paymentReference": "مرجع التحويل",
+    "creditNote": "مذكرة الإسناد",
+    "detail": "التفاصيل",
+    "credits": "مبلغ الرصيد",
+    "commission": "عمولة FlexiPay ({rate})",
+    "vat": "الأداء على العمولة ({rate})",
+    "stamp": "الطابع الجبائي",
+    "transferFee": "مصاريف التحويل",
+    "withholding": "الخصم من المورد ({rate} من المصاريف مع الأداء)",
+    "total": "المجموع للدفع"
   }
 }

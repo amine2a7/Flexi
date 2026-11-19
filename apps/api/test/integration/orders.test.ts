@@ -8,8 +8,16 @@ loadTestEnv();
 const { loadEnv } = await import('../../src/config/env.js');
 const { createApp } = await import('../../src/app.factory.js');
 const { DbService } = await import('../../src/common/db.service.js');
-const { createCompany, createEmployee, createUser, ledgerLines, sealed, seedSettings, signedIn } =
-  await import('./fixtures.js');
+const {
+  createCompany,
+  createEmployee,
+  createUser,
+  ledgerLines,
+  sealed,
+  seedSettings,
+  signedIn,
+  quoted,
+} = await import('./fixtures.js');
 
 const env = loadEnv();
 const db = new DbService(env);
@@ -101,7 +109,7 @@ describe('commission, VAT and stamp duty of an order (decisions of 2026-11-03)',
       totalMillimes: 10_600_000,
     });
     const created = await owner.call('POST', '/v1/company/orders', {
-      body: { lines },
+      body: await quoted(owner, lines),
       headers: key(),
     });
     expect(created.body).toMatchObject({ totalMillimes: 10_600_000, vatMillimes: 95_000 });
@@ -178,7 +186,7 @@ describe('commission, VAT and stamp duty of an order (decisions of 2026-11-03)',
     );
     const lines = [{ creditType: 'RESTAURATION', amountMillimes: 1_000_000 }];
     const created = await owner.call('POST', '/v1/company/orders', {
-      body: { lines },
+      body: await quoted(owner, lines),
       headers: key(),
     });
     await db.system((tx) =>
@@ -276,12 +284,10 @@ describe('credit order circuit', () => {
     });
 
     const headers = key();
-    const body = {
-      lines: [
-        { creditType: 'CADEAUX', amountMillimes: 500_000 },
-        { creditType: 'RESTAURATION', amountMillimes: 1_000_000 },
-      ],
-    };
+    const body = await quoted(owner, [
+      { creditType: 'CADEAUX', amountMillimes: 500_000 },
+      { creditType: 'RESTAURATION', amountMillimes: 1_000_000 },
+    ]);
     const created = await owner.call('POST', '/v1/company/orders', { body, headers });
     expect(created.status).toBe(201);
     expect(created.body).toMatchObject({
@@ -296,7 +302,7 @@ describe('credit order circuit', () => {
     expect(replay.body.id).toBe(created.body.id);
     expect(replay.headers.get('idempotent-replayed')).toBe('true');
     const reused = await owner.call('POST', '/v1/company/orders', {
-      body: { lines: [{ creditType: 'RESTAURATION', amountMillimes: 900_000 }] },
+      body: await quoted(owner, [{ creditType: 'RESTAURATION', amountMillimes: 900_000 }]),
       headers,
     });
     expect(reused.body.code).toBe('IDEMPOTENCY_KEY_REUSED');
@@ -350,7 +356,7 @@ describe('credit order circuit', () => {
   it('refuses a proof that is not a JPG, PNG or PDF (content sniffed, not the name)', async () => {
     const { owner, adminA } = await setup();
     const created = await owner.call('POST', '/v1/company/orders', {
-      body: { lines: [{ creditType: 'RESTAURATION', amountMillimes: 200_000 }] },
+      body: await quoted(owner, [{ creditType: 'RESTAURATION', amountMillimes: 200_000 }]),
       headers: key(),
     });
     const id = String(created.body.id);
@@ -372,7 +378,7 @@ describe('credit order circuit', () => {
   it('needs two different administrators above 10 000,000 TND (four-eyes)', async () => {
     const { owner, adminA, adminB } = await setup();
     const created = await owner.call('POST', '/v1/company/orders', {
-      body: { lines: [{ creditType: 'RESTAURATION', amountMillimes: 12_000_000 }] },
+      body: await quoted(owner, [{ creditType: 'RESTAURATION', amountMillimes: 12_000_000 }]),
       headers: key(),
     });
     const id = String(created.body.id);
@@ -409,7 +415,7 @@ describe('credit order circuit', () => {
   it('keeps each company in its own orders (another tenant gets 404)', async () => {
     const first = await setup();
     const created = await first.owner.call('POST', '/v1/company/orders', {
-      body: { lines: [{ creditType: 'RESTAURATION', amountMillimes: 100_000 }] },
+      body: await quoted(first.owner, [{ creditType: 'RESTAURATION', amountMillimes: 100_000 }]),
       headers: key(),
     });
     const other = await setup();
@@ -427,7 +433,7 @@ describe('credit order circuit', () => {
   it('cancelling an order awaiting payment cancels its invoice with a credit note', async () => {
     const { owner, adminA } = await setup();
     const created = await owner.call('POST', '/v1/company/orders', {
-      body: { lines: [{ creditType: 'RESTAURATION', amountMillimes: 100_000 }] },
+      body: await quoted(owner, [{ creditType: 'RESTAURATION', amountMillimes: 100_000 }]),
       headers: key(),
     });
     const id = String(created.body.id);
@@ -447,7 +453,7 @@ describe('credit order circuit', () => {
   it('freezes the quote end and the second validation; an expired quote is not confirmed', async () => {
     const { owner, adminA } = await setup();
     const created = await owner.call('POST', '/v1/company/orders', {
-      body: { lines: [{ creditType: 'RESTAURATION', amountMillimes: 100_000 }] },
+      body: await quoted(owner, [{ creditType: 'RESTAURATION', amountMillimes: 100_000 }]),
       headers: key(),
     });
     const id = String(created.body.id);
@@ -468,7 +474,7 @@ describe('allocation', () => {
   it('debits only the type allocated and refuses beyond its balance with the missing amount', async () => {
     const { owner, adminA, employee } = await setup();
     const created = await owner.call('POST', '/v1/company/orders', {
-      body: { lines: [{ creditType: 'RESTAURATION', amountMillimes: 300_000 }] },
+      body: await quoted(owner, [{ creditType: 'RESTAURATION', amountMillimes: 300_000 }]),
       headers: key(),
     });
     const id = String(created.body.id);

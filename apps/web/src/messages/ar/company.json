@@ -231,7 +231,8 @@
     "emptyTitle": "لا توجد فواتير",
     "pdf": "PDF",
     "download": "تنزيل",
-    "creditNote": "إشعار دائن {number}"
+    "creditNote": "إشعار دائن {number}",
+    "back": "العودة إلى الفواتير"
   },
   "reporting": {
     "title": "التقارير",

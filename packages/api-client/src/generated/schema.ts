@@ -1692,6 +1692,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/company/invoices/{invoiceId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Détail d'une facture de l'entreprise (crédits par type, frais figés) */
+    get: operations['getCompanyInvoice'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/company/invoices/{invoiceId}/pdf': {
     parameters: {
       query?: never;
@@ -2763,6 +2780,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/admin/payout-requests/{payoutId}/invoice': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Facture de commission d'un virement commerçant (PDF)
+     * @description Permission `adminInvoices.read` ; onglet « Factures » de la fiche commerçant. `409` pour un virement refusé.
+     */
+    get: operations['getAdminPayoutInvoice'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/admin/payout-requests/{payoutId}': {
     parameters: {
       query?: never;
@@ -2922,6 +2959,119 @@ export interface paths {
     };
     /** Transactions globales (paiements chez les commerçants) */
     get: operations['listAdminTransactions'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/ledger-entries': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Grand livre (écritures en partie double), lecture seule
+     * @description Permission `ledger.read` : Finance et Super-admin seulement (W-FIN). Chaque écriture avec sa
+     *     transaction, son compte et le titulaire du compte. Filtres : client, période, type.
+     */
+    get: operations['listLedgerEntries'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/ledger-entries/types': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Types de transaction présents au grand livre (filtre) */
+    get: operations['listLedgerTransactionTypes'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/ledger-entries/export': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Export CSV du grand livre (mêmes filtres, 10 000 lignes au plus)
+     * @description CSV UTF-8 (BOM), séparateur `;`, montants en dinars à 3 décimales, cellules protégées contre
+     *     les formules. Export inscrit au journal d'audit.
+     */
+    get: operations['exportLedgerEntries'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/invoices': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Factures émises par FlexiPay aux entreprises
+     * @description Permission `adminInvoices.read` (Super-admin, Opérations, Finance).
+     */
+    get: operations['listAdminInvoices'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/invoices/{invoiceId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Détail d'une facture (crédits par type, frais figés) */
+    get: operations['getAdminInvoice'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/invoices/{invoiceId}/pdf': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Facture en PDF */
+    get: operations['getAdminInvoicePdf'];
     put?: never;
     post?: never;
     delete?: never;
@@ -4664,12 +4814,12 @@ export interface components {
     };
     /**
      * CreditOrderCreate
-     * @description Soit quoteId (montants du devis figé, 409 QUOTE_EXPIRED après expiration, 409 si déjà utilisé), soit lines (montants calculés maintenant).
+     * @description Devis figé uniquement (W-FIN) : montants, taux et taxes du devis. `409 QUOTE_EXPIRED` après
+     *     expiration, `409` s'il a déjà servi, `404` pour le devis d'une autre entreprise. L'ancien
+     *     corps `{ lines }` est refusé (`400 VALIDATION_FAILED`).
      */
     CreditOrderCreate: {
-      quoteId?: components['schemas']['Uuid'];
-      /** @description Un montant par type de crédit commandé (types distincts). */
-      lines?: components['schemas']['CreditOrderLine'][];
+      quoteId: components['schemas']['Uuid'];
     };
     /** CreditOrder */
     CreditOrder: {
@@ -5070,6 +5220,10 @@ export interface components {
     MerchantOverview: {
       kyc: components['schemas']['OverviewKyc'] | null;
       users: components['schemas']['OverviewUser'][];
+      /** @description Caisses et leur autocollant (onglet « Caisses »). */
+      registers: components['schemas']['Register'][];
+      /** @description Factures de commission des virements non refusés (onglet « Factures »). */
+      invoices: components['schemas']['OverviewCommissionInvoice'][];
       sales: components['schemas']['OverviewSale'][];
       payouts: components['schemas']['OverviewPayout'][];
     };
@@ -5228,8 +5382,99 @@ export interface components {
      * @enum {string}
      */
     TeamSubRole: 'OWNER' | 'MANAGER' | 'FINANCE' | 'CASHIER';
+    /** OverviewCommissionInvoice */
+    OverviewCommissionInvoice: {
+      payoutId: components['schemas']['Uuid'];
+      number: string;
+      payoutReference: string;
+      creditType: components['schemas']['CreditType'];
+      grossMillimes: components['schemas']['AmountMillimes'];
+      commissionMillimes: components['schemas']['AmountMillimes'];
+      vatMillimes: components['schemas']['AmountMillimes'];
+      issuedAt: components['schemas']['Timestamp'];
+    };
+    /**
+     * LedgerEntry
+     * @description Écriture du grand livre (immuable), lue par Finance et le Super-admin.
+     */
+    LedgerEntry: {
+      /** @description Numéro de l'écriture (entier en texte). */
+      id: string;
+      occurredAt: components['schemas']['Timestamp'];
+      transactionId: components['schemas']['Uuid'];
+      transactionType: string;
+      reference: string;
+      accountCode: string;
+      /** @enum {string} */
+      ownerType: 'PLATFORM' | 'COMPANY' | 'EMPLOYEE' | 'MERCHANT';
+      ownerName: string | null;
+      creditType: components['schemas']['CreditType'] | null;
+      direction: components['schemas']['Direction'];
+      amountMillimes: components['schemas']['AmountMillimes'];
+      /**
+       * Format: int64
+       * @description Solde du compte juste après l'écriture (peut être négatif pour un compte d'actif).
+       */
+      balanceAfterMillimes: number;
+    };
+    /** LedgerEntryPage */
+    LedgerEntryPage: {
+      data: components['schemas']['LedgerEntry'][];
+      page: components['schemas']['PageInfo'];
+    };
+    /** LedgerTransactionTypeList */
+    LedgerTransactionTypeList: {
+      data: string[];
+    };
+    /** AdminInvoice */
+    AdminInvoice: {
+      id: components['schemas']['Uuid'];
+      number: string;
+      companyId: components['schemas']['Uuid'];
+      companyName: string;
+      orderReference: string;
+      totalMillimes: components['schemas']['AmountMillimes'];
+      issuedAt: components['schemas']['Timestamp'];
+      status: components['schemas']['InvoiceStatus'];
+      creditNoteNumber?: string;
+    };
+    /** AdminInvoicePage */
+    AdminInvoicePage: {
+      data: components['schemas']['AdminInvoice'][];
+      page: components['schemas']['PageInfo'];
+    };
+    /**
+     * InvoiceDetail
+     * @description Facture avec les crédits par type et les frais figés dans la commande.
+     */
+    InvoiceDetail: {
+      id: components['schemas']['Uuid'];
+      number: string;
+      orderId: components['schemas']['Uuid'];
+      orderReference: string;
+      paymentReference: string;
+      companyId: components['schemas']['Uuid'];
+      companyName: string;
+      status: components['schemas']['InvoiceStatus'];
+      issuedAt: components['schemas']['Timestamp'];
+      creditNoteNumber?: string;
+      cancelledAt?: components['schemas']['Timestamp'];
+      lines: components['schemas']['CreditTypeAmount'][];
+      amountMillimes: components['schemas']['AmountMillimes'];
+      feeRateBps: components['schemas']['RateBps'];
+      feesMillimes: components['schemas']['AmountMillimes'];
+      vatRateBps: components['schemas']['RateBps'];
+      vatMillimes: components['schemas']['AmountMillimes'];
+      withholdingRateBps: components['schemas']['RateBps'];
+      withholdingMillimes: components['schemas']['AmountMillimes'];
+      stampDutyMillimes: components['schemas']['AmountMillimes'];
+      transferFeeMillimes: components['schemas']['AmountMillimes'];
+      totalMillimes: components['schemas']['AmountMillimes'];
+    };
     /** TeamUser */
     TeamUser: {
+      /** @description Caisse d'un caissier (commerçant), `null` sans caisse ; absent pour les autres sous-rôles. */
+      registerId?: components['schemas']['Uuid'] | null;
       id: components['schemas']['Uuid'];
       displayName: string;
       email: string;
@@ -9814,6 +10059,36 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  getCompanyInvoice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        invoiceId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InvoiceDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   getCompanyInvoicePdf: {
     parameters: {
       query?: never;
@@ -11910,6 +12185,37 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  getAdminPayoutInvoice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        payoutId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Le PDF. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/pdf': string;
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   getAdminPayoutRequest: {
     parameters: {
       query?: never;
@@ -12259,6 +12565,224 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  listLedgerEntries: {
+    parameters: {
+      query?: {
+        /** @description Nombre maximal d'éléments par page. */
+        limit?: components['parameters']['Limit'];
+        /** @description Curseur opaque renvoyé par `page.nextCursor`. Absent pour la première page. */
+        cursor?: components['parameters']['Cursor'];
+        /**
+         * @description Demande le compteur borné `page.count` (§7). À n'envoyer qu'au premier chargement et à
+         *     chaque changement de filtre.
+         */
+        withCount?: components['parameters']['WithCount'];
+        /** @description Borne basse incluse de la période (UTC). */
+        createdFrom?: components['parameters']['CreatedFrom'];
+        /** @description Borne haute exclue de la période (UTC). */
+        createdTo?: components['parameters']['CreatedTo'];
+        /** @description Type du client, avec `clientId` (les deux ensemble). */
+        clientType?: 'COMPANY' | 'MERCHANT';
+        /** @description Client (entreprise avec les portefeuilles de ses employés, ou commerçant) ; `404` s'il n'existe pas. */
+        clientId?: components['schemas']['Uuid'];
+        /** @description Type de transaction du grand livre (`ALLOCATION`, `PAYMENT`…), liste par `/v1/admin/ledger-entries/types`. */
+        transactionType?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LedgerEntryPage'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  listLedgerTransactionTypes: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LedgerTransactionTypeList'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  exportLedgerEntries: {
+    parameters: {
+      query?: {
+        /** @description Borne basse incluse de la période (UTC). */
+        createdFrom?: components['parameters']['CreatedFrom'];
+        /** @description Borne haute exclue de la période (UTC). */
+        createdTo?: components['parameters']['CreatedTo'];
+        /** @description Type du client, avec `clientId` (les deux ensemble). */
+        clientType?: 'COMPANY' | 'MERCHANT';
+        /** @description Client (entreprise avec les portefeuilles de ses employés, ou commerçant) ; `404` s'il n'existe pas. */
+        clientId?: components['schemas']['Uuid'];
+        /** @description Type de transaction du grand livre (`ALLOCATION`, `PAYMENT`…), liste par `/v1/admin/ledger-entries/types`. */
+        transactionType?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Le fichier CSV. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'text/csv': string;
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  listAdminInvoices: {
+    parameters: {
+      query?: {
+        /** @description Nombre maximal d'éléments par page. */
+        limit?: components['parameters']['Limit'];
+        /** @description Curseur opaque renvoyé par `page.nextCursor`. Absent pour la première page. */
+        cursor?: components['parameters']['Cursor'];
+        /**
+         * @description Demande le compteur borné `page.count` (§7). À n'envoyer qu'au premier chargement et à
+         *     chaque changement de filtre.
+         */
+        withCount?: components['parameters']['WithCount'];
+        /** @description Borne basse incluse de la période (UTC). */
+        createdFrom?: components['parameters']['CreatedFrom'];
+        /** @description Borne haute exclue de la période (UTC). */
+        createdTo?: components['parameters']['CreatedTo'];
+        companyId?: components['schemas']['Uuid'];
+        status?: components['schemas']['InvoiceStatus'];
+        /** @description Recherche par numéro, entreprise ou commande. Jamais journalisée. */
+        q?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AdminInvoicePage'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getAdminInvoice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        invoiceId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['InvoiceDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getAdminInvoicePdf: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        invoiceId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Le PDF. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/pdf': string;
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
   listAuditLogs: {
     parameters: {
       query?: {
@@ -12277,6 +12801,10 @@ export interface operations {
         createdTo?: components['parameters']['CreatedTo'];
         /** @description Recherche par nom, référence ou ville (insensible à la casse). Jamais journalisée. */
         q?: string;
+        /** @description Type du client, avec `clientId` (les deux ensemble). */
+        clientType?: 'COMPANY' | 'MERCHANT';
+        /** @description Client (entreprise avec les portefeuilles de ses employés, ou commerçant) ; `404` s'il n'existe pas. */
+        clientId?: components['schemas']['Uuid'];
       };
       header?: never;
       path?: never;
@@ -13007,6 +13535,15 @@ type FlattenedDeepRequired<T> = {
 type ReadonlyArray<T> = [Exclude<T, undefined>] extends [unknown[]]
   ? Readonly<Exclude<T, undefined>>
   : Readonly<Exclude<T, undefined>[]>;
+export const pathsV1AdminLedgerEntriesGetParametersQueryClientTypeValues: ReadonlyArray<
+  FlattenedDeepRequired<paths>['/v1/admin/ledger-entries']['get']['parameters']['query']['clientType']
+> = ['COMPANY', 'MERCHANT'];
+export const pathsV1AdminLedgerEntriesExportGetParametersQueryClientTypeValues: ReadonlyArray<
+  FlattenedDeepRequired<paths>['/v1/admin/ledger-entries/export']['get']['parameters']['query']['clientType']
+> = ['COMPANY', 'MERCHANT'];
+export const pathsV1AdminAuditLogsGetParametersQueryClientTypeValues: ReadonlyArray<
+  FlattenedDeepRequired<paths>['/v1/admin/audit-logs']['get']['parameters']['query']['clientType']
+> = ['COMPANY', 'MERCHANT'];
 export const currencyValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['Currency']
 > = ['TND'];
@@ -13147,6 +13684,9 @@ export const invoiceStatusValues: ReadonlyArray<
 export const teamSubRoleValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['TeamSubRole']
 > = ['OWNER', 'MANAGER', 'FINANCE', 'CASHIER'];
+export const ledgerEntryOwnerTypeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['LedgerEntry']['ownerType']
+> = ['PLATFORM', 'COMPANY', 'EMPLOYEE', 'MERCHANT'];
 export const legalFormValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['LegalForm']
 > = ['PP_CIN', 'PP_MF', 'PM_MF'];

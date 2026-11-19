@@ -37,6 +37,8 @@ const PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
     'orders.validate',
     'payouts.decide',
     'messages.handle',
+    'ledger.read',
+    'adminInvoices.read',
   ],
   'operations@flexipay.test': [
     ...BACK_OFFICE_READ,
@@ -46,6 +48,7 @@ const PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
     'disputes.read',
     'disputes.manage',
     'alerts.manage',
+    'adminInvoices.read',
   ],
   'admin2@flexipay.test': [
     ...BACK_OFFICE_READ,
@@ -56,6 +59,8 @@ const PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
     'orders.validate',
     'payouts.decide',
     'approvals.decide',
+    'ledger.read',
+    'adminInvoices.read',
   ],
   'support@flexipay.test': [
     'accounts.read',
@@ -75,8 +80,20 @@ const PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
     'fundingAccount.read',
     'invoices.read',
   ],
-  'entreprise@flexipay.test': ['balances.read', 'employees.read', 'orders.read', 'team.manage'],
-  'commercant@flexipay.test': ['stats.read', 'payments.collect', 'shop.read', 'team.manage'],
+  'entreprise@flexipay.test': [
+    'balances.read',
+    'employees.read',
+    'orders.read',
+    'invoices.read',
+    'team.manage',
+  ],
+  'commercant@flexipay.test': [
+    'stats.read',
+    'payments.collect',
+    'shop.read',
+    'team.manage',
+    'registers.manage',
+  ],
   'caissier@flexipay.test': ['payments.collect', 'sales.readToday', 'shop.read'],
   'beneficiaire@flexipay.test': ['wallet.read', 'payments.pay'],
 };

@@ -195,3 +195,18 @@ export async function fileKycDocuments(db: DbService, fileId: string): Promise<v
     }),
   );
 }
+
+/**
+ * Body of a credit order (W-FIN): a frozen quote of the company, the only accepted path. The
+ * quote is made by the same client, from the lines the test wants to order.
+ */
+export async function quoted(
+  client: WebClient,
+  lines: readonly { creditType: string; amountMillimes: number }[],
+): Promise<{ quoteId: string }> {
+  const quote = await client.call('POST', '/v1/company/order-quotes', { body: { lines } });
+  if (quote.status !== 200 && quote.status !== 201) {
+    throw new Error(`quote refused: ${JSON.stringify(quote.body)}`);
+  }
+  return { quoteId: String(quote.body.quoteId) };
+}

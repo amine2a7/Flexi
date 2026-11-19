@@ -408,10 +408,24 @@ export class AdminController {
   @Can('audit.read')
   @Get('audit-logs')
   audit(@Query() query: Record<string, unknown>) {
-    return this.admin.auditLogs(
-      query,
-      parse(z.object({ q: z.string().max(100).optional() }), { q: query.q }, 'query'),
+    const input = parse(
+      z
+        .object({
+          q: z.string().max(100).optional(),
+          clientType: z.enum(['COMPANY', 'MERCHANT']).optional(),
+          clientId: z.uuid().optional(),
+        })
+        .refine((value) => (value.clientId === undefined) === (value.clientType === undefined), {
+          path: ['clientId'],
+        }),
+      { q: query.q, clientType: query.clientType, clientId: query.clientId },
+      'query',
     );
+    return this.admin.auditLogs(query, {
+      ...(input.q === undefined ? {} : { q: input.q }),
+      ...(input.clientType === undefined ? {} : { clientType: input.clientType }),
+      ...(input.clientId === undefined ? {} : { clientId: input.clientId }),
+    });
   }
 
   @Can('settings.read')

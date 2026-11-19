@@ -11,7 +11,7 @@ import { Paginator, type Page } from '../common/pagination.js';
 import { ApiProblem, problems, validationFailed } from '../common/problem.js';
 import { principal } from '../common/request-context.js';
 import { addMonths, lastMonths, startOfBusinessMonth } from '../common/tunis.js';
-import type { CreditType, Employee, EmployeeStatus } from '../generated/prisma/client.js';
+import type { CreditType, Employee, EmployeeStatus, Prisma } from '../generated/prisma/client.js';
 import { InsufficientFundsError, LedgerService, accounts } from '../ledger/ledger.service.js';
 import { OPEN_ORDER_STATUSES, orderSummary } from '../orders/orders.service.js';
 import { CREDIT_TYPES, SettingsService } from '../platform/settings.service.js';
@@ -390,8 +390,7 @@ export class CompanyService {
     // client created by the administrator. Same answer for an address that already signs in
     // elsewhere (securite S04: nothing tells it): that password is never activated, the person
     // is told by e-mail to use its existing account.
-    if (invitation !== undefined)
-      return { ...body, credentials: credentialsOf(invitation) };
+    if (invitation !== undefined) return { ...body, credentials: credentialsOf(invitation) };
     return body;
   }
 
@@ -816,6 +815,111 @@ export class CompanyService {
           ...(row.cancelledAt === null ? {} : { cancelledAt: row.cancelledAt.toISOString() }),
         })),
         {},
+        count,
+      );
+    });
+  }
+
+  /**
+   * Detail of an invoice (W-FIN): the credits by type and the fees frozen in the order. RLS: the
+   * company of the session, or any invoice for an administrator.
+   */
+  async invoiceDetail(id: string) {
+    return this.db.user(async (tx) => {
+      const invoice = await tx.invoice.findUnique({
+        where: { id },
+        include: {
+          order: { include: { lines: true } },
+          company: { select: { id: true, name: true, city: true } },
+        },
+      });
+      if (invoice === null) throw problems.notFound();
+      const order = invoice.order;
+      return {
+        id: invoice.id,
+        number: invoice.number,
+        orderId: order.id,
+        orderReference: order.reference,
+        paymentReference: order.paymentReference,
+        companyId: invoice.company.id,
+        companyName: invoice.company.name,
+        status: invoice.status,
+        issuedAt: invoice.issuedAt.toISOString(),
+        ...(invoice.creditNoteNumber === null
+          ? {}
+          : { creditNoteNumber: invoice.creditNoteNumber }),
+        ...(invoice.cancelledAt === null ? {} : { cancelledAt: invoice.cancelledAt.toISOString() }),
+        lines: order.lines
+          .map((line) => ({
+            creditType: line.creditType,
+            amountMillimes: toMillimes(line.amountMillimes),
+          }))
+          .sort((a, b) => (a.creditType < b.creditType ? -1 : a.creditType > b.creditType ? 1 : 0)),
+        amountMillimes: toMillimes(order.amountMillimes),
+        feeRateBps: order.feeRateBps,
+        feesMillimes: toMillimes(order.feesMillimes),
+        vatRateBps: order.vatRateBps,
+        vatMillimes: toMillimes(order.vatMillimes),
+        withholdingRateBps: order.withholdingRateBps,
+        withholdingMillimes: toMillimes(order.withholdingMillimes),
+        stampDutyMillimes: toMillimes(order.stampDutyMillimes),
+        transferFeeMillimes: toMillimes(order.transferFeeMillimes),
+        totalMillimes: toMillimes(invoice.totalMillimes),
+      };
+    });
+  }
+
+  /** Invoices issued by FlexiPay to every company (administrators, W-FIN), newest first. */
+  async adminInvoices(
+    query: Record<string, unknown>,
+    filters: { companyId?: string; status?: 'PAID' | 'UNPAID' | 'CANCELLED'; q?: string },
+  ) {
+    const request = this.paginator.request(query, filters);
+    return this.db.user(async (tx) => {
+      const needle = filters.q?.trim();
+      const where: Prisma.InvoiceWhereInput = {
+        ...(filters.companyId === undefined ? {} : { companyId: filters.companyId }),
+        ...(filters.status === undefined ? {} : { status: filters.status }),
+        ...(needle === undefined || needle === ''
+          ? {}
+          : {
+              OR: [
+                { number: { contains: needle, mode: 'insensitive' } },
+                { company: { name: { contains: needle, mode: 'insensitive' } } },
+                { order: { reference: { contains: needle, mode: 'insensitive' } } },
+              ],
+            }),
+        ...(request.createdFrom === undefined && request.createdTo === undefined
+          ? {}
+          : {
+              issuedAt: {
+                ...(request.createdFrom === undefined ? {} : { gte: request.createdFrom }),
+                ...(request.createdTo === undefined ? {} : { lt: request.createdTo }),
+              },
+            }),
+      };
+      const rows = await tx.invoice.findMany({
+        where,
+        include: { order: { select: { reference: true } }, company: { select: { name: true } } },
+        orderBy: [{ issuedAt: 'desc' }, { id: 'desc' }],
+        skip: request.offset,
+        take: request.limit + 1,
+      });
+      const count = request.withCount ? await tx.invoice.count({ where, take: 10_001 }) : undefined;
+      return this.paginator.page(
+        request,
+        rows.map((row) => ({
+          id: row.id,
+          number: row.number,
+          companyId: row.companyId,
+          companyName: row.company.name,
+          orderReference: row.order.reference,
+          totalMillimes: toMillimes(row.totalMillimes),
+          issuedAt: row.issuedAt.toISOString(),
+          status: row.status,
+          ...(row.creditNoteNumber === null ? {} : { creditNoteNumber: row.creditNoteNumber }),
+        })),
+        filters,
         count,
       );
     });

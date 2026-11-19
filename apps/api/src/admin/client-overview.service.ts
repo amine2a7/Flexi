@@ -157,7 +157,33 @@ export class ClientOverviewService {
         orderBy: { requestedAt: 'desc' },
         take: LATEST,
       });
+      // Tills and their stickers (W-FIN « Caisses » tab), oldest first like the shop sees them.
+      const registers = await tx.register.findMany({
+        where: { merchantId },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        take: 200,
+      });
       return {
+        registers: registers.map((row) => ({
+          id: row.id,
+          name: row.name,
+          status: row.status,
+          publicId: row.publicId,
+          createdAt: row.createdAt.toISOString(),
+        })),
+        // Commission invoice of every payout that was not rejected (« Factures » tab).
+        invoices: payouts
+          .filter((row) => row.status !== 'REJECTED')
+          .map((row) => ({
+            payoutId: row.id,
+            number: `FAC-C-${row.reference.slice(4)}`,
+            payoutReference: row.reference,
+            creditType: row.creditType,
+            grossMillimes: toMillimes(row.grossMillimes),
+            commissionMillimes: toMillimes(row.commissionMillimes),
+            vatMillimes: toMillimes(row.vatMillimes),
+            issuedAt: row.requestedAt.toISOString(),
+          })),
         kyc: await this.kyc(tx, { merchantId }),
         users: await this.users(tx, { merchantId }),
         sales: sales.map((row) => ({

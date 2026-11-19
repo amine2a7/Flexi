@@ -20,6 +20,9 @@ const PAGE_PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
   '/admin/commissions': ['commissions.read'],
   '/admin/validations': ['approvals.read'],
   '/admin/transactions': ['transactions.read'],
+  // W-FIN: the general ledger (Finance, Super-admin) and the invoices issued by FlexiPay.
+  '/admin/grand-livre': ['ledger.read'],
+  '/admin/factures': ['adminInvoices.read'],
   '/admin/audit': ['audit.read'],
   '/admin/securite': ['disputes.read'],
   '/admin/reporting': ['dashboard.read'],
@@ -41,6 +44,7 @@ const PAGE_PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
   '/entreprise/utilisateurs': ['team.manage'],
   '/commercant/utilisateurs': ['team.manage'],
   '/commercant/caisses': ['registers.manage'],
+  '/commercant/caissiers': ['team.manage'],
   '/commercant': ['stats.read'],
   '/commercant/encaissement': ['payments.collect'],
   '/commercant/historique': ['sales.read', 'sales.readToday'],

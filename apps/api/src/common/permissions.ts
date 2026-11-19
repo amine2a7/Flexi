@@ -72,6 +72,9 @@ const ADMIN_ALL = [
   'orders.validate',
   'payouts.decide',
   'messages.handle',
+  // W-FIN: the general ledger (Finance and Super-admin only) and the invoices issued by FlexiPay.
+  'ledger.read',
+  'adminInvoices.read',
 ] as const;
 
 /**
@@ -133,7 +136,10 @@ const MATRIX: Record<Role, Partial<Record<SubRole | 'NONE', readonly Permission[
     SUPER_ADMIN: ADMIN_ALL,
     // The second administrator (request of 2026-11-14): everything but the administrators'
     // accounts, the platform settings and the changes to user accounts; the four eyes still apply.
-    COMPLIANCE: ADMIN_ALL.filter((permission) => !SUPER_ADMIN_ONLY.includes(permission)),
+    // The general ledger stays with Finance and the super-admin (request of 2026-11-19).
+    COMPLIANCE: ADMIN_ALL.filter(
+      (permission) => !SUPER_ADMIN_ONLY.includes(permission) && permission !== 'ledger.read',
+    ),
     FINANCE: [
       ...ADMIN_BACK_OFFICE_READ,
       'settings.read',
@@ -143,6 +149,8 @@ const MATRIX: Record<Role, Partial<Record<SubRole | 'NONE', readonly Permission[
       'orders.validate',
       'payouts.decide',
       'approvals.decide',
+      'ledger.read',
+      'adminInvoices.read',
     ],
     SUPPORT: [
       'accounts.read',

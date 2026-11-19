@@ -79,5 +79,22 @@
     "PP_CIN": "PP CIN — personne physique (CIN)",
     "PP_MF": "PP MF — personne physique avec matricule fiscal",
     "PM_MF": "PM MF — société avec matricule fiscal"
+  },
+  "invoice": {
+    "title": "Facture {number}",
+    "order": "Commande {reference}",
+    "download": "Télécharger le PDF",
+    "company": "Entreprise",
+    "issuedAt": "Émise le",
+    "paymentReference": "Référence de virement",
+    "creditNote": "Avoir",
+    "detail": "Détail",
+    "credits": "Montant des crédits",
+    "commission": "Commission FlexiPay ({rate})",
+    "vat": "TVA sur la commission ({rate})",
+    "stamp": "Timbre fiscal",
+    "transferFee": "Frais de virement",
+    "withholding": "Retenue à la source ({rate} des frais TTC)",
+    "total": "Total à payer"
   }
 }

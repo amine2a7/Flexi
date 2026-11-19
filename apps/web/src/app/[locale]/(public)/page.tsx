@@ -2,6 +2,7 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { ContactForm } from '@/components/public/contact-form';
 import { buttonClasses } from '@/components/ui/button';
+import { Mascot } from '@/components/public/mascot';
 import { TicketBook } from '@/components/public/ticket-book';
 import { fetchPlatformTerms, termValues } from '@/lib/api/platform-terms';
 
@@ -46,8 +47,18 @@ export default async function LandingPage() {
               </Link>
             </div>
           </div>
-          <div className="flex min-w-0 justify-center">
-            <TicketBook settlementDays={terms.settlementDays} />
+          {/* Accueil carnet: the mascot peeks over the book, its top ticket stamped « Approuvé ». */}
+          <div className="flex min-w-0 flex-col items-center">
+            <Mascot mood="happy" className="relative z-10 -mb-6 animate-peek" />
+            <div className="relative">
+              <TicketBook settlementDays={terms.settlementDays} />
+              <p
+                aria-hidden="true"
+                className="pointer-events-none absolute end-4 top-1/4 z-10 -rotate-12 rounded-button border-4 border-emerald-text bg-paper px-3 py-1 font-ticket text-title uppercase text-emerald-text animate-pop motion-reduce:animate-none"
+              >
+                {t('hero.stamp')}
+              </p>
+            </div>
           </div>
         </div>
       </section>

@@ -23,5 +23,6 @@
   "merchantReceivable": "Awaiting settlement",
   "DEACTIVATED": "Deactivated",
   "REFUNDED": "Refunded",
-  "ON_HOLD": "On hold — dispute in progress"
+  "ON_HOLD": "On hold — dispute in progress",
+  "UNPAID": "Unpaid"
 }

@@ -23,5 +23,6 @@
   "merchantReceivable": "في انتظار التسوية",
   "DEACTIVATED": "معطّل",
   "REFUNDED": "مسترد",
-  "ON_HOLD": "معلّق — نزاع جارٍ"
+  "ON_HOLD": "معلّق — نزاع جارٍ",
+  "UNPAID": "غير مدفوعة"
 }

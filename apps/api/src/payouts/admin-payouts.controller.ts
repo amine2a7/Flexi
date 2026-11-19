@@ -14,7 +14,7 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { Can, Roles } from '../common/decorators.js';
 import { IdempotencyService } from '../common/idempotency.service.js';
-import { pathId, sendOutcome } from '../common/responses.js';
+import { pathId, sendFile, sendOutcome } from '../common/responses.js';
 import { creditType, parse, reason } from '../common/validation.js';
 import { PayoutsService } from './payouts.service.js';
 
@@ -49,6 +49,14 @@ export class AdminPayoutsController {
       'query',
     );
     return this.payouts.adminList(query, filters);
+  }
+
+  /** Commission invoice of a payout, for the « Factures » tab of a merchant record (W-FIN). */
+  @Can('adminInvoices.read')
+  @Get('payout-requests/:payoutId/invoice')
+  async invoice(@Param('payoutId') payoutId: string, @Res() res: Response): Promise<void> {
+    const file = await this.payouts.commissionInvoice(pathId('payoutId', payoutId), true);
+    sendFile(res, file.data, 'application/pdf', file.fileName);
   }
 
   @Can('adminPayouts.read')

@@ -7,12 +7,14 @@ import { Link } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
 import { getApi } from '@/lib/api/client';
 import { useApiQuery } from '@/lib/api/use-api-query';
+import { usePagedList } from '@/lib/api/use-paged-list';
 import { useCan } from '@/lib/session/session-context';
 import { formatDateTime } from '@/lib/format/date';
 import { Amount } from '@/components/ui/amount';
 import { Card } from '@/components/ui/card';
 import { CreditTypeBadge, CreditTypeBalanceCards } from '@/components/ui/credit-type';
 import { DataTable, type Column } from '@/components/ui/data-table';
+import { PdfDownloadButton } from '@/components/ui/pdf-download';
 import { Tabs } from '@/components/ui/layout-blocks';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -31,8 +33,10 @@ type CompanyTab =
   | 'balances'
   | 'orders'
   | 'allocations'
-  | 'invoices';
-type MerchantTab = 'info' | 'kyc' | 'users' | 'sales' | 'payouts';
+  | 'invoices'
+  | 'audit';
+type MerchantTab =
+  'info' | 'kyc' | 'users' | 'registers' | 'sales' | 'payouts' | 'invoices' | 'audit';
 
 const linkClass = 'font-label text-navy underline-offset-2 hover:underline';
 
@@ -50,6 +54,7 @@ export function CompanyTabs({ companyId, info }: { companyId: string; info: Reac
       }),
     [companyId],
   );
+  const canAudit = useCan('audit.read');
   const keys: CompanyTab[] = [
     'info',
     'kyc',
@@ -60,6 +65,7 @@ export function CompanyTabs({ companyId, info }: { companyId: string; info: Reac
     'orders',
     'allocations',
     'invoices',
+    ...(canAudit ? (['audit'] as const) : []),
   ];
   return (
     <>
@@ -71,6 +77,8 @@ export function CompanyTabs({ companyId, info }: { companyId: string; info: Reac
       />
       {tab === 'info' ? (
         info
+      ) : tab === 'audit' ? (
+        <AuditTab clientType="COMPANY" clientId={companyId} />
       ) : overview.status === 'loading' ? (
         <LoadingBlock lines={6} />
       ) : overview.status === 'error' ? (
@@ -102,6 +110,7 @@ function CompanyTabContent({
   const locale = useLocale();
   // Adding an employee and switching a template off: the super-admin (companies.manage).
   const canManage = useCan('companies.manage');
+  const canReadInvoices = useCan('adminInvoices.read');
   switch (tab) {
     case 'kyc':
       return <KycTab kyc={data.kyc} />;
@@ -306,7 +315,18 @@ function CompanyTabContent({
     }
     case 'invoices': {
       const columns: Column<Schemas['OverviewInvoice']>[] = [
-        { key: 'number', header: t('number'), cell: (row) => row.number },
+        {
+          key: 'number',
+          header: t('number'),
+          cell: (row) =>
+            canReadInvoices ? (
+              <Link href={`/admin/factures/${row.id}`} className={linkClass} dir="ltr">
+                {row.number}
+              </Link>
+            ) : (
+              row.number
+            ),
+        },
         { key: 'date', header: t('date'), cell: (row) => formatDateTime(row.issuedAt, locale) },
         { key: 'status', header: t('status'), cell: (row) => <StatusBadge status={row.status} /> },
         {
@@ -345,9 +365,22 @@ export function MerchantTabs({ merchantId, info }: { merchantId: string; info: R
       }),
     [merchantId],
   );
-  const keys: MerchantTab[] = ['info', 'kyc', 'users', 'sales', 'payouts'];
+  const canAudit = useCan('audit.read');
+  const canReadInvoices = useCan('adminInvoices.read');
+  const keys: MerchantTab[] = [
+    'info',
+    'kyc',
+    'users',
+    'registers',
+    'sales',
+    'payouts',
+    ...(canReadInvoices ? (['invoices'] as const) : []),
+    ...(canAudit ? (['audit'] as const) : []),
+  ];
   let content: ReactNode = info;
-  if (tab !== 'info') {
+  if (tab === 'audit') {
+    content = <AuditTab clientType="MERCHANT" clientId={merchantId} />;
+  } else if (tab !== 'info') {
     if (overview.status === 'loading') content = <LoadingBlock lines={6} />;
     else if (overview.status === 'error')
       content = <ErrorState error={overview.error} onRetry={overview.reload} />;
@@ -398,6 +431,91 @@ function MerchantTabContent({
         onChange={reload}
       />
     );
+  if (tab === 'registers') {
+    const columns: Column<Schemas['Register']>[] = [
+      { key: 'name', header: t('name'), card: 'title', cell: (row) => row.name },
+      {
+        key: 'status',
+        header: t('status'),
+        cell: (row) => (
+          <StatusBadge status={row.status === 'ACTIVE' ? 'ACTIVE' : 'DEACTIVATED'} context="user" />
+        ),
+      },
+      {
+        key: 'sticker',
+        header: t('stickerId'),
+        cell: (row) => (
+          <span dir="ltr" className="font-ticket text-caption">
+            {row.publicId}
+          </span>
+        ),
+      },
+      { key: 'date', header: t('createdAt'), cell: (row) => formatDateTime(row.createdAt, locale) },
+    ];
+    return (
+      <Card>
+        <p className="mb-3 text-caption text-text-muted">{t('registersHint')}</p>
+        <DataTable
+          caption={t('tabs.registers')}
+          columns={columns}
+          rows={data.registers}
+          rowKey={(row) => row.id}
+          empty={{ title: t('empty') }}
+        />
+      </Card>
+    );
+  }
+  if (tab === 'invoices') {
+    const columns: Column<Schemas['OverviewCommissionInvoice']>[] = [
+      { key: 'number', header: t('number'), card: 'title', cell: (row) => row.number },
+      {
+        key: 'payout',
+        header: t('reference'),
+        cell: (row) => (
+          <Link href={`/admin/virements/${row.payoutId}`} className={linkClass} dir="ltr">
+            {row.payoutReference}
+          </Link>
+        ),
+      },
+      { key: 'date', header: t('date'), cell: (row) => formatDateTime(row.issuedAt, locale) },
+      { key: 'type', header: t('type'), cell: (row) => <CreditTypeBadge type={row.creditType} /> },
+      {
+        key: 'commission',
+        header: t('commission'),
+        align: 'end',
+        cell: (row) => <Amount millimes={row.commissionMillimes + row.vatMillimes} />,
+      },
+      {
+        key: 'pdf',
+        header: t('pdf'),
+        align: 'end',
+        card: 'footer',
+        cell: (row) => (
+          <PdfDownloadButton
+            label={t('download')}
+            fileName={`${row.number}.pdf`}
+            load={() =>
+              getApi().GET('/v1/admin/payout-requests/{payoutId}/invoice', {
+                params: { path: { payoutId: row.payoutId } },
+                parseAs: 'blob',
+              })
+            }
+          />
+        ),
+      },
+    ];
+    return (
+      <Card>
+        <DataTable
+          caption={t('tabs.invoices')}
+          columns={columns}
+          rows={data.invoices}
+          rowKey={(row) => row.payoutId}
+          empty={{ title: t('empty') }}
+        />
+      </Card>
+    );
+  }
   if (tab === 'sales') {
     const columns: Column<Schemas['OverviewSale']>[] = [
       { key: 'reference', header: t('reference'), cell: (row) => row.reference },
@@ -505,6 +623,60 @@ function UsersTab({
         {canManage ? t('adminHint') : t('readOnlyHint')}
       </p>
       <TeamUsers scope={scope} users={users} canManage={canManage} onChange={onChange} />
+    </Card>
+  );
+}
+
+/**
+ * « Audit » tab (W-FIN): what the users of the client did, what was done to them, and the entries
+ * that name the client, newest first (paged, read only).
+ */
+function AuditTab({
+  clientType,
+  clientId,
+}: {
+  clientType: 'COMPANY' | 'MERCHANT';
+  clientId: string;
+}) {
+  const t = useTranslations('admin.clientTabs');
+  const locale = useLocale();
+  const list = usePagedList(
+    (cursor, withCount) =>
+      getApi().GET('/v1/admin/audit-logs', {
+        params: { query: { cursor, withCount, clientType, clientId } },
+      }),
+    [clientType, clientId],
+  );
+  const columns: Column<Schemas['AuditLogEntry']>[] = [
+    { key: 'date', header: t('date'), cell: (row) => formatDateTime(row.occurredAt, locale) },
+    { key: 'actor', header: t('actor'), cell: (row) => <bdi>{row.actorName}</bdi> },
+    {
+      key: 'action',
+      header: t('action'),
+      cell: (row) => (
+        <span dir="ltr" className="font-ticket text-caption">
+          {row.action}
+        </span>
+      ),
+    },
+    { key: 'target', header: t('target'), cell: (row) => <bdi>{row.target}</bdi> },
+  ];
+  return (
+    <Card>
+      <DataTable
+        caption={t('tabs.audit')}
+        columns={columns}
+        rows={list.rows}
+        rowKey={(row) => row.id}
+        loading={list.loading}
+        error={list.error}
+        onRetry={list.reload}
+        empty={{ title: t('empty') }}
+        page={list.page}
+        pageNumber={list.pageNumber}
+        onNext={list.next}
+        onPrevious={list.previous}
+      />
     </Card>
   );
 }

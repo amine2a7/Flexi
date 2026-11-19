@@ -90,3 +90,42 @@ describe('page permissions', () => {
     expect(canOpen(account('beneficiaire@flexipay.test'), '/beneficiaire/payer')).toBe(true);
   });
 });
+
+// W-FIN: one test per page, the account allowed to open it and another role refused.
+describe('W-FIN pages: allowed role, refused role', () => {
+  const pages: readonly [string, string, string][] = [
+    ['/admin/grand-livre', 'admin2@flexipay.test', 'operations@flexipay.test'],
+    ['/admin/grand-livre', 'admin@flexipay.test', 'support@flexipay.test'],
+    ['/admin/factures', 'admin2@flexipay.test', 'support@flexipay.test'],
+    [
+      '/admin/factures/0193a000-0000-7000-8000-000000000001',
+      'operations@flexipay.test',
+      'support@flexipay.test',
+    ],
+    [
+      '/entreprise/factures/0193a000-0000-7000-8000-000000000001',
+      'comptable@flexipay.test',
+      'rh@flexipay.test',
+    ],
+    ['/entreprise/utilisateurs', 'entreprise@flexipay.test', 'rh@flexipay.test'],
+    ['/commercant/utilisateurs', 'commercant@flexipay.test', 'caissier@flexipay.test'],
+    ['/commercant/caissiers', 'commercant@flexipay.test', 'caissier@flexipay.test'],
+    ['/commercant/caisses', 'commercant@flexipay.test', 'caissier@flexipay.test'],
+    [
+      '/admin/entreprises/0193a000-0000-7000-8000-000000000001',
+      'support@flexipay.test',
+      'entreprise@flexipay.test',
+    ],
+    [
+      '/admin/commercants/0193a000-0000-7000-8000-000000000001',
+      'admin2@flexipay.test',
+      'commercant@flexipay.test',
+    ],
+  ];
+  for (const [path, allowed, refused] of pages) {
+    it(`${path}: ${allowed} opens it, ${refused} is refused`, () => {
+      expect(canOpen(account(allowed), path)).toBe(true);
+      expect(canOpen(account(refused), path)).toBe(false);
+    });
+  }
+});

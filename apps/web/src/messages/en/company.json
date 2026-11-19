@@ -231,7 +231,8 @@
     "emptyTitle": "No invoices",
     "pdf": "PDF",
     "download": "Download",
-    "creditNote": "Credit note {number}"
+    "creditNote": "Credit note {number}",
+    "back": "Back to invoices"
   },
   "reporting": {
     "title": "Reporting",

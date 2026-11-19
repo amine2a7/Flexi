@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, type SyntheticEvent } from 'react';
 import { cn } from '@/lib/cn';
+import { useMascotMood } from '@/components/public/mascot';
 import { useReplay } from '@/lib/motion';
 import { Link, useRouter } from '@/i18n/navigation';
 import { messageKey } from '@/i18n/keys';
@@ -46,6 +47,8 @@ export function LoginForm() {
   const [error, setError] = useState<unknown>(undefined);
   const [missing, setMissing] = useState({ identifier: false, password: false });
   const [stamp, setStamp] = useState<'ok' | 'refused' | undefined>(undefined);
+  // The mascot above the ticket (connexion-web): eyes hidden while the password is typed.
+  const setMood = useMascotMood();
   // Each refused attempt shakes the ticket (connexion-web), a fade when motion is reduced.
   const [refusals, setRefusals] = useState(0);
   const shake = useReplay(refusals);
@@ -65,6 +68,7 @@ export function LoginForm() {
     setSubmitting(true);
     setError(undefined);
     setStamp(undefined);
+    setMood('loading');
     try {
       const { data, error: problem } = await getApi().POST('/v1/auth/login', {
         params: { header: WEB_CHANNEL_HEADER },
@@ -77,9 +81,11 @@ export function LoginForm() {
           setStamp('refused');
           setRefusals((count) => count + 1);
         }
+        setMood('sad');
         return;
       }
       setStamp('ok');
+      setMood('happy');
       await readStamp();
       if (data.nextStep === 'MFA_CHALLENGE') {
         updateAuthFlow({
@@ -100,6 +106,7 @@ export function LoginForm() {
       }
     } catch (reason) {
       setError(reason);
+      setMood('sad');
     } finally {
       setSubmitting(false);
     }
@@ -163,6 +170,12 @@ export function LoginForm() {
           value={password}
           onChange={(event) => {
             setPassword(event.target.value);
+          }}
+          onFocus={() => {
+            setMood('covering');
+          }}
+          onBlur={() => {
+            setMood('idle');
           }}
         />
         <Button type="submit" loading={submitting}>

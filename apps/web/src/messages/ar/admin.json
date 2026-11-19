@@ -717,8 +717,10 @@
       "orders": "الطلبات",
       "allocations": "التوزيعات والنماذج",
       "invoices": "الفواتير",
-      "sales": "المبيعات",
-      "payouts": "التحويلات"
+      "sales": "المقبوضات",
+      "payouts": "التحويلات",
+      "audit": "التدقيق",
+      "registers": "الصناديق"
     },
     "name": "الاسم",
     "email": "البريد الإلكتروني",
@@ -763,6 +765,57 @@
     "archiveTemplate": "تعطيل",
     "archiveTemplateTitle": "تعطيل النموذج « {name} »؟",
     "archiveTemplateHint": "يختفي النموذج من قائمة المؤسسة؛ تبقى الإسنادات السابقة في السجل.",
-    "templateArchived": "تم تعطيل النموذج « {name} »."
+    "templateArchived": "تم تعطيل النموذج « {name} ».",
+    "actor": "بواسطة",
+    "action": "الإجراء",
+    "target": "الموضوع",
+    "stickerId": "الملصق",
+    "registersHint": "للقراءة فقط: يُنشئ التاجر صناديقه أو يعيد تسميتها أو يعطلها من فضائه.",
+    "commission": "العمولة مع الأداء",
+    "pdf": "PDF",
+    "download": "تنزيل"
+  },
+  "ledger": {
+    "title": "دفتر الأستاذ",
+    "description": "كل القيود المزدوجة للقراءة فقط. صفِّ حسب الحريف أو الفترة أو النوع ثم صدّر بصيغة CSV.",
+    "export": "تصدير CSV",
+    "date": "التاريخ",
+    "reference": "المرجع",
+    "account": "الحساب",
+    "creditType": "نوع الرصيد",
+    "debit": "مدين",
+    "credit": "دائن",
+    "balanceAfter": "الرصيد بعد",
+    "clientType": "نوع الحريف",
+    "allClients": "كل الحرفاء",
+    "client": "الحريف",
+    "pickClient": "اختر حريفًا",
+    "transactionType": "نوع العملية",
+    "allTypes": "كل الأنواع",
+    "from": "من",
+    "to": "إلى",
+    "apply": "تصفية",
+    "empty": "لا قيود لهذه المرشحات",
+    "owner": {
+      "PLATFORM": "FlexiPay",
+      "COMPANY": "مؤسسة",
+      "EMPLOYEE": "موظف",
+      "MERCHANT": "تاجر"
+    }
+  },
+  "invoices": {
+    "title": "الفواتير",
+    "description": "الفواتير الصادرة عن FlexiPay للمؤسسات مقابل طلبات الرصيد.",
+    "search": "بحث (الرقم، المؤسسة، الطلب)",
+    "number": "الرقم",
+    "company": "المؤسسة",
+    "order": "الطلب",
+    "date": "تاريخ الإصدار",
+    "total": "المبلغ",
+    "status": "الحالة",
+    "pdf": "PDF",
+    "download": "تنزيل",
+    "empty": "لا فواتير",
+    "back": "العودة إلى الفواتير"
   }
 }

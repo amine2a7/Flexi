@@ -9,7 +9,7 @@ loadTestEnv();
 const { loadEnv } = await import('../../src/config/env.js');
 const { createApp } = await import('../../src/app.factory.js');
 const { DbService } = await import('../../src/common/db.service.js');
-const { createUser, sealed, seedSettings, signedIn, oneLineGrid, fileKycDocuments } =
+const { createUser, sealed, seedSettings, signedIn, oneLineGrid, fileKycDocuments, quoted } =
   await import('./fixtures.js');
 
 const env = loadEnv();
@@ -131,7 +131,7 @@ describe('four eyes', () => {
       await createUser(db, env, 'COMPANY', { companyId }, 'Leïla M.', 'OWNER'),
     );
     const created = await owner.call('POST', '/v1/company/orders', {
-      body: { lines: [{ creditType: 'RESTAURATION', amountMillimes: 12_000_000 }] },
+      body: await quoted(owner, [{ creditType: 'RESTAURATION', amountMillimes: 12_000_000 }]),
       headers: key(),
     });
     const id = String(created.body.id);

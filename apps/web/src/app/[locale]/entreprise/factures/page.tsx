@@ -2,6 +2,7 @@
 
 import type { Schemas } from '@flexipay/api-client';
 import { useLocale, useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
 import { usePagedList } from '@/lib/api/use-paged-list';
 import { formatDateTime } from '@/lib/format/date';
@@ -21,7 +22,20 @@ export default function InvoicesPage() {
     [],
   );
   const columns: Column<Schemas['Invoice']>[] = [
-    { key: 'number', header: t('number'), cell: (row) => row.number },
+    {
+      key: 'number',
+      header: t('number'),
+      card: 'title',
+      cell: (row) => (
+        <Link
+          href={`/entreprise/factures/${row.id}`}
+          className="font-label text-navy underline-offset-2 hover:underline"
+          dir="ltr"
+        >
+          {row.number}
+        </Link>
+      ),
+    },
     { key: 'order', header: t('order'), cell: (row) => row.orderReference },
     { key: 'date', header: t('date'), cell: (row) => formatDateTime(row.issuedAt, locale) },
     {

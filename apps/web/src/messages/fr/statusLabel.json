@@ -23,5 +23,6 @@
   "merchantReceivable": "En attente de règlement",
   "DEACTIVATED": "Désactivé",
   "REFUNDED": "Remboursé",
-  "ON_HOLD": "En attente — litige en cours"
+  "ON_HOLD": "En attente — litige en cours",
+  "UNPAID": "À payer"
 }

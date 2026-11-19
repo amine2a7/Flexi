@@ -19,8 +19,26 @@ describe('administrator sub-roles (decision C)', () => {
       expect(admin(subRole)).not.toContain('users.manage');
   });
 
+  it('W-FIN: the general ledger for Finance and the super-admin only; FlexiPay invoices', () => {
+    for (const subRole of ['SUPER_ADMIN', 'FINANCE'] as const) {
+      expect(admin(subRole)).toEqual(expect.arrayContaining(['ledger.read', 'adminInvoices.read']));
+    }
+    expect(admin('COMPLIANCE')).not.toContain('ledger.read');
+    expect(admin('COMPLIANCE')).toContain('adminInvoices.read');
+    expect(admin('SUPPORT')).not.toContain('ledger.read');
+    expect(admin('SUPPORT')).not.toContain('adminInvoices.read');
+    expect(permissionsOf('COMPANY', 'OWNER')).not.toContain('ledger.read');
+  });
+
   it('Opérations is the second administrator: everything else of the super-admin', () => {
-    const kept = ['users.adminRoles', 'settings.request', 'users.manage', 'users.support'];
+    // The general ledger stays with Finance and the super-admin (W-FIN, request of 2026-11-19).
+    const kept = [
+      'users.adminRoles',
+      'settings.request',
+      'users.manage',
+      'users.support',
+      'ledger.read',
+    ];
     expect([...admin('COMPLIANCE')].sort()).toEqual(
       admin('SUPER_ADMIN')
         .filter((permission) => !kept.includes(permission))

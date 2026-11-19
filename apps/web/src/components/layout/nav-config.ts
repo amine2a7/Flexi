@@ -2,6 +2,7 @@ import type { Schemas } from '@flexipay/api-client';
 import type { NavCounter } from './nav-counters';
 import {
   ArrowLeftRight,
+  BookOpen,
   Building2,
   ChartColumn,
   LifeBuoy,
@@ -82,6 +83,7 @@ export const NAVIGATION: Partial<Record<Role, readonly NavEntry[]>> = {
     group('account', UserRound, [
       { href: '/commercant/mon-commerce', labelKey: 'nav.merchant.shop', icon: Store },
       { href: '/commercant/caisses', labelKey: 'nav.merchant.registers', icon: Nfc },
+      { href: '/commercant/caissiers', labelKey: 'nav.merchant.cashiers', icon: Users },
       { href: '/commercant/utilisateurs', labelKey: 'nav.merchant.users', icon: UserCog },
       { href: '/commercant/dossier', labelKey: 'nav.merchant.kyc', icon: FileSearch },
       { href: '/commercant/parametres', labelKey: 'nav.merchant.settings', icon: Settings },
@@ -167,6 +169,8 @@ export const NAVIGATION: Partial<Record<Role, readonly NavEntry[]>> = {
     ]),
     group('finance', CreditCard, [
       { href: '/admin/transactions', labelKey: 'nav.admin.transactions', icon: CreditCard },
+      { href: '/admin/grand-livre', labelKey: 'nav.admin.ledger', icon: BookOpen },
+      { href: '/admin/factures', labelKey: 'nav.admin.invoices', icon: Receipt },
       { href: '/admin/commissions', labelKey: 'nav.admin.commissions', icon: Percent },
     ]),
     group('support', LifeBuoy, [

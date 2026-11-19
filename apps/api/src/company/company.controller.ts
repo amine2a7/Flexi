@@ -301,10 +301,9 @@ export class CompanyController {
     @Res({ passthrough: true }) res: Response,
     @Body() body: unknown,
   ) {
-    const input = parse(
-      z.union([z.strictObject({ quoteId: z.uuid() }), z.strictObject({ lines })]),
-      body,
-    );
+    // Only a frozen quote of this company passes (W-FIN): the former `{ lines }` body, priced
+    // with the settings of the moment, is refused (400, unknown member).
+    const input = parse(z.strictObject({ quoteId: z.uuid() }), body);
     const outcome = await this.idempotency.run(req, async (tx) => ({
       status: 201,
       body: await this.orders.create(tx, input),
@@ -423,6 +422,12 @@ export class CompanyController {
   async invoicePdf(@Param('invoiceId') invoiceId: string, @Res() res: Response): Promise<void> {
     const file = await this.company.invoicePdf(pathId('invoiceId', invoiceId));
     sendFile(res, file.data, 'application/pdf', file.fileName);
+  }
+
+  @Can('invoices.read')
+  @Get('invoices/:invoiceId')
+  invoice(@Param('invoiceId') invoiceId: string) {
+    return this.company.invoiceDetail(pathId('invoiceId', invoiceId));
   }
 
   @Can('invoices.read')

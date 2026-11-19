@@ -717,8 +717,10 @@
       "orders": "Commandes",
       "allocations": "Attributions et modèles",
       "invoices": "Factures",
-      "sales": "Ventes",
-      "payouts": "Virements"
+      "sales": "Encaissements",
+      "payouts": "Virements",
+      "audit": "Audit",
+      "registers": "Caisses"
     },
     "name": "Nom",
     "email": "E-mail",
@@ -763,6 +765,57 @@
     "archiveTemplate": "Désactiver",
     "archiveTemplateTitle": "Désactiver le modèle « {name} » ?",
     "archiveTemplateHint": "Le modèle disparaît de la liste de l'entreprise ; les attributions déjà faites restent dans l'historique.",
-    "templateArchived": "Modèle « {name} » désactivé."
+    "templateArchived": "Modèle « {name} » désactivé.",
+    "actor": "Par",
+    "action": "Action",
+    "target": "Objet",
+    "stickerId": "Autocollant",
+    "registersHint": "Lecture seule : le commerçant crée, renomme ou désactive ses caisses depuis son espace.",
+    "commission": "Commission TTC",
+    "pdf": "PDF",
+    "download": "Télécharger"
+  },
+  "ledger": {
+    "title": "Grand livre",
+    "description": "Toutes les écritures en partie double, en lecture seule. Filtrez par client, période ou type, puis exportez en CSV.",
+    "export": "Exporter en CSV",
+    "date": "Date",
+    "reference": "Référence",
+    "account": "Compte",
+    "creditType": "Type de crédit",
+    "debit": "Débit",
+    "credit": "Crédit",
+    "balanceAfter": "Solde après",
+    "clientType": "Type de client",
+    "allClients": "Tous les clients",
+    "client": "Client",
+    "pickClient": "Choisir un client",
+    "transactionType": "Type de transaction",
+    "allTypes": "Tous les types",
+    "from": "Du",
+    "to": "Au",
+    "apply": "Filtrer",
+    "empty": "Aucune écriture pour ces filtres",
+    "owner": {
+      "PLATFORM": "FlexiPay",
+      "COMPANY": "Entreprise",
+      "EMPLOYEE": "Employé",
+      "MERCHANT": "Commerçant"
+    }
+  },
+  "invoices": {
+    "title": "Factures",
+    "description": "Les factures émises par FlexiPay aux entreprises pour leurs commandes de crédits.",
+    "search": "Rechercher (numéro, entreprise, commande)",
+    "number": "Numéro",
+    "company": "Entreprise",
+    "order": "Commande",
+    "date": "Émise le",
+    "total": "Montant",
+    "status": "Statut",
+    "pdf": "PDF",
+    "download": "Télécharger",
+    "empty": "Aucune facture",
+    "back": "Retour aux factures"
   }
 }

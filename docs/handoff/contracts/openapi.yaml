@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: FlexiPay API
-  version: 0.16.0
+  version: 0.17.0
   summary: Conventions transverses, authentification web et profil (WB2, espace Commun).
   description: |
     # Contrat d'API FlexiPay (version 0.2.2)
@@ -4011,6 +4011,41 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/company/invoices/{invoiceId}:
+    get:
+      tags: [company]
+      operationId: getCompanyInvoice
+      summary: Détail d'une facture de l'entreprise (crédits par type, frais figés)
+      parameters:
+        - name: invoiceId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/company/invoices/{invoiceId}/pdf:
     get:
       tags: [company]
@@ -6491,6 +6526,45 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/admin/payout-requests/{payoutId}/invoice:
+    get:
+      tags: [admin]
+      operationId: getAdminPayoutInvoice
+      summary: Facture de commission d'un virement commerçant (PDF)
+      description: Permission `adminInvoices.read` ; onglet « Factures » de la fiche commerçant. `409` pour un virement refusé.
+      parameters:
+        - name: payoutId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Le PDF.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /v1/admin/payout-requests/{payoutId}:
     get:
       tags: [admin]
@@ -6868,6 +6942,268 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
+  /v1/admin/ledger-entries:
+    get:
+      tags: [admin]
+      operationId: listLedgerEntries
+      summary: Grand livre (écritures en partie double), lecture seule
+      description: |
+        Permission `ledger.read` : Finance et Super-admin seulement (W-FIN). Chaque écriture avec sa
+        transaction, son compte et le titulaire du compte. Filtres : client, période, type.
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - $ref: '#/components/parameters/CreatedFrom'
+        - $ref: '#/components/parameters/CreatedTo'
+        - name: clientType
+          in: query
+          required: false
+          description: Type du client, avec `clientId` (les deux ensemble).
+          schema:
+            type: string
+            enum: [COMPANY, MERCHANT]
+        - name: clientId
+          in: query
+          required: false
+          description: Client (entreprise avec les portefeuilles de ses employés, ou commerçant) ; `404` s'il n'existe pas.
+          schema:
+            $ref: '#/components/schemas/Uuid'
+        - name: transactionType
+          in: query
+          required: false
+          description: Type de transaction du grand livre (`ALLOCATION`, `PAYMENT`…), liste par `/v1/admin/ledger-entries/types`.
+          schema:
+            type: string
+            pattern: '^[A-Z][A-Z_]{1,39}$'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgerEntryPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/ledger-entries/types:
+    get:
+      tags: [admin]
+      operationId: listLedgerTransactionTypes
+      summary: Types de transaction présents au grand livre (filtre)
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgerTransactionTypeList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/ledger-entries/export:
+    get:
+      tags: [admin]
+      operationId: exportLedgerEntries
+      summary: Export CSV du grand livre (mêmes filtres, 10 000 lignes au plus)
+      description: |
+        CSV UTF-8 (BOM), séparateur `;`, montants en dinars à 3 décimales, cellules protégées contre
+        les formules. Export inscrit au journal d'audit.
+      parameters:
+        - $ref: '#/components/parameters/CreatedFrom'
+        - $ref: '#/components/parameters/CreatedTo'
+        - name: clientType
+          in: query
+          required: false
+          description: Type du client, avec `clientId` (les deux ensemble).
+          schema:
+            type: string
+            enum: [COMPANY, MERCHANT]
+        - name: clientId
+          in: query
+          required: false
+          description: Client (entreprise avec les portefeuilles de ses employés, ou commerçant) ; `404` s'il n'existe pas.
+          schema:
+            $ref: '#/components/schemas/Uuid'
+        - name: transactionType
+          in: query
+          required: false
+          description: Type de transaction du grand livre (`ALLOCATION`, `PAYMENT`…), liste par `/v1/admin/ledger-entries/types`.
+          schema:
+            type: string
+            pattern: '^[A-Z][A-Z_]{1,39}$'
+      responses:
+        '200':
+          description: Le fichier CSV.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/invoices:
+    get:
+      tags: [admin]
+      operationId: listAdminInvoices
+      summary: Factures émises par FlexiPay aux entreprises
+      description: Permission `adminInvoices.read` (Super-admin, Opérations, Finance).
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/WithCount'
+        - $ref: '#/components/parameters/CreatedFrom'
+        - $ref: '#/components/parameters/CreatedTo'
+        - name: companyId
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Uuid'
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/InvoiceStatus'
+        - name: q
+          in: query
+          required: false
+          description: Recherche par numéro, entreprise ou commande. Jamais journalisée.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminInvoicePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/invoices/{invoiceId}:
+    get:
+      tags: [admin]
+      operationId: getAdminInvoice
+      summary: Détail d'une facture (crédits par type, frais figés)
+      parameters:
+        - name: invoiceId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Succès.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/admin/invoices/{invoiceId}/pdf:
+    get:
+      tags: [admin]
+      operationId: getAdminInvoicePdf
+      summary: Facture en PDF
+      parameters:
+        - name: invoiceId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Le PDF.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /v1/admin/audit-logs:
     get:
       tags: [admin]
@@ -6887,6 +7223,19 @@ paths:
             type: string
             minLength: 1
             maxLength: 100
+        - name: clientType
+          in: query
+          required: false
+          description: Type du client, avec `clientId` (les deux ensemble).
+          schema:
+            type: string
+            enum: [COMPANY, MERCHANT]
+        - name: clientId
+          in: query
+          required: false
+          description: Client (entreprise avec les portefeuilles de ses employés, ou commerçant) ; `404` s'il n'existe pas.
+          schema:
+            $ref: '#/components/schemas/Uuid'
       responses:
         '200':
           description: Succès.
@@ -10196,21 +10545,16 @@ components:
           $ref: '#/components/schemas/PositiveAmountMillimes'
     CreditOrderCreate:
       title: CreditOrderCreate
-      description: Soit quoteId (montants du devis figé, 409 QUOTE_EXPIRED après expiration, 409 si déjà utilisé), soit lines (montants calculés maintenant).
+      description: |
+        Devis figé uniquement (W-FIN) : montants, taux et taxes du devis. `409 QUOTE_EXPIRED` après
+        expiration, `409` s'il a déjà servi, `404` pour le devis d'une autre entreprise. L'ancien
+        corps `{ lines }` est refusé (`400 VALIDATION_FAILED`).
       type: object
       additionalProperties: false
-      minProperties: 1
-      maxProperties: 1
+      required: [quoteId]
       properties:
         quoteId:
           $ref: '#/components/schemas/Uuid'
-        lines:
-          description: Un montant par type de crédit commandé (types distincts).
-          type: array
-          minItems: 1
-          maxItems: 4
-          items:
-            $ref: '#/components/schemas/CreditOrderLine'
     CreditOrder:
       title: CreditOrder
       type: object
@@ -11049,7 +11393,7 @@ components:
       title: MerchantOverview
       type: object
       additionalProperties: false
-      required: [kyc, users, sales, payouts]
+      required: [kyc, users, sales, payouts, registers, invoices]
       properties:
         kyc:
           oneOf:
@@ -11060,6 +11404,18 @@ components:
           maxItems: 100
           items:
             $ref: '#/components/schemas/OverviewUser'
+        registers:
+          description: Caisses et leur autocollant (onglet « Caisses »).
+          type: array
+          maxItems: 200
+          items:
+            $ref: '#/components/schemas/Register'
+        invoices:
+          description: Factures de commission des virements non refusés (onglet « Factures »).
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/OverviewCommissionInvoice'
         sales:
           type: array
           maxItems: 50
@@ -11384,12 +11740,210 @@ components:
         2026-11-14.
       type: string
       enum: [OWNER, MANAGER, FINANCE, CASHIER]
+    OverviewCommissionInvoice:
+      title: OverviewCommissionInvoice
+      type: object
+      additionalProperties: false
+      required: [payoutId, number, payoutReference, creditType, grossMillimes, commissionMillimes, vatMillimes, issuedAt]
+      properties:
+        payoutId:
+          $ref: '#/components/schemas/Uuid'
+        number:
+          type: string
+          maxLength: 40
+        payoutReference:
+          type: string
+          maxLength: 32
+        creditType:
+          $ref: '#/components/schemas/CreditType'
+        grossMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        commissionMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        vatMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        issuedAt:
+          $ref: '#/components/schemas/Timestamp'
+    LedgerEntry:
+      title: LedgerEntry
+      description: Écriture du grand livre (immuable), lue par Finance et le Super-admin.
+      type: object
+      additionalProperties: false
+      required: [id, occurredAt, transactionId, transactionType, reference, accountCode, ownerType, ownerName, creditType, direction, amountMillimes, balanceAfterMillimes]
+      properties:
+        id:
+          description: Numéro de l'écriture (entier en texte).
+          type: string
+          pattern: '^[0-9]{1,19}$'
+        occurredAt:
+          $ref: '#/components/schemas/Timestamp'
+        transactionId:
+          $ref: '#/components/schemas/Uuid'
+        transactionType:
+          type: string
+          maxLength: 40
+        reference:
+          type: string
+          maxLength: 64
+        accountCode:
+          type: string
+          maxLength: 120
+        ownerType:
+          type: string
+          enum: [PLATFORM, COMPANY, EMPLOYEE, MERCHANT]
+        ownerName:
+          oneOf:
+            - type: string
+              maxLength: 300
+            - type: 'null'
+        creditType:
+          oneOf:
+            - $ref: '#/components/schemas/CreditType'
+            - type: 'null'
+        direction:
+          $ref: '#/components/schemas/Direction'
+        amountMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        balanceAfterMillimes:
+          description: Solde du compte juste après l'écriture (peut être négatif pour un compte d'actif).
+          type: integer
+          format: int64
+    LedgerEntryPage:
+      title: LedgerEntryPage
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/LedgerEntry'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    LedgerTransactionTypeList:
+      title: LedgerTransactionTypeList
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          maxItems: 200
+          items:
+            type: string
+            maxLength: 40
+    AdminInvoice:
+      title: AdminInvoice
+      type: object
+      additionalProperties: false
+      required: [id, number, companyId, companyName, orderReference, totalMillimes, issuedAt, status]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        number:
+          type: string
+          maxLength: 32
+        companyId:
+          $ref: '#/components/schemas/Uuid'
+        companyName:
+          type: string
+          maxLength: 200
+        orderReference:
+          type: string
+          maxLength: 32
+        totalMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        issuedAt:
+          $ref: '#/components/schemas/Timestamp'
+        status:
+          $ref: '#/components/schemas/InvoiceStatus'
+        creditNoteNumber:
+          type: string
+          maxLength: 32
+    AdminInvoicePage:
+      title: AdminInvoicePage
+      type: object
+      additionalProperties: false
+      required: [data, page]
+      properties:
+        data:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/AdminInvoice'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+    InvoiceDetail:
+      title: InvoiceDetail
+      description: Facture avec les crédits par type et les frais figés dans la commande.
+      type: object
+      additionalProperties: false
+      required: [id, number, orderId, orderReference, paymentReference, companyId, companyName, status, issuedAt, lines, amountMillimes, feeRateBps, feesMillimes, vatRateBps, vatMillimes, withholdingRateBps, withholdingMillimes, stampDutyMillimes, transferFeeMillimes, totalMillimes]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        number:
+          type: string
+          maxLength: 32
+        orderId:
+          $ref: '#/components/schemas/Uuid'
+        orderReference:
+          type: string
+          maxLength: 32
+        paymentReference:
+          type: string
+          maxLength: 32
+        companyId:
+          $ref: '#/components/schemas/Uuid'
+        companyName:
+          type: string
+          maxLength: 200
+        status:
+          $ref: '#/components/schemas/InvoiceStatus'
+        issuedAt:
+          $ref: '#/components/schemas/Timestamp'
+        creditNoteNumber:
+          type: string
+          maxLength: 32
+        cancelledAt:
+          $ref: '#/components/schemas/Timestamp'
+        lines:
+          type: array
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/CreditTypeAmount'
+        amountMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        feeRateBps:
+          $ref: '#/components/schemas/RateBps'
+        feesMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        vatRateBps:
+          $ref: '#/components/schemas/RateBps'
+        vatMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        withholdingRateBps:
+          $ref: '#/components/schemas/RateBps'
+        withholdingMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        stampDutyMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        transferFeeMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
+        totalMillimes:
+          $ref: '#/components/schemas/AmountMillimes'
     TeamUser:
       title: TeamUser
       type: object
       additionalProperties: false
       required: [id, displayName, email, subRole, status, createdAt]
       properties:
+        registerId:
+          description: Caisse d'un caissier (commerçant), `null` sans caisse ; absent pour les autres sous-rôles.
+          oneOf:
+            - $ref: '#/components/schemas/Uuid'
+            - type: 'null'
         id:
           $ref: '#/components/schemas/Uuid'
         displayName:

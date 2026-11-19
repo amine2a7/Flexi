@@ -12,8 +12,16 @@ const { DbService } = await import('../../src/common/db.service.js');
 const { LedgerService, accounts } = await import('../../src/ledger/ledger.service.js');
 const { PayoutsService } = await import('../../src/payouts/payouts.service.js');
 const { hashSecret } = await import('../../src/auth/password.js');
-const { createCompany, createEmployee, createUser, sealed, seedSettings, signedIn, oneLineGrid } =
-  await import('./fixtures.js');
+const {
+  createCompany,
+  createEmployee,
+  createUser,
+  sealed,
+  seedSettings,
+  signedIn,
+  oneLineGrid,
+  quoted,
+} = await import('./fixtures.js');
 
 const env = loadEnv();
 const db = new DbService(env);
@@ -142,7 +150,7 @@ describe('concurrent decisions on one financial object', () => {
     const adminA = await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Amine K.'));
     const adminB = await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Hela R.'));
     const created = await owner.call('POST', '/v1/company/orders', {
-      body: { lines: [{ creditType: 'RESTAURATION', amountMillimes: 1_000_000 }] },
+      body: await quoted(owner, [{ creditType: 'RESTAURATION', amountMillimes: 1_000_000 }]),
       headers: key(),
     });
     const id = String(created.body.id);

@@ -14,7 +14,8 @@
     "support": "Support",
     "kyc": "Mon dossier",
     "users": "Utilisateurs",
-    "registers": "Caisses"
+    "registers": "Caisses",
+    "cashiers": "Caissiers"
   },
   "company": {
     "dashboard": "Accueil",
@@ -46,7 +47,9 @@
     "messages": "Messages",
     "users": "Utilisateurs",
     "security": "Alertes",
-    "reporting": "Reporting"
+    "reporting": "Reporting",
+    "ledger": "Grand livre",
+    "invoices": "Factures"
   },
   "beneficiary": {
     "home": "Accueil",

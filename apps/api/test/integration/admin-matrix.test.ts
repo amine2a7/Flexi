@@ -35,6 +35,8 @@ const OPS: Sub[] = ['SUPER_ADMIN', 'COMPLIANCE'];
 const MESSAGES: Sub[] = ['SUPER_ADMIN', 'COMPLIANCE', 'SUPPORT'];
 /** Admin accounts, settings changes and every change to a user (request of 2026-11-17). */
 const SUPER: Sub[] = ['SUPER_ADMIN'];
+/** The general ledger: Finance and the super-admin only (W-FIN, request of 2026-11-19). */
+const LEDGER: Sub[] = ['SUPER_ADMIN', 'FINANCE'];
 
 /** Who may call each admin route (decision C, requests of 2026-11-14 and 2026-11-17). */
 const EXPECTED: Record<string, Sub[]> = {
@@ -111,6 +113,13 @@ const EXPECTED: Record<string, Sub[]> = {
   'AdminTeamController.createCompanyUser': SUPER,
   'AdminTeamController.createMerchantUser': SUPER,
   'AdminTeamController.updateUser': SUPER,
+  'LedgerAdminController.list': LEDGER,
+  'LedgerAdminController.types': LEDGER,
+  'LedgerAdminController.export': LEDGER,
+  'AdminInvoicesController.list': BACK_OFFICE,
+  'AdminInvoicesController.detail': BACK_OFFICE,
+  'AdminInvoicesController.pdf': BACK_OFFICE,
+  'AdminPayoutsController.invoice': BACK_OFFICE,
 };
 
 const adminRoutes = (await routes()).filter(

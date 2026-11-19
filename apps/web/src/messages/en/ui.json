@@ -79,5 +79,22 @@
     "PP_CIN": "PP CIN — individual (ID card)",
     "PP_MF": "PP MF — individual with tax number",
     "PM_MF": "PM MF — company with tax number"
+  },
+  "invoice": {
+    "title": "Invoice {number}",
+    "order": "Order {reference}",
+    "download": "Download the PDF",
+    "company": "Company",
+    "issuedAt": "Issued on",
+    "paymentReference": "Transfer reference",
+    "creditNote": "Credit note",
+    "detail": "Detail",
+    "credits": "Credits amount",
+    "commission": "FlexiPay commission ({rate})",
+    "vat": "VAT on the commission ({rate})",
+    "stamp": "Stamp duty",
+    "transferFee": "Transfer fee",
+    "withholding": "Withholding tax ({rate} of the fees incl. VAT)",
+    "total": "Total to pay"
   }
 }

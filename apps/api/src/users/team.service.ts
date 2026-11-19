@@ -25,6 +25,7 @@ interface TeamUserRow {
   status: 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED';
   mustChangePassword: boolean;
   createdAt: Date;
+  registerId?: string | null;
 }
 
 /** An account of the team; « Invité » while the temporary password is unchanged. */
@@ -36,6 +37,8 @@ export function teamUser(row: TeamUserRow) {
     subRole: row.subRole,
     status: row.status === 'ACTIVE' && row.mustChangePassword ? 'INVITED' : row.status,
     createdAt: row.createdAt.toISOString(),
+    // Till of a cashier (W-FIN « Caissiers » page), null when none is assigned.
+    ...(row.subRole === 'CASHIER' ? { registerId: row.registerId ?? null } : {}),
   };
 }
 

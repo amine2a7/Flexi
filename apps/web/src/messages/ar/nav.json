@@ -14,7 +14,8 @@
     "support": "الدعم",
     "kyc": "ملفي",
     "users": "المستخدمون",
-    "registers": "الصناديق"
+    "registers": "الصناديق",
+    "cashiers": "أمناء الصندوق"
   },
   "company": {
     "dashboard": "الرئيسية",
@@ -46,7 +47,9 @@
     "messages": "الرسائل",
     "users": "المستخدمون",
     "security": "التنبيهات",
-    "reporting": "التقارير"
+    "reporting": "التقارير",
+    "ledger": "دفتر الأستاذ",
+    "invoices": "الفواتير"
   },
   "beneficiary": {
     "home": "الرئيسية",

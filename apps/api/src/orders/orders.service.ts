@@ -326,16 +326,16 @@ export class OrdersService {
 
   // ---------------------------------------------------------------- company
 
-  /** From a frozen quote (its amounts) or from lines (amounts of the settings now). */
-  async create(tx: Tx, input: { quoteId: string } | { lines: OrderLineInput[] }) {
+  /**
+   * From a frozen quote only (W-FIN), never from lines priced now: its amounts, rate and taxes
+   * as the company accepted them. A quote of another company is unknown (404).
+   */
+  async create(tx: Tx, input: { quoteId: string }) {
     const who = principal();
     if (who.companyId === null) throw problems.forbidden();
     await this.activeCompany(tx, who.companyId);
     const platform = await this.settings.platform(tx);
-    const frozen =
-      'quoteId' in input
-        ? await this.takeQuote(tx, who.companyId, input.quoteId)
-        : await this.liveQuote(tx, input.lines, platform.quoteValidityDays);
+    const frozen = await this.takeQuote(tx, who.companyId, input.quoteId);
     const { lines, amount, rate, fees } = frozen;
     const [sequence] = await tx.$queryRaw<
       { value: bigint }[]
@@ -372,19 +372,6 @@ export class OrdersService {
     const order = await this.load(tx, id);
     await this.audit.record(tx, 'orders.create', order.reference);
     return orderSummary(order);
-  }
-
-  private async liveQuote(tx: Tx, lines: OrderLineInput[], validityDays: number) {
-    const amount = await this.checkLines(tx, lines);
-    const { rate, taxes, fees } = await this.fees(tx, amount);
-    return {
-      lines,
-      amount,
-      rate,
-      vatRateBps: taxes.vatRateBps,
-      fees,
-      expiresAt: new Date(Date.now() + validityDays * 86_400_000),
-    };
   }
 
   private orderWhere(

@@ -14,7 +14,8 @@
     "support": "Support",
     "kyc": "My file",
     "users": "Users",
-    "registers": "Tills"
+    "registers": "Tills",
+    "cashiers": "Cashiers"
   },
   "company": {
     "dashboard": "Home",
@@ -46,7 +47,9 @@
     "messages": "Messages",
     "users": "Users",
     "security": "Alerts",
-    "reporting": "Reporting"
+    "reporting": "Reporting",
+    "ledger": "General ledger",
+    "invoices": "Invoices"
   },
   "beneficiary": {
     "home": "Home",

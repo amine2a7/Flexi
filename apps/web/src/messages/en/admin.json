@@ -717,8 +717,10 @@
       "orders": "Orders",
       "allocations": "Allocations and templates",
       "invoices": "Invoices",
-      "sales": "Sales",
-      "payouts": "Payouts"
+      "sales": "Collections",
+      "payouts": "Payouts",
+      "audit": "Audit",
+      "registers": "Tills"
     },
     "name": "Name",
     "email": "E-mail",
@@ -763,6 +765,57 @@
     "archiveTemplate": "Switch off",
     "archiveTemplateTitle": "Switch off the template “{name}”?",
     "archiveTemplateHint": "The template leaves the company's list; allocations already made stay in the history.",
-    "templateArchived": "Template “{name}” switched off."
+    "templateArchived": "Template “{name}” switched off.",
+    "actor": "By",
+    "action": "Action",
+    "target": "Subject",
+    "stickerId": "Sticker",
+    "registersHint": "Read only: the merchant creates, renames or switches off its tills from its space.",
+    "commission": "Commission incl. VAT",
+    "pdf": "PDF",
+    "download": "Download"
+  },
+  "ledger": {
+    "title": "General ledger",
+    "description": "Every double-entry line, read only. Filter by client, period or type, then export as CSV.",
+    "export": "Export as CSV",
+    "date": "Date",
+    "reference": "Reference",
+    "account": "Account",
+    "creditType": "Credit type",
+    "debit": "Debit",
+    "credit": "Credit",
+    "balanceAfter": "Balance after",
+    "clientType": "Client type",
+    "allClients": "All clients",
+    "client": "Client",
+    "pickClient": "Choose a client",
+    "transactionType": "Transaction type",
+    "allTypes": "All types",
+    "from": "From",
+    "to": "To",
+    "apply": "Filter",
+    "empty": "No entry for these filters",
+    "owner": {
+      "PLATFORM": "FlexiPay",
+      "COMPANY": "Company",
+      "EMPLOYEE": "Employee",
+      "MERCHANT": "Merchant"
+    }
+  },
+  "invoices": {
+    "title": "Invoices",
+    "description": "Invoices issued by FlexiPay to the companies for their credit orders.",
+    "search": "Search (number, company, order)",
+    "number": "Number",
+    "company": "Company",
+    "order": "Order",
+    "date": "Issued on",
+    "total": "Amount",
+    "status": "Status",
+    "pdf": "PDF",
+    "download": "Download",
+    "empty": "No invoice",
+    "back": "Back to invoices"
   }
 }

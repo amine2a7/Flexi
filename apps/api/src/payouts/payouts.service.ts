@@ -255,14 +255,17 @@ export class PayoutsService {
    * tranche, VAT on the commission, stamp duty and net, as frozen in the request. A rejected
    * payout has no invoice. Generated on download (RLS: the shop of the session).
    */
-  async commissionInvoice(id: string): Promise<{ data: Buffer; fileName: string }> {
-    const merchantId = this.merchantId();
+  async commissionInvoice(id: string, admin = false): Promise<{ data: Buffer; fileName: string }> {
+    // An administrator reads the invoice of any shop (W-FIN); a shop only its own.
+    const merchantId = admin ? null : this.merchantId();
     return this.db.user(async (tx) => {
       const payout = await tx.payoutRequest.findUnique({
         where: { id },
         include: { merchant: { select: { name: true, city: true } } },
       });
-      if (payout?.merchantId !== merchantId) throw problems.notFound();
+      if (payout === null || (merchantId !== null && payout.merchantId !== merchantId)) {
+        throw problems.notFound();
+      }
       if (payout.status === 'REJECTED') throw problems.conflict();
       const number = `FAC-C-${payout.reference.slice(4)}`;
       const lines: PdfLine[] = [
