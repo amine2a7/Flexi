@@ -11,6 +11,8 @@ export 'src/components/credit_style.dart';
 export 'src/components/layout.dart';
 export 'src/components/list_row.dart';
 export 'src/components/mascot.dart';
+export 'src/components/mfa_code_dialog.dart';
+export 'src/components/new_password_view.dart';
 export 'src/components/password_sheet.dart';
 export 'src/components/payment_qr.dart';
 export 'src/components/pin_pad.dart';

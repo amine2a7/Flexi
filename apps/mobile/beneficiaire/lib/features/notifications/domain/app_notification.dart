@@ -1,7 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fp_core/fp_core.dart';
 
-enum NotificationKind { paymentApproved, familyPaid, creditReceived, newLogin }
+enum NotificationKind {
+  paymentApproved,
+  familyPaid,
+  creditReceived,
+  newLogin,
+
+  /// Une part du solde expire bientôt.
+  creditExpiring,
+}
 
 /// Notification ; le texte est construit côté app à partir de clés i18n.
 class AppNotification {

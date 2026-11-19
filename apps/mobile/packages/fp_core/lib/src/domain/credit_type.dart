@@ -1,7 +1,21 @@
 import '../l10n/gen/fp_localizations.dart';
 
 /// Les 4 types de crédit offerts par l'entreprise.
-enum CreditType { food, clothing, fuel, gifts }
+enum CreditType {
+  food('RESTAURATION'),
+  clothing('HABILLEMENT'),
+  fuel('CARBURANT'),
+  gifts('CADEAUX');
+
+  const CreditType(this.apiName);
+
+  /// Valeur du contrat OpenAPI (`CreditType`).
+  final String apiName;
+
+  /// Type du contrat ; `null` pour une valeur inconnue (liste extensible).
+  static CreditType? fromApi(Object? value) =>
+      values.where((t) => t.apiName == value).firstOrNull;
+}
 
 extension CreditTypeLabel on CreditType {
   String label(FpL10n l10n) => switch (this) {

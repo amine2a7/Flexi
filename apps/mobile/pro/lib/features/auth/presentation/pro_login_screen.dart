@@ -6,10 +6,18 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/routes.dart';
 
-/// Connexion Pro : même écran pour le propriétaire et le caissier.
-/// Un appui long sur le logo ouvre le catalogue caché.
+/// Message affiché à l'arrivée sur la connexion.
+enum ProLoginNotice {
+  /// La double authentification est à activer d'abord depuis l'espace web.
+  mfaEnroll,
+}
+
+/// Connexion Pro : même écran pour le propriétaire et le caissier (mot de passe, puis code de
+/// l'application d'authentification). Un appui long sur le logo ouvre le catalogue caché.
 class ProLoginScreen extends ConsumerStatefulWidget {
-  const ProLoginScreen({super.key});
+  const ProLoginScreen({super.key, this.notice});
+
+  final ProLoginNotice? notice;
 
   @override
   ConsumerState<ProLoginScreen> createState() => _ProLoginScreenState();
@@ -21,7 +29,8 @@ class _ProLoginScreenState extends ConsumerState<ProLoginScreen> {
   );
   final _password = TextEditingController();
   bool _busy = false;
-  bool _error = false;
+  String? _error;
+  late bool _mfaEnroll = widget.notice == ProLoginNotice.mfaEnroll;
 
   @override
   void dispose() {
@@ -31,18 +40,41 @@ class _ProLoginScreenState extends ConsumerState<ProLoginScreen> {
   }
 
   Future<void> _submit() async {
+    final l10n = FpL10n.of(context);
+    final auth = ref.read(authControllerProvider.notifier);
     setState(() {
       _busy = true;
-      _error = false;
+      _error = null;
+      _mfaEnroll = false;
     });
     try {
-      await ref
-          .read(authControllerProvider.notifier)
-          .login(_email.text, _password.text);
+      var result = await auth.login(_email.text, _password.text);
       _password.clear();
-      if (mounted) context.go(ProRoutes.collect);
+      // Code de l'application d'authentification : 3 essais par défi.
+      for (var attempt = 0; result.needsMfaCode; attempt++) {
+        if (!mounted) return;
+        final code = await showMfaCodeDialog(context, retry: attempt > 0);
+        if (code == null) return;
+        try {
+          result = await auth.verifyMfa(code);
+        } on UnauthorizedFailure {
+          if (attempt >= 2) rethrow;
+        }
+      }
+      if (!mounted) return;
+      if (result.needsMfaEnrollment) {
+        setState(() => _mfaEnroll = true);
+      } else if (result.mustChangePassword) {
+        context.go(ProRoutes.newPassword);
+      } else {
+        context.go(ProRoutes.collect);
+      }
+    } on UnauthorizedFailure {
+      if (mounted) setState(() => _error = l10n.loginError);
+    } on NetworkFailure {
+      if (mounted) setState(() => _error = l10n.offlineText);
     } on AppFailure {
-      if (mounted) setState(() => _error = true);
+      if (mounted) setState(() => _error = l10n.genericError);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -128,12 +160,13 @@ class _ProLoginScreenState extends ConsumerState<ProLoginScreen> {
                     obscure: true,
                     autofillHints: const [AutofillHints.password],
                   ),
-                  if (_error) ...[
+                  if (_error ?? (_mfaEnroll ? l10n.mfaEnrollOnWeb : null)
+                      case final message?) ...[
                     const SizedBox(height: FpSpace.x10),
                     Semantics(
                       liveRegion: true,
                       child: Text(
-                        l10n.loginError,
+                        message,
                         style: FpText.body(size: 13, color: FpColors.danger),
                       ),
                     ),

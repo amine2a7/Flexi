@@ -2,10 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fp_core/fp_core.dart';
 
 /// Devis de reversement calculé **par le serveur** (millimes, taux en points de base).
-/// Le taux de commission est figé dans la demande.
+/// Le taux de commission est figé dans la demande. Un virement porte sur un seul type de
+/// crédit ([creditType]) ; [byType] donne le solde à reverser de chaque type.
 class PayoutQuote {
   const PayoutQuote({
     required this.gross,
+    this.quoteId,
+    this.creditType,
+    this.serverNet,
     required this.byType,
     required this.commissionBps,
     required this.commission,
@@ -18,6 +22,13 @@ class PayoutQuote {
   });
 
   final int gross;
+
+  /// Devis du serveur (taux figé jusqu'à son expiration) ; `null` en démonstration.
+  final String? quoteId;
+  final CreditType? creditType;
+
+  /// Net calculé par le serveur (fait foi quand il est connu).
+  final int? serverNet;
   final Map<CreditType, int> byType;
   final int commissionBps;
   final int commission;
@@ -29,10 +40,14 @@ class PayoutQuote {
   final int transferFee;
 
   int get feesInclTax => commission + vat;
-  int get net => gross - feesInclTax - withholding - stampDuty - transferFee;
+  int get net =>
+      serverNet ?? gross - feesInclTax - withholding - stampDuty - transferFee;
+
+  /// Solde à reverser, tous types confondus.
+  int get total => byType.values.fold(0, (s, v) => s + v);
 }
 
-enum PayoutStatus { requested, accepted, paid }
+enum PayoutStatus { requested, accepted, paid, rejected }
 
 class Payout {
   const Payout({
@@ -55,10 +70,15 @@ class Payout {
 }
 
 abstract interface class PayoutRepository {
-  Future<PayoutQuote> quote();
+  /// Devis pour [type] (par défaut le type qui a le plus à reverser).
+  Future<PayoutQuote> quote({CreditType? type});
 
-  /// Demande un reversement. [idempotencyKey] évite un double virement en cas de nouvel essai.
-  Future<Payout> request({required String idempotencyKey});
+  /// Demande le reversement du devis. [idempotencyKey] évite un double virement en cas de
+  /// nouvel essai.
+  Future<Payout> request({
+    required PayoutQuote quote,
+    required String idempotencyKey,
+  });
 
   /// Demande en cours en premier, puis l'historique.
   Future<List<Payout>> list();

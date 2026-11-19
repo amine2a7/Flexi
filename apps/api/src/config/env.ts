@@ -10,6 +10,11 @@ const base64Key = z
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   API_PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
+  /**
+   * Listening address: 127.0.0.1 (this computer only) by default; 0.0.0.0 to reach the API from a
+   * phone on the same Wi-Fi during development.
+   */
+  API_HOST: z.union([z.literal('localhost'), z.ipv4()]).default('127.0.0.1'),
   /** Exact origins allowed by CORS and the CSRF Origin check (comma separated, no wildcard). */
   WEB_ORIGINS: z.string().default('http://localhost:3001'),
   PG_ADMIN_URL: z.string().min(1),

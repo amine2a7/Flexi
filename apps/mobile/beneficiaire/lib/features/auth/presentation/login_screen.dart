@@ -21,7 +21,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _password = TextEditingController();
   bool _obscure = true;
   bool _busy = false;
-  bool _error = false;
+  String? _error;
 
   @override
   void dispose() {
@@ -31,15 +31,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    final l10n = FpL10n.of(context);
+    final auth = ref.read(authControllerProvider.notifier);
     setState(() {
       _busy = true;
-      _error = false;
+      _error = null;
     });
     try {
-      final result = await ref
-          .read(authControllerProvider.notifier)
-          .login(_email.text, _password.text);
+      var result = await auth.login(_email.text, _password.text);
       _password.clear();
+      // Compte avec double authentification : code de l'application, 3 essais.
+      for (var attempt = 0; result.needsMfaCode; attempt++) {
+        if (!mounted) return;
+        final code = await showMfaCodeDialog(context, retry: attempt > 0);
+        if (code == null) return;
+        try {
+          result = await auth.verifyMfa(code);
+        } on UnauthorizedFailure {
+          if (attempt >= 2) rethrow;
+        }
+      }
       if (!mounted) return;
       if (result.mustChangePassword) {
         context.go(Routes.newPassword);
@@ -48,8 +59,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       } else {
         context.go(Routes.home);
       }
+    } on UnauthorizedFailure {
+      if (mounted) setState(() => _error = l10n.loginError);
+    } on NetworkFailure {
+      if (mounted) setState(() => _error = l10n.offlineText);
     } on AppFailure {
-      if (mounted) setState(() => _error = true);
+      if (mounted) setState(() => _error = l10n.genericError);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -132,12 +147,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                   ),
-                  if (_error) ...[
+                  if (_error case final message?) ...[
                     const SizedBox(height: FpSpace.x10),
                     Semantics(
                       liveRegion: true,
                       child: Text(
-                        l10n.loginError,
+                        message,
                         style: FpText.body(size: 13, color: FpColors.danger),
                       ),
                     ),

@@ -65,6 +65,16 @@ class NotificationsScreen extends ConsumerWidget {
             ]),
           ),
         ),
+        NotificationKind.creditExpiring => (
+          FpIcons.clock,
+          FpColors.clothingTint,
+          FpColors.clothing,
+          l10n.notifCreditExpiring,
+          l10n.notifCreditExpiringBody(
+            money(n.amount),
+            n.type?.label(l10n) ?? '',
+          ),
+        ),
         NotificationKind.newLogin => (
           FpIcons.lock,
           FpColors.clothingTint,

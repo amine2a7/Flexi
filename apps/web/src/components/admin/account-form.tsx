@@ -36,6 +36,10 @@ const CATEGORIES: Schemas['MerchantCategory'][] = [
 
 const LEGAL_FORMS: Schemas['LegalForm'][] = ['PP_CIN', 'PP_MF', 'PM_MF'];
 
+/** CIN of the manager (8 digits) and tax id (matricule fiscal), checked again by the API. */
+export const NATIONAL_ID = /^[0-9]{8}$/;
+export const TAX_ID = /^[0-9]{7}[A-Z](\/[A-Z]\/[A-Z]\/[0-9]{3})?$/;
+
 interface Draft {
   name: string;
   /** Required (processus v2): drives the withholding tax rate. */
@@ -44,6 +48,9 @@ interface Draft {
   city: string;
   phone: string;
   email: string;
+  /** Optional, sealed by the API (SEC-1). */
+  nationalId: string;
+  taxId: string;
   /** Field errors only (the value lives in its own state). */
   acceptedCreditTypes?: never;
 }
@@ -55,6 +62,8 @@ const EMPTY: Draft = {
   city: '',
   phone: '+216',
   email: '',
+  nationalId: '',
+  taxId: '',
 };
 
 /**
@@ -118,6 +127,12 @@ export function AccountForm({
       ...(draft.phone.replaceAll(' ', '').length < 12 ? { phone: required } : {}),
       ...(kind === 'merchant' && draft.category === '' ? { category: required } : {}),
       ...(kind === 'merchant' && types.length === 0 ? { acceptedCreditTypes: required } : {}),
+      ...(draft.nationalId !== '' && !NATIONAL_ID.test(draft.nationalId)
+        ? { nationalId: t('form.invalidFormat') }
+        : {}),
+      ...(draft.taxId !== '' && !TAX_ID.test(draft.taxId.trim().toUpperCase())
+        ? { taxId: t('form.invalidFormat') }
+        : {}),
     };
     setFieldErrors(missing);
     if (Object.keys(missing).length === 0) setStep(2);
@@ -138,6 +153,8 @@ export function AccountForm({
         phone: draft.phone.replaceAll(' ', ''),
         email: draft.email.trim(),
         commissionGrid: tiers,
+        ...(draft.nationalId === '' ? {} : { nationalId: draft.nationalId }),
+        ...(draft.taxId.trim() === '' ? {} : { taxId: draft.taxId.trim().toUpperCase() }),
       };
       const result =
         kind === 'merchant'
@@ -285,6 +302,31 @@ export function AccountForm({
                 value={draft.email}
                 onChange={(event) => {
                   set('email')(event.target.value);
+                }}
+              />
+              <TextField
+                label={t('form.nationalId')}
+                hint={t('form.nationalIdHint')}
+                error={fieldErrors.nationalId}
+                inputMode="numeric"
+                maxLength={8}
+                dir="ltr"
+                autoComplete="off"
+                value={draft.nationalId}
+                onChange={(event) => {
+                  set('nationalId')(event.target.value.replace(/\D/g, ''));
+                }}
+              />
+              <TextField
+                label={t('form.taxId')}
+                hint={t('form.taxIdHint')}
+                error={fieldErrors.taxId}
+                maxLength={20}
+                dir="ltr"
+                autoComplete="off"
+                value={draft.taxId}
+                onChange={(event) => {
+                  set('taxId')(event.target.value);
                 }}
               />
               {kind === 'merchant' ? (

@@ -1420,4 +1420,77 @@ class FpL10nFr extends FpL10n {
 
   @override
   String get registerStickerPdf => 'Télécharger l\'autocollant (PDF)';
+
+  @override
+  String get mfaCodeTitle => 'Code de vérification';
+
+  @override
+  String get mfaCodeHint =>
+      'Saisissez le code à 6 chiffres de votre application d\'authentification.';
+
+  @override
+  String get mfaCodeInvalid =>
+      'Code incorrect ou expiré. Saisissez le nouveau code.';
+
+  @override
+  String get mfaCodePlaceholder => '000000';
+
+  @override
+  String get mfaCodeAction => 'Valider';
+
+  @override
+  String get cancelAction => 'Annuler';
+
+  @override
+  String get mfaEnrollOnWeb =>
+      'Activez d\'abord la double authentification depuis l\'espace web FlexiPay, puis reconnectez-vous ici.';
+
+  @override
+  String get passwordRefused =>
+      'Ce mot de passe n\'est pas accepté. Choisissez-en un autre.';
+
+  @override
+  String get pinWeak =>
+      'Ce PIN est trop simple (0000, 1234…). Choisissez-en un autre.';
+
+  @override
+  String get lastNameLabel => 'Nom';
+
+  @override
+  String get relationshipLabel => 'Lien de parenté';
+
+  @override
+  String get relationshipSpouse => 'Conjoint';
+
+  @override
+  String get relationshipChild => 'Enfant';
+
+  @override
+  String get relationshipParent => 'Parent';
+
+  @override
+  String get memberPhoneLabel => 'Téléphone (+216…)';
+
+  @override
+  String get creditsExpired => 'Crédits expirés';
+
+  @override
+  String get notifCreditExpiring => 'Crédits bientôt expirés';
+
+  @override
+  String notifCreditExpiringBody(String amount, String type) {
+    return '$amount de votre crédit $type expirent bientôt.';
+  }
+
+  @override
+  String get refusedDeclinedTitle => 'Paiement refusé';
+
+  @override
+  String get refusedDeclinedMessage =>
+      'Ce paiement n\'est pas possible avec votre compte pour le moment.';
+
+  @override
+  String payoutRejected(String ref) {
+    return '$ref · Refusé';
+  }
 }

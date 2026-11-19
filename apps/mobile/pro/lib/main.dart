@@ -5,14 +5,14 @@ import 'package:fp_core/fp_core.dart';
 import 'app/app.dart';
 import 'app/dependencies.dart';
 
-/// Les fausses données (et leurs mots de passe libres, PIN 0000 refusé, réglages de démo)
-/// ne sont branchées que dans un build de démo : `--dart-define=FP_DEMO=true`.
-/// Les Repository de l'API réelle sont branchés en M5.
+/// Même code, deux builds : `--dart-define=FP_DEMO=true` branche les fausses données (mots de
+/// passe libres, réglages de démo) ; sinon les Repository de l'API, à l'adresse
+/// `--dart-define=API_URL=…`.
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
     ProviderScope(
-      overrides: kDemoBuild ? fakeDataOverrides() : const [],
+      overrides: kDemoBuild ? fakeDataOverrides() : apiOverrides(),
       child: const FlexiPayProApp(),
     ),
   );

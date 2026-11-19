@@ -5,8 +5,9 @@ import { loadEnv } from './config/env.js';
 async function bootstrap(): Promise<void> {
   const env = loadEnv();
   const app = await createApp(env);
-  await app.listen(env.API_PORT, '127.0.0.1');
-  new Logger('FlexiPay').log(`API listening on http://localhost:${String(env.API_PORT)}`);
+  // Local only by default; API_HOST=0.0.0.0 opens it to the Wi-Fi (tests on a real phone).
+  await app.listen(env.API_PORT, env.API_HOST);
+  new Logger('FlexiPay').log(`API listening on http://${env.API_HOST}:${String(env.API_PORT)}`);
 }
 
 void bootstrap();

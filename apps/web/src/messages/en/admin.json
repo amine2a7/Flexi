@@ -56,7 +56,11 @@
       "email": "Manager e-mail",
       "city": "City",
       "required": "Required field.",
-      "invalidFormat": "Invalid format."
+      "invalidFormat": "Invalid format.",
+      "nationalId": "Manager ID card number",
+      "nationalIdHint": "8 digits. Optional.",
+      "taxId": "Tax ID",
+      "taxIdHint": "Example: 1234567A or 1234567A/B/M/000. Optional."
     },
     "submit": "Create the merchant",
     "createdToast": "{name} was created (KYC pending). Invitation sent to the owner.",
@@ -91,7 +95,11 @@
       "email": "Manager e-mail",
       "city": "City",
       "required": "Required field.",
-      "invalidFormat": "Invalid format."
+      "invalidFormat": "Invalid format.",
+      "nationalId": "Manager ID card number",
+      "nationalIdHint": "8 digits. Optional.",
+      "taxId": "Tax ID",
+      "taxIdHint": "Example: 1234567A or 1234567A/B/M/000. Optional."
     },
     "submit": "Create the company",
     "createdToast": "{name} was created (KYC pending). Invitation sent to the owner.",
@@ -350,7 +358,14 @@
     "askCorrection": "Ask a correction",
     "correctionTitle": "Ask a correction: {type}",
     "correctionReason": "Reason (visible to the client)",
-    "correctionToast": "Correction asked: the client will file the document again."
+    "correctionToast": "Correction asked: the client will file the document again.",
+    "identifiersTitle": "Client identifiers",
+    "nationalId": "Manager ID card number",
+    "taxId": "Tax ID",
+    "iban": "Bank details (RIB)",
+    "maskedNote": "Only the last 4 digits are shown. The Operations team sees the full numbers.",
+    "clearNote": "Full numbers, visible to the Operations team only: compare them with the documents.",
+    "none": "Not provided"
   },
   "payouts": {
     "open": "Open",
@@ -657,11 +672,15 @@
       "email": "Email",
       "iban": "Bank account",
       "commissionGrid": "Commission grid",
-      "legalForm": "Legal form"
+      "legalForm": "Legal form",
+      "nationalId": "Manager ID card number",
+      "taxId": "Tax ID"
     },
     "changeLegalForm": "Change",
     "legalFormNext": "A change goes through four-eyes approval and applies to the next operations only.",
-    "legalFormTitle": "Change the legal form"
+    "legalFormTitle": "Change the legal form",
+    "identifierHint": "Current: {masked}. Leave empty to keep it.",
+    "identifierNone": "Not provided"
   },
   "payment": {
     "record": "Record the payment",

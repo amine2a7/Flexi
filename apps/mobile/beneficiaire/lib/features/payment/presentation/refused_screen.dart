@@ -80,6 +80,13 @@ class RefusedScreen extends ConsumerWidget {
         l10n.refusedTryAgain,
         retry,
       ),
+      RefusalReason.declined => (
+        l10n.refusedDeclinedTitle,
+        l10n.refusedDeclinedMessage,
+        l10n.refusedNothingDebited,
+        l10n.refusedTryAgain,
+        retry,
+      ),
       RefusalReason.familyLimit => (
         l10n.refusedFamilyTitle,
         l10n.refusedFamilyMessage(money(r.missing ?? 0)),

@@ -23,27 +23,41 @@ class _BalanceScreenState extends ConsumerState<BalanceScreen> {
   String? _idempotencyKey;
   bool _busy = false;
 
-  Future<void> _request() async {
+  /// Type de crédit du virement (un virement porte sur un seul type).
+  CreditType? _type;
+
+  Future<void> _request(PayoutQuote quote) async {
     // Même clé si la personne réessaie : pas de double virement.
     _idempotencyKey ??= newIdempotencyKey();
     setState(() => _busy = true);
     try {
       await ref
           .read(payoutRepositoryProvider)
-          .request(idempotencyKey: _idempotencyKey!);
+          .request(quote: quote, idempotencyKey: _idempotencyKey!);
+      _idempotencyKey = null;
       refreshMerchant(ref);
       if (mounted) context.go(ProRoutes.payouts);
+    } on ApiProblemFailure {
+      // Devis expiré ou refusé : un nouveau devis, et une nouvelle clé pour la nouvelle demande.
+      _idempotencyKey = null;
+      ref.invalidate(payoutQuoteProvider);
+      if (mounted) _snack(FpL10n.of(context).genericError);
+    } on AppFailure {
+      if (mounted) _snack(FpL10n.of(context).genericError);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
+
+  void _snack(String text) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
 
   @override
   Widget build(BuildContext context) {
     final l10n = FpL10n.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     final session = ref.watch(authControllerProvider).session;
-    final q = ref.watch(payoutQuoteProvider).value;
+    final q = ref.watch(payoutQuoteProvider(_type)).value;
     final email =
         ref
             .watch(teamProvider)
@@ -68,7 +82,7 @@ class _BalanceScreenState extends ConsumerState<BalanceScreen> {
         FpRise(
           child: BalanceHero(
             label: l10n.toPayOut,
-            amount: q.gross,
+            amount: q.total,
             bottom: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -87,6 +101,23 @@ class _BalanceScreenState extends ConsumerState<BalanceScreen> {
             ),
           ),
         ),
+        if (q.byType.length > 1)
+          Wrap(
+            spacing: FpSpace.x8,
+            runSpacing: FpSpace.x8,
+            children: [
+              for (final t in q.byType.keys)
+                FpChip(
+                  label: t.label(l10n),
+                  dot: t.color,
+                  selected: (q.creditType ?? q.byType.keys.first) == t,
+                  onTap: () => setState(() {
+                    _type = t;
+                    _idempotencyKey = null;
+                  }),
+                ),
+            ],
+          ),
         FpCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -116,7 +147,8 @@ class _BalanceScreenState extends ConsumerState<BalanceScreen> {
               const SizedBox(height: FpSpace.x10),
               DetailLine(
                 label: l10n.withholding,
-                value: q.withholding == 0
+                // Seuil connu (démonstration) : rappelé quand la retenue est nulle.
+                value: q.withholding == 0 && q.withholdingThreshold > 0
                     ? l10n.withholdingNone(
                         Tnd.format(0, currency: null),
                         Tnd.format(
@@ -159,7 +191,7 @@ class _BalanceScreenState extends ConsumerState<BalanceScreen> {
           label: l10n.requestPayout,
           onPressed: _busy || q.net <= 0 || !(session?.isOwner ?? false)
               ? null
-              : _request,
+              : () => _request(q),
         ),
         Text(
           l10n.payoutInfo,

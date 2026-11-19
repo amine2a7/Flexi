@@ -6,6 +6,16 @@ import '../../wallet/domain/wallet.dart';
 /// Nombre maximal de comptes famille par salarié.
 const maxFamilyMembers = 5;
 
+/// Lien avec le salarié (contrat : SPOUSE, CHILD, PARENT).
+enum FamilyRelationship {
+  spouse('SPOUSE'),
+  child('CHILD'),
+  parent('PARENT');
+
+  const FamilyRelationship(this.apiName);
+  final String apiName;
+}
+
 /// Compte famille. Montants en millimes.
 class FamilyMember {
   const FamilyMember({
@@ -52,8 +62,13 @@ abstract interface class FamilyRepository {
 
   Future<FamilyMember> member(String id);
 
+  /// Nouveau mot de passe et changement du plafond ou de la date disponibles.
+  bool get canEditMember;
+
   Future<FamilyMemberCreated> create({
     required String firstName,
+    required String lastName,
+    required FamilyRelationship relationship,
     required String contact,
     required CreditType type,
     required int amount,

@@ -39,17 +39,19 @@ class AuthController extends Notifier<AuthState> {
     return known;
   }
 
-  Future<LoginResult> login(String email, String password) async {
-    final result = await _repo.login(email: email, password: password);
-    state = AuthState(
-      session: result.session,
-      unlocked: !result.mustChangePassword && !result.needsPin,
-    );
+  LoginResult _apply(LoginResult result) {
+    state = AuthState(session: result.session, unlocked: result.complete);
     return result;
   }
 
-  Future<void> changePassword(String newPassword) =>
-      _repo.changePassword(newPassword: newPassword);
+  Future<LoginResult> login(String email, String password) async =>
+      _apply(await _repo.login(email: email, password: password));
+
+  Future<LoginResult> verifyMfa(String code) async =>
+      _apply(await _repo.verifyMfa(code));
+
+  Future<LoginResult> changePassword(String newPassword) async =>
+      _apply(await _repo.changePassword(newPassword: newPassword));
 
   Future<void> createPin(String pin) async {
     await _repo.createPin(pin);
@@ -84,6 +86,13 @@ class AuthController extends Notifier<AuthState> {
     await _repo.logout();
     state = const AuthState();
   }
+
+  /// PIN bloqué pendant un paiement : l'écran de blocage affiche le délai restant.
+  void lockedOut(Duration lockedFor) =>
+      state = state.copyWith(lockedFor: lockedFor);
+
+  /// Session refusée par le serveur (401) : retour à la connexion, sans appel réseau.
+  void expire() => state = const AuthState();
 }
 
 final authControllerProvider = NotifierProvider<AuthController, AuthState>(

@@ -44,6 +44,15 @@ class _ConfirmPinScreenState extends ConsumerState<ConfirmPinScreen> {
           () => _error = FpL10n.of(context).pinWrong(e.remainingAttempts),
         );
       }
+    } on AccountLockedFailure catch (e) {
+      final auth = ref.read(authControllerProvider.notifier);
+      if (e.level >= 4) {
+        await auth.logout();
+        if (mounted) context.go(Routes.login);
+      } else {
+        auth.lockedOut(e.lockedFor);
+        if (mounted) context.go(Routes.locked);
+      }
     } on NetworkFailure {
       ref.read(connectivityProvider.notifier).setOnline(false);
       if (mounted) context.go(Routes.home);

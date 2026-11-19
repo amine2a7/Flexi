@@ -210,6 +210,27 @@ export class IdempotencyService {
     });
   }
 
+  /**
+   * Status of a key of the current user (M5: the app asks it after a network cut, before any new
+   * attempt): `null` if unknown (nothing was done, the same key can be sent again), `IN_PROGRESS`
+   * while a request holds it, or the recorded answer.
+   */
+  async lookup(
+    key: string,
+  ): Promise<null | { state: 'IN_PROGRESS' } | { state: 'DONE'; status: number; body: unknown }> {
+    const who = principal();
+    const scope = tenantOf(who) ?? '-';
+    const row = await this.db.system((tx) =>
+      tx.idempotencyKey.findUnique({
+        where: { scope_userId_key: { scope, userId: who.userId, key } },
+        select: { state: true, responseStatus: true, responseBody: true },
+      }),
+    );
+    if (row === null) return null;
+    if (row.state !== 'DONE') return { state: 'IN_PROGRESS' };
+    return { state: 'DONE', status: row.responseStatus ?? 200, body: row.responseBody };
+  }
+
   /** Technical failure before or during processing: nothing recorded, the key can be retried. */
   private async release(scope: string, userId: string, key: string, fence: string): Promise<void> {
     await this.db.system((tx) =>

@@ -843,6 +843,97 @@ class EmployeeApi {
     );
   }
 
+  /// Résultat d&#39;une confirmation par sa clé d&#39;idempotence (reprise après coupure réseau)
+  /// Demandé par l&#39;app après une coupure réseau, avant tout nouvel essai : un paiement n&#39;est jamais fait deux fois. &#x60;404&#x60; : rien n&#39;a été fait avec cette clé (renvoyer la même clé) ; &#x60;409 IDEMPOTENCY_REQUEST_IN_PROGRESS&#x60; : confirmation en cours ; sinon la réponse enregistrée (le reçu, ou le refus &#x60;422&#x60;). 
+  ///
+  /// Parameters:
+  /// * [key] 
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [EmployeeOperationDetail] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<EmployeeOperationDetail>> getCheckoutConfirmationByIdempotencyKey({ 
+    required String key,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/v1/employee/checkouts/by-idempotency-key/{key}'.replaceAll('{' r'key' '}', encodeQueryParameter(_serializers, key, const FullType(String)).toString());
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'apiKey',
+            'name': 'csrfToken',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
+          },{
+            'type': 'apiKey',
+            'name': 'cookieAuth',
+            'keyName': '__Host-fp_at',
+            'where': '',
+          },{
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearerAuth',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    EmployeeOperationDetail? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null ? null : _serializers.deserialize(
+        rawResponse,
+        specifiedType: const FullType(EmployeeOperationDetail),
+      ) as EmployeeOperationDetail;
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<EmployeeOperationDetail>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
   /// Détail d&#39;une opération (reçu)
   /// 
   ///
@@ -2060,6 +2151,89 @@ class EmployeeApi {
       statusMessage: _response.statusMessage,
       extra: _response.extra,
     );
+  }
+
+  /// Déverrouiller l&#39;app avec mon code PIN (M5)
+  /// Même compteur et mêmes blocages que la confirmation d&#39;un paiement : 3 PIN faux bloquent 15 min, puis 30, puis 60, puis jusqu&#39;à une reconnexion complète. Le PIN n&#39;est jamais conservé sur le téléphone. 
+  ///
+  /// Parameters:
+  /// * [pinConfirmation] 
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future]
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<void>> verifyPin({ 
+    required PinConfirmation pinConfirmation,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/v1/employee/pin/verify';
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'apiKey',
+            'name': 'csrfToken',
+            'keyName': 'X-CSRF-Token',
+            'where': 'header',
+          },{
+            'type': 'apiKey',
+            'name': 'cookieAuth',
+            'keyName': '__Host-fp_at',
+            'where': '',
+          },{
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'bearerAuth',
+          },
+        ],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(PinConfirmation);
+      _bodyData = _serializers.serialize(pinConfirmation, specifiedType: _type);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    return _response;
   }
 
 }

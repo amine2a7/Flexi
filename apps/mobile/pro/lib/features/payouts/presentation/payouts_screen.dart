@@ -18,9 +18,19 @@ class PayoutsScreen extends ConsumerWidget {
     final locale = Localizations.localeOf(context).toLanguageTag();
     final payouts = ref.watch(payoutsProvider).value ?? const <Payout>[];
     final current = payouts
-        .where((p) => p.status != PayoutStatus.paid)
+        .where(
+          (p) =>
+              p.status == PayoutStatus.requested ||
+              p.status == PayoutStatus.accepted,
+        )
         .firstOrNull;
-    final paid = payouts.where((p) => p.status == PayoutStatus.paid).toList();
+    final paid = payouts
+        .where(
+          (p) =>
+              p.status == PayoutStatus.paid ||
+              p.status == PayoutStatus.rejected,
+        )
+        .toList();
     String date(DateTime d) => DateFormat('d MMM', locale).format(d);
     String dateTime(DateTime d) =>
         '${date(d)} ${DateFormat.Hm(locale).format(d)}';
@@ -100,17 +110,29 @@ class PayoutsScreen extends ConsumerWidget {
         ListGroup(
           children: [
             for (final p in paid)
-              ListRow(
-                leading: const IconTile(
-                  tint: FpColors.greenTint,
-                  color: FpColors.greenDark,
-                  icon: FpIcons.check,
+              if (p.status == PayoutStatus.rejected)
+                ListRow(
+                  leading: const IconTile(
+                    tint: FpColors.dangerTint,
+                    color: FpColors.danger,
+                    icon: FpIcons.close,
+                  ),
+                  title: l10n.payoutRejected(p.reference),
+                  subtitle: date(p.requestedAt),
+                  trailing: ListRow.amount(Tnd.format(p.net, currency: null)),
+                )
+              else
+                ListRow(
+                  leading: const IconTile(
+                    tint: FpColors.greenTint,
+                    color: FpColors.greenDark,
+                    icon: FpIcons.check,
+                  ),
+                  title: l10n.payoutPaid(p.reference),
+                  subtitle:
+                      '${p.bankReference} · ${date(p.paidAt ?? p.requestedAt)}',
+                  trailing: ListRow.amount(Tnd.format(p.net, currency: null)),
                 ),
-                title: l10n.payoutPaid(p.reference),
-                subtitle:
-                    '${p.bankReference} · ${date(p.paidAt ?? p.requestedAt)}',
-                trailing: ListRow.amount(Tnd.format(p.net, currency: null)),
-              ),
           ],
         ),
       ],

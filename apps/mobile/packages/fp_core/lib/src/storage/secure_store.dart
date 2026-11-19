@@ -4,8 +4,20 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// Clés autorisées dans le stockage sécurisé.
 ///
 /// Uniquement des jetons et des préférences non sensibles :
-/// **jamais de PIN ni de mot de passe** sur le téléphone.
-enum SecureKey { accessToken, refreshToken, deviceToken, onboardingDone }
+/// **jamais de PIN ni de mot de passe** sur le téléphone. Le jeton d'accès de l'API reste en
+/// mémoire ; seul le jeton de renouvellement est gardé ici.
+enum SecureKey {
+  accessToken,
+  refreshToken,
+  deviceToken,
+  onboardingDone,
+
+  /// Identifiant de l'appareil, lié à la session par le serveur (aléatoire, sans donnée perso).
+  deviceId,
+
+  /// Prénom, rôle et organisation de la session (« Bon retour, Yasmine »), sans secret.
+  sessionProfile,
+}
 
 /// Stockage chiffré (Keychain iOS, Keystore Android).
 abstract interface class SecureStore {
@@ -14,6 +26,13 @@ abstract interface class SecureStore {
   Future<void> delete(SecureKey key);
   Future<void> clearSession();
 }
+
+const _sessionKeys = [
+  SecureKey.accessToken,
+  SecureKey.refreshToken,
+  SecureKey.deviceToken,
+  SecureKey.sessionProfile,
+];
 
 class FlutterSecureStore implements SecureStore {
   FlutterSecureStore([FlutterSecureStorage? storage])
@@ -39,9 +58,9 @@ class FlutterSecureStore implements SecureStore {
 
   @override
   Future<void> clearSession() async {
-    await delete(SecureKey.accessToken);
-    await delete(SecureKey.refreshToken);
-    await delete(SecureKey.deviceToken);
+    for (final key in _sessionKeys) {
+      await delete(key);
+    }
   }
 }
 
@@ -63,10 +82,7 @@ class MemorySecureStore implements SecureStore {
 
   @override
   Future<void> clearSession() async {
-    _values
-      ..remove(SecureKey.accessToken)
-      ..remove(SecureKey.refreshToken)
-      ..remove(SecureKey.deviceToken);
+    _sessionKeys.forEach(_values.remove);
   }
 }
 

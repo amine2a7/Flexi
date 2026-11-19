@@ -123,28 +123,30 @@ class FamilyMemberScreen extends ConsumerWidget {
               chevron: true,
               onTap: reclaim,
             ),
-            ListRow(
-              leading: const IconTile(
-                tint: FpColors.clothingTint,
-                color: FpColors.clothing,
-                icon: FpIcons.edit,
+            if (repo.canEditMember)
+              ListRow(
+                leading: const IconTile(
+                  tint: FpColors.clothingTint,
+                  color: FpColors.clothing,
+                  icon: FpIcons.edit,
+                ),
+                title: l10n.editCapOrDate,
+                subtitle: l10n.capPerDay(cap, dates.shortDate(m.endDate)),
+                chevron: true,
+                onTap: () => context.push(Routes.familyAdd),
               ),
-              title: l10n.editCapOrDate,
-              subtitle: l10n.capPerDay(cap, dates.shortDate(m.endDate)),
-              chevron: true,
-              onTap: () => context.push(Routes.familyAdd),
-            ),
-            ListRow(
-              leading: const IconTile(
-                tint: FpColors.giftsTint,
-                color: FpColors.gifts,
-                icon: FpIcons.key,
+            if (repo.canEditMember)
+              ListRow(
+                leading: const IconTile(
+                  tint: FpColors.giftsTint,
+                  color: FpColors.gifts,
+                  icon: FpIcons.key,
+                ),
+                title: l10n.newPasswordAction,
+                subtitle: l10n.shownOnce,
+                chevron: true,
+                onTap: newPassword,
               ),
-              title: l10n.newPasswordAction,
-              subtitle: l10n.shownOnce,
-              chevron: true,
-              onTap: newPassword,
-            ),
             ListRow(
               leading: const IconTile(
                 tint: FpColors.dangerTint,

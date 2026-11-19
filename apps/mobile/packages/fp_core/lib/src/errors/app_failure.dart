@@ -48,9 +48,12 @@ enum RefusalReason {
   /// Aucune demande en attente à cette caisse (ou code inconnu).
   noPendingCheckout,
 
-  /// Plafond du jour fixé par le titulaire d'un compte famille.
+  /// Plafond du jour atteint (celui du type, ou celui fixé par le titulaire d'un compte famille).
   familyLimit,
   codeExpired,
+
+  /// Paiement refusé sans motif détaillé (compte suspendu, date de fin famille dépassée…).
+  declined,
 }
 
 /// Paiement refusé ; aucun montant n'a été débité.
@@ -71,8 +74,25 @@ final class UnknownFailure extends AppFailure {
   const UnknownFailure();
 }
 
+/// Erreur RFC 9457 de l'API (`application/problem+json`) : code machine stable et détails
+/// typés. Jamais affichée telle quelle : les Repository la traduisent en erreur d'écran.
+final class ApiProblemFailure extends AppFailure {
+  const ApiProblemFailure({
+    required this.status,
+    required this.code,
+    this.details = const {},
+  });
+  final int status;
+  final String code;
+  final Map<String, Object?> details;
+
+  @override
+  String toString() => 'ApiProblemFailure($status $code)';
+}
+
 /// Traduit une erreur Dio en [AppFailure] sans exposer le corps de la réponse.
 AppFailure mapDioException(DioException e) {
+  if (e.error is AppFailure) return e.error! as AppFailure;
   switch (e.type) {
     case DioExceptionType.connectionError:
     case DioExceptionType.connectionTimeout:
@@ -82,6 +102,15 @@ AppFailure mapDioException(DioException e) {
     case DioExceptionType.badResponse:
       final status = e.response?.statusCode ?? 0;
       if (status == 401) return const UnauthorizedFailure();
+      final data = e.response?.data;
+      if (data is Map && data['code'] is String) {
+        final details = data['details'];
+        return ApiProblemFailure(
+          status: status,
+          code: data['code'] as String,
+          details: details is Map ? details.cast<String, Object?>() : const {},
+        );
+      }
       return const UnknownFailure();
     default:
       return const UnknownFailure();

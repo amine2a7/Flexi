@@ -56,7 +56,11 @@
       "email": "E-mail du responsable",
       "city": "Ville",
       "required": "Champ obligatoire.",
-      "invalidFormat": "Format invalide."
+      "invalidFormat": "Format invalide.",
+      "nationalId": "CIN du gérant",
+      "nationalIdHint": "8 chiffres. Facultatif.",
+      "taxId": "Matricule fiscal",
+      "taxIdHint": "Exemple : 1234567A ou 1234567A/B/M/000. Facultatif."
     },
     "submit": "Créer le commerçant",
     "createdToast": "{name} a été créé (en attente KYC). Invitation envoyée au responsable.",
@@ -91,7 +95,11 @@
       "email": "E-mail du responsable",
       "city": "Ville",
       "required": "Champ obligatoire.",
-      "invalidFormat": "Format invalide."
+      "invalidFormat": "Format invalide.",
+      "nationalId": "CIN du gérant",
+      "nationalIdHint": "8 chiffres. Facultatif.",
+      "taxId": "Matricule fiscal",
+      "taxIdHint": "Exemple : 1234567A ou 1234567A/B/M/000. Facultatif."
     },
     "submit": "Créer l'entreprise",
     "createdToast": "{name} a été créée (en attente KYC). Invitation envoyée au responsable.",
@@ -350,7 +358,14 @@
     "askCorrection": "Demander une correction",
     "correctionTitle": "Demander une correction : {type}",
     "correctionReason": "Motif (visible par le client)",
-    "correctionToast": "Correction demandée : le client va redéposer la pièce."
+    "correctionToast": "Correction demandée : le client va redéposer la pièce.",
+    "identifiersTitle": "Identifiants du client",
+    "nationalId": "CIN du gérant",
+    "taxId": "Matricule fiscal",
+    "iban": "RIB",
+    "maskedNote": "Seuls les 4 derniers chiffres sont affichés. Le service Opérations voit les numéros complets.",
+    "clearNote": "Numéros complets, visibles du seul service Opérations : comparez-les aux pièces.",
+    "none": "Non renseigné"
   },
   "payouts": {
     "open": "Ouvrir",
@@ -657,11 +672,15 @@
       "email": "E-mail",
       "iban": "RIB",
       "commissionGrid": "Grille de commission",
-      "legalForm": "Forme juridique"
+      "legalForm": "Forme juridique",
+      "nationalId": "CIN du gérant",
+      "taxId": "Matricule fiscal"
     },
     "changeLegalForm": "Changer",
     "legalFormNext": "Un changement passe en double validation et ne s’applique qu’aux prochaines opérations.",
-    "legalFormTitle": "Changer la forme juridique"
+    "legalFormTitle": "Changer la forme juridique",
+    "identifierHint": "Actuel : {masked}. Laissez vide pour le garder.",
+    "identifierNone": "Non renseigné"
   },
   "payment": {
     "record": "Enregistrer le paiement",

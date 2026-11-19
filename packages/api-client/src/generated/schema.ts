@@ -638,6 +638,28 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/employee/pin/verify': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Déverrouiller l'app avec mon code PIN (M5)
+     * @description Même compteur et mêmes blocages que la confirmation d'un paiement : 3 PIN faux bloquent
+     *     15 min, puis 30, puis 60, puis jusqu'à une reconnexion complète. Le PIN n'est jamais
+     *     conservé sur le téléphone.
+     */
+    post: operations['verifyPin'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/v1/public/terms': {
     parameters: {
       query?: never;
@@ -3260,6 +3282,29 @@ export interface paths {
     };
     /** Demande en attente du code court affiché en caisse */
     get: operations['getCheckoutByCode'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/employee/checkouts/by-idempotency-key/{key}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Résultat d'une confirmation par sa clé d'idempotence (reprise après coupure réseau)
+     * @description Demandé par l'app après une coupure réseau, avant tout nouvel essai : un paiement n'est
+     *     jamais fait deux fois. `404` : rien n'a été fait avec cette clé (renvoyer la même clé) ;
+     *     `409 IDEMPOTENCY_REQUEST_IN_PROGRESS` : confirmation en cours ; sinon la réponse
+     *     enregistrée (le reçu, ou le refus `422`).
+     */
+    get: operations['getCheckoutConfirmationByIdempotencyKey'];
     put?: never;
     post?: never;
     delete?: never;
@@ -7686,6 +7731,47 @@ export interface operations {
        *     3 PIN faux bloquent 15 min, puis 30, puis 60, puis jusqu'à une reconnexion complète
        *     (mot de passe + MFA). Pendant un blocage, `details.retryAfterSeconds` donne le délai
        *     restant ; après le 4e blocage, `details.reauthenticationRequired = true`.
+       */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/problem+json':
+            components['schemas']['PinRefusedProblem'] | components['schemas']['Problem'];
+        };
+      };
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  verifyPin: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PinConfirmation'];
+      };
+    };
+    responses: {
+      /** @description PIN correct, sans contenu. */
+      204: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      /**
+       * @description `PIN_INVALID` : PIN refusé, qu'il soit faux ou bloqué (même réponse, securite S01).
+       *     Pendant un blocage, `details.retryAfterSeconds` donne le délai restant ; après le 4e
+       *     blocage, `details.reauthenticationRequired = true`.
        */
       403: {
         headers: {
@@ -12825,6 +12911,37 @@ export interface operations {
       403: components['responses']['Forbidden'];
       422: components['responses']['UnprocessableFinancial'];
       429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getCheckoutConfirmationByIdempotencyKey: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Paiement effectué avec cette clé ; reçu. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EmployeeOperationDetail'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      422: components['responses']['UnprocessableFinancial'];
       500: components['responses']['InternalError'];
     };
   };

@@ -1401,4 +1401,73 @@ class FpL10nAr extends FpL10n {
 
   @override
   String get registerStickerPdf => 'تنزيل الملصق (PDF)';
+
+  @override
+  String get mfaCodeTitle => 'رمز التحقق';
+
+  @override
+  String get mfaCodeHint => 'أدخل الرمز المكوّن من 6 أرقام من تطبيق المصادقة.';
+
+  @override
+  String get mfaCodeInvalid => 'رمز خاطئ أو منتهي الصلاحية. أدخل الرمز الجديد.';
+
+  @override
+  String get mfaCodePlaceholder => '000000';
+
+  @override
+  String get mfaCodeAction => 'تأكيد';
+
+  @override
+  String get cancelAction => 'إلغاء';
+
+  @override
+  String get mfaEnrollOnWeb =>
+      'فعّل أولاً المصادقة الثنائية من فضاء FlexiPay على الويب، ثم أعد تسجيل الدخول هنا.';
+
+  @override
+  String get passwordRefused => 'كلمة المرور هذه غير مقبولة. اختر كلمة أخرى.';
+
+  @override
+  String get pinWeak => 'هذا الرمز بسيط جدًا (0000، 1234…). اختر رمزًا آخر.';
+
+  @override
+  String get lastNameLabel => 'اللقب';
+
+  @override
+  String get relationshipLabel => 'صلة القرابة';
+
+  @override
+  String get relationshipSpouse => 'الزوج أو الزوجة';
+
+  @override
+  String get relationshipChild => 'الابن أو الابنة';
+
+  @override
+  String get relationshipParent => 'الأب أو الأم';
+
+  @override
+  String get memberPhoneLabel => 'الهاتف (+216…)';
+
+  @override
+  String get creditsExpired => 'رصيد منتهي الصلاحية';
+
+  @override
+  String get notifCreditExpiring => 'رصيد سينتهي قريبًا';
+
+  @override
+  String notifCreditExpiringBody(String amount, String type) {
+    return '$amount من رصيد $type ستنتهي صلاحيتها قريبًا.';
+  }
+
+  @override
+  String get refusedDeclinedTitle => 'تم رفض الدفع';
+
+  @override
+  String get refusedDeclinedMessage =>
+      'هذا الدفع غير ممكن بحسابك في الوقت الحالي.';
+
+  @override
+  String payoutRejected(String ref) {
+    return '$ref · مرفوض';
+  }
 }

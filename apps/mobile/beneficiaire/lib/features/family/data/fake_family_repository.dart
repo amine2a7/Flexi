@@ -18,8 +18,13 @@ class FakeFamilyRepository implements FamilyRepository {
       _backend.family.firstWhere((m) => m.id == id);
 
   @override
+  bool get canEditMember => true;
+
+  @override
   Future<FamilyMemberCreated> create({
     required String firstName,
+    required String lastName,
+    required FamilyRelationship relationship,
     required String contact,
     required CreditType type,
     required int amount,

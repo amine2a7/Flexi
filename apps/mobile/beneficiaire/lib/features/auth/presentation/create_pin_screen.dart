@@ -39,6 +39,18 @@ class _CreatePinScreenState extends ConsumerState<CreatePinScreen> {
       } else {
         context.go(Routes.home);
       }
+    } on AppFailure catch (e) {
+      if (!mounted) return;
+      final l10n = FpL10n.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e is ValidationFailure && e.messageKey == 'pinWeak'
+                ? l10n.pinWeak
+                : l10n.genericError,
+          ),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }

@@ -30,6 +30,29 @@ class Session {
   final String? organization;
 
   bool get isOwner => role == UserRole.merchantOwner;
+
+  Map<String, String> toJson() => {
+    'userId': userId,
+    'firstName': firstName,
+    'role': role.name,
+    'organization': ?organization,
+  };
+
+  static Session? fromJson(Map<String, Object?> json) {
+    final role = UserRole.values
+        .where((r) => r.name == json['role'])
+        .firstOrNull;
+    final id = json['userId'];
+    final name = json['firstName'];
+    if (role == null || id is! String || name is! String) return null;
+    final org = json['organization'];
+    return Session(
+      userId: id,
+      firstName: name,
+      role: role,
+      organization: org is String ? org : null,
+    );
+  }
 }
 
 /// Résultat d'une connexion par e-mail et mot de passe.
@@ -38,13 +61,29 @@ class LoginResult {
     required this.session,
     required this.mustChangePassword,
     required this.needsPin,
+    this.needsMfaCode = false,
+    this.needsMfaEnrollment = false,
   });
 
-  final Session session;
+  /// Identité ; `null` tant qu'une étape reste à franchir (code MFA, mot de passe temporaire).
+  final Session? session;
 
   /// Mot de passe temporaire (RH, propriétaire) : il faut le changer.
   final bool mustChangePassword;
 
   /// Aucun PIN encore créé côté serveur.
   final bool needsPin;
+
+  /// Code de l'application d'authentification attendu (comptes commerçant).
+  final bool needsMfaCode;
+
+  /// Double authentification à activer d'abord depuis l'espace web.
+  final bool needsMfaEnrollment;
+
+  bool get complete =>
+      session != null &&
+      !mustChangePassword &&
+      !needsPin &&
+      !needsMfaCode &&
+      !needsMfaEnrollment;
 }

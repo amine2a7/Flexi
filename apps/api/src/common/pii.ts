@@ -44,7 +44,7 @@ export function normaliseTaxId(value: string): string {
 
 /** Last 4 characters only (CIN, RIB, tax id): never the whole value out of the API. */
 export function maskTail(clear: string): string {
-  return `•••• ${clear.slice(-4)}`;
+  return `••••${clear.slice(-4)}`;
 }
 
 export const KEYRING = Symbol('KEYRING');

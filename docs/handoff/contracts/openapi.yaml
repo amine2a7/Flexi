@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: FlexiPay API
-  version: 0.15.0
+  version: 0.16.0
   summary: Conventions transverses, authentification web et profil (WB2, espace Commun).
   description: |
     # Contrat d'API FlexiPay (version 0.2.2)
@@ -1648,6 +1648,46 @@ paths:
             3 PIN faux bloquent 15 min, puis 30, puis 60, puis jusqu'à une reconnexion complète
             (mot de passe + MFA). Pendant un blocage, `details.retryAfterSeconds` donne le délai
             restant ; après le 4e blocage, `details.reauthenticationRequired = true`.
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/PinRefusedProblem'
+                  - $ref: '#/components/schemas/Problem'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/pin/verify:
+    post:
+      tags: [employee]
+      operationId: verifyPin
+      summary: Déverrouiller l'app avec mon code PIN (M5)
+      description: |
+        Même compteur et mêmes blocages que la confirmation d'un paiement : 3 PIN faux bloquent
+        15 min, puis 30, puis 60, puis jusqu'à une reconnexion complète. Le PIN n'est jamais
+        conservé sur le téléphone.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinConfirmation'
+      responses:
+        '204':
+          description: PIN correct, sans contenu.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            `PIN_INVALID` : PIN refusé, qu'il soit faux ou bloqué (même réponse, securite S01).
+            Pendant un blocage, `details.retryAfterSeconds` donne le délai restant ; après le 4e
+            blocage, `details.reauthenticationRequired = true`.
           content:
             application/problem+json:
               schema:
@@ -7526,6 +7566,48 @@ paths:
           $ref: '#/components/responses/UnprocessableFinancial'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /v1/employee/checkouts/by-idempotency-key/{key}:
+    get:
+      tags: [employee]
+      operationId: getCheckoutConfirmationByIdempotencyKey
+      summary: Résultat d'une confirmation par sa clé d'idempotence (reprise après coupure réseau)
+      description: |
+        Demandé par l'app après une coupure réseau, avant tout nouvel essai : un paiement n'est
+        jamais fait deux fois. `404` : rien n'a été fait avec cette clé (renvoyer la même clé) ;
+        `409 IDEMPOTENCY_REQUEST_IN_PROGRESS` : confirmation en cours ; sinon la réponse
+        enregistrée (le reçu, ou le refus `422`).
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      responses:
+        '200':
+          description: Paiement effectué avec cette clé ; reçu.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control-No-Store'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeOperationDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableFinancial'
         '500':
           $ref: '#/components/responses/InternalError'
   /v1/employee/checkouts/{checkoutId}/confirm:

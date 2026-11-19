@@ -16,7 +16,7 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { Can, Roles } from '../common/decorators.js';
 import { IdempotencyService } from '../common/idempotency.service.js';
-import { ApiProblem, validationFailed } from '../common/problem.js';
+import { ApiProblem, problems, validationFailed } from '../common/problem.js';
 import { pathId, sendFile, sendOutcome } from '../common/responses.js';
 import { creditType, parse, positiveMillimes } from '../common/validation.js';
 import { CheckoutEvents } from './checkout-events.service.js';
@@ -227,6 +227,37 @@ export class EmployeeCheckoutsController {
       }
       throw error;
     }
+  }
+
+  /**
+   * Result of a confirmation by its Idempotency-Key (M5): after a network cut the app asks it
+   * before trying again, so a payment is never made twice. 404: nothing was done with this key
+   * (send the same key again); 409 IDEMPOTENCY_REQUEST_IN_PROGRESS: still running; otherwise the
+   * recorded answer (the receipt, or the refusal).
+   */
+  @Can('payments.pay')
+  @Get('checkouts/by-idempotency-key/:key')
+  async confirmationByKey(@Param('key') key: string, @Res({ passthrough: true }) res: Response) {
+    const found = await this.idempotency.lookup(pathId('key', key).toLowerCase());
+    if (found === null) throw problems.notFound();
+    if (found.state === 'IN_PROGRESS') {
+      throw new ApiProblem(
+        409,
+        'IDEMPOTENCY_REQUEST_IN_PROGRESS',
+        { retryAfterSeconds: 1 },
+        {
+          'Retry-After': '1',
+        },
+      );
+    }
+    const body = found.body as Record<string, unknown> | null;
+    // Only the answers of a till confirmation: a receipt of a payment, or a business refusal.
+    const receipt = found.status === 200 && body?.type === 'PAYMENT';
+    const refusal = found.status === 422 && typeof body?.code === 'string';
+    if (!receipt && !refusal) throw problems.notFound();
+    res.status(found.status);
+    if (refusal) res.setHeader('Content-Type', 'application/problem+json; charset=utf-8');
+    return body;
   }
 
   @Can('wallet.read')

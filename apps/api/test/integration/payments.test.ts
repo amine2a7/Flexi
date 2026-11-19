@@ -332,7 +332,7 @@ describe('payout and settlement', () => {
       { code: 'STAMP_DUTY', direction: 'C', amount: 1_000 },
       { code: 'VAT_COLLECTED', direction: 'C', amount: 171 },
     ]);
-    expect(String(requested.body.maskedIban)).toMatch(/^•••• \d{4}$/);
+    expect(String(requested.body.maskedIban)).toMatch(/^••••\d{4}$/);
     // Commission invoice of the payout in PDF (task 10): commission, VAT, stamp duty, net.
     const invoice = await fetch(
       `${base}/v1/merchant/payouts/${String(requested.body.id)}/invoice`,
@@ -368,7 +368,7 @@ describe('payout and settlement', () => {
     });
     expect(approved.body).toMatchObject({ status: 'CHECKED', merchantName: merchant.name });
     // SEC-1: the last 4 digits only, even for the administrator who checks the payout.
-    expect(String(approved.body.iban)).toMatch(/^•••• \d{4}$/);
+    expect(String(approved.body.iban)).toMatch(/^••••\d{4}$/);
 
     // The batch date comes: the settlement job executes it.
     const owner = await ownerClient();

@@ -50,6 +50,10 @@ class _QuickPinScreenState extends ConsumerState<QuickPinScreen> {
     switch (failure) {
       case null:
         _enterApp();
+      // Après le 4e blocage, seule une connexion complète débloque le PIN.
+      case AccountLockedFailure(level: >= 4):
+        await ref.read(authControllerProvider.notifier).logout();
+        if (mounted) context.go(Routes.login);
       case AccountLockedFailure():
         context.go(Routes.locked);
       case PinRefusedFailure(:final remainingAttempts):

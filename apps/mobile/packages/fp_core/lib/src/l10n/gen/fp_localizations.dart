@@ -2426,6 +2426,132 @@ abstract class FpL10n {
   /// In fr, this message translates to:
   /// **'Télécharger l\'autocollant (PDF)'**
   String get registerStickerPdf;
+
+  /// No description provided for @mfaCodeTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Code de vérification'**
+  String get mfaCodeTitle;
+
+  /// No description provided for @mfaCodeHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Saisissez le code à 6 chiffres de votre application d\'authentification.'**
+  String get mfaCodeHint;
+
+  /// No description provided for @mfaCodeInvalid.
+  ///
+  /// In fr, this message translates to:
+  /// **'Code incorrect ou expiré. Saisissez le nouveau code.'**
+  String get mfaCodeInvalid;
+
+  /// No description provided for @mfaCodePlaceholder.
+  ///
+  /// In fr, this message translates to:
+  /// **'000000'**
+  String get mfaCodePlaceholder;
+
+  /// No description provided for @mfaCodeAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Valider'**
+  String get mfaCodeAction;
+
+  /// No description provided for @cancelAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Annuler'**
+  String get cancelAction;
+
+  /// No description provided for @mfaEnrollOnWeb.
+  ///
+  /// In fr, this message translates to:
+  /// **'Activez d\'abord la double authentification depuis l\'espace web FlexiPay, puis reconnectez-vous ici.'**
+  String get mfaEnrollOnWeb;
+
+  /// No description provided for @passwordRefused.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce mot de passe n\'est pas accepté. Choisissez-en un autre.'**
+  String get passwordRefused;
+
+  /// No description provided for @pinWeak.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce PIN est trop simple (0000, 1234…). Choisissez-en un autre.'**
+  String get pinWeak;
+
+  /// No description provided for @lastNameLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom'**
+  String get lastNameLabel;
+
+  /// No description provided for @relationshipLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lien de parenté'**
+  String get relationshipLabel;
+
+  /// No description provided for @relationshipSpouse.
+  ///
+  /// In fr, this message translates to:
+  /// **'Conjoint'**
+  String get relationshipSpouse;
+
+  /// No description provided for @relationshipChild.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enfant'**
+  String get relationshipChild;
+
+  /// No description provided for @relationshipParent.
+  ///
+  /// In fr, this message translates to:
+  /// **'Parent'**
+  String get relationshipParent;
+
+  /// No description provided for @memberPhoneLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Téléphone (+216…)'**
+  String get memberPhoneLabel;
+
+  /// No description provided for @creditsExpired.
+  ///
+  /// In fr, this message translates to:
+  /// **'Crédits expirés'**
+  String get creditsExpired;
+
+  /// No description provided for @notifCreditExpiring.
+  ///
+  /// In fr, this message translates to:
+  /// **'Crédits bientôt expirés'**
+  String get notifCreditExpiring;
+
+  /// No description provided for @notifCreditExpiringBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'{amount} de votre crédit {type} expirent bientôt.'**
+  String notifCreditExpiringBody(String amount, String type);
+
+  /// No description provided for @refusedDeclinedTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Paiement refusé'**
+  String get refusedDeclinedTitle;
+
+  /// No description provided for @refusedDeclinedMessage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce paiement n\'est pas possible avec votre compte pour le moment.'**
+  String get refusedDeclinedMessage;
+
+  /// No description provided for @payoutRejected.
+  ///
+  /// In fr, this message translates to:
+  /// **'{ref} · Refusé'**
+  String payoutRejected(String ref);
 }
 
 class _FpL10nDelegate extends LocalizationsDelegate<FpL10n> {

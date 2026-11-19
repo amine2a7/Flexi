@@ -89,7 +89,7 @@ describe('personal data at rest (SEC-1)', () => {
     }
     const superAdmin = await signedIn(base, await createUser(db, env, 'ADMIN', {}, 'Sarra F.'));
     const record = await superAdmin.call('GET', `/v1/admin/merchants/${id}/record`);
-    expect(record.body.maskedNationalId).toBe(`•••• ${number.slice(-4)}`);
+    expect(record.body.maskedNationalId).toBe(`••••${number.slice(-4)}`);
     expect(JSON.stringify(record.body)).not.toContain(number);
   });
 
@@ -139,7 +139,7 @@ describe('personal data at rest (SEC-1)', () => {
     expect(seen.body.identifiers).toMatchObject({ nationalId: number });
     const masked = await finance.call('GET', `/v1/admin/kyc-files/${file.id}`);
     expect(masked.body.identifiers).toBeUndefined();
-    expect(masked.body.maskedIdentifiers).toMatchObject({ nationalId: `•••• ${number.slice(-4)}` });
+    expect(masked.body.maskedIdentifiers).toMatchObject({ nationalId: `••••${number.slice(-4)}` });
     expect(JSON.stringify(masked.body)).not.toContain(number);
   });
 

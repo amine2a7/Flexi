@@ -21,6 +21,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Timeline } from '@/components/ui/timeline';
 import { useToast } from '@/components/ui/toast';
 import { useCan } from '@/lib/session/session-context';
+import { NATIONAL_ID, TAX_ID } from './account-form';
 import { CredentialsDialog, type Credentials } from './credentials-dialog';
 import {
   CommissionGridEditor,
@@ -246,6 +247,15 @@ function RecordView({
               ...(record.phone === null
                 ? []
                 : [{ label: t('fields.phone'), value: <span dir="ltr">{record.phone}</span> }]),
+              // SEC-1: the last 4 digits only, never the full numbers on the record.
+              {
+                label: t('fields.nationalId'),
+                value: <span dir="ltr">{record.maskedNationalId ?? t('identifierNone')}</span>,
+              },
+              {
+                label: t('fields.taxId'),
+                value: <span dir="ltr">{record.maskedTaxId ?? t('identifierNone')}</span>,
+              },
               { label: t('created'), value: formatDateTime(record.createdAt, locale) },
             ]}
           />
@@ -378,8 +388,12 @@ function EditInfo({
     address: record.address ?? '',
     phone: record.phone ?? '',
     email: record.email,
+    // Never filled with the current number (masked): empty keeps it.
+    nationalId: '',
+    taxId: '',
     reason: '',
   });
+  const [invalid, setInvalid] = useState<{ nationalId?: boolean; taxId?: boolean }>({});
   const [error, setError] = useState<unknown>(undefined);
   const [saving, setSaving] = useState(false);
   const set = (field: keyof typeof draft) => (value: string) => {
@@ -388,6 +402,15 @@ function EditInfo({
 
   async function onSubmit(event: SyntheticEvent) {
     event.preventDefault();
+    const taxId = draft.taxId.trim().toUpperCase();
+    const wrong = {
+      ...(draft.nationalId !== '' && !NATIONAL_ID.test(draft.nationalId)
+        ? { nationalId: true }
+        : {}),
+      ...(taxId !== '' && !TAX_ID.test(taxId) ? { taxId: true } : {}),
+    };
+    setInvalid(wrong);
+    if (Object.keys(wrong).length > 0) return;
     setSaving(true);
     setError(undefined);
     try {
@@ -395,6 +418,8 @@ function EditInfo({
         name: draft.name,
         city: draft.city,
         email: draft.email.trim(),
+        ...(draft.nationalId === '' ? {} : { nationalId: draft.nationalId }),
+        ...(taxId === '' ? {} : { taxId }),
         ...(draft.phone === '' ? {} : { phone: draft.phone.replaceAll(' ', '') }),
         ...(draft.reason.trim() === '' ? {} : { reason: draft.reason.trim() }),
       };
@@ -491,6 +516,37 @@ function EditInfo({
             value={draft.phone}
             onChange={(event) => {
               set('phone')(event.target.value);
+            }}
+          />
+          <TextField
+            label={t('fields.nationalId')}
+            hint={t('identifierHint', {
+              masked: record.maskedNationalId ?? t('identifierNone'),
+            })}
+            {...(invalid.nationalId === true
+              ? { error: tRoot('admin.merchants.form.invalidFormat') }
+              : {})}
+            inputMode="numeric"
+            maxLength={8}
+            dir="ltr"
+            autoComplete="off"
+            value={draft.nationalId}
+            onChange={(event) => {
+              set('nationalId')(event.target.value.replace(/\D/g, ''));
+            }}
+          />
+          <TextField
+            label={t('fields.taxId')}
+            hint={t('identifierHint', { masked: record.maskedTaxId ?? t('identifierNone') })}
+            {...(invalid.taxId === true
+              ? { error: tRoot('admin.merchants.form.invalidFormat') }
+              : {})}
+            maxLength={20}
+            dir="ltr"
+            autoComplete="off"
+            value={draft.taxId}
+            onChange={(event) => {
+              set('taxId')(event.target.value);
             }}
           />
           <div className="sm:col-span-2">

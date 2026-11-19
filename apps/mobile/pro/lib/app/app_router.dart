@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../demo/pro_demo_panel.dart';
 import '../features/auth/presentation/pro_login_screen.dart';
+import '../features/auth/presentation/pro_password_screen.dart';
 import '../features/collect/domain/collect.dart';
 import '../features/collect/presentation/collect_screen.dart';
 import '../features/collect/presentation/result_screen.dart';
@@ -41,7 +42,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(path: ProRoutes.login, builder: (_, _) => const ProLoginScreen()),
+      GoRoute(
+        path: ProRoutes.login,
+        builder: (_, state) => ProLoginScreen(
+          notice: state.extra is ProLoginNotice
+              ? state.extra! as ProLoginNotice
+              : null,
+        ),
+      ),
+      GoRoute(
+        path: ProRoutes.newPassword,
+        builder: (_, _) => const ProPasswordScreen(),
+      ),
       GoRoute(
         path: ProRoutes.catalog,
         builder: (_, _) => FpCatalogPage(

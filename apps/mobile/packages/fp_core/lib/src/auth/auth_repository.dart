@@ -12,7 +12,11 @@ abstract interface class AuthRepository {
 
   Future<LoginResult> login({required String email, required String password});
 
-  Future<void> changePassword({required String newPassword});
+  /// Code à 6 chiffres de l'application d'authentification, après le mot de passe.
+  Future<LoginResult> verifyMfa(String code);
+
+  /// Remplace le mot de passe temporaire ; renvoie l'étape suivante.
+  Future<LoginResult> changePassword({required String newPassword});
 
   /// Envoie le PIN au serveur qui le hache ; rien n'est gardé localement.
   Future<void> createPin(String pin);
@@ -23,6 +27,7 @@ abstract interface class AuthRepository {
   /// Déverrouille avec le jeton d'appareil, après une biométrie réussie.
   Future<Session> unlockWithDevice();
 
+  /// Révoque la session côté serveur puis oublie les jetons.
   Future<void> logout();
 }
 

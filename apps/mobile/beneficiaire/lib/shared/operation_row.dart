@@ -85,6 +85,20 @@ class OperationRow extends StatelessWidget {
               ? () => context.push(Routes.notifications)
               : null,
         );
+      case OperationKind.expiry:
+        return ListRow(
+          leading: const IconTile(
+            tint: FpColors.track,
+            color: FpColors.muted,
+            icon: FpIcons.clock,
+          ),
+          title: l10n.creditsExpired,
+          subtitle: when(),
+          trailing: ListRow.amount(
+            Tnd.format(op.amount, currency: null, signed: true),
+            color: FpColors.muted,
+          ),
+        );
       case OperationKind.familyShare:
       case OperationKind.familyReclaim:
         return ListRow(

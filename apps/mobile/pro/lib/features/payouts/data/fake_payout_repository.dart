@@ -10,7 +10,7 @@ class FakePayoutRepository implements PayoutRepository {
   final _requests = <String, Payout>{};
 
   @override
-  Future<PayoutQuote> quote() async {
+  Future<PayoutQuote> quote({CreditType? type}) async {
     final byType = <CreditType, int>{};
     for (final c in _backend.collections.where((c) => c.approved)) {
       byType[c.type] = (byType[c.type] ?? 0) + c.amount;
@@ -19,11 +19,14 @@ class FakePayoutRepository implements PayoutRepository {
   }
 
   @override
-  Future<Payout> request({required String idempotencyKey}) async {
+  Future<Payout> request({
+    required PayoutQuote quote,
+    required String idempotencyKey,
+  }) async {
     // Même clé, même réponse : pas de double demande.
     final previous = _requests[idempotencyKey];
     if (previous != null) return previous;
-    final q = await quote();
+    final q = quote;
     final payout = Payout(
       reference: 'RV-0012',
       net: q.net,

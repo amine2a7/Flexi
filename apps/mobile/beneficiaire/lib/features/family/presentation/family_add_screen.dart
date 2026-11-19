@@ -20,6 +20,8 @@ class FamilyAddScreen extends ConsumerStatefulWidget {
 
 class _FamilyAddScreenState extends ConsumerState<FamilyAddScreen> {
   final _name = TextEditingController();
+  final _lastName = TextEditingController();
+  FamilyRelationship? _relationship;
   final _contact = TextEditingController();
   final _amount = TextEditingController();
   final _end = TextEditingController();
@@ -34,11 +36,21 @@ class _FamilyAddScreenState extends ConsumerState<FamilyAddScreen> {
   @override
   void dispose() {
     _name.dispose();
+    _lastName.dispose();
     _contact.dispose();
     _amount.dispose();
     _end.dispose();
     super.dispose();
   }
+
+  /// Numéro du membre au format international (+216 par défaut pour 8 chiffres).
+  static String _phone(String text) {
+    final digits = text.replaceAll(RegExp(r'[\s.-]'), '');
+    return RegExp(r'^\d{8}$').hasMatch(digits) ? '+216$digits' : digits;
+  }
+
+  static bool _validPhone(String text) =>
+      RegExp(r'^\+[1-9]\d{7,14}$').hasMatch(_phone(text));
 
   Future<void> _pickDate() async {
     final now = ref.read(clockProvider)();
@@ -55,7 +67,8 @@ class _FamilyAddScreenState extends ConsumerState<FamilyAddScreen> {
     final l10n = FpL10n.of(context);
     final amount = Tnd.parse(_amount.text);
     final type = _type;
-    if (amount == null || type == null) {
+    final relationship = _relationship;
+    if (amount == null || type == null || relationship == null) {
       setState(() => _error = l10n.genericError);
       return;
     }
@@ -68,7 +81,9 @@ class _FamilyAddScreenState extends ConsumerState<FamilyAddScreen> {
           .read(familyRepositoryProvider)
           .create(
             firstName: _name.text.trim(),
-            contact: _contact.text.trim(),
+            lastName: _lastName.text.trim(),
+            relationship: relationship,
+            contact: _phone(_contact.text),
             type: type,
             amount: amount,
             dailyCap: Tnd.dinars(_capDinars),
@@ -110,7 +125,9 @@ class _FamilyAddScreenState extends ConsumerState<FamilyAddScreen> {
     final amount = Tnd.parse(_amount.text);
     final valid =
         name.isNotEmpty &&
-        _contact.text.trim().isNotEmpty &&
+        _lastName.text.trim().isNotEmpty &&
+        _relationship != null &&
+        _validPhone(_contact.text) &&
         amount != null &&
         amount > 0 &&
         credit != null &&
@@ -128,11 +145,41 @@ class _FamilyAddScreenState extends ConsumerState<FamilyAddScreen> {
           onChanged: (_) => setState(() {}),
         ),
         FpTextField(
+          fieldKey: const Key('member-last-name'),
+          label: l10n.lastNameLabel,
+          controller: _lastName,
+          icon: FpIcons.user,
+          onChanged: (_) => setState(() {}),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(l10n.relationshipLabel, style: FpText.label),
+            const SizedBox(height: FpSpace.x8),
+            Wrap(
+              spacing: FpSpace.x8,
+              runSpacing: FpSpace.x8,
+              children: [
+                for (final r in FamilyRelationship.values)
+                  FpChip(
+                    label: switch (r) {
+                      FamilyRelationship.spouse => l10n.relationshipSpouse,
+                      FamilyRelationship.child => l10n.relationshipChild,
+                      FamilyRelationship.parent => l10n.relationshipParent,
+                    },
+                    selected: _relationship == r,
+                    onTap: () => setState(() => _relationship = r),
+                  ),
+              ],
+            ),
+          ],
+        ),
+        FpTextField(
           fieldKey: const Key('member-contact'),
-          label: l10n.phoneOrEmail,
+          label: l10n.memberPhoneLabel,
           controller: _contact,
           icon: FpIcons.mail,
-          keyboardType: TextInputType.emailAddress,
+          keyboardType: TextInputType.phone,
           onChanged: (_) => setState(() {}),
         ),
         Column(

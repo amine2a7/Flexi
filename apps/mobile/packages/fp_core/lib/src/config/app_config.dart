@@ -11,14 +11,15 @@ const bool kDemoBuild = bool.fromEnvironment('FP_DEMO');
 class AppConfig {
   const AppConfig({required this.apiBaseUrl, required this.demo});
 
-  /// `--dart-define=FP_API_BASE_URL=https://…`
+  /// Adresse de l'API, passée au build : `--dart-define=API_URL=…`
+  /// (émulateur Android : `http://10.0.2.2:<port>` ; téléphone : IP du PC ou tunnel HTTPS).
   final String apiBaseUrl;
 
-  /// Fonctions de démonstration visibles (préremplissage, réglages du catalogue…).
+  /// Fausses données et fonctions de démonstration (préremplissage, réglages du catalogue…).
   final bool demo;
 
   factory AppConfig.fromEnvironment() => const AppConfig(
-    apiBaseUrl: String.fromEnvironment('FP_API_BASE_URL'),
+    apiBaseUrl: String.fromEnvironment('API_URL'),
     demo: kDemoBuild,
   );
 }

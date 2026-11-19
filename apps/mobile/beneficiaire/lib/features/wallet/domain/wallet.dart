@@ -52,7 +52,15 @@ class Wallet {
 }
 
 /// Nature d'une opération dans l'historique.
-enum OperationKind { payment, creditReceived, familyShare, familyReclaim }
+enum OperationKind {
+  payment,
+  creditReceived,
+  familyShare,
+  familyReclaim,
+
+  /// Crédits arrivés à expiration (retirés du solde).
+  expiry,
+}
 
 /// Une ligne d'historique. [amount] est signé : négatif pour une dépense.
 class Operation {

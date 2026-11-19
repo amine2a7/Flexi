@@ -438,5 +438,43 @@
   "registerDisabled": "Désactivée",
   "myRegister": "Ma caisse",
   "catalogNextCustomer": "Prochain client",
-  "registerStickerPdf": "Télécharger l'autocollant (PDF)"
+  "registerStickerPdf": "Télécharger l'autocollant (PDF)",
+  "mfaCodeTitle": "Code de vérification",
+  "mfaCodeHint": "Saisissez le code à 6 chiffres de votre application d'authentification.",
+  "mfaCodeInvalid": "Code incorrect ou expiré. Saisissez le nouveau code.",
+  "mfaCodePlaceholder": "000000",
+  "mfaCodeAction": "Valider",
+  "cancelAction": "Annuler",
+  "mfaEnrollOnWeb": "Activez d'abord la double authentification depuis l'espace web FlexiPay, puis reconnectez-vous ici.",
+  "passwordRefused": "Ce mot de passe n'est pas accepté. Choisissez-en un autre.",
+  "pinWeak": "Ce PIN est trop simple (0000, 1234…). Choisissez-en un autre.",
+  "lastNameLabel": "Nom",
+  "relationshipLabel": "Lien de parenté",
+  "relationshipSpouse": "Conjoint",
+  "relationshipChild": "Enfant",
+  "relationshipParent": "Parent",
+  "memberPhoneLabel": "Téléphone (+216…)",
+  "creditsExpired": "Crédits expirés",
+  "notifCreditExpiring": "Crédits bientôt expirés",
+  "notifCreditExpiringBody": "{amount} de votre crédit {type} expirent bientôt.",
+  "@notifCreditExpiringBody": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "refusedDeclinedTitle": "Paiement refusé",
+  "refusedDeclinedMessage": "Ce paiement n'est pas possible avec votre compte pour le moment.",
+  "payoutRejected": "{ref} · Refusé",
+  "@payoutRejected": {
+    "placeholders": {
+      "ref": {
+        "type": "String"
+      }
+    }
+  }
 }

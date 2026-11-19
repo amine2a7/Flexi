@@ -1407,4 +1407,76 @@ class FpL10nEn extends FpL10n {
 
   @override
   String get registerStickerPdf => 'Download the sticker (PDF)';
+
+  @override
+  String get mfaCodeTitle => 'Verification code';
+
+  @override
+  String get mfaCodeHint =>
+      'Enter the 6-digit code from your authenticator app.';
+
+  @override
+  String get mfaCodeInvalid => 'Wrong or expired code. Enter the new code.';
+
+  @override
+  String get mfaCodePlaceholder => '000000';
+
+  @override
+  String get mfaCodeAction => 'Confirm';
+
+  @override
+  String get cancelAction => 'Cancel';
+
+  @override
+  String get mfaEnrollOnWeb =>
+      'First turn on two-step verification in the FlexiPay web space, then sign in here again.';
+
+  @override
+  String get passwordRefused =>
+      'This password is not accepted. Choose another one.';
+
+  @override
+  String get pinWeak =>
+      'This PIN is too simple (0000, 1234…). Choose another one.';
+
+  @override
+  String get lastNameLabel => 'Last name';
+
+  @override
+  String get relationshipLabel => 'Relationship';
+
+  @override
+  String get relationshipSpouse => 'Spouse';
+
+  @override
+  String get relationshipChild => 'Child';
+
+  @override
+  String get relationshipParent => 'Parent';
+
+  @override
+  String get memberPhoneLabel => 'Phone (+216…)';
+
+  @override
+  String get creditsExpired => 'Expired credits';
+
+  @override
+  String get notifCreditExpiring => 'Credits expiring soon';
+
+  @override
+  String notifCreditExpiringBody(String amount, String type) {
+    return '$amount of your $type credit expire soon.';
+  }
+
+  @override
+  String get refusedDeclinedTitle => 'Payment declined';
+
+  @override
+  String get refusedDeclinedMessage =>
+      'This payment is not possible with your account for now.';
+
+  @override
+  String payoutRejected(String ref) {
+    return '$ref · Rejected';
+  }
 }

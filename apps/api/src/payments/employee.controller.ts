@@ -129,6 +129,17 @@ export class EmployeeController {
     return this.payments.profile();
   }
 
+  /**
+   * Unlocks the app with the PIN (M5): same counter and locks as a payment (15, 30, 60 min, then
+   * a full sign-in), same single answer `403 PIN_INVALID`.
+   */
+  @Can('payments.pay')
+  @Post('pin/verify')
+  @HttpCode(204)
+  async verifyPin(@Body() body: unknown): Promise<void> {
+    await this.payments.verifyPin(parse(z.strictObject({ pin }), body).pin);
+  }
+
   @Can('payments.pay')
   @Post('pin')
   @HttpCode(204)

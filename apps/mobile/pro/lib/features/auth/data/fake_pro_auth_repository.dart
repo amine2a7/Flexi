@@ -57,7 +57,16 @@ class FakeProAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> changePassword({required String newPassword}) async {}
+  Future<LoginResult> verifyMfa(String code) async =>
+      throw const UnauthorizedFailure();
+
+  @override
+  Future<LoginResult> changePassword({required String newPassword}) async =>
+      LoginResult(
+        session: _session(_backend.account ?? ProDemoAccount.sami),
+        mustChangePassword: false,
+        needsPin: false,
+      );
 
   @override
   Future<void> createPin(String pin) async {}

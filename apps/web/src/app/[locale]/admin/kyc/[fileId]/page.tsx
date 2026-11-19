@@ -167,6 +167,7 @@ function KycView({
             ]}
           />
         </Card>
+        <KycIdentifiersCard file={file} />
         <Card>
           <CardTitle>{t('documentsTitle')}</CardTitle>
           <div className="grid gap-6 md:grid-cols-2">
@@ -269,6 +270,34 @@ function KycView({
         />
       ) : null}
     </>
+  );
+}
+
+/**
+ * CIN of the manager, tax id and RIB (SEC-1): the full numbers for Opérations only (the API sends
+ * them to that team alone, to compare with the pieces); the last 4 digits for everyone else.
+ */
+function KycIdentifiersCard({ file }: { file: KycFile }) {
+  const t = useTranslations('admin.kyc');
+  const shown = file.identifiers ?? file.maskedIdentifiers;
+  if (shown === undefined) return null;
+  const value = (text: string | null) => <span dir="ltr">{text ?? t('none')}</span>;
+  return (
+    <Card>
+      <CardTitle>{t('identifiersTitle')}</CardTitle>
+      <DescriptionList
+        items={[
+          { label: t('nationalId'), value: value(shown.nationalId) },
+          { label: t('taxId'), value: value(shown.taxId) },
+          ...(file.accountType === 'MERCHANT'
+            ? [{ label: t('iban'), value: value(shown.iban) }]
+            : []),
+        ]}
+      />
+      <p className="mt-2 text-caption text-text-muted">
+        {file.identifiers === undefined ? t('maskedNote') : t('clearNote')}
+      </p>
+    </Card>
   );
 }
 

@@ -415,7 +415,7 @@ describe('records editable at any time (decision of 2026-11-03)', () => {
       },
     );
     expect(requested.status).toBe(201);
-    expect(requested.body).toMatchObject({ type: 'IBAN_CHANGE', maskedIban: '•••• 6789' });
+    expect(requested.body).toMatchObject({ type: 'IBAN_CHANGE', maskedIban: '••••6789' });
     expect(JSON.stringify(requested.body)).not.toContain(iban);
     const again = await second.call(
       'POST',
@@ -431,7 +431,7 @@ describe('records editable at any time (decision of 2026-11-03)', () => {
     expect((await first.call('POST', `/v1/admin/approvals/${id}/approve`)).status).toBe(403);
     expect((await second.call('POST', `/v1/admin/approvals/${id}/approve`)).status).toBe(200);
     const after = await first.call('GET', `/v1/admin/merchants/${merchantId}/record`);
-    expect(after.body).toMatchObject({ maskedIban: '•••• 6789', requests: [] });
+    expect(after.body).toMatchObject({ maskedIban: '••••6789', requests: [] });
     expect((after.body.history as { fields: string[] }[])[0]?.fields).toEqual(['iban']);
     const refused = await first.call(
       'POST',

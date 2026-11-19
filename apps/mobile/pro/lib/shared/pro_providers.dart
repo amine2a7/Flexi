@@ -26,8 +26,9 @@ final cashiersProvider = FutureProvider<List<({String id, String name})>>(
   (ref) => ref.watch(dayRepositoryProvider).cashiers(),
 );
 
-final payoutQuoteProvider = FutureProvider<PayoutQuote>(
-  (ref) => ref.watch(payoutRepositoryProvider).quote(),
+/// Devis du type choisi (`null` : le type qui a le plus à reverser).
+final payoutQuoteProvider = FutureProvider.family<PayoutQuote, CreditType?>(
+  (ref, type) => ref.watch(payoutRepositoryProvider).quote(type: type),
 );
 
 final payoutsProvider = FutureProvider<List<Payout>>(

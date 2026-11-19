@@ -47,9 +47,11 @@ void main() {
     await tapText(tester, 'Ajouter un membre');
 
     await tester.enterText(find.byKey(const Key('member-name')), 'Lina');
+    await tester.enterText(find.byKey(const Key('member-last-name')), 'Jaziri');
+    await tapText(tester, 'Enfant');
     await tester.enterText(
       find.byKey(const Key('member-contact')),
-      'lina@flexipay.test',
+      '22 123 456',
     );
     await tester.enterText(find.byKey(const Key('member-amount')), '30');
     await tester.pumpAndSettle();
