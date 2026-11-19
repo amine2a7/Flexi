@@ -16,6 +16,8 @@ const filters = z
       .optional(),
     createdFrom: z.iso.datetime({ offset: true }).optional(),
     createdTo: z.iso.datetime({ offset: true }).optional(),
+    // W-SUP-bis: reference of the transaction (or its account code).
+    q: z.string().trim().min(1).max(100).optional(),
   })
   // A client is a type and an id together.
   .refine((value) => (value.clientId === undefined) === (value.clientType === undefined), {
@@ -31,6 +33,7 @@ function read(query: Record<string, unknown>) {
       transactionType: query.transactionType,
       createdFrom: query.createdFrom,
       createdTo: query.createdTo,
+      q: query.q,
     },
     'query',
   );
@@ -38,6 +41,7 @@ function read(query: Record<string, unknown>) {
     ...(input.clientType === undefined ? {} : { clientType: input.clientType }),
     ...(input.clientId === undefined ? {} : { clientId: input.clientId }),
     ...(input.transactionType === undefined ? {} : { transactionType: input.transactionType }),
+    ...(input.q === undefined ? {} : { q: input.q }),
   };
   const period = {
     ...(input.createdFrom === undefined ? {} : { createdFrom: new Date(input.createdFrom) }),

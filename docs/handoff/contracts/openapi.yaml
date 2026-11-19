@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: FlexiPay API
-  version: 0.18.0
+  version: 0.19.0
   summary: Conventions transverses, authentification web et profil (WB2, espace Commun).
   description: |
     # Contrat d'API FlexiPay (version 0.2.2)
@@ -2225,6 +2225,14 @@ paths:
           description: Filtre par type de crédit.
           schema:
             $ref: '#/components/schemas/CreditType'
+        - name: q
+          in: query
+          required: false
+          description: 'Recherche par référence du paiement. Jamais journalisée.'
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
       responses:
         '200':
           description: Succès.
@@ -2453,6 +2461,14 @@ paths:
         - $ref: '#/components/parameters/WithCount'
         - $ref: '#/components/parameters/CreatedFrom'
         - $ref: '#/components/parameters/CreatedTo'
+        - name: q
+          in: query
+          required: false
+          description: 'Recherche par référence du règlement. Jamais journalisée.'
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
       responses:
         '200':
           description: Succès.
@@ -4914,6 +4930,14 @@ paths:
           description: Filtre par statut.
           schema:
             $ref: '#/components/schemas/ApprovalStatus'
+        - name: q
+          in: query
+          required: false
+          description: 'Recherche par objet ou demandeur. Jamais journalisée.'
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
       responses:
         '200':
           description: Succès.
@@ -6184,6 +6208,14 @@ paths:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/WithCount'
+        - name: q
+          in: query
+          required: false
+          description: 'Recherche par sujet de l''alerte. Jamais journalisée.'
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
       responses:
         '200':
           description: Succès.
@@ -6292,6 +6324,14 @@ paths:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/WithCount'
+        - name: q
+          in: query
+          required: false
+          description: 'Recherche par référence du litige, du paiement ou nom du commerçant. Jamais journalisée.'
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
       responses:
         '200':
           description: Succès.
@@ -6737,6 +6777,14 @@ paths:
         - $ref: '#/components/parameters/WithCount'
         - $ref: '#/components/parameters/CreatedFrom'
         - $ref: '#/components/parameters/CreatedTo'
+        - name: q
+          in: query
+          required: false
+          description: 'Recherche par référence du lot, d''un virement ou nom d''un commerçant. Jamais journalisée.'
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
       responses:
         '200':
           description: Succès.
@@ -7016,6 +7064,14 @@ paths:
           schema:
             type: string
             pattern: '^[A-Z][A-Z_]{1,39}$'
+        - name: q
+          in: query
+          required: false
+          description: 'Recherche par référence de la transaction ou code du compte. Jamais journalisée.'
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
       responses:
         '200':
           description: Succès.
@@ -7096,6 +7152,14 @@ paths:
           schema:
             type: string
             pattern: '^[A-Z][A-Z_]{1,39}$'
+        - name: q
+          in: query
+          required: false
+          description: 'Même recherche que la liste.'
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
       responses:
         '200':
           description: Le fichier CSV.

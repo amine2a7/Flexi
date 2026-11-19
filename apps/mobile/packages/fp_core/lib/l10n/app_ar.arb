@@ -446,5 +446,15 @@
   "daySearch": "بحث (المرجع أو المبلغ)",
   "helpAndTickets": "المساعدة والطلبات",
   "supportSent": "تمّ إرسال الطلب {reference}.",
-  "supportLinked": "العملية المعنية: {reference}"
+  "supportLinked": "العملية المعنية: {reference}",
+  "supportAttach": "إرفاق ملف (صورة، لقطة شاشة أو PDF)",
+  "supportAttachHint": "PDF أو JPG أو PNG، 5 ميغابايت على الأكثر.",
+  "supportAttachCamera": "التقاط صورة",
+  "supportAttachGallery": "اختيار صورة أو لقطة شاشة",
+  "supportAttachPdf": "اختيار ملف PDF",
+  "supportAttachTooLarge": "حجم الملف يتجاوز 5 ميغابايت.",
+  "supportAttachType": "الصيغ المقبولة: PDF أو JPG أو PNG.",
+  "supportAttachRemove": "إزالة الملف",
+  "supportAttachError": "تعذّر فتح الملف.",
+  "supportAttachOpen": "فتح {name}"
 }

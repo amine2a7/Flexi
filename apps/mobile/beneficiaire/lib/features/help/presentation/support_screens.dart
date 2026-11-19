@@ -6,6 +6,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/routes.dart';
 
+/// Choix d'une pièce jointe (photo, capture ou PDF) ; remplacé dans les tests.
+final piecePickerProvider = Provider<PiecePicker>((ref) => pickTicketPiece);
+
 /// Aide › Mes demandes (W-SUP).
 class SupportTicketsScreen extends ConsumerWidget {
   const SupportTicketsScreen({super.key});
@@ -29,6 +32,7 @@ class NewTicketScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) => NewTicketView(
     repository: ref.watch(supportRepositoryProvider),
     link: link,
+    pickPiece: ref.watch(piecePickerProvider),
     onCreated: (ticket) => context.pushReplacement(Routes.ticket(ticket.id)),
     onBack: () => context.pop(),
   );
@@ -43,6 +47,7 @@ class TicketScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) => TicketView(
     repository: ref.watch(supportRepositoryProvider),
     ticketId: ticketId,
+    pickPiece: ref.watch(piecePickerProvider),
     onBack: () => context.canPop() ? context.pop() : context.go(Routes.tickets),
   );
 }

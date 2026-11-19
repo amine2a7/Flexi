@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../network/api_json.dart';
@@ -46,6 +48,60 @@ class TicketLink {
   final String? reference;
 }
 
+/// Pièce jointe d'une demande (PDF, JPG ou PNG, chiffrée côté serveur).
+class TicketAttachment {
+  const TicketAttachment({
+    required this.id,
+    required this.fileName,
+    required this.contentType,
+    required this.sizeBytes,
+  });
+
+  final String id;
+  final String fileName;
+  final String contentType;
+  final int sizeBytes;
+
+  bool get isImage => contentType.startsWith('image/');
+}
+
+/// Fichier choisi par l'utilisateur, avant l'envoi (5 Mo au plus).
+class PickedPiece {
+  const PickedPiece({
+    required this.name,
+    required this.bytes,
+    required this.contentType,
+  });
+
+  static const maxBytes = 5 * 1024 * 1024;
+
+  final String name;
+  final Uint8List bytes;
+  final String contentType;
+
+  /// Type lu dans les premiers octets (jamais le nom) : JPG, PNG ou PDF, sinon `null`.
+  static String? sniff(Uint8List b) {
+    if (b.length >= 3 && b[0] == 0xff && b[1] == 0xd8 && b[2] == 0xff) {
+      return 'image/jpeg';
+    }
+    if (b.length >= 4 &&
+        b[0] == 0x89 &&
+        b[1] == 0x50 &&
+        b[2] == 0x4e &&
+        b[3] == 0x47) {
+      return 'image/png';
+    }
+    if (b.length >= 4 &&
+        b[0] == 0x25 &&
+        b[1] == 0x50 &&
+        b[2] == 0x44 &&
+        b[3] == 0x46) {
+      return 'application/pdf';
+    }
+    return null;
+  }
+}
+
 class TicketSummary {
   const TicketSummary({
     required this.id,
@@ -76,6 +132,7 @@ class TicketMessage {
     required this.body,
     required this.redacted,
     required this.createdAt,
+    this.attachments = const [],
   });
 
   final String id;
@@ -86,6 +143,7 @@ class TicketMessage {
   /// Un code PIN, un mot de passe ou un numéro de carte a été masqué par le serveur.
   final bool redacted;
   final DateTime createdAt;
+  final List<TicketAttachment> attachments;
 }
 
 class TicketDetail extends TicketSummary {
@@ -103,6 +161,7 @@ class TicketDetail extends TicketSummary {
     required this.canReopen,
     required this.messages,
     required this.createdAt,
+    this.attachments = const [],
   });
 
   final String description;
@@ -111,6 +170,9 @@ class TicketDetail extends TicketSummary {
   final bool canReopen;
   final List<TicketMessage> messages;
   final DateTime createdAt;
+
+  /// Pièces jointes à l'ouverture de la demande.
+  final List<TicketAttachment> attachments;
 }
 
 /// Demandes de support de l'utilisateur connecté (les siennes ; celles du commerce pour le
@@ -125,11 +187,15 @@ abstract interface class SupportRepository {
     required String subject,
     required String description,
     TicketLink? link,
+    PickedPiece? piece,
   });
 
-  Future<TicketDetail> reply(String id, String body);
+  Future<TicketDetail> reply(String id, String body, {PickedPiece? piece});
 
   Future<TicketDetail> reopen(String id);
+
+  /// Octets d'une pièce, lus par son lien signé (5 minutes, cet utilisateur).
+  Future<Uint8List> attachment(String ticketId, String attachmentId);
 }
 
 final supportRepositoryProvider = Provider<SupportRepository>(
@@ -158,36 +224,61 @@ class ApiSupportRepository implements SupportRepository {
   Future<TicketDetail> ticket(String id) async =>
       _detail(await _api.get('/v1/support/tickets/$id'));
 
+  /// Avec une pièce : multipart ; sans : JSON (les deux sont acceptés par l'API).
+  Future<Json> _send(
+    String path,
+    Map<String, String> fields,
+    PickedPiece? piece,
+  ) => piece == null
+      ? _api.post(path, body: fields)
+      : _api.postForm(
+          path,
+          fields: fields,
+          fileField: 'attachment',
+          fileBytes: piece.bytes,
+          fileName: piece.name,
+          fileType: piece.contentType,
+        );
+
   @override
   Future<TicketDetail> open({
     required TicketCategory category,
     required String subject,
     required String description,
     TicketLink? link,
+    PickedPiece? piece,
   }) async => _detail(
-    await _api.post(
-      '/v1/support/tickets',
-      body: {
-        'category': category.api,
-        'subject': subject.trim(),
-        'description': description.trim(),
-        if (link != null) 'linkType': link.type,
-        if (link != null) 'linkId': link.id,
-      },
-    ),
+    await _send('/v1/support/tickets', {
+      'category': category.api,
+      'subject': subject.trim(),
+      'description': description.trim(),
+      if (link != null) 'linkType': link.type,
+      if (link != null) 'linkId': link.id,
+    }, piece),
   );
 
   @override
-  Future<TicketDetail> reply(String id, String body) async => _detail(
-    await _api.post(
-      '/v1/support/tickets/$id/messages',
-      body: {'body': body.trim()},
-    ),
+  Future<TicketDetail> reply(
+    String id,
+    String body, {
+    PickedPiece? piece,
+  }) async => _detail(
+    await _send('/v1/support/tickets/$id/messages', {
+      'body': body.trim(),
+    }, piece),
   );
 
   @override
   Future<TicketDetail> reopen(String id) async =>
       _detail(await _api.post('/v1/support/tickets/$id/reopen'));
+
+  @override
+  Future<Uint8List> attachment(String ticketId, String attachmentId) async {
+    final link = await _api.get(
+      '/v1/support/tickets/$ticketId/attachments/$attachmentId/link',
+    );
+    return _api.bytes(link['url'] as String);
+  }
 }
 
 TicketLink? _link(Object? value) {
@@ -198,6 +289,16 @@ TicketLink? _link(Object? value) {
     reference: value['reference'] as String?,
   );
 }
+
+List<TicketAttachment> _attachments(Object? value) => [
+  for (final a in listOf(value))
+    TicketAttachment(
+      id: a['id'] as String,
+      fileName: a['fileName'] as String? ?? '',
+      contentType: a['contentType'] as String? ?? '',
+      sizeBytes: intOf(a['sizeBytes']),
+    ),
+];
 
 TicketSummary _summary(Json t) => TicketSummary(
   id: t['id'] as String,
@@ -222,6 +323,7 @@ TicketDetail _detail(Json t) => TicketDetail(
   redacted: t['redacted'] == true,
   canReply: t['canReply'] == true,
   canReopen: t['canReopen'] == true,
+  attachments: _attachments(t['attachments']),
   messages: [
     for (final m in listOf(t['messages']))
       TicketMessage(
@@ -231,6 +333,7 @@ TicketDetail _detail(Json t) => TicketDetail(
         body: m['body'] as String? ?? '',
         redacted: m['redacted'] == true,
         createdAt: dateOf(m['createdAt']),
+        attachments: _attachments(m['attachments']),
       ),
   ],
 );
@@ -241,6 +344,18 @@ class FakeSupportRepository implements SupportRepository {
 
   final DateTime Function() _now;
   final _tickets = <TicketDetail>[];
+  final _pieces = <String, Uint8List>{};
+
+  TicketAttachment _store(PickedPiece piece) {
+    final id = 'demo-piece-${_pieces.length + 1}';
+    _pieces[id] = piece.bytes;
+    return TicketAttachment(
+      id: id,
+      fileName: piece.name,
+      contentType: piece.contentType,
+      sizeBytes: piece.bytes.length,
+    );
+  }
 
   @override
   Future<List<TicketSummary>> tickets({String? query}) async {
@@ -259,11 +374,16 @@ class FakeSupportRepository implements SupportRepository {
       _tickets.firstWhere((t) => t.id == id);
 
   @override
+  Future<Uint8List> attachment(String ticketId, String attachmentId) async =>
+      _pieces[attachmentId] ?? Uint8List(0);
+
+  @override
   Future<TicketDetail> open({
     required TicketCategory category,
     required String subject,
     required String description,
     TicketLink? link,
+    PickedPiece? piece,
   }) async {
     final now = _now();
     final n = _tickets.length + 1;
@@ -281,13 +401,18 @@ class FakeSupportRepository implements SupportRepository {
       canReply: true,
       canReopen: false,
       messages: const [],
+      attachments: piece == null ? const [] : [_store(piece)],
     );
     _tickets.add(ticket);
     return ticket;
   }
 
   @override
-  Future<TicketDetail> reply(String id, String body) async {
+  Future<TicketDetail> reply(
+    String id,
+    String body, {
+    PickedPiece? piece,
+  }) async {
     final i = _tickets.indexWhere((t) => t.id == id);
     final t = _tickets[i];
     final now = _now();
@@ -304,6 +429,7 @@ class FakeSupportRepository implements SupportRepository {
       redacted: t.redacted,
       canReply: t.canReply,
       canReopen: t.canReopen,
+      attachments: t.attachments,
       messages: [
         ...t.messages,
         TicketMessage(
@@ -313,6 +439,7 @@ class FakeSupportRepository implements SupportRepository {
           body: body.trim(),
           redacted: false,
           createdAt: now,
+          attachments: piece == null ? const [] : [_store(piece)],
         ),
       ],
     );

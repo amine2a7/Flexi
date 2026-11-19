@@ -120,8 +120,11 @@ export class MerchantController {
     return this.payouts.receivables(
       query,
       parse(
-        z.object({ creditType: creditType.optional() }),
-        { creditType: query.creditType },
+        z.object({
+          creditType: creditType.optional(),
+          q: z.string().trim().max(100).optional(),
+        }),
+        { creditType: query.creditType, q: query.q },
         'query',
       ),
     );
@@ -180,7 +183,11 @@ export class MerchantController {
   @Can('settlements.read')
   @Get('settlements')
   settlements(@Query() query: Record<string, unknown>) {
-    return this.payouts.merchantSettlements(query);
+    return this.payouts.merchantSettlements(query, parse(
+      z.object({ q: z.string().trim().max(100).optional() }),
+      { q: query.q },
+      'query',
+    ).q);
   }
 
   @Can('documents.read')

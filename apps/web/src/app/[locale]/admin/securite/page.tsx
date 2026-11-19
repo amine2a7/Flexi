@@ -12,6 +12,7 @@ import { Amount } from '@/components/ui/amount';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { DataTable, type Column } from '@/components/ui/data-table';
+import { FilterBar, type Filters } from '@/components/ui/filter-bar';
 import { Alert, PageHeader, Tabs } from '@/components/ui/layout-blocks';
 import { ReasonDialog } from '@/components/ui/reason-dialog';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -60,10 +61,13 @@ function Alerts() {
   const canManage = useCan('alerts.manage');
   const [closing, setClosing] = useState<FraudAlert | undefined>(undefined);
   const [failure, setFailure] = useState(false);
+  const [filters, setFilters] = useState<Filters>({ q: '', status: '', creditType: '' });
   const list = usePagedList(
     (cursor, withCount) =>
-      getApi().GET('/v1/admin/fraud-alerts', { params: { query: { cursor, withCount } } }),
-    [],
+      getApi().GET('/v1/admin/fraud-alerts', {
+        params: { query: { cursor, withCount, ...(filters.q === '' ? {} : { q: filters.q }) } },
+      }),
+    [filters.q],
   );
   async function start(alert: FraudAlert) {
     setFailure(false);
@@ -153,6 +157,7 @@ function Alerts() {
           <Alert tone="danger">{t('alertFailed')}</Alert>
         </div>
       ) : null}
+      <FilterBar searchLabel={t('searchAlerts')} onApply={setFilters} />
       <DataTable
         caption={t('tabAlerts')}
         columns={columns}
@@ -200,10 +205,13 @@ function Alerts() {
 function Disputes() {
   const t = useTranslations('admin.security');
   const locale = useLocale();
+  const [filters, setFilters] = useState<Filters>({ q: '', status: '', creditType: '' });
   const list = usePagedList(
     (cursor, withCount) =>
-      getApi().GET('/v1/admin/disputes', { params: { query: { cursor, withCount } } }),
-    [],
+      getApi().GET('/v1/admin/disputes', {
+        params: { query: { cursor, withCount, ...(filters.q === '' ? {} : { q: filters.q }) } },
+      }),
+    [filters.q],
   );
   const columns: Column<Schemas['Dispute']>[] = [
     {
@@ -250,19 +258,22 @@ function Disputes() {
     },
   ];
   return (
-    <DataTable
-      caption={t('tabDisputes')}
-      columns={columns}
-      rows={list.rows}
-      rowKey={(row) => row.id}
-      loading={list.loading}
-      error={list.error}
-      onRetry={list.reload}
-      empty={{ title: t('emptyDisputes') }}
-      page={list.page}
-      pageNumber={list.pageNumber}
-      onNext={list.next}
-      onPrevious={list.previous}
-    />
+    <>
+      <FilterBar searchLabel={t('searchDisputes')} onApply={setFilters} />
+      <DataTable
+        caption={t('tabDisputes')}
+        columns={columns}
+        rows={list.rows}
+        rowKey={(row) => row.id}
+        loading={list.loading}
+        error={list.error}
+        onRetry={list.reload}
+        empty={{ title: t('emptyDisputes') }}
+        page={list.page}
+        pageNumber={list.pageNumber}
+        onNext={list.next}
+        onPrevious={list.previous}
+      />
+    </>
   );
 }

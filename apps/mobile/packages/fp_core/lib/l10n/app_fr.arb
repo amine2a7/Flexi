@@ -529,5 +529,22 @@
         "type": "String"
       }
     }
+  },
+  "supportAttach": "Joindre une pièce (photo, capture ou PDF)",
+  "supportAttachHint": "PDF, JPG ou PNG, 5 Mo au plus.",
+  "supportAttachCamera": "Prendre une photo",
+  "supportAttachGallery": "Choisir une image ou une capture",
+  "supportAttachPdf": "Choisir un PDF",
+  "supportAttachTooLarge": "Le fichier dépasse 5 Mo.",
+  "supportAttachType": "Format accepté : PDF, JPG ou PNG.",
+  "supportAttachRemove": "Retirer la pièce",
+  "supportAttachError": "La pièce n'a pas pu être ouverte.",
+  "supportAttachOpen": "Ouvrir {name}",
+  "@supportAttachOpen": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   }
 }

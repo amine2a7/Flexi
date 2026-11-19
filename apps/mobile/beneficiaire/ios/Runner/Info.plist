@@ -5,7 +5,9 @@
 	<key>NFCReaderUsageDescription</key>
 	<string>FlexiPay lit l'autocollant de la caisse pour afficher le montant à payer.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>FlexiPay utilise la caméra pour scanner le QR de l'autocollant de la caisse.</string>
+	<string>FlexiPay utilise la caméra pour scanner le QR de l'autocollant de la caisse et photographier une pièce jointe à une demande de support.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>FlexiPay ouvre vos photos pour joindre une image ou une capture d'écran à une demande de support.</string>
 	<key>FlutterDeepLinkingEnabled</key>
 	<true/>
 	<key>NSFaceIDUsageDescription</key>

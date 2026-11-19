@@ -41,7 +41,11 @@ export class DisputesController {
   @Can('disputes.read')
   @Get()
   list(@Query() query: Record<string, unknown>) {
-    return this.disputes.list(query);
+    return this.disputes.list(query, parse(
+      z.object({ q: z.string().trim().max(100).optional() }),
+      { q: query.q },
+      'query',
+    ).q);
   }
 
   @Can('disputes.read')
@@ -116,7 +120,11 @@ export class FraudAlertsController {
   @Can('risk.read')
   @Get()
   list(@Query() query: Record<string, unknown>) {
-    return this.fraud.list(query);
+    return this.fraud.list(query, parse(
+      z.object({ q: z.string().trim().max(100).optional() }),
+      { q: query.q },
+      'query',
+    ).q);
   }
 
   @Can('alerts.manage')

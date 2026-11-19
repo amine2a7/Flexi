@@ -9134,6 +9134,8 @@ export interface operations {
         createdTo?: components['parameters']['CreatedTo'];
         /** @description Filtre par type de crédit. */
         creditType?: components['schemas']['CreditType'];
+        /** @description Recherche par référence du paiement. Jamais journalisée. */
+        q?: string;
       };
       header?: never;
       path?: never;
@@ -9352,6 +9354,8 @@ export interface operations {
         createdFrom?: components['parameters']['CreatedFrom'];
         /** @description Borne haute exclue de la période (UTC). */
         createdTo?: components['parameters']['CreatedTo'];
+        /** @description Recherche par référence du règlement. Jamais journalisée. */
+        q?: string;
       };
       header?: never;
       path?: never;
@@ -11458,6 +11462,8 @@ export interface operations {
         createdTo?: components['parameters']['CreatedTo'];
         /** @description Filtre par statut. */
         status?: components['schemas']['ApprovalStatus'];
+        /** @description Recherche par objet ou demandeur. Jamais journalisée. */
+        q?: string;
       };
       header?: never;
       path?: never;
@@ -12478,6 +12484,8 @@ export interface operations {
          *     chaque changement de filtre.
          */
         withCount?: components['parameters']['WithCount'];
+        /** @description Recherche par sujet de l'alerte. Jamais journalisée. */
+        q?: string;
       };
       header?: never;
       path?: never;
@@ -12577,6 +12585,8 @@ export interface operations {
          *     chaque changement de filtre.
          */
         withCount?: components['parameters']['WithCount'];
+        /** @description Recherche par référence du litige, du paiement ou nom du commerçant. Jamais journalisée. */
+        q?: string;
       };
       header?: never;
       path?: never;
@@ -12991,6 +13001,8 @@ export interface operations {
         createdFrom?: components['parameters']['CreatedFrom'];
         /** @description Borne haute exclue de la période (UTC). */
         createdTo?: components['parameters']['CreatedTo'];
+        /** @description Recherche par référence du lot, d'un virement ou nom d'un commerçant. Jamais journalisée. */
+        q?: string;
       };
       header?: never;
       path?: never;
@@ -13235,6 +13247,8 @@ export interface operations {
         clientId?: components['schemas']['Uuid'];
         /** @description Type de transaction du grand livre (`ALLOCATION`, `PAYMENT`…), liste par `/v1/admin/ledger-entries/types`. */
         transactionType?: string;
+        /** @description Recherche par référence de la transaction ou code du compte. Jamais journalisée. */
+        q?: string;
       };
       header?: never;
       path?: never;
@@ -13300,6 +13314,8 @@ export interface operations {
         clientId?: components['schemas']['Uuid'];
         /** @description Type de transaction du grand livre (`ALLOCATION`, `PAYMENT`…), liste par `/v1/admin/ledger-entries/types`. */
         transactionType?: string;
+        /** @description Même recherche que la liste. */
+        q?: string;
       };
       header?: never;
       path?: never;

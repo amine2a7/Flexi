@@ -4,6 +4,10 @@
 <dict>
 	<key>NFCReaderUsageDescription</key>
 	<string>FlexiPay Pro écrit le lien de la caisse sur l'autocollant NFC.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>FlexiPay Pro utilise la caméra pour photographier une pièce jointe à une demande de support.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>FlexiPay Pro ouvre vos photos pour joindre une image ou une capture d'écran à une demande de support.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

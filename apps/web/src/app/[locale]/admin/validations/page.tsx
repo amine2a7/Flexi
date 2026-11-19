@@ -13,6 +13,7 @@ import { formatRateBps } from '@/lib/format/money';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { DataTable, type Column } from '@/components/ui/data-table';
+import { FilterBar, type Filters } from '@/components/ui/filter-bar';
 import { TextField } from '@/components/ui/field';
 import { Alert, DescriptionList, PageHeader, Tabs } from '@/components/ui/layout-blocks';
 import { ConfirmDialog, Modal } from '@/components/ui/modal';
@@ -34,6 +35,7 @@ export default function ApprovalsPage() {
   const [tab, setTab] = useState<Tab>('pending');
   const [refresh, setRefresh] = useState(0);
   const [decision, setDecision] = useState<Decision | undefined>(undefined);
+  const [filters, setFilters] = useState<Filters>({ q: '', status: '', creditType: '' });
   const list = usePagedList(
     (cursor, withCount) =>
       getApi().GET('/v1/admin/approvals', {
@@ -42,10 +44,11 @@ export default function ApprovalsPage() {
             cursor,
             withCount,
             ...(tab === 'pending' ? { status: 'PENDING' as const } : {}),
+            ...(filters.q === '' ? {} : { q: filters.q }),
           },
         },
       }),
-    [tab, refresh],
+    [tab, refresh, filters.q],
   );
   const rows = tab === 'pending' ? list.rows : list.rows?.filter((row) => row.status !== 'PENDING');
 
@@ -141,6 +144,7 @@ export default function ApprovalsPage() {
           value={tab}
           onChange={setTab}
         />
+        <FilterBar searchLabel={t('search')} onApply={setFilters} />
         <DataTable
           highlightNew
           caption={tab === 'pending' ? t('tabPending') : t('tabHistory')}

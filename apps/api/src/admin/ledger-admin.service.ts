@@ -11,6 +11,7 @@ export interface LedgerFilters {
   clientType?: 'COMPANY' | 'MERCHANT' | undefined;
   clientId?: string | undefined;
   transactionType?: string | undefined;
+  q?: string | undefined;
 }
 
 /** Lines of one CSV export at most (the period narrows it). */
@@ -58,11 +59,20 @@ export class LedgerAdminService {
         };
       }
     }
+    const q = filters.q?.trim() ?? '';
     return {
       ...(owners === undefined ? {} : { account: owners }),
       ...(filters.transactionType === undefined
         ? {}
         : { transaction: { type: filters.transactionType } }),
+      ...(q === ''
+        ? {}
+        : {
+            OR: [
+              { transaction: { reference: { contains: q, mode: 'insensitive' as const } } },
+              { account: { code: { contains: q, mode: 'insensitive' as const } } },
+            ],
+          }),
       ...(period.createdFrom === undefined && period.createdTo === undefined
         ? {}
         : {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fp_beneficiaire/app/app.dart';
 import 'package:fp_beneficiaire/app/dependencies.dart';
@@ -11,7 +12,8 @@ import 'helpers.dart';
 
 export 'package:fp_core/testing.dart';
 
-const refreshToken = 'ref-0123456789abcdefghij'; // gitleaks:allow (test-only value)
+const refreshToken =
+    'ref-0123456789abcdefghij'; // gitleaks:allow (test-only value)
 const checkoutId = '0193a000-0000-7000-8000-00000000c001';
 
 /// Session mobile du contrat (`MobileSession`).
@@ -237,6 +239,7 @@ Future<(ProviderContainer, MemorySecureStore)> launchApi(
   WidgetTester tester,
   FakeApiServer server, {
   bool known = false,
+  List<Override> overrides = const [],
 }) async {
   tester.view.physicalSize = const Size(390 * 3, 844 * 3);
   tester.view.devicePixelRatio = 3;
@@ -260,6 +263,7 @@ Future<(ProviderContainer, MemorySecureStore)> launchApi(
       biometricServiceProvider.overrideWithValue(FakeBiometrics()),
       stickerReaderProvider.overrideWithValue(NoNfc()),
       qrCameraEnabledProvider.overrideWithValue(false),
+      ...overrides,
     ],
   );
   addTearDown(container.dispose);
@@ -284,9 +288,15 @@ Future<void> signIn(WidgetTester tester) async {
 /// Démarre connecté (session connue + PIN) sur l'accueil.
 Future<(ProviderContainer, MemorySecureStore)> launchApiHome(
   WidgetTester tester,
-  FakeApiServer server,
-) async {
-  final launched = await launchApi(tester, server, known: true);
+  FakeApiServer server, {
+  List<Override> overrides = const [],
+}) async {
+  final launched = await launchApi(
+    tester,
+    server,
+    known: true,
+    overrides: overrides,
+  );
   await unlock(tester);
   return launched;
 }

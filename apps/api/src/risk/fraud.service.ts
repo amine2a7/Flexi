@@ -6,7 +6,12 @@ import { DbService, type Tx } from '../common/db.service.js';
 import { Paginator, type Page } from '../common/pagination.js';
 import { problems } from '../common/problem.js';
 import { principal } from '../common/request-context.js';
-import type { FraudAlert, FraudAlertKind, FraudAlertSeverity } from '../generated/prisma/client.js';
+import type {
+  FraudAlert,
+  FraudAlertKind,
+  FraudAlertSeverity,
+  Prisma,
+} from '../generated/prisma/client.js';
 
 /** Thresholds of the starting rules (decision of 2026-10-31), set by the super-admin. */
 interface FraudRules {
@@ -98,16 +103,23 @@ export class FraudService {
     });
   }
 
-  async list(query: Record<string, unknown>): Promise<Page<unknown>> {
-    const request = this.paginator.request(query, {});
+  async list(query: Record<string, unknown>, q?: string): Promise<Page<unknown>> {
+    const request = this.paginator.request(query, { q });
+    // W-SUP-bis: search by subject of the alert.
+    const needle = q?.trim() ?? '';
+    const where: Prisma.FraudAlertWhereInput =
+      needle === '' ? {} : { subject: { contains: needle, mode: 'insensitive' } };
     return this.db.user(async (tx) => {
       const rows = await tx.fraudAlert.findMany({
+        where,
         orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
         skip: request.offset,
         take: request.limit + 1,
       });
-      const count = request.withCount ? await tx.fraudAlert.count({ take: 10_001 }) : undefined;
-      return this.paginator.page(request, rows.map(alertBody), {}, count);
+      const count = request.withCount
+        ? await tx.fraudAlert.count({ where, take: 10_001 })
+        : undefined;
+      return this.paginator.page(request, rows.map(alertBody), { q }, count);
     });
   }
 

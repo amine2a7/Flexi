@@ -208,12 +208,18 @@ export class PayoutsService {
     });
   }
 
-  async receivables(query: Record<string, unknown>, filters: { creditType?: CreditType }) {
+  async receivables(
+    query: Record<string, unknown>,
+    filters: { creditType?: CreditType; q?: string },
+  ) {
     const merchantId = this.merchantId();
     const request = this.paginator.request(query, filters);
+    const needle = filters.q?.trim() ?? '';
     return this.db.user(async (tx) => {
       const where: Prisma.PaymentWhereInput = {
         ...this.receivablesWhere(merchantId, filters.creditType),
+        // W-SUP-bis: search by payment reference.
+        ...(needle === '' ? {} : { reference: { contains: needle, mode: 'insensitive' } }),
         ...(request.createdFrom === undefined && request.createdTo === undefined
           ? {}
           : {
@@ -559,8 +565,9 @@ export class PayoutsService {
   }
 
   /** Settlements of the merchant: its payouts grouped by settlement batch. */
-  async merchantSettlements(query: Record<string, unknown>): Promise<Page<unknown>> {
-    const request = this.paginator.request(query, {});
+  async merchantSettlements(query: Record<string, unknown>, q?: string): Promise<Page<unknown>> {
+    const request = this.paginator.request(query, { q });
+    const needle = q?.trim().toLowerCase() ?? '';
     return this.db.user(async (tx) => {
       const payouts = await tx.payoutRequest.findMany({
         where: { batchId: { not: null } },
@@ -604,7 +611,10 @@ export class PayoutsService {
         current.net += payout.netMillimes;
         batches.set(payout.batch.id, current);
       }
-      const sorted = [...batches.values()].sort((a, b) => b.date.getTime() - a.date.getTime());
+      // W-SUP-bis: search by settlement reference.
+      const sorted = [...batches.values()]
+        .filter((batch) => needle === '' || batch.reference.toLowerCase().includes(needle))
+        .sort((a, b) => b.date.getTime() - a.date.getTime());
       return this.paginator.page(
         request,
         sorted.slice(request.offset, request.offset + request.limit + 1).map((batch) => ({
@@ -617,7 +627,7 @@ export class PayoutsService {
           netMillimes: toMillimes(batch.net),
           status: batch.status,
         })),
-        {},
+        { q },
         request.withCount ? sorted.length : undefined,
       );
     });
@@ -782,17 +792,38 @@ export class PayoutsService {
     };
   }
 
-  async batches(query: Record<string, unknown>) {
-    const request = this.paginator.request(query, {});
+  async batches(query: Record<string, unknown>, q?: string) {
+    const request = this.paginator.request(query, { q });
+    // W-SUP-bis: search by batch reference or by a merchant of the batch.
+    const needle = q?.trim() ?? '';
+    const where: Prisma.SettlementBatchWhereInput =
+      needle === ''
+        ? {}
+        : {
+            OR: [
+              { reference: { contains: needle, mode: 'insensitive' } },
+              {
+                payouts: {
+                  some: {
+                    OR: [
+                      { reference: { contains: needle, mode: 'insensitive' } },
+                      { merchant: { name: { contains: needle, mode: 'insensitive' } } },
+                    ],
+                  },
+                },
+              },
+            ],
+          };
     return this.db.user(async (tx) => {
       const rows = await tx.settlementBatch.findMany({
+        where,
         include: { payouts: true },
         orderBy: [{ settlementDate: 'desc' }, { id: 'desc' }],
         skip: request.offset,
         take: request.limit + 1,
       });
       const count = request.withCount
-        ? await tx.settlementBatch.count({ take: 10_001 })
+        ? await tx.settlementBatch.count({ where, take: 10_001 })
         : undefined;
       return this.paginator.page(
         request,
@@ -803,7 +834,7 @@ export class PayoutsService {
           status: batch.status,
           ...this.batchTotals(batch.payouts),
         })),
-        {},
+        { q },
         count,
       );
     });

@@ -16,6 +16,7 @@ import type {
   Merchant,
   Payment,
   PayoutRequest,
+  Prisma,
 } from '../generated/prisma/client.js';
 
 /** Target of a decision (decision of 2026-10-31). */
@@ -64,17 +65,32 @@ export class DisputesService {
     @Inject(OutboxService) private readonly outbox: OutboxService,
   ) {}
 
-  async list(query: Record<string, unknown>): Promise<Page<unknown>> {
-    const request = this.paginator.request(query, {});
+  async list(query: Record<string, unknown>, q?: string): Promise<Page<unknown>> {
+    const request = this.paginator.request(query, { q });
+    // W-SUP-bis: search by dispute or payment reference, or merchant.
+    const needle = q?.trim() ?? '';
+    const where: Prisma.DisputeWhereInput =
+      needle === ''
+        ? {}
+        : {
+            OR: [
+              { reference: { contains: needle, mode: 'insensitive' } },
+              { payment: { reference: { contains: needle, mode: 'insensitive' } } },
+              { merchant: { name: { contains: needle, mode: 'insensitive' } } },
+            ],
+          };
     return this.db.user(async (tx) => {
       const rows = await tx.dispute.findMany({
+        where,
         include: { payment: true, merchant: true },
         orderBy: [{ openedAt: 'desc' }, { id: 'desc' }],
         skip: request.offset,
         take: request.limit + 1,
       });
-      const count = request.withCount ? await tx.dispute.count({ take: 10_001 }) : undefined;
-      return this.paginator.page(request, rows.map(disputeBody), {}, count);
+      const count = request.withCount
+        ? await tx.dispute.count({ where, take: 10_001 })
+        : undefined;
+      return this.paginator.page(request, rows.map(disputeBody), { q }, count);
     });
   }
 

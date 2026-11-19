@@ -846,11 +846,24 @@ export class AdminService {
     });
   }
 
-  async approvals(query: Record<string, unknown>, filters: { status?: ApprovalStatus }) {
+  async approvals(
+    query: Record<string, unknown>,
+    filters: { status?: ApprovalStatus; q?: string },
+  ) {
     const who = principal();
     const request = this.paginator.request(query, filters);
+    const needle = filters.q?.trim() ?? '';
     return this.db.user(async (tx) => {
       const where: Prisma.ApprovalWhereInput = {
+        // W-SUP-bis: search by subject or initiator.
+        ...(needle === ''
+          ? {}
+          : {
+              OR: [
+                { subject: { contains: needle, mode: 'insensitive' } },
+                { initiatorName: { contains: needle, mode: 'insensitive' } },
+              ],
+            }),
         ...(filters.status === undefined ? {} : { status: filters.status }),
         ...this.period(request),
       };

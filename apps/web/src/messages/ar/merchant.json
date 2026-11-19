@@ -94,7 +94,8 @@
     "amount": "المبلغ",
     "status": "الحالة",
     "emptyTitle": "لا توجد مستحقات",
-    "emptyMessage": "تمّت تسوية كل مستحقاتك."
+    "emptyMessage": "تمّت تسوية كل مستحقاتك.",
+    "search": "البحث عن مرجع"
   },
   "payouts": {
     "title": "طلب تحويل",
@@ -182,7 +183,8 @@
       "STATEMENT": "الكشف الشهري",
       "CERTIFICATE": "شهادة"
     },
-    "emptyDocuments": "لا توجد وثائق"
+    "emptyDocuments": "لا توجد وثائق",
+    "search": "البحث عن مرجع"
   },
   "shop": {
     "title": "محلّي",

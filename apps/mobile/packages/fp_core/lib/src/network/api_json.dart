@@ -44,6 +44,31 @@ class ApiJson {
             const {},
       );
 
+  /// Multipart (`multipart/form-data`) : champs texte et un fichier facultatif (W-SUP).
+  Future<Json> postForm(
+    String path, {
+    required Map<String, String> fields,
+    String? fileField,
+    Uint8List? fileBytes,
+    String? fileName,
+    String? fileType,
+  }) => _guard(() async {
+    final form = FormData.fromMap(fields);
+    if (fileField != null && fileBytes != null) {
+      form.files.add(
+        MapEntry(
+          fileField,
+          MultipartFile.fromBytes(
+            fileBytes,
+            filename: fileName,
+            contentType: fileType == null ? null : DioMediaType.parse(fileType),
+          ),
+        ),
+      );
+    }
+    return (await _dio.post<Json>(path, data: form)).data ?? const {};
+  });
+
   Future<Json> put(String path, {Object? body}) =>
       _guard(() async => (await _dio.put<Json>(path, data: body)).data ?? {});
 

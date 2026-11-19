@@ -94,7 +94,8 @@
     "amount": "Montant",
     "status": "Statut",
     "emptyTitle": "Aucune créance",
-    "emptyMessage": "Toutes vos créances ont été réglées."
+    "emptyMessage": "Toutes vos créances ont été réglées.",
+    "search": "Rechercher une référence"
   },
   "payouts": {
     "title": "Demander un virement",
@@ -182,7 +183,8 @@
       "STATEMENT": "Relevé mensuel",
       "CERTIFICATE": "Attestation"
     },
-    "emptyDocuments": "Aucun document"
+    "emptyDocuments": "Aucun document",
+    "search": "Rechercher une référence"
   },
   "shop": {
     "title": "Mon commerce",

@@ -10,6 +10,7 @@ import { formatCalendarDate, formatDateTime, formatMonth } from '@/lib/format/da
 import { Amount } from '@/components/ui/amount';
 import { Card } from '@/components/ui/card';
 import { DataTable, type Column } from '@/components/ui/data-table';
+import { FilterBar, type Filters } from '@/components/ui/filter-bar';
 import { PageHeader, Tabs } from '@/components/ui/layout-blocks';
 import { StatusBadge } from '@/components/ui/status-badge';
 
@@ -41,10 +42,13 @@ export default function SettlementsPage() {
 function SettlementList() {
   const t = useTranslations('merchant.settlements');
   const locale = useLocale();
+  const [filters, setFilters] = useState<Filters>({ q: '', status: '', creditType: '' });
   const list = usePagedList(
     (cursor, withCount) =>
-      getApi().GET('/v1/merchant/settlements', { params: { query: { cursor, withCount } } }),
-    [],
+      getApi().GET('/v1/merchant/settlements', {
+        params: { query: { cursor, withCount, ...(filters.q === '' ? {} : { q: filters.q }) } },
+      }),
+    [filters.q],
   );
   const columns: Column<Schemas['Settlement']>[] = [
     {
@@ -87,20 +91,23 @@ function SettlementList() {
     },
   ];
   return (
-    <DataTable
-      caption={t('tabSettlements')}
-      columns={columns}
-      rows={list.rows}
-      rowKey={(row) => row.id}
-      loading={list.loading}
-      error={list.error}
-      onRetry={list.reload}
-      empty={{ title: t('emptyTitle') }}
-      page={list.page}
-      pageNumber={list.pageNumber}
-      onNext={list.next}
-      onPrevious={list.previous}
-    />
+    <>
+      <FilterBar searchLabel={t('search')} onApply={setFilters} />
+      <DataTable
+        caption={t('tabSettlements')}
+        columns={columns}
+        rows={list.rows}
+        rowKey={(row) => row.id}
+        loading={list.loading}
+        error={list.error}
+        onRetry={list.reload}
+        empty={{ title: t('emptyTitle') }}
+        page={list.page}
+        pageNumber={list.pageNumber}
+        onNext={list.next}
+        onPrevious={list.previous}
+      />
+    </>
   );
 }
 

@@ -162,7 +162,8 @@
     "approvedToast": "Request approved.",
     "rejectedToast": "Request rejected.",
     "emptyPending": "No pending request",
-    "emptyHistory": "No processed request"
+    "emptyHistory": "No processed request",
+    "search": "Search (subject, requester)"
   },
   "settlements": {
     "title": "Settlements",
@@ -190,7 +191,8 @@
     "releaseNeeded": "Batch to release by Finance (four eyes) before it goes to the bank.",
     "released": "Batch released: the order goes to the bank on its date.",
     "bankReturned": "Bank return reconciled (order {reference}).",
-    "taxes": "VAT and stamp duties"
+    "taxes": "VAT and stamp duties",
+    "search": "Search (batch, payout, merchant)"
   },
   "audit": {
     "title": "Audit log",
@@ -594,7 +596,9 @@
     "notes": "Investigation notes",
     "notesEmpty": "No note yet.",
     "noteLabel": "Add a note",
-    "noteAdd": "Add"
+    "noteAdd": "Add",
+    "searchAlerts": "Search an alert",
+    "searchDisputes": "Search (dispute, payment, merchant)"
   },
   "commissionWindow": {
     "stepInfo": "Information",
@@ -802,7 +806,8 @@
       "COMPANY": "Company",
       "EMPLOYEE": "Employee",
       "MERCHANT": "Merchant"
-    }
+    },
+    "search": "Reference or account"
   },
   "invoices": {
     "title": "Invoices",

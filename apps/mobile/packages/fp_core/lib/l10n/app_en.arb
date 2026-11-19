@@ -446,5 +446,15 @@
   "daySearch": "Search (reference or amount)",
   "helpAndTickets": "Help and requests",
   "supportSent": "Request {reference} sent.",
-  "supportLinked": "Operation concerned: {reference}"
+  "supportLinked": "Operation concerned: {reference}",
+  "supportAttach": "Attach a file (photo, screenshot or PDF)",
+  "supportAttachHint": "PDF, JPG or PNG, 5 MB at most.",
+  "supportAttachCamera": "Take a photo",
+  "supportAttachGallery": "Choose an image or a screenshot",
+  "supportAttachPdf": "Choose a PDF",
+  "supportAttachTooLarge": "The file is larger than 5 MB.",
+  "supportAttachType": "Accepted formats: PDF, JPG or PNG.",
+  "supportAttachRemove": "Remove the file",
+  "supportAttachError": "The file could not be opened.",
+  "supportAttachOpen": "Open {name}"
 }

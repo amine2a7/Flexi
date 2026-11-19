@@ -91,7 +91,8 @@
     "counterparty": "التاجر أو المؤسسة",
     "amount": "المبلغ",
     "status": "الحالة",
-    "apply": "تصفية"
+    "apply": "تصفية",
+    "search": "بحث (المرجع، التاجر، المبلغ)"
   },
   "receipt": {
     "title": "الوصل {reference}",

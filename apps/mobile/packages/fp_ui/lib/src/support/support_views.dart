@@ -12,6 +12,7 @@ import '../components/list_row.dart';
 import '../icons/fp_icons.dart';
 import '../tokens/fp_tokens.dart';
 import '../tokens/fp_typography.dart';
+import 'ticket_pieces.dart';
 
 /// Libellé d'une catégorie de demande.
 String ticketCategoryLabel(FpL10n l10n, TicketCategory c) => switch (c) {
@@ -191,10 +192,14 @@ class NewTicketView extends StatefulWidget {
     required this.onCreated,
     required this.onBack,
     this.link,
+    this.pickPiece = pickTicketPiece,
   });
 
   final SupportRepository repository;
   final TicketLink? link;
+
+  /// Choix de la pièce jointe (remplaçable dans les tests).
+  final PiecePicker pickPiece;
   final ValueChanged<TicketDetail> onCreated;
   final VoidCallback onBack;
 
@@ -210,6 +215,7 @@ class _NewTicketViewState extends State<NewTicketView> {
       : TicketCategory.paymentDeclined;
   bool _sending = false;
   String? _error;
+  PickedPiece? _piece;
 
   @override
   void dispose() {
@@ -234,6 +240,7 @@ class _NewTicketViewState extends State<NewTicketView> {
         subject: _subject.text,
         description: _description.text,
         link: widget.link,
+        piece: _piece,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -245,6 +252,10 @@ class _NewTicketViewState extends State<NewTicketView> {
       setState(
         () => _error = e is ApiProblemFailure && e.code == 'RATE_LIMITED'
             ? l10n.supportRateLimited
+            : e is ApiProblemFailure && e.code == 'PAYLOAD_TOO_LARGE'
+            ? l10n.supportAttachTooLarge
+            : e is ApiProblemFailure && e.code == 'UNSUPPORTED_MEDIA_TYPE'
+            ? l10n.supportAttachType
             : l10n.supportInvalid,
       );
     } finally {
@@ -290,6 +301,18 @@ class _NewTicketViewState extends State<NewTicketView> {
           fieldKey: const Key('support-description'),
         ),
         Text(l10n.supportPinWarning, style: FpText.small),
+        _PieceField(
+          piece: _piece,
+          onPick: () async {
+            final choice = await widget.pickPiece(context);
+            if (choice == null || !mounted) return;
+            setState(() {
+              _piece = choice.piece;
+              _error = choice.error;
+            });
+          },
+          onRemove: () => setState(() => _piece = null),
+        ),
         if (_error != null)
           Text(_error!, style: FpText.body(size: 13, color: FpColors.danger)),
         FpButton(
@@ -309,11 +332,17 @@ class TicketView extends StatefulWidget {
     required this.repository,
     required this.ticketId,
     required this.onBack,
+    this.pickPiece = pickTicketPiece,
+    this.openPiece,
   });
 
   final SupportRepository repository;
   final String ticketId;
   final VoidCallback onBack;
+
+  /// Choix et ouverture des pièces (remplaçables dans les tests).
+  final PiecePicker pickPiece;
+  final PieceOpener? openPiece;
 
   @override
   State<TicketView> createState() => _TicketViewState();
@@ -324,6 +353,8 @@ class _TicketViewState extends State<TicketView> {
   TicketDetail? _ticket;
   bool _busy = false;
   bool _failed = false;
+  PickedPiece? _piece;
+  String? _pieceError;
 
   @override
   void initState() {
@@ -359,6 +390,7 @@ class _TicketViewState extends State<TicketView> {
   Widget build(BuildContext context) {
     final l10n = FpL10n.of(context);
     final ticket = _ticket;
+    final open = widget.openPiece ?? ticketPieceOpener(widget.repository);
     final time = DateFormat.yMMMd(Localizations.localeOf(context).toString())
         .add_Hm();
     if (ticket == null) {
@@ -405,6 +437,11 @@ class _TicketViewState extends State<TicketView> {
           body: ticket.description,
           redacted: ticket.redacted,
           mine: true,
+          pieces: TicketPieces(
+            ticketId: ticket.id,
+            attachments: ticket.attachments,
+            onOpen: open,
+          ),
         ),
         if (ticket.messages.isEmpty)
           Text(l10n.supportNoAnswer, style: FpText.muted14)
@@ -416,6 +453,11 @@ class _TicketViewState extends State<TicketView> {
               body: m.body,
               redacted: m.redacted,
               mine: !m.fromAgent,
+              pieces: TicketPieces(
+                ticketId: ticket.id,
+                attachments: m.attachments,
+                onOpen: open,
+              ),
             ),
         if (ticket.canReopen) ...[
           Text(l10n.supportResolvedHint, style: FpText.muted14),
@@ -434,6 +476,23 @@ class _TicketViewState extends State<TicketView> {
             controller: _reply,
             fieldKey: const Key('support-reply'),
           ),
+          _PieceField(
+            piece: _piece,
+            onPick: () async {
+              final choice = await widget.pickPiece(context);
+              if (choice == null || !mounted) return;
+              setState(() {
+                _piece = choice.piece;
+                _pieceError = choice.error;
+              });
+            },
+            onRemove: () => setState(() => _piece = null),
+          ),
+          if (_pieceError != null)
+            Text(
+              _pieceError!,
+              style: FpText.body(size: 13, color: FpColors.danger),
+            ),
           FpButton(
             label: l10n.supportReplySend,
             icon: FpIcons.mail,
@@ -446,8 +505,10 @@ class _TicketViewState extends State<TicketView> {
                       final updated = await widget.repository.reply(
                         ticket.id,
                         body,
+                        piece: _piece,
                       );
                       _reply.clear();
+                      _piece = null;
                       return updated;
                     });
                   },
@@ -466,6 +527,7 @@ class _Bubble extends StatelessWidget {
     required this.body,
     required this.redacted,
     required this.mine,
+    required this.pieces,
   });
 
   final String author;
@@ -473,6 +535,7 @@ class _Bubble extends StatelessWidget {
   final String body;
   final bool redacted;
   final bool mine;
+  final Widget pieces;
 
   @override
   Widget build(BuildContext context) {
@@ -495,6 +558,8 @@ class _Bubble extends StatelessWidget {
                 style: FpText.body(size: 12, color: FpColors.warningInk),
               ),
             ],
+            const SizedBox(height: FpSpace.x6),
+            pieces,
           ],
         ),
       ),
@@ -546,6 +611,41 @@ class _MultilineField extends StatelessWidget {
             ),
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Bouton « Joindre une pièce » ou la pièce choisie, avec son format.
+class _PieceField extends StatelessWidget {
+  const _PieceField({
+    required this.piece,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  final PickedPiece? piece;
+  final VoidCallback onPick;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = FpL10n.of(context);
+    final chosen = piece;
+    if (chosen != null) {
+      return PickedPieceRow(piece: chosen, onRemove: onRemove);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        FpLink(
+          label: l10n.supportAttach,
+          icon: FpIcons.plus,
+          onTap: onPick,
+          key: const Key('support-attach'),
+        ),
+        const SizedBox(height: FpSpace.x4),
+        Text(l10n.supportAttachHint, style: FpText.small),
       ],
     );
   }

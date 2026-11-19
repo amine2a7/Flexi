@@ -355,8 +355,11 @@ export class AdminController {
     return this.admin.approvals(
       query,
       parse(
-        z.object({ status: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional() }),
-        { status: query.status },
+        z.object({
+          status: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
+          q: z.string().trim().max(100).optional(),
+        }),
+        { status: query.status, q: query.q },
         'query',
       ),
     );

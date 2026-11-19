@@ -94,7 +94,8 @@
     "amount": "Amount",
     "status": "Status",
     "emptyTitle": "No receivables",
-    "emptyMessage": "All your receivables have been settled."
+    "emptyMessage": "All your receivables have been settled.",
+    "search": "Search a reference"
   },
   "payouts": {
     "title": "Request a payout",
@@ -182,7 +183,8 @@
       "STATEMENT": "Monthly statement",
       "CERTIFICATE": "Certificate"
     },
-    "emptyDocuments": "No documents"
+    "emptyDocuments": "No documents",
+    "search": "Search a reference"
   },
   "shop": {
     "title": "My shop",

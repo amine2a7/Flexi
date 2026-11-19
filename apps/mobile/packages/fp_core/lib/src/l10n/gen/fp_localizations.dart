@@ -2786,6 +2786,66 @@ abstract class FpL10n {
   /// In fr, this message translates to:
   /// **'Opération concernée : {reference}'**
   String supportLinked(String reference);
+
+  /// No description provided for @supportAttach.
+  ///
+  /// In fr, this message translates to:
+  /// **'Joindre une pièce (photo, capture ou PDF)'**
+  String get supportAttach;
+
+  /// No description provided for @supportAttachHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'PDF, JPG ou PNG, 5 Mo au plus.'**
+  String get supportAttachHint;
+
+  /// No description provided for @supportAttachCamera.
+  ///
+  /// In fr, this message translates to:
+  /// **'Prendre une photo'**
+  String get supportAttachCamera;
+
+  /// No description provided for @supportAttachGallery.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisir une image ou une capture'**
+  String get supportAttachGallery;
+
+  /// No description provided for @supportAttachPdf.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisir un PDF'**
+  String get supportAttachPdf;
+
+  /// No description provided for @supportAttachTooLarge.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le fichier dépasse 5 Mo.'**
+  String get supportAttachTooLarge;
+
+  /// No description provided for @supportAttachType.
+  ///
+  /// In fr, this message translates to:
+  /// **'Format accepté : PDF, JPG ou PNG.'**
+  String get supportAttachType;
+
+  /// No description provided for @supportAttachRemove.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer la pièce'**
+  String get supportAttachRemove;
+
+  /// No description provided for @supportAttachError.
+  ///
+  /// In fr, this message translates to:
+  /// **'La pièce n\'a pas pu être ouverte.'**
+  String get supportAttachError;
+
+  /// No description provided for @supportAttachOpen.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouvrir {name}'**
+  String supportAttachOpen(String name);
 }
 
 class _FpL10nDelegate extends LocalizationsDelegate<FpL10n> {

@@ -40,6 +40,7 @@ export default function BeneficiaryHistoryPage() {
               ? {}
               : { type: filters.status as Schemas['EmployeeOperationType'] }),
             ...(filters.creditType === '' ? {} : { creditType: filters.creditType }),
+            ...(filters.q === '' ? {} : { q: filters.q }),
           },
         },
       }),
@@ -102,6 +103,7 @@ export default function BeneficiaryHistoryPage() {
       <PageHeader title={t('title')} description={t('description')} />
       <Card>
         <FilterBar
+          searchLabel={t('search')}
           statusLabel={t('type')}
           statusPlaceholder={t('allOperations')}
           statusOptions={TYPES.map((value) => ({ value, label: t(`types.${value}`) }))}

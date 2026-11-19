@@ -3,6 +3,7 @@
 import type { Schemas } from '@flexipay/api-client';
 import { ChevronRight } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { usePlatformTerms } from '@/lib/api/use-platform-terms';
 import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
@@ -12,6 +13,7 @@ import { Amount } from '@/components/ui/amount';
 import { buttonClasses } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { DataTable, type Column } from '@/components/ui/data-table';
+import { FilterBar, type Filters } from '@/components/ui/filter-bar';
 import { PageHeader } from '@/components/ui/layout-blocks';
 import { StatusBadge } from '@/components/ui/status-badge';
 
@@ -19,10 +21,13 @@ export default function AdminSettlementsPage() {
   const t = useTranslations('admin.settlements');
   const { settlementDays } = usePlatformTerms();
   const locale = useLocale();
+  const [filters, setFilters] = useState<Filters>({ q: '', status: '', creditType: '' });
   const list = usePagedList(
     (cursor, withCount) =>
-      getApi().GET('/v1/admin/settlements', { params: { query: { cursor, withCount } } }),
-    [],
+      getApi().GET('/v1/admin/settlements', {
+        params: { query: { cursor, withCount, ...(filters.q === '' ? {} : { q: filters.q }) } },
+      }),
+    [filters.q],
   );
   const columns: Column<Schemas['SettlementBatch']>[] = [
     {
@@ -98,6 +103,7 @@ export default function AdminSettlementsPage() {
     <>
       <PageHeader title={t('title')} description={t('description', { days: settlementDays })} />
       <Card>
+        <FilterBar searchLabel={t('search')} onApply={setFilters} />
         <DataTable
           caption={t('title')}
           columns={columns}

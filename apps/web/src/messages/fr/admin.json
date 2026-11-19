@@ -162,7 +162,8 @@
     "approvedToast": "Demande validée.",
     "rejectedToast": "Demande refusée.",
     "emptyPending": "Aucune demande en attente",
-    "emptyHistory": "Aucune demande traitée"
+    "emptyHistory": "Aucune demande traitée",
+    "search": "Rechercher (objet, demandeur)"
   },
   "settlements": {
     "title": "Règlements",
@@ -190,7 +191,8 @@
     "releaseNeeded": "Lot à libérer par Finance (double validation) avant son départ à la banque.",
     "released": "Lot libéré : l’ordre part à la banque à sa date.",
     "bankReturned": "Retour de la banque rapproché (ordre {reference}).",
-    "taxes": "TVA et timbres"
+    "taxes": "TVA et timbres",
+    "search": "Rechercher (lot, virement, commerçant)"
   },
   "audit": {
     "title": "Journal d'audit",
@@ -594,7 +596,9 @@
     "notes": "Notes d’instruction",
     "notesEmpty": "Aucune note pour le moment.",
     "noteLabel": "Ajouter une note",
-    "noteAdd": "Ajouter"
+    "noteAdd": "Ajouter",
+    "searchAlerts": "Rechercher une alerte",
+    "searchDisputes": "Rechercher (litige, paiement, commerçant)"
   },
   "commissionWindow": {
     "stepInfo": "Informations",
@@ -802,7 +806,8 @@
       "COMPANY": "Entreprise",
       "EMPLOYEE": "Employé",
       "MERCHANT": "Commerçant"
-    }
+    },
+    "search": "Référence ou compte"
   },
   "invoices": {
     "title": "Factures",

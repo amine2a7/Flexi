@@ -316,13 +316,22 @@ export class SearchService {
               AND u.employee_id IS NULL`
           : Prisma.sql`WHERE u.role = 'MERCHANT' AND u.merchant_id = ${scope.id}::uuid
               AND u.employee_id IS NULL`;
+    // The candidates are always found under the session (the function checks its tenant).
+    const found = await tx.$queryRaw<{ id: string; score: number }[]>`
+      SELECT s.id, s.score FROM ${candidates('users', needle, scope)} s`;
+    if (found.length === 0) return [];
+    const ids = found.map((row) => row.id);
+    const scores = found.map((row) => row.score);
     const query = () => tx.$queryRaw<Row[]>`
       SELECT u.id, u.display_name AS title, u.email AS subtitle, u.status::text AS status,
              NULL::bigint AS amount, coalesce(u.company_id, u.merchant_id) AS parent_id
-        FROM ${candidates('users', needle, scope)} s JOIN users u ON u.id = s.id
+        FROM unnest(${ids}::uuid[], ${scores}::real[]) AS s(id, score)
+        JOIN users u ON u.id = s.id
        ${tenant}
        ORDER BY s.score DESC, u.display_name
        LIMIT ${GROUP_SIZE}`;
+    // A company session does not read its team's rows (RLS): that read only is a service step,
+    // narrowed to the company of the session.
     return scope?.column === 'company_id' ? asService(tx, query) : query();
   }
 

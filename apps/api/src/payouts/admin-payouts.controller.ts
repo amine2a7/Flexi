@@ -102,7 +102,11 @@ export class AdminPayoutsController {
   @Can('adminPayouts.read')
   @Get('settlements')
   batches(@Query() query: Record<string, unknown>) {
-    return this.payouts.batches(query);
+    return this.payouts.batches(query, parse(
+      z.object({ q: z.string().trim().max(100).optional() }),
+      { q: query.q },
+      'query',
+    ).q);
   }
 
   @Can('adminPayouts.read')

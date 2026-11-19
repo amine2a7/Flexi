@@ -26,15 +26,23 @@ export default function ReceivablesPage() {
   const canPayouts = useCanOpen('/commercant/virements');
   const [total, setTotal] = useState<number | undefined>(undefined);
   const [creditType, setCreditType] = useState<CreditType | ''>('');
+  const [search, setSearch] = useState('');
   const list = usePagedList(
     async (cursor, withCount) => {
       const result = await getApi().GET('/v1/merchant/receivables', {
-        params: { query: { cursor, withCount, ...(creditType === '' ? {} : { creditType }) } },
+        params: {
+          query: {
+            cursor,
+            withCount,
+            ...(creditType === '' ? {} : { creditType }),
+            ...(search === '' ? {} : { q: search }),
+          },
+        },
       });
       if (result.data !== undefined) setTotal(result.data.totalMillimes);
       return result;
     },
-    [creditType],
+    [creditType, search],
   );
 
   const columns: Column<Schemas['Receivable']>[] = [
@@ -99,8 +107,10 @@ export default function ReceivablesPage() {
       </div>
       <Card>
         <FilterBar
+          searchLabel={t('search')}
           withCreditType
           onApply={(filters) => {
+            setSearch(filters.q);
             setCreditType(filters.creditType);
           }}
         />

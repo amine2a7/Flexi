@@ -1621,4 +1621,36 @@ class FpL10nFr extends FpL10n {
   String supportLinked(String reference) {
     return 'Opération concernée : $reference';
   }
+
+  @override
+  String get supportAttach => 'Joindre une pièce (photo, capture ou PDF)';
+
+  @override
+  String get supportAttachHint => 'PDF, JPG ou PNG, 5 Mo au plus.';
+
+  @override
+  String get supportAttachCamera => 'Prendre une photo';
+
+  @override
+  String get supportAttachGallery => 'Choisir une image ou une capture';
+
+  @override
+  String get supportAttachPdf => 'Choisir un PDF';
+
+  @override
+  String get supportAttachTooLarge => 'Le fichier dépasse 5 Mo.';
+
+  @override
+  String get supportAttachType => 'Format accepté : PDF, JPG ou PNG.';
+
+  @override
+  String get supportAttachRemove => 'Retirer la pièce';
+
+  @override
+  String get supportAttachError => 'La pièce n\'a pas pu être ouverte.';
+
+  @override
+  String supportAttachOpen(String name) {
+    return 'Ouvrir $name';
+  }
 }

@@ -7,7 +7,7 @@ import { useState, type SyntheticEvent } from 'react';
 import { getApi } from '@/lib/api/client';
 import { useApiQuery } from '@/lib/api/use-api-query';
 import { usePagedList } from '@/lib/api/use-paged-list';
-import { useUrlFilterState } from '@/lib/ui/use-url-filters';
+import { useDebounced, useUrlFilterState } from '@/lib/ui/use-url-filters';
 import { formatDateTime } from '@/lib/format/date';
 import { Amount } from '@/components/ui/amount';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ interface LedgerFilters {
   clientType: ClientType | '';
   clientId: string;
   transactionType: string;
+  q: string;
   from: string;
   to: string;
 }
@@ -33,6 +34,7 @@ const EMPTY: LedgerFilters = {
   clientType: '',
   clientId: '',
   transactionType: '',
+  q: '',
   from: '',
   to: '',
 };
@@ -49,6 +51,7 @@ const URL_NAMES = {
   clientType: 'client',
   clientId: 'id',
   transactionType: 'type',
+  q: 'q',
   from: 'du',
   to: 'au',
 } as const;
@@ -62,6 +65,7 @@ function ledgerQuery(filters: LedgerFilters) {
       ? {}
       : { clientType: filters.clientType, clientId: filters.clientId }),
     ...(filters.transactionType === '' ? {} : { transactionType: filters.transactionType }),
+    ...(filters.q === '' ? {} : { q: filters.q }),
     ...(from === undefined ? {} : { createdFrom: from }),
     ...(to === undefined ? {} : { createdTo: to }),
   };
@@ -108,6 +112,11 @@ export default function LedgerPage() {
       ...(field === 'clientType' ? { clientId: '' } : {}),
     }));
   };
+
+  // W-SUP-bis: the reference typed is searched 300 ms after the last key.
+  useDebounced(draft.q, filters.q, (q) => {
+    setFilters({ ...filters, q });
+  });
 
   function onSubmit(event: SyntheticEvent) {
     event.preventDefault();
@@ -218,6 +227,14 @@ export default function LedgerPage() {
             value={draft.clientId}
             onChange={(event) => {
               set('clientId')(event.target.value);
+            }}
+          />
+          <TextField
+            label={t('search')}
+            type="search"
+            value={draft.q}
+            onChange={(event) => {
+              set('q')(event.target.value);
             }}
           />
           <SelectField
