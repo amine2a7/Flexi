@@ -1302,11 +1302,21 @@ export class AdminService {
 
   async kycFiles(
     query: Record<string, unknown>,
-    filters: { status?: KycStatus; accountType?: KycAccountType },
+    filters: { status?: KycStatus; accountType?: KycAccountType; q?: string },
   ) {
     const request = this.paginator.request(query, filters);
+    const q = filters.q?.trim() ?? '';
     return this.db.user(async (tx) => {
       const where: Prisma.KycFileWhereInput = {
+        // W-SUP: instant search by client name.
+        ...(q === ''
+          ? {}
+          : {
+              OR: [
+                { company: { name: { contains: q, mode: 'insensitive' } } },
+                { merchant: { name: { contains: q, mode: 'insensitive' } } },
+              ],
+            }),
         ...(filters.status === undefined ? {} : { status: filters.status }),
         ...(filters.accountType === undefined ? {} : { accountType: filters.accountType }),
       };

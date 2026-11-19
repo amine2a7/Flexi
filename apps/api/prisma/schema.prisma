@@ -1420,3 +1420,114 @@ model FraudAlert {
   @@index([status, occurredAt], map: "fraud_alerts_status_idx")
   @@map("fraud_alerts")
 }
+
+// ------------------------------------------------------------------ support (W-SUP)
+
+enum TicketCategory {
+  PAYMENT_DECLINED
+  DISPUTED_TRANSACTION
+  ACCOUNT_ACCESS
+  ORDER_TRANSFER
+  PAYOUT
+  KYC
+  OTHER
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  NORMAL
+  HIGH
+}
+
+enum TicketTeam {
+  SUPPORT
+  FINANCE
+  OPERATIONS
+}
+
+enum TicketLinkType {
+  PAYMENT
+  ORDER
+  PAYOUT
+}
+
+/// Support ticket (W-SUP): one tenant (company, merchant or beneficiary), TK-AAAA-NNNNNN.
+model SupportTicket {
+  id                 String          @id @db.Uuid
+  reference          String          @unique @db.VarChar(20)
+  category           TicketCategory
+  priority           TicketPriority
+  status             TicketStatus    @default(OPEN)
+  team               TicketTeam      @default(SUPPORT)
+  subject            String          @db.VarChar(160)
+  description        String          @db.VarChar(4000)
+  redacted           Boolean         @default(false)
+  requesterId        String          @map("requester_id") @db.Uuid
+  requesterName      String          @map("requester_name") @db.VarChar(120)
+  requesterRole      Role            @map("requester_role")
+  companyId          String?         @map("company_id") @db.Uuid
+  merchantId         String?         @map("merchant_id") @db.Uuid
+  employeeId         String?         @map("employee_id") @db.Uuid
+  linkType           TicketLinkType? @map("link_type")
+  linkId             String?         @map("link_id") @db.Uuid
+  linkReference      String?         @map("link_reference") @db.VarChar(32)
+  assigneeId         String?         @map("assignee_id") @db.Uuid
+  assigneeName       String?         @map("assignee_name") @db.VarChar(120)
+  createdAt          DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime        @default(now()) @map("updated_at") @db.Timestamptz(3)
+  firstResponseDueAt DateTime        @map("first_response_due_at") @db.Timestamptz(3)
+  firstResponseAt    DateTime?       @map("first_response_at") @db.Timestamptz(3)
+  resolvedAt         DateTime?       @map("resolved_at") @db.Timestamptz(3)
+  closedAt           DateTime?       @map("closed_at") @db.Timestamptz(3)
+
+  messages    SupportTicketMessage[]
+  attachments SupportTicketAttachment[]
+
+  @@index([status, createdAt(sort: Desc)], map: "support_tickets_queue_idx")
+  @@map("support_tickets")
+}
+
+/// Message of a ticket (append only); an internal note is never shown to the client (RLS).
+model SupportTicketMessage {
+  id         String   @id @db.Uuid
+  ticketId   String   @map("ticket_id") @db.Uuid
+  authorId   String?  @map("author_id") @db.Uuid
+  authorName String   @map("author_name") @db.VarChar(120)
+  fromAgent  Boolean  @map("from_agent")
+  internal   Boolean  @default(false)
+  body       String   @db.VarChar(4000)
+  redacted   Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  ticket      SupportTicket             @relation(fields: [ticketId], references: [id])
+  attachments SupportTicketAttachment[]
+
+  @@index([ticketId, createdAt], map: "support_ticket_messages_ticket_idx")
+  @@map("support_ticket_messages")
+}
+
+/// Piece of a ticket, encrypted on the storage (W-SUP).
+model SupportTicketAttachment {
+  id          String   @id @db.Uuid
+  ticketId    String   @map("ticket_id") @db.Uuid
+  messageId   String?  @map("message_id") @db.Uuid
+  fileName    String   @map("file_name") @db.VarChar(255)
+  contentType String   @map("content_type") @db.VarChar(40)
+  sizeBytes   Int      @map("size_bytes")
+  storageKey  String   @map("storage_key")
+  uploadedBy  String?  @map("uploaded_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  ticket  SupportTicket         @relation(fields: [ticketId], references: [id])
+  message SupportTicketMessage? @relation(fields: [messageId], references: [id])
+
+  @@index([ticketId], map: "support_ticket_attachments_ticket_idx")
+  @@map("support_ticket_attachments")
+}

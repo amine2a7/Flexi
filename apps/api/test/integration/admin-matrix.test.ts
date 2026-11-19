@@ -120,6 +120,18 @@ const EXPECTED: Record<string, Sub[]> = {
   'AdminInvoicesController.detail': BACK_OFFICE,
   'AdminInvoicesController.pdf': BACK_OFFICE,
   'AdminPayoutsController.invoice': BACK_OFFICE,
+  // W-SUP: the support queue and the global search, every administrator.
+  'AdminSupportController.queue': ALL,
+  'AdminSupportController.stats': ALL,
+  'AdminSupportController.agents': ALL,
+  'AdminSupportController.detail': ALL,
+  'AdminSupportController.reply': ALL,
+  'AdminSupportController.assign': ALL,
+  'AdminSupportController.transfer': ALL,
+  'AdminSupportController.status': ALL,
+  'AdminSupportController.link': ALL,
+  'AdminSupportController.attachment': ALL,
+  'SearchController.search': ALL,
 };
 
 const adminRoutes = (await routes()).filter(

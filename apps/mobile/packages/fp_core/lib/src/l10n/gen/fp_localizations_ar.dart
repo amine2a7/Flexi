@@ -1470,4 +1470,129 @@ class FpL10nAr extends FpL10n {
   String payoutRejected(String ref) {
     return '$ref · مرفوض';
   }
+
+  @override
+  String get supportTickets => 'طلباتي';
+
+  @override
+  String get supportTicketsHint => 'طلباتك لفريق FlexiPay والردود عليها.';
+
+  @override
+  String get supportNew => 'طلب جديد';
+
+  @override
+  String get supportEmpty => 'لا توجد طلبات حاليًا.';
+
+  @override
+  String get supportSearch => 'البحث عن طلب';
+
+  @override
+  String get supportCategory => 'الصنف';
+
+  @override
+  String get supportSubject => 'الموضوع';
+
+  @override
+  String get supportDescription => 'الوصف';
+
+  @override
+  String get supportPinWarning =>
+      'لا تكتب أبدًا رمزك السري أو كلمة المرور أو رقم بطاقة: سيتم إخفاؤها.';
+
+  @override
+  String get supportSend => 'إرسال الطلب';
+
+  @override
+  String get supportInvalid =>
+      'اكتب موضوعًا (3 أحرف على الأقل) ووصفًا (10 أحرف على الأقل).';
+
+  @override
+  String get supportRateLimited =>
+      'فتحت طلبات كثيرة خلال ساعة. أعد المحاولة لاحقًا.';
+
+  @override
+  String get supportReply => 'ردّك';
+
+  @override
+  String get supportReplySend => 'إرسال';
+
+  @override
+  String get supportReopen => 'إعادة فتح الطلب';
+
+  @override
+  String get supportResolvedHint =>
+      'تمّ حلّ الطلب: سيُغلق بعد 7 أيام من حلّه. يمكنك إعادة فتحه قبل ذلك.';
+
+  @override
+  String get supportClosedHint => 'الطلب مغلق. افتح طلبًا جديدًا عند الحاجة.';
+
+  @override
+  String get supportRedacted => 'تمّ إخفاء رمز أو رقم حسّاس.';
+
+  @override
+  String get supportNoAnswer => 'لا يوجد ردّ بعد. يجيبك فريق FlexiPay هنا.';
+
+  @override
+  String get supportFlexipay => 'FlexiPay';
+
+  @override
+  String get supportYou => 'أنت';
+
+  @override
+  String get supportStatusOpen => 'مفتوح';
+
+  @override
+  String get supportStatusInProgress => 'قيد المعالجة';
+
+  @override
+  String get supportStatusWaiting => 'في انتظار ردّك';
+
+  @override
+  String get supportStatusResolved => 'تمّ الحلّ';
+
+  @override
+  String get supportStatusClosed => 'مغلق';
+
+  @override
+  String get supportCategoryPaymentDeclined => 'دفع مرفوض';
+
+  @override
+  String get supportCategoryDisputed => 'عملية متنازع عليها';
+
+  @override
+  String get supportCategoryAccount => 'الحساب / الدخول';
+
+  @override
+  String get supportCategoryOrder => 'طلبية / تحويل';
+
+  @override
+  String get supportCategoryPayout => 'تحويل المستحقات';
+
+  @override
+  String get supportCategoryKyc => 'ملف التعريف';
+
+  @override
+  String get supportCategoryOther => 'أخرى';
+
+  @override
+  String get historySearch => 'بحث (المرجع، التاجر، المبلغ)';
+
+  @override
+  String get searchNoResult => 'لا توجد نتائج.';
+
+  @override
+  String get daySearch => 'بحث (المرجع أو المبلغ)';
+
+  @override
+  String get helpAndTickets => 'المساعدة والطلبات';
+
+  @override
+  String supportSent(String reference) {
+    return 'تمّ إرسال الطلب $reference.';
+  }
+
+  @override
+  String supportLinked(String reference) {
+    return 'العملية المعنية: $reference';
+  }
 }

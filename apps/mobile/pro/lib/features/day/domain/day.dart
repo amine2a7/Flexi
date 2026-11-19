@@ -18,6 +18,7 @@ class DayCollection {
     required this.cashierName,
     required this.approved,
     this.refusal,
+    this.reference,
   });
 
   final String id;
@@ -32,6 +33,23 @@ class DayCollection {
   final String cashierName;
   final bool approved;
   final RefusalReason? refusal;
+
+  /// Référence du paiement (PAY-…), pour la recherche (W-SUP).
+  final String? reference;
+
+  /// Vrai si la recherche (référence ou montant en dinars, « 12,5 ») trouve l'encaissement.
+  bool matches(String query) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return true;
+    if ((reference ?? '').toLowerCase().contains(q)) return true;
+    final m = RegExp(r'^(\d{1,9})(?:[.,](\d{1,3}))?$')
+        .firstMatch(q.replaceAll(' ', ''));
+    if (m == null) return false;
+    final millimes =
+        int.parse(m.group(1)!) * 1000 +
+        int.parse((m.group(2) ?? '').padRight(3, '0'));
+    return amount == millimes;
+  }
 }
 
 /// Journée du commerce, ou du caissier connecté.

@@ -2,6 +2,7 @@
 
 import type { Schemas } from '@flexipay/api-client';
 import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
 import { usePagedList } from '@/lib/api/use-paged-list';
@@ -9,6 +10,7 @@ import { formatDateTime } from '@/lib/format/date';
 import { Amount } from '@/components/ui/amount';
 import { Card } from '@/components/ui/card';
 import { DataTable, type Column } from '@/components/ui/data-table';
+import { FilterBar, type Filters } from '@/components/ui/filter-bar';
 import { PageHeader } from '@/components/ui/layout-blocks';
 import { PdfDownloadButton } from '@/components/ui/pdf-download';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -16,10 +18,15 @@ import { StatusBadge } from '@/components/ui/status-badge';
 export default function InvoicesPage() {
   const t = useTranslations('company.invoices');
   const locale = useLocale();
+  const [filters, setFilters] = useState<Filters>({ q: '', status: '', creditType: '' });
   const list = usePagedList(
     (cursor, withCount) =>
-      getApi().GET('/v1/company/invoices', { params: { query: { cursor, withCount } } }),
-    [],
+      getApi().GET('/v1/company/invoices', {
+        params: {
+          query: { cursor, withCount, ...(filters.q === '' ? {} : { q: filters.q }) },
+        },
+      }),
+    [filters.q],
   );
   const columns: Column<Schemas['Invoice']>[] = [
     {
@@ -80,6 +87,7 @@ export default function InvoicesPage() {
     <>
       <PageHeader title={t('title')} description={t('description')} />
       <Card>
+        <FilterBar searchLabel={t('search')} onApply={setFilters} />
         <DataTable
           caption={t('title')}
           columns={columns}

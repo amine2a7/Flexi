@@ -27,6 +27,9 @@ const PAGE_PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
   '/admin/securite': ['disputes.read'],
   '/admin/reporting': ['dashboard.read'],
   '/admin/messages': ['messages.read'],
+  // W-SUP: the support tickets (every administrator; every user of a company or a shop).
+  '/admin/support': ['tickets.read'],
+  '/entreprise/support': ['support.use'],
   '/admin/parametres': ['settings.read'],
   '/entreprise': ['balances.read'],
   '/entreprise/employes': ['employees.read'],
@@ -51,10 +54,10 @@ const PAGE_PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
   '/commercant/creances': ['receivables.read'],
   '/commercant/virements': ['payouts.read'],
   '/commercant/reglements': ['settlements.read'],
-  // The cashier reads the shop for the collect page only: the shop page and the support are the
-  // owner's (request of 2026-11-14: a cashier collects and sees the day, nothing else).
+  // The cashier reads the shop for the collect page only: the shop page is the owner's (request
+  // of 2026-11-14). The support tickets are open to every sub-role (W-SUP).
   '/commercant/mon-commerce': ['stats.read'],
-  '/commercant/support': ['stats.read'],
+  '/commercant/support': ['support.use'],
   '/commercant/statistiques': ['stats.read'],
 };
 

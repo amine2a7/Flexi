@@ -122,6 +122,14 @@ const CONTEXT_OVERRIDES: Record<string, Record<string, string>> = {
   kyc: { MISSING: 'EN_ATTENTE', SUBMITTED: 'ENVOYEE', VALIDATED: 'VALIDE', TO_CORRECT: 'REJETE' },
   // Account lifecycle (commun-statut-utilisateur.md §3.1).
   user: { ACTIVE: 'ACTIF', INVITED: 'INVITE', SUSPENDED: 'SUSPENDU', DEACTIVATED: 'DESACTIVE' },
+  // Support tickets (W-SUP): open, in progress, waiting for the client, resolved, closed.
+  ticket: {
+    OPEN: 'EN_ATTENTE',
+    IN_PROGRESS: 'A_REGLER',
+    WAITING_CUSTOMER: 'ENVOYEE',
+    RESOLVED: 'VALIDE',
+    CLOSED: 'EXPIRE',
+  },
   // Fraud alerts and disputes: severity and state with the colours of the charter.
   risk: {
     OPEN: 'EN_ATTENTE',
@@ -140,7 +148,7 @@ const CONTEXT_OVERRIDES: Record<string, Record<string, string>> = {
 interface StatusBadgeProps {
   /** Status as sent by the API. */
   readonly status: string;
-  readonly context?: 'approval' | 'payout' | 'order' | 'user' | 'risk' | 'kyc';
+  readonly context?: 'approval' | 'payout' | 'order' | 'user' | 'risk' | 'kyc' | 'ticket';
   /** i18n key replacing the default label (e.g. merchant wording of A_REGLER, decision 2). */
   readonly labelKey?: string;
 }

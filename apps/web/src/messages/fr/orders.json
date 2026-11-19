@@ -166,7 +166,8 @@
     "firstByMe": "Vous avez fait la première validation le {date} : un autre administrateur doit valider.",
     "firstValidate": "Première validation",
     "secondValidate": "Valider (2e validation)",
-    "firstValidatedToast": "Première validation enregistrée : un second administrateur doit valider."
+    "firstValidatedToast": "Première validation enregistrée : un second administrateur doit valider.",
+    "search": "Rechercher (référence, entreprise)"
   },
   "reasonRequired": "Le motif est obligatoire.",
   "conflict": "Cette commande a changé entre-temps : la page a été actualisée.",

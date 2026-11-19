@@ -476,5 +476,58 @@
         "type": "String"
       }
     }
+  },
+  "supportTickets": "Mes demandes",
+  "supportTicketsHint": "Vos demandes à l'équipe FlexiPay et leurs réponses.",
+  "supportNew": "Nouvelle demande",
+  "supportEmpty": "Aucune demande pour le moment.",
+  "supportSearch": "Rechercher une demande",
+  "supportCategory": "Catégorie",
+  "supportSubject": "Sujet",
+  "supportDescription": "Description",
+  "supportPinWarning": "Ne saisissez jamais votre code PIN, votre mot de passe ni un numéro de carte : ils seraient masqués.",
+  "supportSend": "Envoyer la demande",
+  "supportInvalid": "Indiquez un sujet (3 caractères au moins) et une description (10 caractères au moins).",
+  "supportRateLimited": "Vous avez ouvert beaucoup de demandes en une heure. Réessayez plus tard.",
+  "supportReply": "Votre réponse",
+  "supportReplySend": "Envoyer",
+  "supportReopen": "Rouvrir la demande",
+  "supportResolvedHint": "Demande résolue : elle sera fermée 7 jours après sa résolution. Vous pouvez la rouvrir d’ici là.",
+  "supportClosedHint": "Demande fermée. Ouvrez une nouvelle demande si besoin.",
+  "supportRedacted": "Un code ou un numéro sensible a été masqué.",
+  "supportNoAnswer": "Pas encore de réponse. L'équipe FlexiPay vous répond ici.",
+  "supportFlexipay": "FlexiPay",
+  "supportYou": "Vous",
+  "supportStatusOpen": "Ouverte",
+  "supportStatusInProgress": "En cours",
+  "supportStatusWaiting": "En attente de votre réponse",
+  "supportStatusResolved": "Résolue",
+  "supportStatusClosed": "Fermée",
+  "supportCategoryPaymentDeclined": "Paiement refusé",
+  "supportCategoryDisputed": "Transaction contestée",
+  "supportCategoryAccount": "Compte / connexion",
+  "supportCategoryOrder": "Commande / virement",
+  "supportCategoryPayout": "Reversement",
+  "supportCategoryKyc": "KYC",
+  "supportCategoryOther": "Autre",
+  "historySearch": "Rechercher (référence, commerçant, montant)",
+  "searchNoResult": "Aucun résultat.",
+  "daySearch": "Rechercher (référence ou montant)",
+  "helpAndTickets": "Aide et demandes",
+  "supportSent": "Demande {reference} envoyée.",
+  "@supportSent": {
+    "placeholders": {
+      "reference": {
+        "type": "String"
+      }
+    }
+  },
+  "supportLinked": "Opération concernée : {reference}",
+  "@supportLinked": {
+    "placeholders": {
+      "reference": {
+        "type": "String"
+      }
+    }
   }
 }

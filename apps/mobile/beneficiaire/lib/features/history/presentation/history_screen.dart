@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fp_core/fp_core.dart';
@@ -18,6 +20,25 @@ class HistoryScreen extends ConsumerStatefulWidget {
 
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   int _month = 0;
+  final _search = TextEditingController();
+  Timer? _debounce;
+
+  /// Texte recherché (W-SUP), appliqué 300 ms après la dernière touche.
+  String _query = '';
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _search.dispose();
+    super.dispose();
+  }
+
+  void _onSearch(String text) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) setState(() => _query = text.trim());
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,16 +73,51 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           )
           .add(o);
     }
+    final title = Semantics(
+      header: true,
+      child: Text(
+        l10n.historyTitle,
+        style: FpText.display(size: 40, color: FpColors.navy),
+      ),
+    );
+    final searchField = FpTextField(
+      label: l10n.historySearch,
+      controller: _search,
+      icon: FpIcons.search,
+      onChanged: _onSearch,
+      fieldKey: const Key('history-search'),
+    );
+    if (_query.isNotEmpty) {
+      final found = ref.watch(operationSearchProvider(_query));
+      final results = found.value;
+      return FpTabScroll(
+        gap: FpSpace.x14,
+        children: [
+          title,
+          searchField,
+          if (results == null)
+            const Center(child: CircularProgressIndicator())
+          else if (results.isEmpty)
+            Text(l10n.searchNoResult, style: FpText.muted14)
+          else
+            ListGroup(
+              children: [
+                for (final op in results)
+                  OperationRow(
+                    op: op,
+                    dates: dates,
+                    mode: OperationRowMode.history,
+                  ),
+              ],
+            ),
+        ],
+      );
+    }
     return FpTabScroll(
       gap: FpSpace.x14,
       children: [
-        Semantics(
-          header: true,
-          child: Text(
-            l10n.historyTitle,
-            style: FpText.display(size: 40, color: FpColors.navy),
-          ),
-        ),
+        title,
+        searchField,
         Semantics(
           label: l10n.monthFilter,
           container: true,

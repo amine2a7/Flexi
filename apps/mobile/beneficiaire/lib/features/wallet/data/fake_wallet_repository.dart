@@ -62,6 +62,21 @@ class FakeWalletRepository implements WalletRepository {
   }
 
   @override
+  Future<List<Operation>> search(String query) async {
+    final q = query.trim().toLowerCase();
+    final amount = int.tryParse(q.replaceAll(',', '').replaceAll('.', ''));
+    return [
+      for (final o in _backend.operations)
+        if ((o.reference ?? '').toLowerCase().contains(q) ||
+            (o.merchantName ?? '').toLowerCase().contains(q) ||
+            (o.counterpart ?? '').toLowerCase().contains(q) ||
+            (amount != null &&
+                (o.amount.abs() == amount * 1000 || o.amount.abs() == amount)))
+          o,
+    ];
+  }
+
+  @override
   Future<Operation> operation(String id) async {
     final all = [..._backend.operations, ..._backend.adamOperations];
     return all.firstWhere((o) => o.id == id);

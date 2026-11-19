@@ -1479,4 +1479,132 @@ class FpL10nEn extends FpL10n {
   String payoutRejected(String ref) {
     return '$ref · Rejected';
   }
+
+  @override
+  String get supportTickets => 'My requests';
+
+  @override
+  String get supportTicketsHint =>
+      'Your requests to the FlexiPay team and their answers.';
+
+  @override
+  String get supportNew => 'New request';
+
+  @override
+  String get supportEmpty => 'No request yet.';
+
+  @override
+  String get supportSearch => 'Search a request';
+
+  @override
+  String get supportCategory => 'Category';
+
+  @override
+  String get supportSubject => 'Subject';
+
+  @override
+  String get supportDescription => 'Description';
+
+  @override
+  String get supportPinWarning =>
+      'Never type your PIN, your password or a card number: they would be masked.';
+
+  @override
+  String get supportSend => 'Send the request';
+
+  @override
+  String get supportInvalid =>
+      'Give a subject (at least 3 characters) and a description (at least 10 characters).';
+
+  @override
+  String get supportRateLimited =>
+      'You opened many requests in one hour. Try again later.';
+
+  @override
+  String get supportReply => 'Your reply';
+
+  @override
+  String get supportReplySend => 'Send';
+
+  @override
+  String get supportReopen => 'Reopen the request';
+
+  @override
+  String get supportResolvedHint =>
+      'Request resolved: it is closed 7 days after its resolution. You can reopen it until then.';
+
+  @override
+  String get supportClosedHint =>
+      'Request closed. Open a new request if needed.';
+
+  @override
+  String get supportRedacted => 'A sensitive code or number was masked.';
+
+  @override
+  String get supportNoAnswer =>
+      'No answer yet. The FlexiPay team answers you here.';
+
+  @override
+  String get supportFlexipay => 'FlexiPay';
+
+  @override
+  String get supportYou => 'You';
+
+  @override
+  String get supportStatusOpen => 'Open';
+
+  @override
+  String get supportStatusInProgress => 'In progress';
+
+  @override
+  String get supportStatusWaiting => 'Waiting for your reply';
+
+  @override
+  String get supportStatusResolved => 'Resolved';
+
+  @override
+  String get supportStatusClosed => 'Closed';
+
+  @override
+  String get supportCategoryPaymentDeclined => 'Payment declined';
+
+  @override
+  String get supportCategoryDisputed => 'Disputed transaction';
+
+  @override
+  String get supportCategoryAccount => 'Account / sign-in';
+
+  @override
+  String get supportCategoryOrder => 'Order / transfer';
+
+  @override
+  String get supportCategoryPayout => 'Payout';
+
+  @override
+  String get supportCategoryKyc => 'KYC';
+
+  @override
+  String get supportCategoryOther => 'Other';
+
+  @override
+  String get historySearch => 'Search (reference, merchant, amount)';
+
+  @override
+  String get searchNoResult => 'No result.';
+
+  @override
+  String get daySearch => 'Search (reference or amount)';
+
+  @override
+  String get helpAndTickets => 'Help and requests';
+
+  @override
+  String supportSent(String reference) {
+    return 'Request $reference sent.';
+  }
+
+  @override
+  String supportLinked(String reference) {
+    return 'Operation concerned: $reference';
+  }
 }

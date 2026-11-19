@@ -166,7 +166,8 @@
     "firstByMe": "You made the first approval on {date}: another administrator must validate.",
     "firstValidate": "First approval",
     "secondValidate": "Validate (second approval)",
-    "firstValidatedToast": "First approval recorded: a second administrator must validate."
+    "firstValidatedToast": "First approval recorded: a second administrator must validate.",
+    "search": "Search (reference, company)"
   },
   "reasonRequired": "A reason is required.",
   "conflict": "This order changed in the meantime: the page was refreshed.",

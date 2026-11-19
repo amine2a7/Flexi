@@ -3,7 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { AuditService } from '../common/audit.service.js';
 import { randomDigits, uuidv7 } from '../common/crypto.js';
 import { asService, DbService, type Tx } from '../common/db.service.js';
-import { commissionOf, fromMillimes, toMillimes } from '../common/money.js';
+import { commissionOf, fromMillimes, searchedMillimes, toMillimes } from '../common/money.js';
 import { Paginator, type Page } from '../common/pagination.js';
 import { ApiProblem, problems, validationFailed } from '../common/problem.js';
 import { permissionsOf } from '../common/permissions.js';
@@ -471,10 +471,22 @@ export class PaymentsService {
   private async operations(
     tx: Tx,
     employeeId: string,
-    filters: { type?: string; creditType?: CreditType; from?: Date; to?: Date; id?: string },
+    filters: {
+      type?: string;
+      creditType?: CreditType;
+      from?: Date;
+      to?: Date;
+      id?: string;
+      q?: string;
+    },
     offset: number,
     limit: number,
   ) {
+    // W-SUP: reference, shop or company, or the amount typed in dinars.
+    const q = filters.q?.trim();
+    const like =
+      q === undefined || q === '' ? null : `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+    const amount = q === undefined ? null : searchedMillimes(q);
     const rows = await tx.$queryRaw<
       {
         id: string;
@@ -541,6 +553,8 @@ export class PaymentsService {
         AND (${filters.from ?? null}::timestamptz IS NULL OR o.occurred_at >= ${filters.from ?? null}::timestamptz)
         AND (${filters.to ?? null}::timestamptz IS NULL OR o.occurred_at < ${filters.to ?? null}::timestamptz)
         AND (${filters.id ?? null}::text IS NULL OR o.id = ${filters.id ?? null}::text)
+        AND (${like}::text IS NULL OR o.reference ILIKE ${like}::text
+             OR o.counterparty ILIKE ${like}::text OR o.amount = ${amount}::bigint)
       ORDER BY o.occurred_at DESC, o.id DESC
       OFFSET ${offset} LIMIT ${limit}`;
     return rows;
@@ -556,6 +570,7 @@ export class PaymentsService {
     filters: {
       type?: 'PAYMENT' | 'ALLOCATION' | 'EXPIRY' | 'FAMILY_TRANSFER';
       creditType?: CreditType;
+      q?: string;
     },
   ): Promise<Page<unknown>> {
     const employeeId = this.employeeId();
@@ -849,6 +864,10 @@ export class PaymentsService {
               OR: [
                 { reference: { contains: needle, mode: 'insensitive' as const } },
                 { customerFirstName: { contains: needle, mode: 'insensitive' as const } },
+                // W-SUP: the Pro app searches its day by reference or amount (dinars).
+                ...(searchedMillimes(needle) === null
+                  ? []
+                  : [{ amountMillimes: searchedMillimes(needle) ?? 0n }]),
               ],
             }),
         ...(from === undefined && request.createdTo === undefined

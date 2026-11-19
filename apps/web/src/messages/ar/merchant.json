@@ -158,7 +158,8 @@
     "destinationHint": "الحساب البنكي المسجل (مخفي). لتغييره، تواصل مع FlexiPay.",
     "requestAgain": "إعادة الطلب",
     "requestAgainFor": "إعادة طلب التحويل {reference}",
-    "invoice": "تنزيل فاتورة العمولة"
+    "invoice": "تنزيل فاتورة العمولة",
+    "search": "البحث عن مرجع"
   },
   "settlements": {
     "title": "التسويات والوثائق",

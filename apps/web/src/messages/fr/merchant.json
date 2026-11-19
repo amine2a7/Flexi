@@ -158,7 +158,8 @@
     "destinationHint": "Compte bancaire enregistré (masqué). Pour le changer, contactez FlexiPay.",
     "requestAgain": "Redemander",
     "requestAgainFor": "Redemander le virement {reference}",
-    "invoice": "Télécharger la facture de commission"
+    "invoice": "Télécharger la facture de commission",
+    "search": "Rechercher une référence"
   },
   "settlements": {
     "title": "Règlements et documents",

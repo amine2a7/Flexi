@@ -64,7 +64,7 @@ describe('page permissions', () => {
     expect(canOpen(readOnly, '/entreprise/employes/import')).toBe(false);
   });
 
-  it('only the owners open « Utilisateurs »; a cashier never opens the shop page nor support', () => {
+  it('only the owners open « Utilisateurs »; a cashier never opens the shop page', () => {
     expect(canOpen(account('entreprise@flexipay.test'), '/entreprise/utilisateurs')).toBe(true);
     expect(canOpen(account('commercant@flexipay.test'), '/commercant/utilisateurs')).toBe(true);
     expect(canOpen(account('commercant@flexipay.test'), '/commercant/mon-commerce')).toBe(true);
@@ -73,7 +73,8 @@ describe('page permissions', () => {
     const cashier = account('caissier@flexipay.test');
     expect(canOpen(cashier, '/commercant/utilisateurs')).toBe(false);
     expect(canOpen(cashier, '/commercant/mon-commerce')).toBe(false);
-    expect(canOpen(cashier, '/commercant/support')).toBe(false);
+    // W-SUP: the support tickets are open to every sub-role, the cashier included.
+    expect(canOpen(cashier, '/commercant/support')).toBe(true);
   });
 
   it('company Finance: orders, transfers and invoices, never employees, departments nor allocation', () => {
@@ -121,6 +122,26 @@ describe('W-FIN pages: allowed role, refused role', () => {
       'admin2@flexipay.test',
       'commercant@flexipay.test',
     ],
+  ];
+  for (const [path, allowed, refused] of pages) {
+    it(`${path}: ${allowed} opens it, ${refused} is refused`, () => {
+      expect(canOpen(account(allowed), path)).toBe(true);
+      expect(canOpen(account(refused), path)).toBe(false);
+    });
+  }
+});
+
+// W-SUP: the support tickets, every user of a company or a shop; the queue, every administrator.
+describe('W-SUP pages: allowed role, refused role', () => {
+  const ID = '0193a000-0000-7000-8000-000000000001';
+  const pages: readonly [string, string, string][] = [
+    ['/entreprise/support', 'rh@flexipay.test', 'support@flexipay.test'],
+    ['/entreprise/support/nouvelle', 'comptable@flexipay.test', 'admin@flexipay.test'],
+    [`/entreprise/support/${ID}`, 'lecture@flexipay.test', 'operations@flexipay.test'],
+    ['/commercant/support', 'caissier@flexipay.test', 'admin2@flexipay.test'],
+    [`/commercant/support/${ID}`, 'commercant@flexipay.test', 'support@flexipay.test'],
+    ['/admin/support', 'support@flexipay.test', 'entreprise@flexipay.test'],
+    [`/admin/support/${ID}`, 'admin2@flexipay.test', 'commercant@flexipay.test'],
   ];
   for (const [path, allowed, refused] of pages) {
     it(`${path}: ${allowed} opens it, ${refused} is refused`, () => {

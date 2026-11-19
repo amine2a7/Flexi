@@ -4,7 +4,7 @@ import { WEB_CHANNEL_HEADER, type Schemas } from '@flexipay/api-client';
 import { CircleHelp, Compass, LogOut, Menu, ShieldOff, X, Zap } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { getApi, setCsrfToken } from '@/lib/api/client';
 import { asProblem } from '@/lib/api/problem';
@@ -12,13 +12,14 @@ import { messageKey } from '@/i18n/keys';
 import { cn } from '@/lib/cn';
 import { resetAuthFlow } from '@/lib/session/auth-flow';
 import { SPACE_HOME } from '@/lib/session/return-to';
-import { canOpen, firstOpenPage } from '@/lib/session/permissions';
+import { can, canOpen, firstOpenPage } from '@/lib/session/permissions';
 import { SessionProvider, type Me } from '@/lib/session/session-context';
 import { buttonClasses } from '@/components/ui/button';
 import { PageEyebrowContext } from '@/components/ui/layout-blocks';
 import { LoadingBlock } from '@/components/ui/states';
 import { ToastProvider } from '@/components/ui/toast';
 import { CounterBadge } from './counter-badge';
+import { GlobalSearch } from './global-search';
 import { LocaleSwitcher } from './locale-switcher';
 import { HELP_ANCHORS } from '@/components/public/help-topics';
 import { NAVIGATION, isActive, isGroup, navLinks, type NavEntry } from './nav-config';
@@ -299,6 +300,12 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {/* W-SUP: global search (Ctrl+K) of the web spaces. */}
+            {role !== 'EMPLOYEE' && role !== 'FAMILY_MEMBER' && can(me, 'search.use', 'adminSearch.read') ? (
+              <Suspense>
+                <GlobalSearch role={role} pages={items} />
+              </Suspense>
+            ) : null}
             <span className="hidden min-h-chip-height items-center rounded-badge bg-emerald-soft px-3 text-caption font-label text-emerald-text md:inline-flex">
               {t(`layout.role.${role}`)}
             </span>
@@ -325,7 +332,7 @@ function Shell({ me, role, onSignOut, children }: ShellProps) {
             {/* Animation 1: page content enters in cascade; sidebar and header never move. */}
             <div className="fp-cascade">
               {pageOpen ? (
-                children
+                <Suspense>{children}</Suspense>
               ) : landing === undefined ? (
                 <PageForbidden home={items[0]?.href} />
               ) : null}

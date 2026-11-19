@@ -19,6 +19,7 @@ export 'src/components/pin_pad.dart';
 export 'src/components/stamp.dart';
 export 'src/components/ticket_card.dart';
 export 'src/icons/fp_icons.dart';
+export 'src/support/support_views.dart';
 export 'src/theme/fp_theme.dart';
 export 'src/tokens/fp_tokens.dart';
 export 'src/tokens/fp_typography.dart';

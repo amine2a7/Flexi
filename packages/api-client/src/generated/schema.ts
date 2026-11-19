@@ -3486,10 +3486,648 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/v1/support/tickets': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Mes demandes de support
+     * @description Permission `support.use`. Chaque utilisateur voit ses demandes ; le propriétaire voit celles de son entreprise ou de son commerce.
+     */
+    get: operations['listSupportTickets'];
+    put?: never;
+    /**
+     * Ouvrir une demande de support
+     * @description Multipart (pièce jointe facultative) ou JSON. Numéro TK-AAAA-NNNNNN ; priorité haute pour une transaction contestée. Un PIN, un mot de passe ou un numéro de carte saisi est masqué avant l'enregistrement. 10 demandes par heure et par utilisateur au plus.
+     */
+    post: operations['createSupportTicket'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/support/tickets/{ticketId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Détail d'une demande et sa conversation
+     * @description Les notes internes de FlexiPay ne sont jamais renvoyées.
+     */
+    get: operations['getSupportTicket'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/support/tickets/{ticketId}/messages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Répondre à une demande
+     * @description Une demande en attente du client ou résolue repasse « En cours ». Refusé (409) sur une demande fermée.
+     */
+    post: operations['replySupportTicket'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/support/tickets/{ticketId}/reopen': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Rouvrir une demande résolue
+     * @description Possible tant que la demande n'est pas fermée (fermeture automatique 7 jours après la résolution).
+     */
+    post: operations['reopenSupportTicket'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/support/tickets/{ticketId}/attachments/{attachmentId}/link': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lien signé vers une pièce jointe (5 minutes) */
+    get: operations['getSupportAttachmentLink'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/support/tickets/{ticketId}/attachments/{attachmentId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Pièce jointe (lien signé)
+     * @description Lien expiré ou signé pour un autre utilisateur : 403.
+     */
+    get: operations['getSupportAttachment'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/support-tickets': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * File des demandes de support
+     * @description Permission `tickets.read` (tous les administrateurs).
+     */
+    get: operations['listAdminSupportTickets'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/support-tickets/stats': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Compteurs de la file
+     * @description Ouvertes, en retard, délai moyen de première réponse (30 jours).
+     */
+    get: operations['getSupportStats'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/support-tickets/agents': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Agents d'une équipe (assignation) */
+    get: operations['listSupportAgents'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/support-tickets/{ticketId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Détail d'une demande (notes internes, opération liée en lecture seule)
+     * @description Chaque consultation est journalisée.
+     */
+    get: operations['getAdminSupportTicket'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/support-tickets/{ticketId}/messages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Répondre au client ou ajouter une note interne
+     * @description Permission `tickets.manage`. Une réponse publique est notifiée (outbox) ; une note interne n'est visible que de FlexiPay.
+     */
+    post: operations['replyAdminSupportTicket'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/support-tickets/{ticketId}/assignment': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Assigner à un agent de l'équipe */
+    post: operations['assignSupportTicket'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/support-tickets/{ticketId}/transfer': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Transférer à Finance ou Opérations */
+    post: operations['transferSupportTicket'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/support-tickets/{ticketId}/status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Changer le statut d'une demande
+     * @description Une demande fermée ne change plus.
+     */
+    post: operations['setSupportTicketStatus'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/support-tickets/{ticketId}/attachments/{attachmentId}/link': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lien signé vers une pièce jointe (5 minutes) */
+    get: operations['getAdminSupportAttachmentLink'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/admin/support-tickets/{ticketId}/attachments/{attachmentId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Pièce jointe (lien signé) */
+    get: operations['getAdminSupportAttachment'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/v1/search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Recherche globale (en-tête, Ctrl+K)
+     * @description Permissions `search.use` ou `adminSearch.read`. Groupes de 5 résultats selon les droits de la session, toujours sous RLS ; une référence exacte (CMD-, TX-, RV-, TK-, FAC-) est renvoyée dans `exact`. CIN et RIB : valeur complète, Opérations seulement, journalisé. 120 requêtes par minute.
+     */
+    get: operations['globalSearch'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    /**
+     * TicketCategory
+     * @description Catégorie (paiement refusé, transaction contestée, compte/connexion, commande/virement, reversement, KYC, autre).
+     * @enum {string}
+     */
+    TicketCategory:
+      | 'PAYMENT_DECLINED'
+      | 'DISPUTED_TRANSACTION'
+      | 'ACCOUNT_ACCESS'
+      | 'ORDER_TRANSFER'
+      | 'PAYOUT'
+      | 'KYC'
+      | 'OTHER';
+    /**
+     * TicketStatus
+     * @description Ouvert, En cours, En attente client, Résolu, Fermé.
+     * @enum {string}
+     */
+    TicketStatus: 'OPEN' | 'IN_PROGRESS' | 'WAITING_CUSTOMER' | 'RESOLVED' | 'CLOSED';
+    /**
+     * TicketPriority
+     * @description Haute pour une transaction contestée.
+     * @enum {string}
+     */
+    TicketPriority: 'NORMAL' | 'HIGH';
+    /**
+     * TicketTeam
+     * @description Équipe qui traite la demande.
+     * @enum {string}
+     */
+    TicketTeam: 'SUPPORT' | 'FINANCE' | 'OPERATIONS';
+    /**
+     * TicketLinkType
+     * @description Opération liée : transaction, commande ou reversement.
+     * @enum {string}
+     */
+    TicketLinkType: 'PAYMENT' | 'ORDER' | 'PAYOUT';
+    /** TicketLink */
+    TicketLink: {
+      type: components['schemas']['TicketLinkType'];
+      id: components['schemas']['Uuid'];
+      reference: string | null;
+    };
+    /** TicketAttachment */
+    TicketAttachment: {
+      id: components['schemas']['Uuid'];
+      fileName: string;
+      contentType: string;
+      sizeBytes: number;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    /** TicketMessage */
+    TicketMessage: {
+      id: components['schemas']['Uuid'];
+      authorName: string;
+      fromAgent: boolean;
+      body: string;
+      redacted: boolean;
+      /** Format: date-time */
+      createdAt: string;
+      attachments: components['schemas']['TicketAttachment'][];
+    };
+    /**
+     * AgentTicketMessage
+     * @description Message vu par FlexiPay (`internal` : note interne).
+     */
+    AgentTicketMessage: {
+      id: components['schemas']['Uuid'];
+      authorName: string;
+      fromAgent: boolean;
+      body: string;
+      redacted: boolean;
+      /** Format: date-time */
+      createdAt: string;
+      attachments: components['schemas']['TicketAttachment'][];
+      internal: boolean;
+    };
+    /**
+     * SupportTicketSummary
+     * @description Demande vue par le client (sans équipe, agent ni note interne).
+     */
+    SupportTicketSummary: {
+      id: components['schemas']['Uuid'];
+      reference: string;
+      category: components['schemas']['TicketCategory'];
+      priority: components['schemas']['TicketPriority'];
+      status: components['schemas']['TicketStatus'];
+      subject: string;
+      requesterName: string;
+      link: components['schemas']['TicketLink'] | null;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+      /** Format: date-time */
+      resolvedAt: string | null;
+      /** Format: date-time */
+      closedAt: string | null;
+    };
+    /** SupportTicket */
+    SupportTicket: {
+      id: components['schemas']['Uuid'];
+      reference: string;
+      category: components['schemas']['TicketCategory'];
+      priority: components['schemas']['TicketPriority'];
+      status: components['schemas']['TicketStatus'];
+      subject: string;
+      requesterName: string;
+      link: components['schemas']['TicketLink'] | null;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+      /** Format: date-time */
+      resolvedAt: string | null;
+      /** Format: date-time */
+      closedAt: string | null;
+      description: string;
+      redacted: boolean;
+      canReopen: boolean;
+      canReply: boolean;
+      attachments: components['schemas']['TicketAttachment'][];
+      messages: components['schemas']['TicketMessage'][];
+    };
+    /** AgentTicketSummary */
+    AgentTicketSummary: {
+      id: components['schemas']['Uuid'];
+      reference: string;
+      category: components['schemas']['TicketCategory'];
+      priority: components['schemas']['TicketPriority'];
+      status: components['schemas']['TicketStatus'];
+      subject: string;
+      requesterName: string;
+      link: components['schemas']['TicketLink'] | null;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+      /** Format: date-time */
+      resolvedAt: string | null;
+      /** Format: date-time */
+      closedAt: string | null;
+      team: components['schemas']['TicketTeam'];
+      requesterRole: components['schemas']['Role'];
+      clientName: string | null;
+      assignee: {
+        id: components['schemas']['Uuid'];
+        name: string;
+      } | null;
+      /** Format: date-time */
+      firstResponseDueAt: string;
+      /** Format: date-time */
+      firstResponseAt: string | null;
+      overdue: boolean;
+    };
+    /**
+     * TicketLinkedOperation
+     * @description Opération liée, en lecture seule.
+     */
+    TicketLinkedOperation: {
+      type: components['schemas']['TicketLinkType'];
+      id: components['schemas']['Uuid'];
+      reference: string;
+      status: string;
+      amountMillimes: components['schemas']['AmountMillimes'];
+      creditType: components['schemas']['CreditType'] | null;
+      counterparty: string;
+      /** Format: date-time */
+      occurredAt: string;
+    };
+    /** AgentTicket */
+    AgentTicket: {
+      id: components['schemas']['Uuid'];
+      reference: string;
+      category: components['schemas']['TicketCategory'];
+      priority: components['schemas']['TicketPriority'];
+      status: components['schemas']['TicketStatus'];
+      subject: string;
+      requesterName: string;
+      link: components['schemas']['TicketLink'] | null;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+      /** Format: date-time */
+      resolvedAt: string | null;
+      /** Format: date-time */
+      closedAt: string | null;
+      team: components['schemas']['TicketTeam'];
+      requesterRole: components['schemas']['Role'];
+      clientName: string | null;
+      assignee: {
+        id: components['schemas']['Uuid'];
+        name: string;
+      } | null;
+      /** Format: date-time */
+      firstResponseDueAt: string;
+      /** Format: date-time */
+      firstResponseAt: string | null;
+      overdue: boolean;
+      description: string;
+      redacted: boolean;
+      attachments: components['schemas']['TicketAttachment'][];
+      messages: components['schemas']['AgentTicketMessage'][];
+      linked: components['schemas']['TicketLinkedOperation'] | null;
+    };
+    /** SupportTicketPage */
+    SupportTicketPage: {
+      data: components['schemas']['SupportTicketSummary'][];
+      page: components['schemas']['PageInfo'];
+    };
+    /** AgentTicketPage */
+    AgentTicketPage: {
+      data: components['schemas']['AgentTicketSummary'][];
+      page: components['schemas']['PageInfo'];
+    };
+    /** SupportTicketCreate */
+    SupportTicketCreate: {
+      category: components['schemas']['TicketCategory'];
+      subject: string;
+      description: string;
+      linkType?: components['schemas']['TicketLinkType'];
+      linkId?: components['schemas']['Uuid'];
+    };
+    /** SupportReply */
+    SupportReply: {
+      body: string;
+    };
+    /** AgentReply */
+    AgentReply: {
+      body: string;
+      internal?: boolean;
+      waitingCustomer?: boolean;
+    };
+    /** TicketAssignment */
+    TicketAssignment: {
+      assigneeId: components['schemas']['Uuid'] | null;
+    };
+    /** TicketTransfer */
+    TicketTransfer: {
+      team: components['schemas']['TicketTeam'];
+      note?: string;
+    };
+    /** TicketStatusChange */
+    TicketStatusChange: {
+      /** @enum {string} */
+      status: 'IN_PROGRESS' | 'WAITING_CUSTOMER' | 'RESOLVED' | 'CLOSED';
+    };
+    /** SupportStats */
+    SupportStats: {
+      open: number;
+      overdue: number;
+      highPriority: number;
+      averageFirstResponseMinutes: number | null;
+    };
+    /** SupportAgent */
+    SupportAgent: {
+      id: components['schemas']['Uuid'];
+      displayName: string;
+      subRole: components['schemas']['SubRole'];
+    };
+    /** SupportAgentList */
+    SupportAgentList: {
+      data: components['schemas']['SupportAgent'][];
+    };
+    /** AttachmentLink */
+    AttachmentLink: {
+      expires: number;
+      signature: string;
+      reference: string;
+      url: string;
+      /** Format: date-time */
+      expiresAt: string;
+    };
+    /**
+     * SearchType
+     * @description Groupe de résultats.
+     * @enum {string}
+     */
+    SearchType:
+      | 'COMPANY'
+      | 'MERCHANT'
+      | 'USER'
+      | 'EMPLOYEE'
+      | 'ORDER'
+      | 'PAYMENT'
+      | 'PAYOUT'
+      | 'INVOICE'
+      | 'TICKET';
+    /** SearchItem */
+    SearchItem: {
+      type: components['schemas']['SearchType'];
+      id: components['schemas']['Uuid'];
+      title: string;
+      subtitle: string | null;
+      status: string | null;
+      amountMillimes: number | null;
+      /** Format: uuid */
+      parentId: string | null;
+    };
+    /** SearchGroup */
+    SearchGroup: {
+      type: components['schemas']['SearchType'];
+      items: components['schemas']['SearchItem'][];
+    };
+    /** SearchResult */
+    SearchResult: {
+      query: string;
+      exact: components['schemas']['SearchItem'] | null;
+      groups: components['schemas']['SearchGroup'][];
+    };
     /**
      * AmountMillimes
      * Format: int64
@@ -7868,6 +8506,8 @@ export interface operations {
         type?: components['schemas']['EmployeeOperationType'];
         /** @description Filtre par type de crédit. */
         creditType?: components['schemas']['CreditType'];
+        /** @description Recherche par référence, commerçant ou montant en dinars (« 12,5 »). Jamais journalisée. */
+        q?: string;
       };
       header?: never;
       path?: never;
@@ -9607,6 +10247,8 @@ export interface operations {
         status?: components['schemas']['OrderStatus'];
         /** @description Filtre par type de crédit. */
         creditType?: components['schemas']['CreditType'];
+        /** @description Recherche instantanée par référence. Jamais journalisée. */
+        q?: string;
       };
       header?: never;
       path?: never;
@@ -10135,6 +10777,8 @@ export interface operations {
         createdFrom?: components['parameters']['CreatedFrom'];
         /** @description Borne haute exclue de la période (UTC). */
         createdTo?: components['parameters']['CreatedTo'];
+        /** @description Recherche par numéro de facture ou référence de commande. Jamais journalisée. */
+        q?: string;
       };
       header?: never;
       path?: never;
@@ -10930,6 +11574,8 @@ export interface operations {
         creditType?: components['schemas']['CreditType'];
         /** @description Filtre par entreprise. */
         companyId?: components['schemas']['Uuid'];
+        /** @description Recherche instantanée par référence ou entreprise. Jamais journalisée. */
+        q?: string;
       };
       header?: never;
       path?: never;
@@ -11170,6 +11816,8 @@ export interface operations {
         status?: components['schemas']['KycStatus'];
         /** @description Filtre par type de compte. */
         accountType?: components['schemas']['KycAccountType'];
+        /** @description Recherche par nom du client. Jamais journalisée. */
+        q?: string;
       };
       header?: never;
       path?: never;
@@ -13526,6 +14174,646 @@ export interface operations {
       500: components['responses']['InternalError'];
     };
   };
+  listSupportTickets: {
+    parameters: {
+      query?: {
+        /** @description Nombre maximal d'éléments par page. */
+        limit?: components['parameters']['Limit'];
+        /** @description Curseur opaque renvoyé par `page.nextCursor`. Absent pour la première page. */
+        cursor?: components['parameters']['Cursor'];
+        /**
+         * @description Demande le compteur borné `page.count` (§7). À n'envoyer qu'au premier chargement et à
+         *     chaque changement de filtre.
+         */
+        withCount?: components['parameters']['WithCount'];
+        status?: components['schemas']['TicketStatus'];
+        /** @description Recherche par référence, sujet ou demandeur. Jamais journalisée. */
+        q?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SupportTicketPage'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  createSupportTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SupportTicketCreate'];
+        'multipart/form-data': {
+          category: components['schemas']['TicketCategory'];
+          subject: string;
+          description: string;
+          linkType?: components['schemas']['TicketLinkType'];
+          linkId?: components['schemas']['Uuid'];
+          /**
+           * Format: binary
+           * @description PDF, JPG ou PNG, 5 Mo au plus (type lu dans le contenu).
+           */
+          attachment?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Créée. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SupportTicket'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      413: components['responses']['PayloadTooLarge'];
+      415: components['responses']['UnsupportedMediaType'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getSupportTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SupportTicket'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  replySupportTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SupportReply'];
+        'multipart/form-data': {
+          body: string;
+          /**
+           * Format: binary
+           * @description PDF, JPG ou PNG, 5 Mo au plus (type lu dans le contenu).
+           */
+          attachment?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Envoyé. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SupportTicket'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      413: components['responses']['PayloadTooLarge'];
+      415: components['responses']['UnsupportedMediaType'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  reopenSupportTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Rouverte. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SupportTicket'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getSupportAttachmentLink: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: components['schemas']['Uuid'];
+        attachmentId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AttachmentLink'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getSupportAttachment: {
+    parameters: {
+      query: {
+        /** @description Fin de validité (secondes Unix). */
+        expires: number;
+        /** @description Signature du lien (cet utilisateur, cette pièce). */
+        signature: string;
+      };
+      header?: never;
+      path: {
+        ticketId: components['schemas']['Uuid'];
+        attachmentId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Le fichier. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/octet-stream': string;
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  listAdminSupportTickets: {
+    parameters: {
+      query?: {
+        /** @description Nombre maximal d'éléments par page. */
+        limit?: components['parameters']['Limit'];
+        /** @description Curseur opaque renvoyé par `page.nextCursor`. Absent pour la première page. */
+        cursor?: components['parameters']['Cursor'];
+        /**
+         * @description Demande le compteur borné `page.count` (§7). À n'envoyer qu'au premier chargement et à
+         *     chaque changement de filtre.
+         */
+        withCount?: components['parameters']['WithCount'];
+        status?: components['schemas']['TicketStatus'];
+        category?: components['schemas']['TicketCategory'];
+        priority?: components['schemas']['TicketPriority'];
+        team?: components['schemas']['TicketTeam'];
+        assignee?: string;
+        /** @description Sans première réponse dans le délai. */
+        overdue?: 'true' | 'false';
+        /** @description Recherche par référence, sujet ou demandeur. Jamais journalisée. */
+        q?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AgentTicketPage'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getSupportStats: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SupportStats'];
+        };
+      };
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  listSupportAgents: {
+    parameters: {
+      query: {
+        team: components['schemas']['TicketTeam'];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SupportAgentList'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getAdminSupportTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AgentTicket'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  replyAdminSupportTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AgentReply'];
+        'multipart/form-data': {
+          body: string;
+          /** @enum {string} */
+          internal?: 'true' | 'false';
+          /** @enum {string} */
+          waitingCustomer?: 'true' | 'false';
+          /**
+           * Format: binary
+           * @description PDF, JPG ou PNG, 5 Mo au plus (type lu dans le contenu).
+           */
+          attachment?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Envoyé. */
+      201: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AgentTicket'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      413: components['responses']['PayloadTooLarge'];
+      415: components['responses']['UnsupportedMediaType'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  assignSupportTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TicketAssignment'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AgentTicket'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  transferSupportTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TicketTransfer'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AgentTicket'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  setSupportTicketStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TicketStatusChange'];
+      };
+    };
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AgentTicket'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      409: components['responses']['Conflict'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getAdminSupportAttachmentLink: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticketId: components['schemas']['Uuid'];
+        attachmentId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AttachmentLink'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  getAdminSupportAttachment: {
+    parameters: {
+      query: {
+        /** @description Fin de validité (secondes Unix). */
+        expires: number;
+        /** @description Signature du lien (cet utilisateur, cette pièce). */
+        signature: string;
+      };
+      header?: never;
+      path: {
+        ticketId: components['schemas']['Uuid'];
+        attachmentId: components['schemas']['Uuid'];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Le fichier. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/octet-stream': string;
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      404: components['responses']['NotFound'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
+  globalSearch: {
+    parameters: {
+      query: {
+        q: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Succès. */
+      200: {
+        headers: {
+          'X-Request-Id': components['headers']['X-Request-Id'];
+          'Cache-Control': components['headers']['Cache-Control-No-Store'];
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SearchResult'];
+        };
+      };
+      400: components['responses']['BadRequest'];
+      401: components['responses']['Unauthorized'];
+      403: components['responses']['Forbidden'];
+      429: components['responses']['TooManyRequests'];
+      500: components['responses']['InternalError'];
+    };
+  };
 }
 type FlattenedDeepRequired<T> = {
   [K in keyof T]-?: FlattenedDeepRequired<
@@ -13544,6 +14832,44 @@ export const pathsV1AdminLedgerEntriesExportGetParametersQueryClientTypeValues: 
 export const pathsV1AdminAuditLogsGetParametersQueryClientTypeValues: ReadonlyArray<
   FlattenedDeepRequired<paths>['/v1/admin/audit-logs']['get']['parameters']['query']['clientType']
 > = ['COMPANY', 'MERCHANT'];
+export const pathsV1AdminSupportTicketsGetParametersQueryOverdueValues: ReadonlyArray<
+  FlattenedDeepRequired<paths>['/v1/admin/support-tickets']['get']['parameters']['query']['overdue']
+> = ['true', 'false'];
+export const pathsV1AdminSupportTicketsTicketIdMessagesPostRequestBodyContentMultipartFormDataInternalValues: ReadonlyArray<
+  FlattenedDeepRequired<paths>['/v1/admin/support-tickets/{ticketId}/messages']['post']['requestBody']['content']['multipart/form-data']['internal']
+> = ['true', 'false'];
+export const pathsV1AdminSupportTicketsTicketIdMessagesPostRequestBodyContentMultipartFormDataWaitingCustomerValues: ReadonlyArray<
+  FlattenedDeepRequired<paths>['/v1/admin/support-tickets/{ticketId}/messages']['post']['requestBody']['content']['multipart/form-data']['waitingCustomer']
+> = ['true', 'false'];
+export const ticketCategoryValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['TicketCategory']
+> = [
+  'PAYMENT_DECLINED',
+  'DISPUTED_TRANSACTION',
+  'ACCOUNT_ACCESS',
+  'ORDER_TRANSFER',
+  'PAYOUT',
+  'KYC',
+  'OTHER',
+];
+export const ticketStatusValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['TicketStatus']
+> = ['OPEN', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'RESOLVED', 'CLOSED'];
+export const ticketPriorityValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['TicketPriority']
+> = ['NORMAL', 'HIGH'];
+export const ticketTeamValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['TicketTeam']
+> = ['SUPPORT', 'FINANCE', 'OPERATIONS'];
+export const ticketLinkTypeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['TicketLinkType']
+> = ['PAYMENT', 'ORDER', 'PAYOUT'];
+export const ticketStatusChangeStatusValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['TicketStatusChange']['status']
+> = ['IN_PROGRESS', 'WAITING_CUSTOMER', 'RESOLVED', 'CLOSED'];
+export const searchTypeValues: ReadonlyArray<
+  FlattenedDeepRequired<components>['schemas']['SearchType']
+> = ['COMPANY', 'MERCHANT', 'USER', 'EMPLOYEE', 'ORDER', 'PAYMENT', 'PAYOUT', 'INVOICE', 'TICKET'];
 export const currencyValues: ReadonlyArray<
   FlattenedDeepRequired<components>['schemas']['Currency']
 > = ['TND'];

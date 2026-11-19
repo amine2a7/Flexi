@@ -139,6 +139,18 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
         ),
         ListGroup(
           children: [
+            // W-SUP : les demandes de support et leurs réponses.
+            ListRow(
+              leading: const IconTile(
+                tint: FpColors.greenTint,
+                color: FpColors.greenDark,
+                icon: FpIcons.list,
+              ),
+              title: l10n.supportTickets,
+              subtitle: l10n.supportTicketsHint,
+              chevron: true,
+              onTap: () => context.push(Routes.tickets),
+            ),
             ListRow(
               leading: const IconTile(
                 tint: FpColors.clothingTint,

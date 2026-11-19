@@ -15,6 +15,7 @@ dependencies:
   flutter_svg: ^2.4.0
   fp_core:
     path: ../fp_core
+  intl: ^0.20.3
   qr_flutter: ^4.1.0
 
 dev_dependencies:

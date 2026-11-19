@@ -42,7 +42,11 @@ const lines = z
   .array(z.strictObject({ creditType, amountMillimes: positiveMillimes }))
   .min(1)
   .max(4);
-const ordersQuery = z.object({ status: orderStatus.optional(), creditType: creditType.optional() });
+const ordersQuery = z.object({
+  status: orderStatus.optional(),
+  creditType: creditType.optional(),
+  q: z.string().trim().max(100).optional(),
+});
 const employeesQuery = z.object({
   status: z.enum(['INVITED', 'ACTIVE', 'SUSPENDED', 'DEACTIVATED']).optional(),
   q: z.string().max(100).optional(),
@@ -290,7 +294,11 @@ export class CompanyController {
   listOrders(@Query() query: Record<string, unknown>) {
     return this.orders.list(
       query,
-      parse(ordersQuery, { status: query.status, creditType: query.creditType }, 'query'),
+      parse(
+        ordersQuery,
+        { status: query.status, creditType: query.creditType, q: query.q },
+        'query',
+      ),
     );
   }
 
@@ -433,6 +441,11 @@ export class CompanyController {
   @Can('invoices.read')
   @Get('invoices')
   invoices(@Query() query: Record<string, unknown>) {
-    return this.company.invoices(query);
+    const { q } = parse(
+      z.object({ q: z.string().trim().max(100).optional() }),
+      { q: query.q },
+      'query',
+    );
+    return this.company.invoices(query, q);
   }
 }

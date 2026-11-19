@@ -365,7 +365,8 @@
     "iban": "RIB",
     "maskedNote": "Seuls les 4 derniers chiffres sont affichés. Le service Opérations voit les numéros complets.",
     "clearNote": "Numéros complets, visibles du seul service Opérations : comparez-les aux pièces.",
-    "none": "Non renseigné"
+    "none": "Non renseigné",
+    "search": "Rechercher un client"
   },
   "payouts": {
     "open": "Ouvrir",

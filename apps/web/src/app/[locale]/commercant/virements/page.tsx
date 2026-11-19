@@ -55,6 +55,7 @@ export default function PayoutsPage() {
   const [created, setCreated] = useState<Schemas['PayoutRequest'] | undefined>(undefined);
   const [refresh, setRefresh] = useState(0);
   const [status, setStatus] = useState('');
+  const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<CreditType | ''>('');
   const [creditType, setCreditType] = useState<CreditType>('RESTAURATION');
   const profile = useApiQuery(() => getApi().GET('/v1/merchant/profile'), []);
@@ -75,12 +76,13 @@ export default function PayoutsPage() {
           query: {
             cursor,
             withCount,
+            ...(search === '' ? {} : { q: search }),
             ...(status === '' ? {} : { status: status as Status }),
             ...(typeFilter === '' ? {} : { creditType: typeFilter }),
           },
         },
       }),
-    [refresh, status, typeFilter],
+    [refresh, search, status, typeFilter],
   );
 
   async function onSimulate(event: SyntheticEvent) {
@@ -387,6 +389,7 @@ export default function PayoutsPage() {
           <Card>
             <CardTitle>{t('listTitle')}</CardTitle>
             <FilterBar
+              searchLabel={t('search')}
               statusLabel={t('filterStatus')}
               statusOptions={STATUSES.map((value) => ({
                 value,
@@ -394,6 +397,7 @@ export default function PayoutsPage() {
               }))}
               withCreditType
               onApply={(filters) => {
+                setSearch(filters.q);
                 setStatus(filters.status);
                 setTypeFilter(filters.creditType);
               }}

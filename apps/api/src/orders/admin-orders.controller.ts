@@ -31,6 +31,7 @@ const query = z.object({
     .optional(),
   creditType: creditType.optional(),
   companyId: z.uuid().optional(),
+  q: z.string().trim().max(100).optional(),
 });
 const reasonBody = z.strictObject({ reason });
 
@@ -49,7 +50,7 @@ export class AdminOrdersController {
       raw,
       parse(
         query,
-        { status: raw.status, creditType: raw.creditType, companyId: raw.companyId },
+        { status: raw.status, creditType: raw.creditType, companyId: raw.companyId, q: raw.q },
         'query',
       ),
     );

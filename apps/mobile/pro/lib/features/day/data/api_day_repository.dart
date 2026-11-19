@@ -40,6 +40,7 @@ class ApiDayRepository implements DayRepository {
           cashierName: '',
           approved: approved,
           refusal: approved ? null : RefusalReason.declined,
+          reference: p['reference'] as String?,
         ),
       );
     }

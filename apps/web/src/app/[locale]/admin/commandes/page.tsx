@@ -9,6 +9,7 @@ import { getApi } from '@/lib/api/client';
 import { useApiQuery } from '@/lib/api/use-api-query';
 import { usePagedList } from '@/lib/api/use-paged-list';
 import { formatDateTime } from '@/lib/format/date';
+import { useDebounced, useUrlFilterState } from '@/lib/ui/use-url-filters';
 import {
   ADMIN_ACTION_STATUSES,
   ORDER_STATUSES,
@@ -19,17 +20,20 @@ import { Button, buttonClasses } from '@/components/ui/button';
 import { Card, StatCard } from '@/components/ui/card';
 import { CreditTypeBadges, CreditTypeSelect, type CreditType } from '@/components/ui/credit-type';
 import { DataTable, type Column } from '@/components/ui/data-table';
-import { SelectField } from '@/components/ui/field';
+import { SelectField, TextField } from '@/components/ui/field';
 import { PageHeader } from '@/components/ui/layout-blocks';
 import { Skeleton } from '@/components/ui/states';
 
 type Status = Schemas['OrderStatus'];
 interface Filters {
+  q: string;
   status: Status | '';
   companyId: string;
   creditType: CreditType | '';
 }
-const NO_FILTER: Filters = { status: '', companyId: '', creditType: '' };
+const NO_FILTER: Filters = { q: '', status: '', companyId: '', creditType: '' };
+/** Filters in the URL (W-SUP): shared links, reload, back button. */
+const URL_NAMES = { q: 'q', status: 'statut', companyId: 'entreprise', creditType: 'type' } as const;
 
 /** Number of orders in a status (bounded counter of the contract), for the action tiles. */
 function useStatusCount(status: Status) {
@@ -48,8 +52,8 @@ export default function AdminOrdersPage() {
   const tFilters = useTranslations('ui.filters');
   const tTypes = useTranslations('ui.creditTypes');
   const locale = useLocale();
-  const [filters, setFilters] = useState<Filters>(NO_FILTER);
-  const [draft, setDraft] = useState<Filters>(NO_FILTER);
+  const [filters, setFilters] = useUrlFilterState(NO_FILTER, URL_NAMES);
+  const [draft, setDraft] = useState<Filters>(filters);
   const companies = useApiQuery(
     () => getApi().GET('/v1/admin/companies', { params: { query: { limit: 100 } } }),
     [],
@@ -63,6 +67,7 @@ export default function AdminOrdersPage() {
           query: {
             cursor,
             withCount,
+            ...(filters.q === '' ? {} : { q: filters.q }),
             ...(filters.status === '' ? {} : { status: filters.status }),
             ...(filters.companyId === '' ? {} : { companyId: filters.companyId }),
             ...(filters.creditType === '' ? {} : { creditType: filters.creditType }),
@@ -80,6 +85,10 @@ export default function AdminOrdersPage() {
     event.preventDefault();
     setFilters(draft);
   };
+  // W-SUP: the reference typed is searched 300 ms after the last key.
+  useDebounced(draft.q, filters.q, (q) => {
+    setFilters({ ...filters, q });
+  });
 
   const columns: Column<Schemas['CreditOrder']>[] = [
     {
@@ -198,13 +207,21 @@ export default function AdminOrdersPage() {
           role="search"
           className="mb-4 grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-4"
         >
+          <TextField
+            label={t('admin.search')}
+            type="search"
+            value={draft.q}
+            onChange={(event) => {
+              setDraft((previous) => ({ ...previous, q: event.target.value }));
+            }}
+          />
           <SelectField
             label={t('fields.status')}
             options={ORDER_STATUSES.map((value) => ({ value, label: t(`status.${value}`) }))}
             placeholder={tFilters('allStatuses')}
             value={draft.status}
             onChange={(event) => {
-              setDraft((previous) => ({ ...previous, status: event.target.value as Status | '' }));
+              apply({ ...draft, status: event.target.value as Status | '' });
             }}
           />
           <SelectField
@@ -213,7 +230,7 @@ export default function AdminOrdersPage() {
             placeholder={t('admin.allCompanies')}
             value={draft.companyId}
             onChange={(event) => {
-              setDraft((previous) => ({ ...previous, companyId: event.target.value }));
+              apply({ ...draft, companyId: event.target.value });
             }}
           />
           <CreditTypeSelect
@@ -221,7 +238,7 @@ export default function AdminOrdersPage() {
             placeholder={tFilters('allTypes')}
             value={draft.creditType}
             onChange={(value) => {
-              setDraft((previous) => ({ ...previous, creditType: value }));
+              apply({ ...draft, creditType: value });
             }}
           />
           <div className="flex gap-2">

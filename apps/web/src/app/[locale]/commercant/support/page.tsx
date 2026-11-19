@@ -2,6 +2,7 @@
 
 import { SupportPage } from '@/components/account/support-page';
 
+/** Support (W-SUP): the tickets of the user and the help topics. */
 export default function SpaceSupportPage() {
-  return <SupportPage role="MERCHANT" />;
+  return <SupportPage role="MERCHANT" base="/commercant/support" />;
 }

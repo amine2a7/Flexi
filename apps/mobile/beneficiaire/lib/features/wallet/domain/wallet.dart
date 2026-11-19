@@ -106,6 +106,9 @@ abstract interface class WalletRepository {
   Future<List<Operation>> operations({required int year, required int month});
 
   Future<Operation> operation(String id);
+
+  /// Recherche (W-SUP) : référence, commerçant ou montant en dinars (« 12,5 »).
+  Future<List<Operation>> search(String query);
 }
 
 final walletRepositoryProvider = Provider<WalletRepository>(

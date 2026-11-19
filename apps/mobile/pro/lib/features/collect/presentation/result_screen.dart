@@ -123,6 +123,20 @@ class ResultScreen extends StatelessWidget {
           variant: FpButtonVariant.secondary,
           onPressed: () => context.go(ProRoutes.day),
         ),
+        if (result.paymentId != null)
+          Center(
+            child: FpLink(
+              label: l10n.reportProblem,
+              onTap: () => context.push(
+                ProRoutes.newTicket,
+                extra: TicketLink(
+                  type: 'PAYMENT',
+                  id: result.paymentId!,
+                  reference: result.reference,
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }

@@ -23,6 +23,8 @@ const pin = z.string().regex(/^[0-9]{4}$/);
 const operationsQuery = z.object({
   type: z.enum(['PAYMENT', 'ALLOCATION', 'EXPIRY', 'FAMILY_TRANSFER']).optional(),
   creditType: creditType.optional(),
+  // W-SUP: search of the history (reference, shop or company, amount in dinars).
+  q: z.string().trim().min(1).max(100).optional(),
 });
 const payBody = z.strictObject({
   merchantCode: z.string().regex(/^[0-9]{6}$/),
@@ -113,7 +115,11 @@ export class EmployeeController {
   operations(@Query() query: Record<string, unknown>) {
     return this.payments.listOperations(
       query,
-      parse(operationsQuery, { type: query.type, creditType: query.creditType }, 'query'),
+      parse(
+        operationsQuery,
+        { type: query.type, creditType: query.creditType, q: query.q },
+        'query',
+      ),
     );
   }
 

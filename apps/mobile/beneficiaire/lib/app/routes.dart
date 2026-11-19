@@ -12,6 +12,11 @@ abstract final class Routes {
   static const catalog = '/catalogue';
   static const help = '/help';
 
+  /// Aide › Mes demandes (W-SUP), avec une session.
+  static const tickets = '/help/tickets';
+  static const newTicket = '/help/tickets/new';
+  static String ticket(String id) => '/help/tickets/$id';
+
   static const home = '/home';
   static const discover = '/discover';
   static const history = '/history';

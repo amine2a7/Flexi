@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fp_core/fp_core.dart';
@@ -24,6 +26,18 @@ class _DayScreenState extends ConsumerState<DayScreen> {
   /// `null` : tous ; sinon identifiant du caissier.
   String? _cashier;
 
+  /// Recherche par référence ou montant (W-SUP), appliquée 300 ms après la dernière touche.
+  final _search = TextEditingController();
+  Timer? _debounce;
+  String _query = '';
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _search.dispose();
+    super.dispose();
+  }
+
   static const _slots = [
     (8, 2),
     (10, 2),
@@ -47,9 +61,10 @@ class _DayScreenState extends ConsumerState<DayScreen> {
         : const [];
     if (summary == null) return const SizedBox.expand();
     final all = summary.collections;
-    final list = _cashier == null
-        ? all
-        : all.where((c) => c.cashierId == _cashier).toList();
+    final list = all
+        .where((c) => _cashier == null || c.cashierId == _cashier)
+        .where((c) => c.matches(_query))
+        .toList();
     final max = _slots
         .map((s) => summary.totalBetween(s.$1, s.$2))
         .fold(0, (a, b) => a > b ? a : b);
@@ -188,10 +203,40 @@ class _DayScreenState extends ConsumerState<DayScreen> {
               ),
           ],
         ),
+        FpTextField(
+          label: l10n.daySearch,
+          controller: _search,
+          icon: FpIcons.search,
+          fieldKey: const Key('day-search'),
+          onChanged: (text) {
+            _debounce?.cancel();
+            _debounce = Timer(const Duration(milliseconds: 300), () {
+              if (mounted) setState(() => _query = text);
+            });
+          },
+        ),
+        if (list.isEmpty && _query.trim().isNotEmpty)
+          Text(l10n.searchNoResult, style: FpText.muted14)
+        else
+          ListGroup(
+            children: [
+              for (final c in list)
+                _CollectionRow(collection: c, time: hm.format(c.time)),
+            ],
+          ),
         ListGroup(
           children: [
-            for (final c in list)
-              _CollectionRow(collection: c, time: hm.format(c.time)),
+            ListRow(
+              leading: const IconTile(
+                tint: FpColors.greenTint,
+                color: FpColors.greenDark,
+                icon: FpIcons.help,
+              ),
+              title: l10n.helpAndTickets,
+              subtitle: l10n.supportTicketsHint,
+              chevron: true,
+              onTap: () => context.push(ProRoutes.tickets),
+            ),
           ],
         ),
         FpButton(
@@ -235,6 +280,8 @@ class _CollectionRow extends StatelessWidget {
         refusal: c.refusal,
         cashier: c.cashierName,
         time: c.time,
+        reference: c.reference,
+        paymentId: c.id,
       ),
     );
     if (!c.approved) {

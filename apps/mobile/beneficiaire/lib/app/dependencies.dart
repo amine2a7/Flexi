@@ -58,6 +58,9 @@ List<Override> fakeDataOverrides({SecureStore? store}) => [
   profileRepositoryProvider.overrideWith(
     (ref) => FakeProfileRepository(ref.watch(demoBackendProvider)),
   ),
+  supportRepositoryProvider.overrideWith(
+    (ref) => FakeSupportRepository(ref.watch(clockProvider)),
+  ),
 ];
 
 /// Branche les Repository de l'API (build normal, `--dart-define=API_URL=…`).
@@ -104,5 +107,8 @@ List<Override> apiOverrides({SecureStore? store}) => [
   ),
   profileRepositoryProvider.overrideWith(
     (ref) => ApiProfileRepository(ref.watch(apiJsonProvider)),
+  ),
+  supportRepositoryProvider.overrideWith(
+    (ref) => ApiSupportRepository(ref.watch(apiJsonProvider)),
   ),
 ];

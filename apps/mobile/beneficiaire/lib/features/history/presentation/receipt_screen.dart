@@ -143,7 +143,15 @@ class ReceiptScreen extends ConsumerWidget {
         Center(
           child: FpLink(
             label: l10n.reportProblem,
-            onTap: () => context.push(Routes.help),
+            // W-SUP : nouvelle demande, la transaction pré-remplie.
+            onTap: () => context.push(
+              Routes.newTicket,
+              extra: TicketLink(
+                type: 'PAYMENT',
+                id: op.id,
+                reference: op.reference,
+              ),
+            ),
           ),
         ),
       ],

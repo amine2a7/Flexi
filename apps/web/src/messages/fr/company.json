@@ -38,7 +38,8 @@
     "total": "Total à virer",
     "paymentReference": "Référence de virement",
     "emptyTitle": "Aucune commande",
-    "emptyMessage": "Passez votre première commande de crédits."
+    "emptyMessage": "Passez votre première commande de crédits.",
+    "search": "Rechercher une référence"
   },
   "newOrder": {
     "title": "Nouvelle commande de crédits",
@@ -232,7 +233,8 @@
     "pdf": "PDF",
     "download": "Télécharger",
     "creditNote": "Avoir {number}",
-    "back": "Retour aux factures"
+    "back": "Retour aux factures",
+    "search": "Rechercher (facture, commande)"
   },
   "reporting": {
     "title": "Reporting",

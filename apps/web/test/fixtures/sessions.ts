@@ -39,6 +39,9 @@ const PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
     'messages.handle',
     'ledger.read',
     'adminInvoices.read',
+    'tickets.read',
+    'tickets.manage',
+    'adminSearch.read',
   ],
   'operations@flexipay.test': [
     ...BACK_OFFICE_READ,
@@ -49,6 +52,9 @@ const PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
     'disputes.manage',
     'alerts.manage',
     'adminInvoices.read',
+    'tickets.read',
+    'tickets.manage',
+    'adminSearch.read',
   ],
   'admin2@flexipay.test': [
     ...BACK_OFFICE_READ,
@@ -61,6 +67,9 @@ const PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
     'approvals.decide',
     'ledger.read',
     'adminInvoices.read',
+    'tickets.read',
+    'tickets.manage',
+    'adminSearch.read',
   ],
   'support@flexipay.test': [
     'accounts.read',
@@ -69,9 +78,12 @@ const PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
     'users.support',
     'messages.read',
     'messages.handle',
+    'tickets.read',
+    'tickets.manage',
+    'adminSearch.read',
   ],
-  'rh@flexipay.test': ['balances.read', 'employees.read', 'employees.manage', 'credits.allocate'],
-  'lecture@flexipay.test': ['balances.read', 'employees.read', 'orders.read', 'invoices.read'],
+  'rh@flexipay.test': ['balances.read', 'employees.read', 'employees.manage', 'credits.allocate', 'support.use', 'search.use'],
+  'lecture@flexipay.test': ['balances.read', 'employees.read', 'orders.read', 'invoices.read', 'support.use', 'search.use'],
   'comptable@flexipay.test': [
     'balances.read',
     'orders.read',
@@ -79,6 +91,8 @@ const PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
     'orders.declareTransfer',
     'fundingAccount.read',
     'invoices.read',
+    'support.use',
+    'search.use',
   ],
   'entreprise@flexipay.test': [
     'balances.read',
@@ -86,6 +100,8 @@ const PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
     'orders.read',
     'invoices.read',
     'team.manage',
+    'support.use',
+    'search.use',
   ],
   'commercant@flexipay.test': [
     'stats.read',
@@ -93,9 +109,11 @@ const PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
     'shop.read',
     'team.manage',
     'registers.manage',
+    'support.use',
+    'search.use',
   ],
-  'caissier@flexipay.test': ['payments.collect', 'sales.readToday', 'shop.read'],
-  'beneficiaire@flexipay.test': ['wallet.read', 'payments.pay'],
+  'caissier@flexipay.test': ['payments.collect', 'sales.readToday', 'shop.read', 'support.use', 'search.use'],
+  'beneficiaire@flexipay.test': ['wallet.read', 'payments.pay', 'support.use'],
 };
 
 export function sessionOf(identifier: string): { permissions: readonly string[] } {

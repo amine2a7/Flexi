@@ -7,6 +7,7 @@ import { useState, type SyntheticEvent } from 'react';
 import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
 import { usePagedList } from '@/lib/api/use-paged-list';
+import { useDebounced, useUrlFilterState } from '@/lib/ui/use-url-filters';
 import { formatDateTime } from '@/lib/format/date';
 import { ContactStatusBadge } from '@/components/admin/contact-status-badge';
 import { Button, buttonClasses } from '@/components/ui/button';
@@ -22,6 +23,7 @@ interface Filters {
   status: Status | '';
   requesterType: Requester | '';
 }
+const URL_NAMES = { q: 'q', status: 'statut', requesterType: 'demandeur' } as const;
 const NO_FILTER: Filters = { q: '', status: '', requesterType: '' };
 const STATUSES: readonly Status[] = ['NEW', 'HANDLED'];
 const REQUESTERS: readonly Requester[] = ['COMPANY', 'MERCHANT', 'OTHER'];
@@ -32,8 +34,16 @@ export default function ContactMessagesPage() {
   const tContact = useTranslations('contact');
   const tFilters = useTranslations('ui.filters');
   const locale = useLocale();
-  const [filters, setFilters] = useState<Filters>(NO_FILTER);
-  const [draft, setDraft] = useState<Filters>(NO_FILTER);
+  const [filters, setFilters] = useUrlFilterState(NO_FILTER, URL_NAMES);
+  const [draft, setDraft] = useState<Filters>(filters);
+  const apply = (next: Filters) => {
+    setDraft(next);
+    setFilters(next);
+  };
+  // W-SUP: the text typed is searched 300 ms after the last key.
+  useDebounced(draft.q, filters.q, (q) => {
+    setFilters({ ...filters, q });
+  });
   const list = usePagedList(
     (cursor, withCount) =>
       getApi().GET('/v1/admin/contact-messages', {
@@ -137,7 +147,7 @@ export default function ContactMessagesPage() {
             placeholder={tFilters('allStatuses')}
             value={draft.status}
             onChange={(event) => {
-              setDraft((previous) => ({ ...previous, status: event.target.value as Status | '' }));
+              apply({ ...draft, status: event.target.value as Status | '' });
             }}
           />
           <SelectField

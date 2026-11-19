@@ -770,10 +770,24 @@ export class CompanyService {
     });
   }
 
-  async invoices(query: Record<string, unknown>) {
-    const request = this.paginator.request(query, {});
+  async invoices(query: Record<string, unknown>, q?: string) {
+    const request = this.paginator.request(query, { q });
+    const needle = q?.trim() ?? '';
     return this.db.user(async (tx) => {
       const where = {
+        // W-SUP: search by invoice number or order reference.
+        ...(needle === ''
+          ? {}
+          : {
+              AND: [
+                {
+                  OR: [
+                    { number: { contains: needle, mode: 'insensitive' as const } },
+                    { order: { reference: { contains: needle, mode: 'insensitive' as const } } },
+                  ],
+                },
+              ],
+            }),
         // Issued invoices, and the cancelled ones with their credit note.
         OR: [
           {
@@ -814,7 +828,7 @@ export class CompanyService {
           ...(row.creditNoteNumber === null ? {} : { creditNoteNumber: row.creditNoteNumber }),
           ...(row.cancelledAt === null ? {} : { cancelledAt: row.cancelledAt.toISOString() }),
         })),
-        {},
+        { q },
         count,
       );
     });

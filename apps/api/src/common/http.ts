@@ -15,6 +15,10 @@ const EXPOSED_HEADERS =
 const MULTIPART_ROUTES = [
   /^\/v1\/company\/orders\/[^/]+\/transfer-declarations$/,
   /^\/v1\/account\/kyc\/documents$/,
+  // Support tickets (W-SUP): opening and answers, with an optional piece.
+  /^\/v1\/support\/tickets$/,
+  /^\/v1\/support\/tickets\/[^/]+\/messages$/,
+  /^\/v1\/admin\/support-tickets\/[^/]+\/messages$/,
 ];
 
 /** Writes a problem directly (middlewares that run before Nest). */
@@ -157,7 +161,12 @@ interface Bucket {
  * Stricter limits per minute and IP (M4): sign-in, PIN, till requests and their confirmation. The
  * 4-digit code of a till can only be tried a few times (guessing it is useless without the PIN).
  */
-const ROUTE_LIMITS: readonly { name: string; pattern: RegExp; limit: number }[] = [
+const ROUTE_LIMITS: readonly {
+  name: string;
+  pattern: RegExp;
+  limit: number;
+  method?: string;
+}[] = [
   { name: 'auth', pattern: /^\/v1\/(mobile\/)?auth\//, limit: 30 },
   { name: 'public', pattern: /^\/v1\/public\//, limit: 30 },
   { name: 'checkout-code', pattern: /^\/v1\/employee\/checkouts\/code\//, limit: 12 },
@@ -169,6 +178,10 @@ const ROUTE_LIMITS: readonly { name: string; pattern: RegExp; limit: number }[] 
     limit: 30,
   },
   { name: 'checkout-create', pattern: /^\/v1\/merchant\/registers\/[^/]+\/checkouts$/, limit: 60 },
+  // W-SUP: opening a ticket (the service also counts the tickets of the user per hour) and the
+  // search typed letter by letter.
+  { name: 'ticket-create', pattern: /^\/v1\/support\/tickets$/, limit: 10, method: 'POST' },
+  { name: 'search', pattern: /^\/v1\/search$/, limit: 120 },
 ];
 
 function rateLimit(env: Env) {
@@ -177,7 +190,10 @@ function rateLimit(env: Env) {
   // Integration tests drive many requests from 127.0.0.1 in a few seconds.
   const factor = env.NODE_ENV === 'test' ? 10 : 1;
   return (req: Request, res: Response, next: NextFunction): void => {
-    const route = ROUTE_LIMITS.find((entry) => entry.pattern.test(req.path));
+    const route = ROUTE_LIMITS.find(
+      (entry) =>
+        entry.pattern.test(req.path) && (entry.method === undefined || entry.method === req.method),
+    );
     // Sign-in and public pages are counted per path (unchanged); the others per group.
     const bucketName =
       route === undefined

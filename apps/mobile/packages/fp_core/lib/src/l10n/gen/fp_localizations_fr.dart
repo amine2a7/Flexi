@@ -1493,4 +1493,132 @@ class FpL10nFr extends FpL10n {
   String payoutRejected(String ref) {
     return '$ref · Refusé';
   }
+
+  @override
+  String get supportTickets => 'Mes demandes';
+
+  @override
+  String get supportTicketsHint =>
+      'Vos demandes à l\'équipe FlexiPay et leurs réponses.';
+
+  @override
+  String get supportNew => 'Nouvelle demande';
+
+  @override
+  String get supportEmpty => 'Aucune demande pour le moment.';
+
+  @override
+  String get supportSearch => 'Rechercher une demande';
+
+  @override
+  String get supportCategory => 'Catégorie';
+
+  @override
+  String get supportSubject => 'Sujet';
+
+  @override
+  String get supportDescription => 'Description';
+
+  @override
+  String get supportPinWarning =>
+      'Ne saisissez jamais votre code PIN, votre mot de passe ni un numéro de carte : ils seraient masqués.';
+
+  @override
+  String get supportSend => 'Envoyer la demande';
+
+  @override
+  String get supportInvalid =>
+      'Indiquez un sujet (3 caractères au moins) et une description (10 caractères au moins).';
+
+  @override
+  String get supportRateLimited =>
+      'Vous avez ouvert beaucoup de demandes en une heure. Réessayez plus tard.';
+
+  @override
+  String get supportReply => 'Votre réponse';
+
+  @override
+  String get supportReplySend => 'Envoyer';
+
+  @override
+  String get supportReopen => 'Rouvrir la demande';
+
+  @override
+  String get supportResolvedHint =>
+      'Demande résolue : elle sera fermée 7 jours après sa résolution. Vous pouvez la rouvrir d’ici là.';
+
+  @override
+  String get supportClosedHint =>
+      'Demande fermée. Ouvrez une nouvelle demande si besoin.';
+
+  @override
+  String get supportRedacted => 'Un code ou un numéro sensible a été masqué.';
+
+  @override
+  String get supportNoAnswer =>
+      'Pas encore de réponse. L\'équipe FlexiPay vous répond ici.';
+
+  @override
+  String get supportFlexipay => 'FlexiPay';
+
+  @override
+  String get supportYou => 'Vous';
+
+  @override
+  String get supportStatusOpen => 'Ouverte';
+
+  @override
+  String get supportStatusInProgress => 'En cours';
+
+  @override
+  String get supportStatusWaiting => 'En attente de votre réponse';
+
+  @override
+  String get supportStatusResolved => 'Résolue';
+
+  @override
+  String get supportStatusClosed => 'Fermée';
+
+  @override
+  String get supportCategoryPaymentDeclined => 'Paiement refusé';
+
+  @override
+  String get supportCategoryDisputed => 'Transaction contestée';
+
+  @override
+  String get supportCategoryAccount => 'Compte / connexion';
+
+  @override
+  String get supportCategoryOrder => 'Commande / virement';
+
+  @override
+  String get supportCategoryPayout => 'Reversement';
+
+  @override
+  String get supportCategoryKyc => 'KYC';
+
+  @override
+  String get supportCategoryOther => 'Autre';
+
+  @override
+  String get historySearch => 'Rechercher (référence, commerçant, montant)';
+
+  @override
+  String get searchNoResult => 'Aucun résultat.';
+
+  @override
+  String get daySearch => 'Rechercher (référence ou montant)';
+
+  @override
+  String get helpAndTickets => 'Aide et demandes';
+
+  @override
+  String supportSent(String reference) {
+    return 'Demande $reference envoyée.';
+  }
+
+  @override
+  String supportLinked(String reference) {
+    return 'Opération concernée : $reference';
+  }
 }

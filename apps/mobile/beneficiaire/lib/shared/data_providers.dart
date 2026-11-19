@@ -43,6 +43,11 @@ final operationsProvider = FutureProvider.family<List<Operation>, (int, int)>((
       .operations(year: ym.$1, month: ym.$2);
 });
 
+/// Recherche dans l'historique (W-SUP).
+final operationSearchProvider = FutureProvider.family<List<Operation>, String>(
+  (ref, query) => ref.watch(walletRepositoryProvider).search(query),
+);
+
 final operationProvider = FutureProvider.family<Operation, String>(
   (ref, id) => ref.watch(walletRepositoryProvider).operation(id),
 );

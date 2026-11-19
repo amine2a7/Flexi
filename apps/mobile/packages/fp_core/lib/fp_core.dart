@@ -17,4 +17,5 @@ export 'src/network/api_client.dart';
 export 'src/network/api_json.dart';
 export 'src/network/connectivity.dart';
 export 'src/storage/secure_store.dart';
+export 'src/support/support.dart';
 export 'src/time/clock.dart';

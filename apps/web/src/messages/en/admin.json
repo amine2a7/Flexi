@@ -365,7 +365,8 @@
     "iban": "Bank details (RIB)",
     "maskedNote": "Only the last 4 digits are shown. The Operations team sees the full numbers.",
     "clearNote": "Full numbers, visible to the Operations team only: compare them with the documents.",
-    "none": "Not provided"
+    "none": "Not provided",
+    "search": "Search a client"
   },
   "payouts": {
     "open": "Open",

@@ -38,6 +38,15 @@ const MERCHANT_OWNER = [
   'registers.manage',
 ] as const;
 
+/**
+ * W-SUP: every user of a company, a merchant or a beneficiary opens and follows its support
+ * tickets; the web users (administrators included) have the global search.
+ */
+const SUPPORT_CLIENT = ['support.use'] as const;
+const SEARCH = ['search.use'] as const;
+/** The complete CIN or RIB of a client, through the blind index: Opérations only (W-SUP). */
+const IDENTIFIER_SEARCH = ['search.identifiers'] as const;
+
 // Admin permissions never reuse a company or merchant name: a tenant route must stay unreachable
 // for an administrator (the matrix is per role, the guard checks names only).
 const ADMIN_ALL = [
@@ -75,6 +84,10 @@ const ADMIN_ALL = [
   // W-FIN: the general ledger (Finance and Super-admin only) and the invoices issued by FlexiPay.
   'ledger.read',
   'adminInvoices.read',
+  // W-SUP: the queue of the support tickets (every administrator) and the global search.
+  'tickets.read',
+  'tickets.manage',
+  'adminSearch.read',
 ] as const;
 
 /**
@@ -113,6 +126,9 @@ export type Permission =
   | (typeof MERCHANT_OWNER)[number]
   | (typeof ADMIN_ALL)[number]
   | (typeof EMPLOYEE)[number]
+  | (typeof SUPPORT_CLIENT)[number]
+  | (typeof SEARCH)[number]
+  | (typeof IDENTIFIER_SEARCH)[number]
   | 'sales.readToday';
 
 /**
@@ -137,9 +153,12 @@ const MATRIX: Record<Role, Partial<Record<SubRole | 'NONE', readonly Permission[
     // The second administrator (request of 2026-11-14): everything but the administrators'
     // accounts, the platform settings and the changes to user accounts; the four eyes still apply.
     // The general ledger stays with Finance and the super-admin (request of 2026-11-19).
-    COMPLIANCE: ADMIN_ALL.filter(
-      (permission) => !SUPER_ADMIN_ONLY.includes(permission) && permission !== 'ledger.read',
-    ),
+    COMPLIANCE: [
+      ...ADMIN_ALL.filter(
+        (permission) => !SUPER_ADMIN_ONLY.includes(permission) && permission !== 'ledger.read',
+      ),
+      ...IDENTIFIER_SEARCH,
+    ],
     FINANCE: [
       ...ADMIN_BACK_OFFICE_READ,
       'settings.read',
@@ -151,6 +170,9 @@ const MATRIX: Record<Role, Partial<Record<SubRole | 'NONE', readonly Permission[
       'approvals.decide',
       'ledger.read',
       'adminInvoices.read',
+      'tickets.read',
+      'tickets.manage',
+      'adminSearch.read',
     ],
     SUPPORT: [
       'accounts.read',
@@ -158,11 +180,21 @@ const MATRIX: Record<Role, Partial<Record<SubRole | 'NONE', readonly Permission[
       'users.read',
       'messages.read',
       'messages.handle',
+      'tickets.read',
+      'tickets.manage',
+      'adminSearch.read',
     ],
   },
   COMPANY: {
-    OWNER: COMPANY_OWNER,
-    MANAGER: ['balances.read', 'employees.read', 'employees.manage', 'credits.allocate'],
+    OWNER: [...COMPANY_OWNER, ...SUPPORT_CLIENT, ...SEARCH],
+    MANAGER: [
+      'balances.read',
+      'employees.read',
+      'employees.manage',
+      'credits.allocate',
+      ...SUPPORT_CLIENT,
+      ...SEARCH,
+    ],
     FINANCE: [
       'balances.read',
       'orders.read',
@@ -170,13 +202,22 @@ const MATRIX: Record<Role, Partial<Record<SubRole | 'NONE', readonly Permission[
       'orders.declareTransfer',
       'fundingAccount.read',
       'invoices.read',
+      ...SUPPORT_CLIENT,
+      ...SEARCH,
     ],
-    ACCOUNTANT: ['balances.read', 'orders.read', 'invoices.read'],
-    READ_ONLY: ['balances.read', 'employees.read', 'orders.read', 'invoices.read'],
+    ACCOUNTANT: ['balances.read', 'orders.read', 'invoices.read', ...SUPPORT_CLIENT, ...SEARCH],
+    READ_ONLY: [
+      'balances.read',
+      'employees.read',
+      'orders.read',
+      'invoices.read',
+      ...SUPPORT_CLIENT,
+      ...SEARCH,
+    ],
   },
   MERCHANT: {
-    OWNER: MERCHANT_OWNER,
-    CASHIER: ['payments.collect', 'sales.readToday', 'shop.read'],
+    OWNER: [...MERCHANT_OWNER, ...SUPPORT_CLIENT, ...SEARCH],
+    CASHIER: ['payments.collect', 'sales.readToday', 'shop.read', ...SUPPORT_CLIENT, ...SEARCH],
     ACCOUNTANT: [
       'stats.read',
       'sales.read',
@@ -185,10 +226,12 @@ const MATRIX: Record<Role, Partial<Record<SubRole | 'NONE', readonly Permission[
       'settlements.read',
       'documents.read',
       'shop.read',
+      ...SUPPORT_CLIENT,
+      ...SEARCH,
     ],
   },
-  EMPLOYEE: { NONE: EMPLOYEE },
-  FAMILY_MEMBER: { NONE: FAMILY_MEMBER },
+  EMPLOYEE: { NONE: [...EMPLOYEE, ...SUPPORT_CLIENT] },
+  FAMILY_MEMBER: { NONE: [...FAMILY_MEMBER, ...SUPPORT_CLIENT] },
 };
 
 /** Permissions of a session, published by GET /v1/me (the web masks what is not allowed). */

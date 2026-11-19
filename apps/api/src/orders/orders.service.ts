@@ -375,10 +375,20 @@ export class OrdersService {
   }
 
   private orderWhere(
-    filters: { status?: OrderStatus; creditType?: CreditType; companyId?: string },
+    filters: { status?: OrderStatus; creditType?: CreditType; companyId?: string; q?: string },
     request: PageRequest,
   ): Prisma.CreditOrderWhereInput {
+    const q = filters.q?.trim();
     return {
+      // W-SUP: instant search of the list pages, by reference (and company for FlexiPay).
+      ...(q === undefined || q === ''
+        ? {}
+        : {
+            OR: [
+              { reference: { contains: q, mode: 'insensitive' as const } },
+              { company: { name: { contains: q, mode: 'insensitive' as const } } },
+            ],
+          }),
       ...(filters.status === undefined ? {} : { status: filters.status }),
       ...(filters.creditType === undefined
         ? {}
@@ -398,7 +408,7 @@ export class OrdersService {
   /** Company list (RLS keeps it to the company of the session), newest first. */
   async list(
     query: Record<string, unknown>,
-    filters: { status?: OrderStatus; creditType?: CreditType },
+    filters: { status?: OrderStatus; creditType?: CreditType; q?: string },
   ): Promise<Page<ReturnType<typeof orderSummary>>> {
     const request = this.paginator.request(query, filters);
     return this.db.user(async (tx) => {
@@ -420,7 +430,7 @@ export class OrdersService {
   /** Admin list: orders waiting for an administrator first, then newest first. */
   async adminList(
     query: Record<string, unknown>,
-    filters: { status?: OrderStatus; creditType?: CreditType; companyId?: string },
+    filters: { status?: OrderStatus; creditType?: CreditType; companyId?: string; q?: string },
   ): Promise<Page<ReturnType<typeof orderSummary>>> {
     const request = this.paginator.request(query, filters);
     return this.db.user(async (tx) => {

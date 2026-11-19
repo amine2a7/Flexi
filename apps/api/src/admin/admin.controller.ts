@@ -449,8 +449,9 @@ export class AdminController {
       z.object({
         status: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
         accountType: z.enum(['MERCHANT', 'COMPANY']).optional(),
+        q: z.string().trim().max(100).optional(),
       }),
-      { status: query.status, accountType: query.accountType },
+      { status: query.status, accountType: query.accountType, q: query.q },
       'query',
     );
     return this.admin.kycFiles(query, filters);

@@ -5,16 +5,17 @@ import { CircleHelp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { messageKey } from '@/i18n/keys';
-import { ContactForm } from '@/components/public/contact-form';
 import { HELP_ANCHORS, HELP_SECTIONS, type HelpSectionKey } from '@/components/public/help-topics';
 import { Card, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/layout-blocks';
+import { ClientTicketList, NewTicketLink } from '@/components/support/client-tickets';
 
 /**
- * Support (commun-support.md), shared by the three spaces: the help topics of the role and of the
- * account, each linking to the help page, then the contact form (same channel as the home page).
+ * Support (commun-support.md, W-SUP), shared by the company and merchant spaces: the support
+ * tickets of the user (all of the account for the owner) with « Nouvelle demande », then the help
+ * topics of the role and of the account, each linking to the help page.
  */
-export function SupportPage({ role }: { role: Schemas['Role'] }) {
+export function SupportPage({ role, base }: { role: Schemas['Role']; base: string }) {
   const t = useTranslations('account.support');
   const tHelp = useTranslations();
   const keys: HelpSectionKey[] = [
@@ -25,7 +26,14 @@ export function SupportPage({ role }: { role: Schemas['Role'] }) {
 
   return (
     <>
-      <PageHeader title={t('title')} description={t('description')} />
+      <PageHeader
+        title={t('title')}
+        description={t('description')}
+        actions={<NewTicketLink base={base} />}
+      />
+      <div className="mb-6">
+        <ClientTicketList base={base} />
+      </div>
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardTitle description={t('helpHint')}>{t('help')}</CardTitle>
@@ -44,10 +52,6 @@ export function SupportPage({ role }: { role: Schemas['Role'] }) {
               )),
             )}
           </ul>
-        </Card>
-        <Card>
-          <CardTitle description={t('contactHint')}>{t('contact')}</CardTitle>
-          <ContactForm />
         </Card>
       </div>
     </>

@@ -38,7 +38,8 @@
     "total": "Total to transfer",
     "paymentReference": "Transfer reference",
     "emptyTitle": "No orders",
-    "emptyMessage": "Place your first credit order."
+    "emptyMessage": "Place your first credit order.",
+    "search": "Search a reference"
   },
   "newOrder": {
     "title": "New credit order",
@@ -232,7 +233,8 @@
     "pdf": "PDF",
     "download": "Download",
     "creditNote": "Credit note {number}",
-    "back": "Back to invoices"
+    "back": "Back to invoices",
+    "search": "Search (invoice, order)"
   },
   "reporting": {
     "title": "Reporting",

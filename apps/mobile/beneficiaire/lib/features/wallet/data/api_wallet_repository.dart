@@ -82,6 +82,18 @@ class ApiWalletRepository implements WalletRepository {
   }
 
   @override
+  Future<List<Operation>> search(String query) async {
+    final body = await _api.get(
+      '/v1/employee/operations',
+      query: {'limit': 50, 'q': query.trim()},
+    );
+    return [
+      for (final o in listOf(body['data']))
+        if (o['status'] == 'COMPLETED') operationOf(o),
+    ];
+  }
+
+  @override
   Future<Operation> operation(String id) async =>
       operationOf(await _api.get('/v1/employee/operations/$id'));
 }

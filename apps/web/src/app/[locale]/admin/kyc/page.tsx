@@ -8,11 +8,12 @@ import { Link } from '@/i18n/navigation';
 import { getApi } from '@/lib/api/client';
 import { useApiQuery } from '@/lib/api/use-api-query';
 import { usePagedList } from '@/lib/api/use-paged-list';
+import { useDebounced, useUrlFilterState } from '@/lib/ui/use-url-filters';
 import { formatDateTime } from '@/lib/format/date';
 import { Button, buttonClasses } from '@/components/ui/button';
 import { Card, StatCard } from '@/components/ui/card';
 import { DataTable, type Column } from '@/components/ui/data-table';
-import { SelectField } from '@/components/ui/field';
+import { SelectField, TextField } from '@/components/ui/field';
 import { PageHeader } from '@/components/ui/layout-blocks';
 import { Skeleton } from '@/components/ui/states';
 import { KycStatusBadge } from '@/components/admin/kyc-status-badge';
@@ -20,10 +21,12 @@ import { KycStatusBadge } from '@/components/admin/kyc-status-badge';
 type Status = Schemas['KycStatus'];
 type AccountType = Schemas['KycAccountType'];
 interface Filters {
+  q: string;
   status: Status | '';
   accountType: AccountType | '';
 }
-const NO_FILTER: Filters = { status: '', accountType: '' };
+const NO_FILTER: Filters = { q: '', status: '', accountType: '' };
+const URL_NAMES = { q: 'q', status: 'statut', accountType: 'client' } as const;
 const STATUSES: readonly Status[] = ['PENDING', 'APPROVED', 'REJECTED'];
 const TYPES: readonly AccountType[] = ['MERCHANT', 'COMPANY'];
 
@@ -31,8 +34,8 @@ export default function KycFilesPage() {
   const t = useTranslations('admin.kyc');
   const tFilters = useTranslations('ui.filters');
   const locale = useLocale();
-  const [filters, setFilters] = useState<Filters>(NO_FILTER);
-  const [draft, setDraft] = useState<Filters>(NO_FILTER);
+  const [filters, setFilters] = useUrlFilterState(NO_FILTER, URL_NAMES);
+  const [draft, setDraft] = useState<Filters>(filters);
   const pending = useApiQuery(
     () =>
       getApi().GET('/v1/admin/kyc-files', {
@@ -47,6 +50,7 @@ export default function KycFilesPage() {
           query: {
             cursor,
             withCount,
+            ...(filters.q === '' ? {} : { q: filters.q }),
             ...(filters.status === '' ? {} : { status: filters.status }),
             ...(filters.accountType === '' ? {} : { accountType: filters.accountType }),
           },
@@ -59,6 +63,10 @@ export default function KycFilesPage() {
     setDraft(next);
     setFilters(next);
   };
+  // W-SUP: the client name typed is searched 300 ms after the last key.
+  useDebounced(draft.q, filters.q, (q) => {
+    setFilters({ ...filters, q });
+  });
   const onSubmit = (event: SyntheticEvent) => {
     event.preventDefault();
     setFilters(draft);
@@ -139,13 +147,21 @@ export default function KycFilesPage() {
           role="search"
           className="mb-4 grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-3"
         >
+          <TextField
+            label={t('search')}
+            type="search"
+            value={draft.q}
+            onChange={(event) => {
+              setDraft((previous) => ({ ...previous, q: event.target.value }));
+            }}
+          />
           <SelectField
             label={t('status')}
             options={STATUSES.map((value) => ({ value, label: t(`statuses.${value}`) }))}
             placeholder={tFilters('allStatuses')}
             value={draft.status}
             onChange={(event) => {
-              setDraft((previous) => ({ ...previous, status: event.target.value as Status | '' }));
+              apply({ ...draft, status: event.target.value as Status | '' });
             }}
           />
           <SelectField

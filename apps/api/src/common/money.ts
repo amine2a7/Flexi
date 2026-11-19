@@ -9,6 +9,18 @@ export function toMillimes(value: bigint): number {
   return Number(value);
 }
 
+/**
+ * Amount typed in a search box, in dinars (« 12 », « 12,5 », « 12.500 »): exact millimes, or null
+ * when the text is not an amount (W-SUP, search by amount in the apps). Never a float.
+ */
+export function searchedMillimes(text: string): bigint | null {
+  const match = /^(\d{1,9})(?:[.,](\d{1,3}))?$/.exec(text.trim().replace(/\s+/g, ''));
+  if (match === null) return null;
+  const dinars = BigInt(match[1] ?? '0');
+  const fraction = BigInt((match[2] ?? '').padEnd(3, '0') || '0');
+  return dinars * 1000n + fraction;
+}
+
 /** JSON integer -> BIGINT. The validation layer has already checked it is a safe integer. */
 export function fromMillimes(value: number): bigint {
   if (!Number.isSafeInteger(value)) throw new Error('amount must be a safe integer');

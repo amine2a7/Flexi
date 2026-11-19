@@ -17,6 +17,7 @@ import '../features/family/presentation/family_add_screen.dart';
 import '../features/family/presentation/family_member_screen.dart';
 import '../features/family/presentation/family_screen.dart';
 import '../features/help/presentation/help_screen.dart';
+import '../features/help/presentation/support_screens.dart';
 import '../features/history/presentation/history_screen.dart';
 import '../features/history/presentation/receipt_screen.dart';
 import '../features/home/presentation/home_screen.dart';
@@ -84,6 +85,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: Routes.locked, builder: (_, _) => const LockedScreen()),
       GoRoute(path: Routes.help, builder: (_, _) => const HelpScreen()),
+      GoRoute(
+        path: Routes.tickets,
+        builder: (_, _) => const SupportTicketsScreen(),
+      ),
+      GoRoute(
+        path: Routes.newTicket,
+        builder: (_, state) =>
+            NewTicketScreen(link: state.extra as TicketLink?),
+      ),
+      GoRoute(
+        path: '/help/tickets/:id',
+        builder: (_, state) =>
+            TicketScreen(ticketId: state.pathParameters['id']!),
+      ),
       GoRoute(
         path: Routes.catalog,
         builder: (_, _) => FpCatalogPage(

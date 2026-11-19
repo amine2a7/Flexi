@@ -35,6 +35,7 @@ class TillCheckout {
     this.reference,
     this.cashier,
     this.time,
+    this.paymentId,
   });
 
   final String id;
@@ -60,6 +61,9 @@ class TillCheckout {
   final String? reference;
   final String? cashier;
   final DateTime? time;
+
+  /// Paiement encaissé (ouvert depuis Aujourd'hui) : « Signaler un problème » (W-SUP).
+  final String? paymentId;
 
   TillCheckout copyWith({
     CheckoutStatus? status,

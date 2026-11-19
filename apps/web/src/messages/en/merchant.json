@@ -158,7 +158,8 @@
     "destinationHint": "Registered bank account (masked). To change it, contact FlexiPay.",
     "requestAgain": "Request again",
     "requestAgainFor": "Request the payout {reference} again",
-    "invoice": "Download the commission invoice"
+    "invoice": "Download the commission invoice",
+    "search": "Search a reference"
   },
   "settlements": {
     "title": "Settlements and documents",

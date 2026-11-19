@@ -13,6 +13,11 @@ abstract final class ProRoutes {
   static const payouts = '/payouts';
   static const team = '/team';
 
+  /// Aide › Mes demandes (W-SUP), tous les utilisateurs du commerce.
+  static const tickets = '/help/tickets';
+  static const newTicket = '/help/tickets/new';
+  static String ticket(String id) => '/help/tickets/$id';
+
   /// Écrans réservés au propriétaire.
   static const ownerOnly = {balance, payouts, team, registers, sticker};
 

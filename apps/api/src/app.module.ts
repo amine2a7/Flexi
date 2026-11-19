@@ -12,6 +12,7 @@ import { OrdersModule } from './orders/orders.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
 import { PayoutsModule } from './payouts/payouts.module.js';
 import { PlatformModule } from './platform/platform.module.js';
+import { SupportModule } from './support/support.module.js';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { PlatformModule } from './platform/platform.module.js';
     RiskModule,
     KycModule,
     FamilyModule,
+    SupportModule,
   ],
   controllers: [HealthController],
 })

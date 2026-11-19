@@ -30,6 +30,25 @@ describe('administrator sub-roles (decision C)', () => {
     expect(permissionsOf('COMPANY', 'OWNER')).not.toContain('ledger.read');
   });
 
+  it('W-SUP: every administrator works the tickets and searches; CIN and RIB for Opérations', () => {
+    for (const subRole of ['SUPER_ADMIN', 'COMPLIANCE', 'FINANCE', 'SUPPORT'] as const) {
+      expect(admin(subRole)).toEqual(
+        expect.arrayContaining(['tickets.read', 'tickets.manage', 'adminSearch.read']),
+      );
+    }
+    expect(admin('COMPLIANCE')).toContain('search.identifiers');
+    for (const subRole of ['SUPER_ADMIN', 'FINANCE', 'SUPPORT'] as const)
+      expect(admin(subRole)).not.toContain('search.identifiers');
+    for (const sub of ['OWNER', 'MANAGER', 'FINANCE', 'ACCOUNTANT', 'READ_ONLY'] as const)
+      expect(permissionsOf('COMPANY', sub)).toEqual(
+        expect.arrayContaining(['support.use', 'search.use']),
+      );
+    for (const sub of ['OWNER', 'CASHIER', 'ACCOUNTANT'] as const)
+      expect(permissionsOf('MERCHANT', sub)).toContain('support.use');
+    expect(permissionsOf('EMPLOYEE', null)).toContain('support.use');
+    expect(permissionsOf('FAMILY_MEMBER', null)).toContain('support.use');
+  });
+
   it('Opérations is the second administrator: everything else of the super-admin', () => {
     // The general ledger stays with Finance and the super-admin (W-FIN, request of 2026-11-19).
     const kept = [
@@ -39,7 +58,8 @@ describe('administrator sub-roles (decision C)', () => {
       'users.support',
       'ledger.read',
     ];
-    expect([...admin('COMPLIANCE')].sort()).toEqual(
+    // W-SUP: the complete CIN or RIB in the search is for Opérations only.
+    expect([...admin('COMPLIANCE')].filter((p) => p !== 'search.identifiers').sort()).toEqual(
       admin('SUPER_ADMIN')
         .filter((permission) => !kept.includes(permission))
         .sort(),

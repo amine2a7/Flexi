@@ -39,6 +39,7 @@ export default function OrdersPage() {
           query: {
             cursor,
             withCount,
+            ...(filters.q === '' ? {} : { q: filters.q }),
             ...(filters.status === '' ? {} : { status: filters.status as Schemas['OrderStatus'] }),
             ...(filters.creditType === '' ? {} : { creditType: filters.creditType }),
           },
@@ -97,6 +98,7 @@ export default function OrdersPage() {
       </div>
       <Card>
         <FilterBar
+          searchLabel={t('search')}
           statusLabel={t('status')}
           statusOptions={ORDER_STATUSES.map((value) => ({
             value,

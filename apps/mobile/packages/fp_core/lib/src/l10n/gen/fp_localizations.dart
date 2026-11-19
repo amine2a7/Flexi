@@ -2552,6 +2552,240 @@ abstract class FpL10n {
   /// In fr, this message translates to:
   /// **'{ref} · Refusé'**
   String payoutRejected(String ref);
+
+  /// No description provided for @supportTickets.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes demandes'**
+  String get supportTickets;
+
+  /// No description provided for @supportTicketsHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vos demandes à l\'équipe FlexiPay et leurs réponses.'**
+  String get supportTicketsHint;
+
+  /// No description provided for @supportNew.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouvelle demande'**
+  String get supportNew;
+
+  /// No description provided for @supportEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune demande pour le moment.'**
+  String get supportEmpty;
+
+  /// No description provided for @supportSearch.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rechercher une demande'**
+  String get supportSearch;
+
+  /// No description provided for @supportCategory.
+  ///
+  /// In fr, this message translates to:
+  /// **'Catégorie'**
+  String get supportCategory;
+
+  /// No description provided for @supportSubject.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sujet'**
+  String get supportSubject;
+
+  /// No description provided for @supportDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Description'**
+  String get supportDescription;
+
+  /// No description provided for @supportPinWarning.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ne saisissez jamais votre code PIN, votre mot de passe ni un numéro de carte : ils seraient masqués.'**
+  String get supportPinWarning;
+
+  /// No description provided for @supportSend.
+  ///
+  /// In fr, this message translates to:
+  /// **'Envoyer la demande'**
+  String get supportSend;
+
+  /// No description provided for @supportInvalid.
+  ///
+  /// In fr, this message translates to:
+  /// **'Indiquez un sujet (3 caractères au moins) et une description (10 caractères au moins).'**
+  String get supportInvalid;
+
+  /// No description provided for @supportRateLimited.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vous avez ouvert beaucoup de demandes en une heure. Réessayez plus tard.'**
+  String get supportRateLimited;
+
+  /// No description provided for @supportReply.
+  ///
+  /// In fr, this message translates to:
+  /// **'Votre réponse'**
+  String get supportReply;
+
+  /// No description provided for @supportReplySend.
+  ///
+  /// In fr, this message translates to:
+  /// **'Envoyer'**
+  String get supportReplySend;
+
+  /// No description provided for @supportReopen.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rouvrir la demande'**
+  String get supportReopen;
+
+  /// No description provided for @supportResolvedHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Demande résolue : elle sera fermée 7 jours après sa résolution. Vous pouvez la rouvrir d’ici là.'**
+  String get supportResolvedHint;
+
+  /// No description provided for @supportClosedHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Demande fermée. Ouvrez une nouvelle demande si besoin.'**
+  String get supportClosedHint;
+
+  /// No description provided for @supportRedacted.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un code ou un numéro sensible a été masqué.'**
+  String get supportRedacted;
+
+  /// No description provided for @supportNoAnswer.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pas encore de réponse. L\'équipe FlexiPay vous répond ici.'**
+  String get supportNoAnswer;
+
+  /// No description provided for @supportFlexipay.
+  ///
+  /// In fr, this message translates to:
+  /// **'FlexiPay'**
+  String get supportFlexipay;
+
+  /// No description provided for @supportYou.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vous'**
+  String get supportYou;
+
+  /// No description provided for @supportStatusOpen.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouverte'**
+  String get supportStatusOpen;
+
+  /// No description provided for @supportStatusInProgress.
+  ///
+  /// In fr, this message translates to:
+  /// **'En cours'**
+  String get supportStatusInProgress;
+
+  /// No description provided for @supportStatusWaiting.
+  ///
+  /// In fr, this message translates to:
+  /// **'En attente de votre réponse'**
+  String get supportStatusWaiting;
+
+  /// No description provided for @supportStatusResolved.
+  ///
+  /// In fr, this message translates to:
+  /// **'Résolue'**
+  String get supportStatusResolved;
+
+  /// No description provided for @supportStatusClosed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fermée'**
+  String get supportStatusClosed;
+
+  /// No description provided for @supportCategoryPaymentDeclined.
+  ///
+  /// In fr, this message translates to:
+  /// **'Paiement refusé'**
+  String get supportCategoryPaymentDeclined;
+
+  /// No description provided for @supportCategoryDisputed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Transaction contestée'**
+  String get supportCategoryDisputed;
+
+  /// No description provided for @supportCategoryAccount.
+  ///
+  /// In fr, this message translates to:
+  /// **'Compte / connexion'**
+  String get supportCategoryAccount;
+
+  /// No description provided for @supportCategoryOrder.
+  ///
+  /// In fr, this message translates to:
+  /// **'Commande / virement'**
+  String get supportCategoryOrder;
+
+  /// No description provided for @supportCategoryPayout.
+  ///
+  /// In fr, this message translates to:
+  /// **'Reversement'**
+  String get supportCategoryPayout;
+
+  /// No description provided for @supportCategoryKyc.
+  ///
+  /// In fr, this message translates to:
+  /// **'KYC'**
+  String get supportCategoryKyc;
+
+  /// No description provided for @supportCategoryOther.
+  ///
+  /// In fr, this message translates to:
+  /// **'Autre'**
+  String get supportCategoryOther;
+
+  /// No description provided for @historySearch.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rechercher (référence, commerçant, montant)'**
+  String get historySearch;
+
+  /// No description provided for @searchNoResult.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun résultat.'**
+  String get searchNoResult;
+
+  /// No description provided for @daySearch.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rechercher (référence ou montant)'**
+  String get daySearch;
+
+  /// No description provided for @helpAndTickets.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aide et demandes'**
+  String get helpAndTickets;
+
+  /// No description provided for @supportSent.
+  ///
+  /// In fr, this message translates to:
+  /// **'Demande {reference} envoyée.'**
+  String supportSent(String reference);
+
+  /// No description provided for @supportLinked.
+  ///
+  /// In fr, this message translates to:
+  /// **'Opération concernée : {reference}'**
+  String supportLinked(String reference);
 }
 
 class _FpL10nDelegate extends LocalizationsDelegate<FpL10n> {

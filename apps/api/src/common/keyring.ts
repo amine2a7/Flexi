@@ -1,4 +1,4 @@
-import { createHmac, randomBytes } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHmac, randomBytes } from 'node:crypto';
 import { decryptSecret, encryptSecret } from './crypto.js';
 
 /**
@@ -80,4 +80,31 @@ export function openWith(ring: KeyRing, sealed: string): string {
  */
 export function blindIndex(key: Buffer, kind: string, value: string): string {
   return createHmac('sha256', key).update(`${kind}|${value}`).digest('hex');
+}
+
+const FILE_MAGIC = Buffer.from('FPF1', 'ascii');
+
+/**
+ * Encrypted file (W-SUP attachments): `FPF1` + data key id (2 bytes) + iv (12) + tag (16) +
+ * ciphertext, AES-256-GCM under the active data key. The storage never holds the clear bytes.
+ */
+export function sealBytesWith(ring: KeyRing, data: Buffer): Buffer {
+  const key = ring.keys.get(ring.activeId);
+  if (key === undefined) throw new Error('active data key missing');
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', key.subarray(0, 32), iv);
+  const body = Buffer.concat([cipher.update(data), cipher.final()]);
+  const id = Buffer.alloc(2);
+  id.writeUInt16BE(ring.activeId);
+  return Buffer.concat([FILE_MAGIC, id, iv, cipher.getAuthTag(), body]);
+}
+
+export function openBytesWith(ring: KeyRing, sealed: Buffer): Buffer {
+  if (sealed.length < 34 || !sealed.subarray(0, 4).equals(FILE_MAGIC))
+    throw new Error('file not encrypted');
+  const key = ring.keys.get(sealed.readUInt16BE(4));
+  if (key === undefined) throw new Error('unknown data key');
+  const decipher = createDecipheriv('aes-256-gcm', key.subarray(0, 32), sealed.subarray(6, 18));
+  decipher.setAuthTag(sealed.subarray(18, 34));
+  return Buffer.concat([decipher.update(sealed.subarray(34)), decipher.final()]);
 }

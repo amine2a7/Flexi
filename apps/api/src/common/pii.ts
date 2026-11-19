@@ -6,7 +6,9 @@ import { DbService } from './db.service.js';
 import {
   blindIndex,
   isSealedValue,
+  openBytesWith,
   openWith,
+  sealBytesWith,
   sealWith,
   unwrapKeys,
   type DataKeyRow,
@@ -79,6 +81,15 @@ export class PiiService {
   /** Decrypts a sealed value; a value in clear is an error (never shown as if it were trusted). */
   open(value: string): string {
     return openWith(this.ring, value);
+  }
+
+  /** Bytes of a file encrypted before the storage (W-SUP attachments). */
+  sealFile(data: Buffer): Buffer {
+    return sealBytesWith(this.ring, data);
+  }
+
+  openFile(sealed: Buffer): Buffer {
+    return openBytesWith(this.ring, sealed);
   }
 
   openNullable(value: string | null): string | null {

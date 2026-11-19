@@ -7,6 +7,7 @@ import { useState, type SyntheticEvent } from 'react';
 import { getApi } from '@/lib/api/client';
 import { useApiQuery } from '@/lib/api/use-api-query';
 import { usePagedList } from '@/lib/api/use-paged-list';
+import { useUrlFilterState } from '@/lib/ui/use-url-filters';
 import { formatDateTime } from '@/lib/format/date';
 import { Amount } from '@/components/ui/amount';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,14 @@ function instant(day: string, next = false): string | undefined {
   return date.toISOString();
 }
 
+const URL_NAMES = {
+  clientType: 'client',
+  clientId: 'id',
+  transactionType: 'type',
+  from: 'du',
+  to: 'au',
+} as const;
+
 /** Query of the list and of the CSV export (same filters). */
 function ledgerQuery(filters: LedgerFilters) {
   const from = instant(filters.from);
@@ -66,8 +75,9 @@ function ledgerQuery(filters: LedgerFilters) {
 export default function LedgerPage() {
   const t = useTranslations('admin.ledger');
   const locale = useLocale();
-  const [draft, setDraft] = useState<LedgerFilters>(EMPTY);
-  const [filters, setFilters] = useState<LedgerFilters>(EMPTY);
+  // W-SUP: the filters are kept in the URL (shared links, reload, back button).
+  const [filters, setFilters] = useUrlFilterState(EMPTY, URL_NAMES);
+  const [draft, setDraft] = useState<LedgerFilters>(filters);
   const types = useApiQuery(() => getApi().GET('/v1/admin/ledger-entries/types'), []);
   const clients = useApiQuery(async () => {
     if (draft.clientType === 'COMPANY') {
