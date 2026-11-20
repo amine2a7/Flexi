@@ -10,7 +10,7 @@ import {
   APP_DB_ROLE,
   APP_GROUP_ROLE,
   databaseUrls,
-  MIGRATE_DB_ROLE,
+  dbRoles,
   REPORT_DB_ROLE,
   WORKER_DB_ROLE,
 } from '../src/config/database-urls.js';
@@ -18,6 +18,9 @@ import { runMigrations } from './db-migrate.js';
 
 const reset = process.argv.includes('--reset');
 const urls = databaseUrls(process.env);
+// Roles of this database: the base roles, or the separate test roles (DB_ROLE_SUFFIX=_test).
+const roles = dbRoles(process.env);
+const MIGRATE_DB_ROLE = roles.migrate;
 if (urls.dbName === 'unset') {
   console.error('PG_ADMIN_URL is missing: run `pnpm --filter @flexipay/api env:init` first.');
   process.exit(1);
@@ -28,10 +31,10 @@ if (!['localhost', '127.0.0.1', '::1'].includes(host)) {
   process.exit(1);
 }
 const passwords: Record<string, string> = {
-  [APP_DB_ROLE]: process.env.APP_DB_PASSWORD ?? '',
-  [MIGRATE_DB_ROLE]: process.env.MIGRATE_DB_PASSWORD ?? '',
-  [WORKER_DB_ROLE]: process.env.WORKER_DB_PASSWORD ?? '',
-  [REPORT_DB_ROLE]: process.env.REPORT_DB_PASSWORD ?? '',
+  [roles.app]: process.env.APP_DB_PASSWORD ?? '',
+  [roles.migrate]: process.env.MIGRATE_DB_PASSWORD ?? '',
+  [roles.worker]: process.env.WORKER_DB_PASSWORD ?? '',
+  [roles.report]: process.env.REPORT_DB_PASSWORD ?? '',
 };
 for (const [role, password] of Object.entries(passwords)) {
   if (password.length < 16) {
@@ -42,10 +45,10 @@ for (const [role, password] of Object.entries(passwords)) {
 
 /** Role attributes: nobody but the superuser bypasses the policies, except the reader. */
 const ROLES: readonly [string, string][] = [
-  [MIGRATE_DB_ROLE, 'LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS'],
-  [APP_DB_ROLE, 'LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS INHERIT'],
-  [WORKER_DB_ROLE, 'LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS'],
-  [REPORT_DB_ROLE, 'LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE BYPASSRLS'],
+  [roles.migrate, 'LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS'],
+  [roles.app, 'LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS INHERIT'],
+  [roles.worker, 'LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS INHERIT'],
+  [roles.report, 'LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE BYPASSRLS INHERIT'],
 ];
 
 const admin = new pg.Client({ connectionString: urls.adminUrl });
@@ -70,8 +73,24 @@ try {
   }
   await admin.query(`ALTER ROLE ${admin.escapeIdentifier(APP_GROUP_ROLE)} NOLOGIN PASSWORD NULL`);
   await admin.query(
-    `GRANT ${admin.escapeIdentifier(APP_GROUP_ROLE)} TO ${admin.escapeIdentifier(APP_DB_ROLE)}`,
+    `GRANT ${admin.escapeIdentifier(APP_GROUP_ROLE)} TO ${admin.escapeIdentifier(roles.app)}`,
   );
+  if (roles.suffix !== '') {
+    // Separate test roles: the base roles named by the migrations must exist (created without a
+    // login when missing, NEVER altered: their passwords are the development ones); the test
+    // roles receive their grants by membership.
+    for (const base of [APP_DB_ROLE, WORKER_DB_ROLE, REPORT_DB_ROLE]) {
+      const known =
+        (await admin.query('SELECT 1 FROM pg_roles WHERE rolname = $1', [base])).rowCount === 1;
+      if (!known) await admin.query(`CREATE ROLE ${admin.escapeIdentifier(base)} NOLOGIN`);
+    }
+    await admin.query(
+      `GRANT ${admin.escapeIdentifier(WORKER_DB_ROLE)} TO ${admin.escapeIdentifier(roles.worker)}`,
+    );
+    await admin.query(
+      `GRANT ${admin.escapeIdentifier(REPORT_DB_ROLE)} TO ${admin.escapeIdentifier(roles.report)}`,
+    );
+  }
 
   const ident = admin.escapeIdentifier(urls.dbName);
   const exists =
@@ -96,7 +115,7 @@ try {
       `ALTER DATABASE ${ident} OWNER TO ${admin.escapeIdentifier(MIGRATE_DB_ROLE)}`,
     );
   }
-  for (const role of [APP_DB_ROLE, WORKER_DB_ROLE, REPORT_DB_ROLE]) {
+  for (const role of [roles.app, roles.worker, roles.report]) {
     await admin.query(`GRANT CONNECT ON DATABASE ${ident} TO ${admin.escapeIdentifier(role)}`);
   }
   await admin.query(`REVOKE CONNECT ON DATABASE ${ident} FROM PUBLIC`);
@@ -145,5 +164,5 @@ try {
 }
 
 await runMigrations();
-console.log(`roles ${APP_DB_ROLE}, ${WORKER_DB_ROLE}, ${MIGRATE_DB_ROLE}, ${REPORT_DB_ROLE} ready`);
+console.log(`roles ${roles.app}, ${roles.worker}, ${roles.migrate}, ${roles.report} ready`);
 console.log('Next: pnpm --filter @flexipay/api db:seed');

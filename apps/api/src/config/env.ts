@@ -19,6 +19,11 @@ const schema = z.object({
   WEB_ORIGINS: z.string().default('http://localhost:3001'),
   PG_ADMIN_URL: z.string().min(1),
   DB_NAME: z.string().default('flexipay'),
+  /** Login roles of a separate database (`_test` for the integration tests), see dbRoles. */
+  DB_ROLE_SUFFIX: z
+    .string()
+    .regex(/^(_[a-z0-9]{1,16})?$/)
+    .default(''),
   /** Password of `fp_app`, the only role the API connects with (RLS applies, no DDL). */
   APP_DB_PASSWORD: z.string().min(16),
   /** Password of `fp_migrate`, owner of the schema: migrations and data scripts only. */
@@ -114,6 +119,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
         throw new Error(`${name} is a dummy key, refused in production`);
     }
     if (env.DB_NAME.endsWith('_test')) throw new Error('DB_NAME is a test database');
+    if (env.DB_ROLE_SUFFIX !== '') throw new Error('DB_ROLE_SUFFIX is for the test database');
   }
   const uploadDir = resolve(env.UPLOAD_DIR);
   // Uploaded pieces never live under a folder served by a web server.

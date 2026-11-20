@@ -22,6 +22,36 @@ export const REPORT_DB_ROLE = 'fp_report';
  */
 export const PG_SESSION_OPTIONS = '-c TimeZone=UTC';
 
+/** Suffix of the login roles of a separate database (`_test`): lower case, 16 characters at most. */
+const ROLE_SUFFIX = /^(_[a-z0-9]{1,16})?$/;
+
+export interface DbRoles {
+  readonly app: string;
+  readonly migrate: string;
+  readonly worker: string;
+  readonly report: string;
+  /** Empty for the roles of the development database (the base names). */
+  readonly suffix: string;
+}
+
+/**
+ * Login roles of the database. PostgreSQL roles belong to the whole server: the integration
+ * tests use their own roles (DB_ROLE_SUFFIX=_test: fp_app_test, fp_migrate_test...), members of
+ * the base roles for the grants of the migrations, each with its own password, so that a test run
+ * never changes a role, nor a password, of the development database.
+ */
+export function dbRoles(env: NodeJS.ProcessEnv): DbRoles {
+  const suffix = env.DB_ROLE_SUFFIX ?? '';
+  if (!ROLE_SUFFIX.test(suffix)) throw new Error('DB_ROLE_SUFFIX must look like _test');
+  return {
+    app: `${APP_DB_ROLE}${suffix}`,
+    migrate: `${MIGRATE_DB_ROLE}${suffix}`,
+    worker: `${WORKER_DB_ROLE}${suffix}`,
+    report: `${REPORT_DB_ROLE}${suffix}`,
+    suffix,
+  };
+}
+
 export interface DatabaseUrls {
   /** Superuser, maintenance database (CREATE DATABASE, roles): local db:setup only. */
   readonly adminUrl: string;
@@ -62,7 +92,8 @@ export function databaseUrls(env: NodeJS.ProcessEnv): DatabaseUrls {
   const base = new URL(admin);
   const database = new URL(base.toString());
   database.pathname = `/${dbName}`;
-  const migration = new URL(withRole(database, MIGRATE_DB_ROLE, env.MIGRATE_DB_PASSWORD));
+  const roles = dbRoles(env);
+  const migration = new URL(withRole(database, roles.migrate, env.MIGRATE_DB_PASSWORD));
   // Prisma migrate reads the TLS mode from the URL.
   if (env.DB_SSL === 'require' || env.DB_SSL === 'verify-full') {
     migration.searchParams.set('sslmode', env.DB_SSL === 'require' ? 'require' : 'verify-full');
@@ -73,7 +104,7 @@ export function databaseUrls(env: NodeJS.ProcessEnv): DatabaseUrls {
     adminUrl: base.toString(),
     superUrl: database.toString(),
     migrationUrl: migration.toString(),
-    appUrl: withRole(database, APP_DB_ROLE, env.APP_DB_PASSWORD),
+    appUrl: withRole(database, roles.app, env.APP_DB_PASSWORD),
     dbName,
   };
 }

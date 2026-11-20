@@ -15,6 +15,7 @@ const ENV_FILE = join(import.meta.dirname, '..', '..', '..', '..', 'infra', '.en
  * of infra/.env, never derived from another secret, never written anywhere.
  */
 const RUN_KEYS = [
+  'APP_DB_PASSWORD',
   'MIGRATE_DB_PASSWORD',
   'WORKER_DB_PASSWORD',
   'REPORT_DB_PASSWORD',
@@ -30,6 +31,8 @@ export function loadTestEnv(): void {
   const inherited = new Map(RUN_KEYS.map((name) => [name, process.env[name]]));
   if (existsSync(ENV_FILE)) process.loadEnvFile(ENV_FILE);
   process.env.DB_NAME = 'flexipay_test';
+  // Own roles (fp_app_test, fp_migrate_test...): the development roles are never touched.
+  process.env.DB_ROLE_SUFFIX = '_test';
   process.env.NODE_ENV = 'test';
   const ownRun = process.env[RUN_MARKER] === '1';
   for (const name of RUN_KEYS) {
